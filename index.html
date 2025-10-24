@@ -305,7 +305,7 @@
         return;
       }
 
-      const body = `Name: ${name}\nPhone: ${phone}\nProduct: ${product}\nMessage: ${message}`;
+      const body = `Name: ${name}\nPhone: ${phone}\nProduct: ${product}\nMessage: ${message}\naddress: ${address}\nquantity: ${quantity}`;
       const mailto = `mailto:puregrowfarm001@gmail.com?subject=Order%20from%20website&body=${encodeURIComponent(body)}`;
       window.location.href = mailto;
     }

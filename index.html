@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Pure Grow Farm — Oyster Mushrooms</title>
+  <meta name="description" content="Pure Grow Farm — Fresh (green) & Dry Oyster Mushrooms. Sustainable mushroom farming and sales." />
+  <style>
+    :root{ --accent:#2b8a3e; --accent-2:#7fc07f; --dark:#0f1720; --muted:#6b7280; --card:#ffffff; }
+    *{box-sizing:border-box}
+    body{font-family:Inter,ui-sans-serif,system-ui,Segoe UI,Roboto,'Helvetica Neue',Arial; margin:0; background:linear-gradient(180deg,#f6faf5 0%, #ffffff 100%); color:var(--dark); line-height:1.45}
+    .container{max-width:1100px;margin:0 auto;padding:24px}
+
+    /* Header */
+    header{display:flex;align-items:center;justify-content:space-between;padding:14px 0}
+    .brand{display:flex;gap:12px;align-items:center}
+    .logo{width:56px;height:56px;border-radius:12px;background:linear-gradient(135deg,var(--accent),var(--accent-2));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:20px}
+    nav{display:flex;gap:16px;align-items:center}
+    .btn{background:var(--accent);color:#fff;padding:10px 14px;border-radius:10px;text-decoration:none;font-weight:600}
+    .muted{color:var(--muted)}
+
+    /* Hero */
+    .hero{display:grid;grid-template-columns:1fr 420px;gap:28px;align-items:center;padding:28px 0}
+    .hero h1{font-size:34px;margin:0 0 10px}
+    .hero p{margin:0 0 18px;color:var(--muted)}
+    .cards{display:flex;gap:12px}
+    .card{background:var(--card);border-radius:12px;padding:12px;box-shadow:0 4px 18px rgba(12,18,20,0.06)}
+    .stats{display:flex;gap:12px}
+
+    /* Product list */
+    .products{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:18px;margin:18px 0}
+    .product{background:var(--card);border-radius:12px;padding:14px;box-shadow:0 6px 22px rgba(12,18,20,0.04);display:flex;flex-direction:column}
+    .product img{width:100%;height:160px;object-fit:cover;border-radius:8px;margin-bottom:12px}
+    .product h3{margin:0 0 8px}
+    .pill{display:inline-block;padding:6px 8px;border-radius:999px;background:#eef7ee;color:var(--accent);font-weight:700;font-size:13px}
+
+    /* About */
+    .about{display:flex;gap:20px;align-items:center;padding:20px 0}
+    .about img{width:320px;height:200px;object-fit:cover;border-radius:12px}
+
+    /* Gallery */
+    .gallery{display:flex;gap:10px;flex-wrap:wrap}
+    .gallery img{width:calc(33.333% - 6.6px);height:300px;object-fit:cover;border-radius:8px}
+
+    /* Contact */
+    .contact{background:linear-gradient(180deg,#fff,#f7fff7);padding:20px;border-radius:12px;margin-top:18px}
+    form{display:grid;gap:10px}
+    input,textarea,select{padding:10px;border-radius:8px;border:1px solid #e6e9ec;font-size:15px}
+    button{padding:10px 14px;border-radius:8px;border:0;background:var(--accent);color:#fff;font-weight:700}
+
+    footer{padding:28px 0;color:var(--muted);font-size:14px;text-align:center}
+
+    /* Responsive */
+    @media (max-width:920px){.hero{grid-template-columns:1fr;}.about{flex-direction:column}.gallery img{width:calc(50% - 5px)} }
+    @media (max-width:520px){.gallery img{width:100%}.nav-toggle{display:block}.nav-collapse{display:none}.nav-collapse.show{display:flex;flex-direction:column;gap:12px}}
+
+    .nav-toggle{display:none;border:0;background:transparent;font-size:18px}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="brand">
+        <div class="">
+            <img src="mushroom/logo-pure.png" alt="oyster mushrooms" style="width:100%;height:70px;object-fit:cover;border-radius:10px;margin-top: 5px;">
+        </div>
+        <div>
+          <div style="font-weight:800">Pure Grow Farm</div>
+          <div class="muted" style="font-size:13px">Oyster Mushrooms — Green & Dry</div>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:12px;align-items:center">
+        <button class="nav-toggle" onclick="toggleNav()">☰</button>
+        <nav class="nav-collapse">
+          <a href="#about" class="muted">About</a>
+          <a href="#products" class="muted">Products</a>
+          <a href="#gallery" class="muted">Gallery</a>
+          <a href="#contact" class="muted">Contact</a>
+        </nav>
+        <a class="btn" href="#contact">Order Now</a>
+      </div>
+    </header>
+
+    <main>
+      <section class="hero">
+        <div>
+          <h1>Fresh & Premium Oyster Mushrooms</h1>
+          <p>Pure Grow Farm produces high-quality oyster mushrooms — both fresh (green) and carefully dried for longer shelf life. Sustainable cultivation, chemical-free farming, and direct delivery.</p>
+
+          <div class="cards">
+            <div class="card">
+              <div style="font-size:13px;color:var(--muted)">Products</div>
+              <div style="font-weight:800;font-size:18px">Green & Dry Oyster Mushrooms</div>
+            </div>
+            <div class="card">
+              <div style="font-size:13px;color:var(--muted)">Contact</div>
+              <div style="font-weight:800;font-size:16px">9067891039 | 8200145732</div>
+            </div>
+          </div>
+
+          <div style="margin-top:18px">
+            <a class="pill" href="mailto:puregrowfarm001@gmail.com">Email: puregrowfarm001@gmail.com</a>
+            <span style="margin-left:8px" class="muted">Instagram:</span>
+            <a href="https://instagram.com/_.pure_grow_farm_." target="_blank" class="muted">@_.pure_grow_farm_.</a>
+          </div>
+        </div>
+
+        <aside>
+          <div style="background:linear-gradient(135deg,#e8f5e9,#ffffff);padding:18px;border-radius:12px;text-align:center">
+            <img src="mushroom/home.png" alt="oyster mushrooms" style="width:100%;height:220px;object-fit:cover;border-radius:10px;margin-bottom:12px">
+            <div style="font-weight:800">Organic Oyster Mushrooms</div>
+            <div class="muted" style="font-size:13px">Fresh harvest — packed and delivered</div>
+          </div>
+        </aside>
+      </section>
+
+      <section id="products">
+        <h2>Our Products</h2>
+        <div class="products">
+          <article class="product">
+            <img src="mushroom/Screenshot 2025-10-24 154001.png" alt="green oyster">
+            <h3>Fresh Green Oyster Mushroom</h3>
+            <p class="muted">Picked fresh, chilled and delivered within 24-48 hours for best taste and texture.</p>
+            <div style="margin-top:auto;display:flex;gap:8px;align-items:center;justify-content:space-between">
+              <div class="pill">Per kg</div>
+              <a class="btn" href="#contact">Order</a>
+            </div>
+          </article>
+
+          <article class="product">
+            <img src="mushroom/oyst dry.webp" alt="dry oyster">
+            <h3>Dried Oyster Mushroom</h3>
+            <p class="muted">Slow-dried to preserve flavor and nutrients — ideal for long-term storage and culinary use.</p>
+            <div style="margin-top:auto;display:flex;gap:8px;align-items:center;justify-content:space-between">
+              <div class="pill">Per pack</div>
+              <a class="btn" href="#contact">Order</a>
+            </div>
+          </article>
+
+          <article class="product">
+            <img src="mushroom/bulk.png" alt="mushroom farm">
+            <h3>Bulk & Wholesale</h3>
+            <p class="muted">Supply to restaurants, retailers, and markets. Reliable volumes and regular schedules.</p>
+            <div style="margin-top:auto;display:flex;gap:8px;align-items:center;justify-content:space-between">
+              <div class="pill">Custom</div>
+              <a class="btn" href="#contact">Get Quote</a>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section id="about" class="about">
+        <div>
+          <h2>About Pure Grow Farm</h2>
+          <p class="muted" style="width:800px;">Pure Grow Farm is a family-run mushroom farm focused on sustainable oyster mushroom cultivation. We grow on locally sourced substrates, avoid chemical treatments, and pack produce with care to deliver maximum freshness.</p>
+
+          <ul class="muted">
+            <li>Organic substrate & eco-friendly methods</li>
+            <li>Cold-chain packing for fresh mushrooms</li>
+            <li>Traceable batches & hygienic processing</li>
+          </ul>
+        </div>
+        <img src="mushroom/farm.jpeg" alt="farm" style="width: 200px;height:220px;object-fit:cover;"/>
+      </section>
+
+      <section id="gallery">
+        <h2>Gallery</h2>
+        <div class="gallery" style="width:1500px;height:900px;object-fit:cover;">
+          <img src="mushroom/1.jpeg" alt="img1">
+          <img src="mushroom/2.jpeg" alt="img2">
+          <img src="mushroom/3.jpeg" alt="img3">
+          <img src="mushroom/4.jpeg" alt="img4">
+          <img src="mushroom/5.jpeg" alt="img5">
+          <img src="mushroom/6.jpeg" alt="img6">
+        </div>
+      </section>
+
+      <section id="contact" class="contact">
+        <h2>Contact & Orders</h2>
+        <div style="display:grid;grid-template-columns:1fr 320px;gap:16px;align-items:start">
+          <div>
+            <form id="contactForm" onsubmit="submitForm(event)">
+              <input type="text" id="name" placeholder="Your name" required />
+              <input type="tel" id="phone" placeholder="Phone (e.g. 9067891039)" pattern="[0-9]{10}" required />
+              <input type="email" id="email" placeholder="Email" />
+              <select id="product">
+                <option value="green">Fresh Green Oyster</option>
+                <option value="dry">Dried Oyster</option>
+                <option value="bulk">Bulk / Wholesale</option>
+              </select>
+              <textarea id="message" rows="4" placeholder="Message / Order details"></textarea>
+              <button type="submit">Send Order (client-side)</button>
+            </form>
+            <p class="muted" style="margin-top:10px">Or call us directly: <strong>9067891039</strong>, <strong>8200145732</strong></p>
+            <p class="muted">Email : <a href="mailto:puregrowfarm001@gmail.com">puregrowfarm001@gmail.com</a></p>
+            <p class="muted">Instagram : <a href="https://instagram.com/_pure_grow_farm_" target="_blank">@_pure_grow_farm_</a></p>
+            <p class="muted">Address : <a href="https://www.google.com/maps/dir//Makhiyala,+Gujarat+362011/@21.6172629,70.3661049,12z/data=!4m8!4m7!1m0!1m5!1m1!1s0x395803313ef34a91:0xcfc3fa020115f2c6!2m2!1d70.4485065!2d21.6172832?entry=ttu&g_ep=EgoyMDI1MTAyMC4wIKXMDSoASAFQAw%3D%3D">Makhiyala, Gujarat 362011</a></p>
+          </div>
+
+          <aside style="background:#fff;padding:12px;border-radius:8px;box-shadow:0 8px 20px rgba(11,16,18,0.04)">
+            <h3 style="margin-top:0">Fast facts</h3>
+            <p class="muted" style="margin:0 0 8px">Delivery areas: Local markets & focused delivery zones. For bulk inquiries, please call.</p>
+            <p style="margin:0;font-weight:700">Working hours</p>
+            <p class="muted" style="margin:6px 0 0">Mon–Sat: 8:00 AM — 6:00 PM</p>
+          </aside>
+        </div>
+      </section>
+
+    </main>
+
+    <footer>
+      © Pure Grow Farm — Oyster Mushrooms • Phone: 9067891039 | 8200145732 • Email: puregrowfarm001@gmail.com
+    </footer>
+  </div>
+
+  <script>
+    function toggleNav(){ document.querySelector('.nav-collapse').classList.toggle('show'); }
+
+    function submitForm(e){
+      e.preventDefault();
+      const name=document.getElementById('name').value.trim();
+      const phone=document.getElementById('phone').value.trim();
+      const product=document.getElementById('product').value;
+      const message=document.getElementById('message').value.trim();
+
+      if(!/^[0-9]{10}$/.test(phone)){
+        alert('Please enter a valid 10-digit phone number (numbers only).');
+        return;
+      }
+
+      // This is client-side only. Replace with real backend or set up formspree/netlify/EmailJS for email forwarding.
+      const body = `Name: ${name}\nPhone: ${phone}\nProduct: ${product}\nMessage: ${message}`;
+      const mailto = `mailto:puregrowfarm001@gmail.com?subject=Order%20from%20website&body=${encodeURIComponent(body)}`;
+      window.location.href = mailto;
+    }
+  </script>
+</body>
+</html>

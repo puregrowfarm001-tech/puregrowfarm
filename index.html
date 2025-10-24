@@ -12,67 +12,128 @@
     .container{max-width:1100px;margin:0 auto;padding:24px}
 
     /* Header */
-    header{display:flex;align-items:center;justify-content:space-between;padding:14px 0}
+    header{display:flex;align-items:center;justify-content:space-between;padding:14px 0;flex-wrap:wrap;gap:12px}
     .brand{display:flex;gap:12px;align-items:center}
-    .logo{width:56px;height:56px;border-radius:12px;background:linear-gradient(135deg,var(--accent),var(--accent-2));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:20px}
+    .logo-img{width:100%;height:70px;object-fit:cover;border-radius:10px;margin-top:5px}
+    .brand-text{font-weight:800}
+    .brand-subtitle{color:var(--muted);font-size:13px}
     nav{display:flex;gap:16px;align-items:center}
-    .btn{background:var(--accent);color:#fff;padding:10px 14px;border-radius:10px;text-decoration:none;font-weight:600}
+    .btn{background:var(--accent);color:#fff;padding:10px 14px;border-radius:10px;text-decoration:none;font-weight:600;display:inline-block;text-align:center}
     .muted{color:var(--muted)}
+
+    /* Mobile nav toggle */
+    .nav-toggle{display:none;border:0;background:transparent;font-size:24px;cursor:pointer;padding:8px}
+    .nav-wrapper{display:flex;gap:12px;align-items:center}
 
     /* Hero */
     .hero{display:grid;grid-template-columns:1fr 420px;gap:28px;align-items:center;padding:28px 0}
-    .hero h1{font-size:34px;margin:0 0 10px}
+    .hero h1{font-size:34px;margin:0 0 10px;line-height:1.2}
     .hero p{margin:0 0 18px;color:var(--muted)}
-    .cards{display:flex;gap:12px}
-    .card{background:var(--card);border-radius:12px;padding:12px;box-shadow:0 4px 18px rgba(12,18,20,0.06)}
+    .cards{display:flex;gap:12px;flex-wrap:wrap}
+    .card{background:var(--card);border-radius:12px;padding:12px;box-shadow:0 4px 18px rgba(12,18,20,0.06);flex:1;min-width:200px}
     .stats{display:flex;gap:12px}
 
     /* Product list */
     .products{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:18px;margin:18px 0}
     .product{background:var(--card);border-radius:12px;padding:14px;box-shadow:0 6px 22px rgba(12,18,20,0.04);display:flex;flex-direction:column}
     .product img{width:100%;height:160px;object-fit:cover;border-radius:8px;margin-bottom:12px}
-    .product h3{margin:0 0 8px}
+    .product h3{margin:0 0 8px;font-size:18px}
     .pill{display:inline-block;padding:6px 8px;border-radius:999px;background:#eef7ee;color:var(--accent);font-weight:700;font-size:13px}
 
     /* About */
-    .about{display:flex;gap:20px;align-items:center;padding:20px 0}
-    .about img{width:320px;height:200px;object-fit:cover;border-radius:12px}
+    .about{display:flex;gap:20px;align-items:center;padding:20px 0;flex-wrap:wrap}
+    .about-content{flex:1;min-width:280px}
+    .about-content p{max-width:100%}
+    .about img{width:320px;height:220px;object-fit:cover;border-radius:12px;flex-shrink:0}
 
     /* Gallery */
-    .gallery{display:flex;gap:10px;flex-wrap:wrap}
-    .gallery img{width:calc(33.333% - 6.6px);height:300px;object-fit:cover;border-radius:8px}
+    .gallery{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+    .gallery img{width:100%;height:300px;object-fit:cover;border-radius:8px}
 
     /* Contact */
     .contact{background:linear-gradient(180deg,#fff,#f7fff7);padding:20px;border-radius:12px;margin-top:18px}
+    .contact-grid{display:grid;grid-template-columns:1fr 320px;gap:16px;align-items:start}
     form{display:grid;gap:10px}
-    input,textarea,select{padding:10px;border-radius:8px;border:1px solid #e6e9ec;font-size:15px}
-    button{padding:10px 14px;border-radius:8px;border:0;background:var(--accent);color:#fff;font-weight:700}
+    input,textarea,select{padding:10px;border-radius:8px;border:1px solid #e6e9ec;font-size:15px;width:100%}
+    button{padding:10px 14px;border-radius:8px;border:0;background:var(--accent);color:#fff;font-weight:700;cursor:pointer}
+    button:hover{background:#246e33}
 
     footer{padding:28px 0;color:var(--muted);font-size:14px;text-align:center}
 
-    /* Responsive */
-    @media (max-width:920px){.hero{grid-template-columns:1fr;}.about{flex-direction:column}.gallery img{width:calc(50% - 5px)} }
-    @media (max-width:520px){.gallery img{width:100%}.nav-toggle{display:block}.nav-collapse{display:none}.nav-collapse.show{display:flex;flex-direction:column;gap:12px}}
+    /* Tablet breakpoint */
+    @media (max-width:920px){
+      .hero{grid-template-columns:1fr}
+      .about{flex-direction:column;align-items:flex-start}
+      .about img{width:100%;max-width:400px;height:auto}
+      .gallery{grid-template-columns:repeat(2,1fr)}
+      .contact-grid{grid-template-columns:1fr}
+    }
 
-    .nav-toggle{display:none;border:0;background:transparent;font-size:18px}
+    /* Mobile breakpoint */
+    @media (max-width:640px){
+      .container{padding:16px}
+      
+      header{padding:10px 0}
+      .brand{gap:8px}
+      .logo-img{height:50px}
+      .brand-text{font-size:16px}
+      .brand-subtitle{font-size:12px}
+      
+      .nav-toggle{display:block}
+      .nav-wrapper{width:100%}
+      nav{display:none;flex-direction:column;width:100%;background:#fff;padding:12px;border-radius:8px;margin-top:8px;box-shadow:0 4px 12px rgba(0,0,0,0.1)}
+      nav.show{display:flex}
+      nav a{padding:8px 0;width:100%}
+      
+      .hero{padding:20px 0}
+      .hero h1{font-size:26px}
+      .hero p{font-size:15px}
+      .cards{flex-direction:column}
+      .card{min-width:auto}
+      
+      .hero aside{width:100%}
+      .hero aside img{height:180px}
+      
+      .products{grid-template-columns:1fr;gap:14px}
+      
+      .about{padding:16px 0}
+      .about-content ul{padding-left:20px}
+      
+      .gallery{grid-template-columns:1fr;gap:8px}
+      .gallery img{height:220px}
+      
+      .contact{padding:16px}
+      .contact h2{font-size:22px}
+      
+      footer{font-size:13px;padding:20px 0}
+    }
+
+    /* Extra small devices */
+    @media (max-width:380px){
+      .hero h1{font-size:22px}
+      .card{padding:10px}
+      .product{padding:12px}
+      .product h3{font-size:16px}
+      .btn{padding:8px 12px;font-size:14px}
+    }
   </style>
 </head>
 <body>
   <div class="container">
     <header>
       <div class="brand">
-        <div class="">
-            <img src="mushroom/logo-pure.png" alt="oyster mushrooms" style="width:100%;height:70px;object-fit:cover;border-radius:10px;margin-top: 5px;">
+        <div>
+          <img src="mushroom/logo-pure.png" alt="oyster mushrooms" class="logo-img">
         </div>
         <div>
-          <div style="font-weight:800">Pure Grow Farm</div>
-          <div class="muted" style="font-size:13px">Oyster Mushrooms — Green & Dry</div>
+          <div class="brand-text">Pure Grow Farm</div>
+          <div class="brand-subtitle">Oyster Mushrooms — Green & Dry</div>
         </div>
       </div>
 
-      <div style="display:flex;gap:12px;align-items:center">
-        <button class="nav-toggle" onclick="toggleNav()">☰</button>
-        <nav class="nav-collapse">
+      <div class="nav-wrapper">
+        <button class="nav-toggle" onclick="toggleNav()" aria-label="Toggle menu">☰</button>
+        <nav id="mainNav">
           <a href="#about" class="muted">About</a>
           <a href="#products" class="muted">Products</a>
           <a href="#gallery" class="muted">Gallery</a>
@@ -101,8 +162,10 @@
 
           <div style="margin-top:18px">
             <a class="pill" href="mailto:puregrowfarm001@gmail.com">Email: puregrowfarm001@gmail.com</a>
-            <span style="margin-left:8px" class="muted">Instagram:</span>
-            <a href="https://instagram.com/_.pure_grow_farm_." target="_blank" class="muted">@_.pure_grow_farm_.</a>
+            <div style="margin-top:8px">
+              <span class="muted">Instagram:</span>
+              <a href="https://instagram.com/_.pure_grow_farm_." target="_blank" class="muted">@_.pure_grow_farm_.</a>
+            </div>
           </div>
         </div>
 
@@ -151,9 +214,9 @@
       </section>
 
       <section id="about" class="about">
-        <div>
+        <div class="about-content">
           <h2>About Pure Grow Farm</h2>
-          <p class="muted" style="width:800px;">Pure Grow Farm is a family-run mushroom farm focused on sustainable oyster mushroom cultivation. We grow on locally sourced substrates, avoid chemical treatments, and pack produce with care to deliver maximum freshness.</p>
+          <p class="muted">Pure Grow Farm is a family-run mushroom farm focused on sustainable oyster mushroom cultivation. We grow on locally sourced substrates, avoid chemical treatments, and pack produce with care to deliver maximum freshness.</p>
 
           <ul class="muted">
             <li>Organic substrate & eco-friendly methods</li>
@@ -161,12 +224,12 @@
             <li>Traceable batches & hygienic processing</li>
           </ul>
         </div>
-        <img src="mushroom/farm.jpeg" alt="farm" style="width: 200px;height:220px;object-fit:cover;"/>
+        <img src="mushroom/farm.jpeg" alt="farm">
       </section>
 
       <section id="gallery">
         <h2>Gallery</h2>
-        <div class="gallery" style="width:1500px;height:900px;object-fit:cover;">
+        <div class="gallery">
           <img src="mushroom/1.jpeg" alt="img1">
           <img src="mushroom/2.jpeg" alt="img2">
           <img src="mushroom/3.jpeg" alt="img3">
@@ -178,7 +241,7 @@
 
       <section id="contact" class="contact">
         <h2>Contact & Orders</h2>
-        <div style="display:grid;grid-template-columns:1fr 320px;gap:16px;align-items:start">
+        <div class="contact-grid">
           <div>
             <form id="contactForm" onsubmit="submitForm(event)">
               <input type="text" id="name" placeholder="Your name" required />
@@ -190,12 +253,12 @@
                 <option value="bulk">Bulk / Wholesale</option>
               </select>
               <textarea id="message" rows="4" placeholder="Message / Order details"></textarea>
-              <button type="submit">Send Order (client-side)</button>
+              <button type="submit">Send Order</button>
             </form>
             <p class="muted" style="margin-top:10px">Or call us directly: <strong>9067891039</strong>, <strong>8200145732</strong></p>
-            <p class="muted">Email : <a href="mailto:puregrowfarm001@gmail.com">puregrowfarm001@gmail.com</a></p>
-            <p class="muted">Instagram : <a href="https://instagram.com/_pure_grow_farm_" target="_blank">@_pure_grow_farm_</a></p>
-            <p class="muted">Address : <a href="https://www.google.com/maps/dir//Makhiyala,+Gujarat+362011/@21.6172629,70.3661049,12z/data=!4m8!4m7!1m0!1m5!1m1!1s0x395803313ef34a91:0xcfc3fa020115f2c6!2m2!1d70.4485065!2d21.6172832?entry=ttu&g_ep=EgoyMDI1MTAyMC4wIKXMDSoASAFQAw%3D%3D">Makhiyala, Gujarat 362011</a></p>
+            <p class="muted">Email: <a href="mailto:puregrowfarm001@gmail.com">puregrowfarm001@gmail.com</a></p>
+            <p class="muted">Instagram: <a href="https://instagram.com/_pure_grow_farm_" target="_blank">@_pure_grow_farm_</a></p>
+            <p class="muted">Address: <a href="https://www.google.com/maps/dir//Makhiyala,+Gujarat+362011/@21.6172629,70.3661049,12z/data=!4m8!4m7!1m0!1m5!1m1!1s0x395803313ef34a91:0xcfc3fa020115f2c6!2m2!1d70.4485065!2d21.6172832?entry=ttu&g_ep=EgoyMDI1MTAyMC4wIKXMDSoASAFQAw%3D%3D">Makhiyala, Gujarat 362011</a></p>
           </div>
 
           <aside style="background:#fff;padding:12px;border-radius:8px;box-shadow:0 8px 20px rgba(11,16,18,0.04)">
@@ -215,7 +278,16 @@
   </div>
 
   <script>
-    function toggleNav(){ document.querySelector('.nav-collapse').classList.toggle('show'); }
+    function toggleNav(){ 
+      document.getElementById('mainNav').classList.toggle('show'); 
+    }
+
+    // Close nav when clicking on a link
+    document.querySelectorAll('nav a').forEach(link => {
+      link.addEventListener('click', () => {
+        document.getElementById('mainNav').classList.remove('show');
+      });
+    });
 
     function submitForm(e){
       e.preventDefault();
@@ -229,7 +301,6 @@
         return;
       }
 
-      // This is client-side only. Replace with real backend or set up formspree/netlify/EmailJS for email forwarding.
       const body = `Name: ${name}\nPhone: ${phone}\nProduct: ${product}\nMessage: ${message}`;
       const mailto = `mailto:puregrowfarm001@gmail.com?subject=Order%20from%20website&body=${encodeURIComponent(body)}`;
       window.location.href = mailto;

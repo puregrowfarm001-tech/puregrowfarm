@@ -14,10 +14,10 @@ function toggleNav(){
         const name=document.getElementById('name').value.trim();
         const phone=document.getElementById('phone').value.trim();
         const product=document.getElementById('product').value;
-        const message=document.getElementById('message').value.trim();
         const address=document.getElementById('address').value.trim();
         const quantity=document.getElementById('quantity').value.trim();
         const weight=document.getElementById('weight').value.trim();
+        const message=document.getElementById('message').value.trim();
 
 
         if(!/^[0-9]{10}$/.test(phone)){
@@ -25,7 +25,7 @@ function toggleNav(){
           return;
         }
 
-        const body = `Name: ${name}\nPhone: ${phone}\nProduct: ${product}\nMessage: ${message}\naddress: ${address}\nquantity: ${quantity}\nweight: ${weight}`;
+        const body = `Name: ${name}\nPhone: ${phone}\nProduct: ${product}\nweight: ${weight}\nquantity: ${quantity}\naddress: ${address}\nMessage: ${message}`;
         const mailto = `mailto:puregrowfarm001@gmail.com?subject=Order%20from%20website&body=${encodeURIComponent(body)}`;
         window.location.href = mailto;
     }

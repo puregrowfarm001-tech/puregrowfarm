@@ -17,13 +17,15 @@ function toggleNav(){
         const message=document.getElementById('message').value.trim();
         const address=document.getElementById('address').value.trim();
         const quantity=document.getElementById('quantity').value.trim();
+        const weight=document.getElementById('weight').value.trim();
+
 
         if(!/^[0-9]{10}$/.test(phone)){
           alert('Please enter a valid 10-digit phone number (numbers only).');
           return;
         }
 
-        const body = `Name: ${name}\nPhone: ${phone}\nProduct: ${product}\nMessage: ${message}\naddress: ${address}\nquantity: ${quantity}`;
+        const body = `Name: ${name}\nPhone: ${phone}\nProduct: ${product}\nMessage: ${message}\naddress: ${address}\nquantity: ${quantity}\nweight: ${weight}`;
         const mailto = `mailto:puregrowfarm001@gmail.com?subject=Order%20from%20website&body=${encodeURIComponent(body)}`;
         window.location.href = mailto;
     }

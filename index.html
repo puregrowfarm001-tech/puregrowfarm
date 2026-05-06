@@ -36,7 +36,7 @@
           <a href="#gallery" class="muted">Gallery</a>
           <a href="#contact" class="muted">Contact</a>
         </nav>
-        <a class="btn" href="">Visit Now</a>
+        <a class="btn" href="#visit">Visit Now</a>
         <a class="btn" href="#contact">Order Now</a>
       </div>
     </header>
@@ -192,6 +192,31 @@
       © Pure Grow Farm — Oyster Mushrooms • Phone: 9067891039 | 8200145732 • Email: puregrowfarm001@gmail.com
     </footer>
   </div>
+
+
+
+
+
+
+  <section id="visit" class="visit">
+        <h2>Visit</h2>
+        <div class="contact-grid">
+          <div>
+            <form id="visitForm" onsubmit="submitForm(event)">
+              <select id="svisit">
+                <button value="green">Farmer</button>
+                <button value="dry">Student Intership</button>
+              </select>
+              <input type="text" id="name" placeholder="Your name" required />
+              <input type="tel" id="phone" placeholder="Phone (e.g. 9067891039)" pattern="[0-9]{10}" required />
+              <input type="email" id="email" placeholder="Email" />
+              <input type="payment id" id="payment id" placeholder="payment id" required/>
+              <select id="svisit">
+                <button value="green">Farmer</button>
+                <button value="dry">Student Intership</button>
+              </select>
+              <button type="submit">Send Order</button>
+            </form>
 
 </body>
 </html>

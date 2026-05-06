@@ -1,0 +1,195 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pure Grow Farm Visit</title>
+
+<style>
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #f1f8e9;
+}
+
+header {
+    background: #2e7d32;
+    color: white;
+    text-align: center;
+    padding: 20px;
+}
+
+.container {
+    max-width: 420px;
+    margin: 30px auto;
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+button {
+    width: 100%;
+    padding: 12px;
+    margin-top: 10px;
+    background: green;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+button:hover {
+    background: darkgreen;
+}
+
+input, select {
+    width: 100%;
+    padding: 10px;
+    margin-top: 10px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+}
+
+.qr {
+    text-align: center;
+    margin: 15px 0;
+}
+
+.qr img {
+    width: 150px;
+}
+
+.hidden {
+    display: none;
+}
+
+#msg {
+    text-align: center;
+    margin-top: 10px;
+    font-weight: bold;
+}
+</style>
+
+<!-- EmailJS -->
+<script src="https://cdn.jsdelivr.net/npm/emailjs-com@3/dist/email.min.js"></script>
+<script>
+(function(){
+    emailjs.init("YOUR_PUBLIC_KEY");
+})();
+</script>
+
+</head>
+<body>
+
+<header>
+    <h1>🌾 Pure Grow Farm</h1>
+    <p>Book Your Visit</p>
+</header>
+
+<div class="container">
+
+    <!-- Selection -->
+    <button onclick="showStudent()">🎓 Student Internship (₹80)</button>
+    <button onclick="showFarmer()">🚜 Farmer Visit (₹599)</button>
+
+    <!-- Student Form -->
+    <form id="studentForm" class="hidden">
+        <h3>Student Internship</h3>
+
+        <input type="text" id="s_name" placeholder="Name" required>
+        <input type="tel" id="s_phone" placeholder="Mobile Number" required>
+        <input type="text" id="s_enroll" placeholder="Enrollment Number" required>
+        <input type="text" id="s_degree" placeholder="Degree" required>
+
+        <div class="qr">
+            <p>Scan & Pay ₹80</p>
+            <img src="qr.png">
+        </div>
+
+        <input type="text" id="s_payment" placeholder="Payment ID" required>
+
+        <button type="submit">Submit</button>
+    </form>
+
+    <!-- Farmer Form -->
+    <form id="farmerForm" class="hidden">
+        <h3>Farmer Visit</h3>
+
+        <input type="text" id="f_name" placeholder="Name" required>
+        <input type="tel" id="f_phone" placeholder="Mobile Number" required>
+        <input type="date" id="f_date" required>
+
+        <div class="qr">
+            <p>Scan & Pay ₹599</p>
+            <img src="qr.png">
+        </div>
+
+        <input type="text" id="f_payment" placeholder="Payment ID" required>
+
+        <button type="submit">Submit</button>
+    </form>
+
+    <p id="msg"></p>
+
+</div>
+
+<script>
+// Show Forms
+function showStudent() {
+    document.getElementById("studentForm").classList.remove("hidden");
+    document.getElementById("farmerForm").classList.add("hidden");
+}
+
+function showFarmer() {
+    document.getElementById("farmerForm").classList.remove("hidden");
+    document.getElementById("studentForm").classList.add("hidden");
+}
+
+// Send Email
+function sendEmail(data) {
+    emailjs.send("YOUR_SERVICE_ID", "YOUR_TEMPLATE_ID", data)
+    .then(() => {
+        document.getElementById("msg").innerText = "✅ Data sent successfully!";
+    })
+    .catch(() => {
+        document.getElementById("msg").innerText = "❌ Failed to send!";
+    });
+}
+
+// Student Submit
+document.getElementById("studentForm").addEventListener("submit", function(e){
+    e.preventDefault();
+
+    let data = {
+        type: "Student Internship",
+        name: s_name.value,
+        phone: s_phone.value,
+        enrollment: s_enroll.value,
+        degree: s_degree.value,
+        payment: s_payment.value
+    };
+
+    sendEmail(data);
+});
+
+// Farmer Submit
+document.getElementById("farmerForm").addEventListener("submit", function(e){
+    e.preventDefault();
+
+    let data = {
+        type: "Farmer Visit",
+        name: f_name.value,
+        phone: f_phone.value,
+        date: f_date.value,
+        payment: f_payment.value
+    };
+
+    sendEmail(data);
+});
+</script>
+
+</body>
+</html>
+```

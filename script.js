@@ -32,58 +32,7 @@ function toggleNav(){
 
 
 
-   // Show Forms
-function showStudent() {
-    document.getElementById("studentForm").classList.remove("hidden");
-    document.getElementById("farmerForm").classList.add("hidden");
-}
-
-function showFarmer() {
-    document.getElementById("farmerForm").classList.remove("hidden");
-    document.getElementById("studentForm").classList.add("hidden");
-}
-
-// Send Email
-function sendEmail(data) {
-    emailjs.send("YOUR_SERVICE_ID", "YOUR_TEMPLATE_ID", data)
-    .then(() => {
-        document.getElementById("msg").innerText = "✅ Data sent successfully!";
-    })
-    .catch(() => {
-        document.getElementById("msg").innerText = "❌ Failed to send!";
-    });
-}
-
-// Student Submit
-document.getElementById("studentForm").addEventListener("submit", function(e){
-    e.preventDefault();
-
-    let data = {
-        type: "Student Internship",
-        name: s_name.value,
-        phone: s_phone.value,
-        enrollment: s_enroll.value,
-        degree: s_degree.value,
-        payment: s_payment.value
-    };
-
-    sendEmail(data);
-});
-
-// Farmer Submit
-document.getElementById("farmerForm").addEventListener("submit", function(e){
-    e.preventDefault();
-
-    let data = {
-        type: "Farmer Visit",
-        name: f_name.value,
-        phone: f_phone.value,
-        date: f_date.value,
-        payment: f_payment.value
-    };
-
-    sendEmail(data);
-});
+   
 
 
 

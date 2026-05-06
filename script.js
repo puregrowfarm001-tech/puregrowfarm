@@ -19,8 +19,7 @@ function toggleNav(){
         const weight=document.getElementById('weight').value.trim();
         const message=document.getElementById('message').value.trim();
 
-
-        if(!/^[0-9]{10}$/.test(phone)){
+         if(!/^[0-9]{10}$/.test(phone)){
           alert('Please enter a valid 10-digit phone number (numbers only).');
           return;
         }
@@ -29,3 +28,11 @@ function toggleNav(){
         const mailto = `mailto:puregrowfarm001@gmail.com?subject=Order%20from%20website&body=${encodeURIComponent(body)}`;
         window.location.href = mailto;
     }
+
+
+
+
+   
+
+
+

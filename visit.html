@@ -1,11 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<title>PURE GROW FARM</title>
+<title>Pure Grow Farm Visit Form</title>
 
 <style>
 
@@ -22,9 +20,9 @@ padding:20px;
 }
 
 .container{
-max-width:750px;
+max-width:700px;
 margin:auto;
-background:white;
+background:#fff;
 padding:25px;
 border-radius:15px;
 box-shadow:0 0 15px rgba(0,0,0,0.1);
@@ -36,27 +34,27 @@ color:green;
 margin-bottom:10px;
 }
 
-.info{
+.farm-info{
 text-align:center;
-line-height:30px;
 margin-bottom:20px;
+line-height:28px;
 }
 
-.option-btns{
+.option-buttons{
 display:flex;
 gap:10px;
 margin-bottom:20px;
 }
 
-.option-btns button{
+.option-buttons button{
 flex:1;
-padding:14px;
-background:green;
-color:white;
+padding:12px;
 border:none;
-border-radius:10px;
-font-size:16px;
+background:green;
+color:#fff;
+border-radius:8px;
 cursor:pointer;
+font-size:16px;
 }
 
 form{
@@ -67,36 +65,31 @@ form.active{
 display:block;
 }
 
-input,label{
-width:100%;
-display:block;
-margin-top:12px;
-}
-
 input{
+width:100%;
 padding:12px;
-border-radius:8px;
+margin:10px 0;
 border:1px solid #ccc;
+border-radius:8px;
 }
 
 .payment-box{
 background:#f1f1f1;
 padding:15px;
 border-radius:10px;
-margin-top:15px;
+margin-top:10px;
 text-align:center;
 }
 
-.pay-btn{
+.qr-btn{
 width:100%;
 padding:12px;
 background:#4285f4;
-color:white;
+color:#fff;
 border:none;
-border-radius:10px;
-margin-top:10px;
+border-radius:8px;
 cursor:pointer;
-font-size:16px;
+margin-top:10px;
 }
 
 .submit-btn{
@@ -106,31 +99,30 @@ background:green;
 color:white;
 border:none;
 border-radius:10px;
-margin-top:20px;
-cursor:pointer;
 font-size:18px;
+margin-top:15px;
+cursor:pointer;
 }
 
 .preview{
 width:100%;
 max-height:250px;
 object-fit:contain;
-margin-top:10px;
 display:none;
+margin-top:10px;
 border-radius:10px;
 }
 
-.success{
+.thankyou{
 display:none;
-background:#dfffe0;
+text-align:center;
 padding:20px;
+background:#e8ffe8;
 border-radius:10px;
 margin-top:20px;
-text-align:center;
 }
 
 </style>
-
 </head>
 
 <body>
@@ -139,18 +131,18 @@ text-align:center;
 
 <h1>PURE GROW FARM</h1>
 
-<div class="info">
+<div class="farm-info">
 
 <b>Location:</b> Pure Grow Farm<br>
 
-<b>Phone:</b> 9067891039 / 8200145732<br>
+<b>Phone:</b> 9067891039 & 8200145732<br>
 
 <b>Email:</b> puregrowfarm001@gmail.com
 
 </div>
 
 
-<div class="option-btns">
+<div class="option-buttons">
 
 <button onclick="showForm('studentForm')">
 Student Internship
@@ -165,55 +157,58 @@ Farmer Training
 
 <!-- STUDENT FORM -->
 
-<form
-id="studentForm"
-class="active"
-action="https://formsubmit.co/puregrowfarm001@gmail.com"
-method="POST"
-enctype="multipart/form-data">
-
-<input type="hidden" name="_captcha" value="false">
-
-<input type="hidden"
-name="_subject"
-value="Student Internship Form">
+<form id="studentForm" class="active">
 
 <input type="text"
-name="Student Name"
+id="sname"
 placeholder="Student Name"
 required>
 
 <input type="tel"
-name="Phone Number"
+id="sphone"
 placeholder="Phone Number"
 required>
 
 <input type="text"
-name="Enrollment Number"
+id="senroll"
 placeholder="Enrollment Number"
 required>
 
 <input type="text"
-name="College Name"
+id="scollege"
 placeholder="College Name"
 required>
 
 <label>Internship Start Date</label>
 
 <input type="date"
-name="Start Date"
+id="sstart"
 required>
 
 <label>Internship End Date</label>
 
 <input type="date"
-name="End Date"
+id="send"
 required>
 
 <input type="text"
-name="Payment ID"
+id="spayment"
 placeholder="Payment ID"
 required>
+
+
+<!-- SCREENSHOT -->
+
+<label>Upload Payment Screenshot</label>
+
+<input type="file"
+id="studentSS"
+accept="image/*"
+required
+onchange="previewImage(this,'studentPreview')">
+
+<img id="studentPreview"
+class="preview">
 
 
 <div class="payment-box">
@@ -225,35 +220,19 @@ UPI ID:
 sohamgajera01@okhdfcbank
 </p>
 
-<button
-type="button"
-class="pay-btn"
+<button type="button"
+class="qr-btn"
 onclick="openGpay(100)">
 
-Pay With GPay
+Pay with GPay
 
 </button>
 
 </div>
 
-
-<label>Upload Payment Screenshot</label>
-
-<input
-type="file"
-name="attachment"
-accept="image/*"
-required
-onchange="previewImage(this,'studentPreview')">
-
-<img
-id="studentPreview"
-class="preview">
-
-
-<button
-type="submit"
-class="submit-btn">
+<button type="button"
+class="submit-btn"
+onclick="submitStudent()">
 
 Submit
 
@@ -265,38 +244,42 @@ Submit
 
 <!-- FARMER FORM -->
 
-<form
-id="farmerForm"
-action="https://formsubmit.co/puregrowfarm001@gmail.com"
-method="POST"
-enctype="multipart/form-data">
-
-<input type="hidden" name="_captcha" value="false">
-
-<input type="hidden"
-name="_subject"
-value="Farmer Training Form">
+<form id="farmerForm">
 
 <input type="text"
-name="Farmer Name"
+id="fname"
 placeholder="Farmer Name"
 required>
 
 <input type="tel"
-name="Phone Number"
+id="fphone"
 placeholder="Phone Number"
 required>
 
 <label>Training Date</label>
 
 <input type="date"
-name="Training Date"
+id="fdate"
 required>
 
 <input type="text"
-name="Payment ID"
+id="fpayment"
 placeholder="Payment ID"
 required>
+
+
+<!-- SCREENSHOT -->
+
+<label>Upload Payment Screenshot</label>
+
+<input type="file"
+id="farmerSS"
+accept="image/*"
+required
+onchange="previewImage(this,'farmerPreview')">
+
+<img id="farmerPreview"
+class="preview">
 
 
 <div class="payment-box">
@@ -308,35 +291,19 @@ UPI ID:
 sohamgajera01@okhdfcbank
 </p>
 
-<button
-type="button"
-class="pay-btn"
+<button type="button"
+class="qr-btn"
 onclick="openGpay(699)">
 
-Pay With GPay
+Pay with GPay
 
 </button>
 
 </div>
 
-
-<label>Upload Payment Screenshot</label>
-
-<input
-type="file"
-name="attachment"
-accept="image/*"
-required
-onchange="previewImage(this,'farmerPreview')">
-
-<img
-id="farmerPreview"
-class="preview">
-
-
-<button
-type="submit"
-class="submit-btn">
+<button type="button"
+class="submit-btn"
+onclick="submitFarmer()">
 
 Submit
 
@@ -345,26 +312,18 @@ Submit
 </form>
 
 
-<div class="success" id="successBox">
+<div class="thankyou" id="thankyouBox">
 
 <h2>Thank You!</h2>
 
-<p>
-Your Form Submitted Successfully
-</p>
-
-<br>
+<p>Your Form Submitted Successfully.</p>
 
 <p>
 
-<b>PURE GROW FARM</b>
-
-<br>
+Pure Grow Farm<br>
 
 Phone:
-9067891039 / 8200145732
-
-<br>
+9067891039 & 8200145732<br>
 
 Email:
 puregrowfarm001@gmail.com
@@ -376,26 +335,25 @@ puregrowfarm001@gmail.com
 </div>
 
 
-
 <script>
 
 function showForm(formId){
 
-document.getElementById("studentForm")
-.classList.remove("active");
+document.getElementById('studentForm')
+.classList.remove('active');
 
-document.getElementById("farmerForm")
-.classList.remove("active");
+document.getElementById('farmerForm')
+.classList.remove('active');
 
 document.getElementById(formId)
-.classList.add("active");
+.classList.add('active');
 
 }
 
 
 function openGpay(amount){
 
-window.location.href=
+window.location.href =
 `upi://pay?pa=sohamgajera01@okhdfcbank&pn=PureGrowFarm&am=${amount}&cu=INR`;
 
 }
@@ -422,6 +380,93 @@ img.style.display="block";
 reader.readAsDataURL(file);
 
 }
+
+}
+
+
+
+function submitStudent(){
+
+let name =
+document.getElementById("sname").value;
+
+let phone =
+document.getElementById("sphone").value;
+
+let enroll =
+document.getElementById("senroll").value;
+
+let payment =
+document.getElementById("spayment").value;
+
+
+let whatsappMessage =
+
+`PURE GROW FARM
+
+Student Internship Form
+
+Name: ${name}
+
+Phone: ${phone}
+
+Enrollment: ${enroll}
+
+Payment ID: ${payment}
+
+Payment Screenshot Uploaded`;
+
+window.open(
+
+`https://wa.me/919067891039?text=${encodeURIComponent(whatsappMessage)}`,
+
+'_blank'
+
+);
+
+document.getElementById("thankyouBox")
+.style.display="block";
+
+}
+
+
+
+function submitFarmer(){
+
+let name =
+document.getElementById("fname").value;
+
+let phone =
+document.getElementById("fphone").value;
+
+let payment =
+document.getElementById("fpayment").value;
+
+
+let whatsappMessage =
+
+`PURE GROW FARM
+
+Farmer Training Form
+
+Name: ${name}
+
+Phone: ${phone}
+
+Payment ID: ${payment}
+
+Payment Screenshot Uploaded`;
+
+window.open(
+
+`https://wa.me/919067891039?text=${encodeURIComponent(whatsappMessage)}`,
+
+'_blank'
+
+);
+
+document.getElementById("thankyouBox")
+.style.display="block";
 
 }
 

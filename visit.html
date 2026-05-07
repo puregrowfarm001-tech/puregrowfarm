@@ -1,10 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Pure Grow Farm Visit Form</title>
+<title>PURE GROW FARM</title>
 
 <style>
 
@@ -21,7 +22,7 @@ padding:20px;
 }
 
 .container{
-max-width:700px;
+max-width:750px;
 margin:auto;
 background:white;
 padding:25px;
@@ -35,27 +36,27 @@ color:green;
 margin-bottom:10px;
 }
 
-.farm-info{
+.info{
 text-align:center;
-line-height:28px;
+line-height:30px;
 margin-bottom:20px;
 }
 
-.option-buttons{
+.option-btns{
 display:flex;
 gap:10px;
 margin-bottom:20px;
 }
 
-.option-buttons button{
+.option-btns button{
 flex:1;
-padding:12px;
+padding:14px;
 background:green;
 color:white;
 border:none;
 border-radius:10px;
-cursor:pointer;
 font-size:16px;
+cursor:pointer;
 }
 
 form{
@@ -69,7 +70,7 @@ display:block;
 input,label{
 width:100%;
 display:block;
-margin-top:10px;
+margin-top:12px;
 }
 
 input{
@@ -86,14 +87,14 @@ margin-top:15px;
 text-align:center;
 }
 
-.qr-btn{
+.pay-btn{
 width:100%;
 padding:12px;
-margin-top:10px;
 background:#4285f4;
 color:white;
 border:none;
 border-radius:10px;
+margin-top:10px;
 cursor:pointer;
 font-size:16px;
 }
@@ -101,22 +102,13 @@ font-size:16px;
 .submit-btn{
 width:100%;
 padding:14px;
-margin-top:20px;
 background:green;
 color:white;
 border:none;
 border-radius:10px;
-font-size:18px;
-cursor:pointer;
-}
-
-.thankyou{
-display:none;
 margin-top:20px;
-padding:20px;
-background:#e8ffe8;
-border-radius:10px;
-text-align:center;
+cursor:pointer;
+font-size:18px;
 }
 
 .preview{
@@ -128,7 +120,17 @@ display:none;
 border-radius:10px;
 }
 
+.success{
+display:none;
+background:#dfffe0;
+padding:20px;
+border-radius:10px;
+margin-top:20px;
+text-align:center;
+}
+
 </style>
+
 </head>
 
 <body>
@@ -137,7 +139,7 @@ border-radius:10px;
 
 <h1>PURE GROW FARM</h1>
 
-<div class="farm-info">
+<div class="info">
 
 <b>Location:</b> Pure Grow Farm<br>
 
@@ -147,7 +149,8 @@ border-radius:10px;
 
 </div>
 
-<div class="option-buttons">
+
+<div class="option-btns">
 
 <button onclick="showForm('studentForm')">
 Student Internship
@@ -162,39 +165,69 @@ Farmer Training
 
 <!-- STUDENT FORM -->
 
-<form id="studentForm" class="active">
+<form
+id="studentForm"
+class="active"
+action="https://formsubmit.co/puregrowfarm001@gmail.com"
+method="POST"
+enctype="multipart/form-data">
 
-<input type="text" id="sname"
-placeholder="Student Name" required>
+<input type="hidden" name="_captcha" value="false">
 
-<input type="tel" id="sphone"
-placeholder="Phone Number" required>
+<input type="hidden"
+name="_subject"
+value="Student Internship Form">
 
-<input type="text" id="senroll"
-placeholder="Enrollment Number" required>
+<input type="text"
+name="Student Name"
+placeholder="Student Name"
+required>
 
-<input type="text" id="scollege"
-placeholder="College Name" required>
+<input type="tel"
+name="Phone Number"
+placeholder="Phone Number"
+required>
+
+<input type="text"
+name="Enrollment Number"
+placeholder="Enrollment Number"
+required>
+
+<input type="text"
+name="College Name"
+placeholder="College Name"
+required>
 
 <label>Internship Start Date</label>
 
-<input type="date" id="sstart" required>
+<input type="date"
+name="Start Date"
+required>
 
 <label>Internship End Date</label>
 
-<input type="date" id="send" required>
+<input type="date"
+name="End Date"
+required>
 
-<input type="text" id="spayment"
-placeholder="Payment ID" required>
+<input type="text"
+name="Payment ID"
+placeholder="Payment ID"
+required>
+
 
 <div class="payment-box">
 
 <h3>Student Internship Fee ₹100</h3>
 
-<p>UPI ID: sohamgajera01@okhdfcbank</p>
+<p>
+UPI ID:
+sohamgajera01@okhdfcbank
+</p>
 
-<button type="button"
-class="qr-btn"
+<button
+type="button"
+class="pay-btn"
 onclick="openGpay(100)">
 
 Pay With GPay
@@ -203,19 +236,24 @@ Pay With GPay
 
 </div>
 
+
 <label>Upload Payment Screenshot</label>
 
-<input type="file"
-id="studentSS"
+<input
+type="file"
+name="attachment"
 accept="image/*"
 required
 onchange="previewImage(this,'studentPreview')">
 
-<img id="studentPreview" class="preview">
+<img
+id="studentPreview"
+class="preview">
 
-<button type="button"
-class="submit-btn"
-onclick="submitStudent()">
+
+<button
+type="submit"
+class="submit-btn">
 
 Submit
 
@@ -227,29 +265,52 @@ Submit
 
 <!-- FARMER FORM -->
 
-<form id="farmerForm">
+<form
+id="farmerForm"
+action="https://formsubmit.co/puregrowfarm001@gmail.com"
+method="POST"
+enctype="multipart/form-data">
 
-<input type="text" id="fname"
-placeholder="Farmer Name" required>
+<input type="hidden" name="_captcha" value="false">
 
-<input type="tel" id="fphone"
-placeholder="Phone Number" required>
+<input type="hidden"
+name="_subject"
+value="Farmer Training Form">
+
+<input type="text"
+name="Farmer Name"
+placeholder="Farmer Name"
+required>
+
+<input type="tel"
+name="Phone Number"
+placeholder="Phone Number"
+required>
 
 <label>Training Date</label>
 
-<input type="date" id="fdate" required>
+<input type="date"
+name="Training Date"
+required>
 
-<input type="text" id="fpayment"
-placeholder="Payment ID" required>
+<input type="text"
+name="Payment ID"
+placeholder="Payment ID"
+required>
+
 
 <div class="payment-box">
 
 <h3>Farmer Training Fee ₹699</h3>
 
-<p>UPI ID: sohamgajera01@okhdfcbank</p>
+<p>
+UPI ID:
+sohamgajera01@okhdfcbank
+</p>
 
-<button type="button"
-class="qr-btn"
+<button
+type="button"
+class="pay-btn"
 onclick="openGpay(699)">
 
 Pay With GPay
@@ -258,19 +319,24 @@ Pay With GPay
 
 </div>
 
+
 <label>Upload Payment Screenshot</label>
 
-<input type="file"
-id="farmerSS"
+<input
+type="file"
+name="attachment"
 accept="image/*"
 required
 onchange="previewImage(this,'farmerPreview')">
 
-<img id="farmerPreview" class="preview">
+<img
+id="farmerPreview"
+class="preview">
 
-<button type="button"
-class="submit-btn"
-onclick="submitFarmer()">
+
+<button
+type="submit"
+class="submit-btn">
 
 Submit
 
@@ -279,23 +345,26 @@ Submit
 </form>
 
 
-
-<!-- THANK YOU -->
-
-<div class="thankyou" id="thankyouBox">
+<div class="success" id="successBox">
 
 <h2>Thank You!</h2>
 
-<p>Your Form Submitted Successfully.</p>
+<p>
+Your Form Submitted Successfully
+</p>
 
 <br>
 
 <p>
 
-<b>PURE GROW FARM</b><br>
+<b>PURE GROW FARM</b>
+
+<br>
 
 Phone:
-9067891039 / 8200145732<br>
+9067891039 / 8200145732
+
+<br>
 
 Email:
 puregrowfarm001@gmail.com
@@ -312,204 +381,47 @@ puregrowfarm001@gmail.com
 
 function showForm(formId){
 
-document.getElementById('studentForm')
-.classList.remove('active');
+document.getElementById("studentForm")
+.classList.remove("active");
 
-document.getElementById('farmerForm')
-.classList.remove('active');
+document.getElementById("farmerForm")
+.classList.remove("active");
 
 document.getElementById(formId)
-.classList.add('active');
+.classList.add("active");
 
 }
 
 
 function openGpay(amount){
 
-window.location.href =
+window.location.href=
 `upi://pay?pa=sohamgajera01@okhdfcbank&pn=PureGrowFarm&am=${amount}&cu=INR`;
 
 }
 
 
-function previewImage(input,previewId){
+function previewImage(input,id){
 
-const file = input.files[0];
+const file=input.files[0];
 
 if(file){
 
-const reader = new FileReader();
+const reader=new FileReader();
 
-reader.onload = function(e){
+reader.onload=function(e){
 
-const preview =
-document.getElementById(previewId);
+const img=document.getElementById(id);
 
-preview.src = e.target.result;
+img.src=e.target.result;
 
-preview.style.display = "block";
+img.style.display="block";
 
 }
 
 reader.readAsDataURL(file);
 
 }
-
-}
-
-
-
-async function submitStudent(){
-
-let name =
-document.getElementById("sname").value;
-
-let phone =
-document.getElementById("sphone").value;
-
-let enroll =
-document.getElementById("senroll").value;
-
-let college =
-document.getElementById("scollege").value;
-
-let start =
-document.getElementById("sstart").value;
-
-let end =
-document.getElementById("send").value;
-
-let payment =
-document.getElementById("spayment").value;
-
-let screenshot =
-document.getElementById("studentSS").files[0];
-
-let formData = new FormData();
-
-formData.append("name",name);
-formData.append("phone",phone);
-formData.append("enrollment",enroll);
-formData.append("college",college);
-formData.append("startDate",start);
-formData.append("endDate",end);
-formData.append("paymentId",payment);
-
-formData.append("_subject",
-"Student Internship Form");
-
-formData.append("attachment",
-screenshot);
-
-fetch(
-"https://formsubmit.co/ajax/puregrowfarm001@gmail.com",
-{
-method:"POST",
-body:formData
-}
-)
-
-.then(response=>response.json())
-
-.then(data=>{
-
-document.getElementById("thankyouBox")
-.style.display="block";
-
-let whatsappMessage =
-`PURE GROW FARM
-
-Student Internship Submitted
-
-Name: ${name}
-
-Phone: ${phone}
-
-Enrollment: ${enroll}
-
-College: ${college}
-
-Payment ID: ${payment}
-
-Payment Screenshot Uploaded Successfully`;
-
-window.open(
-`https://wa.me/919067891039?text=${encodeURIComponent(whatsappMessage)}`,
-'_blank'
-);
-
-});
-
-}
-
-
-
-async function submitFarmer(){
-
-let name =
-document.getElementById("fname").value;
-
-let phone =
-document.getElementById("fphone").value;
-
-let date =
-document.getElementById("fdate").value;
-
-let payment =
-document.getElementById("fpayment").value;
-
-let screenshot =
-document.getElementById("farmerSS").files[0];
-
-let formData = new FormData();
-
-formData.append("name",name);
-formData.append("phone",phone);
-formData.append("trainingDate",date);
-formData.append("paymentId",payment);
-
-formData.append("_subject",
-"Farmer Training Form");
-
-formData.append("attachment",
-screenshot);
-
-fetch(
-"https://formsubmit.co/ajax/puregrowfarm001@gmail.com",
-{
-method:"POST",
-body:formData
-}
-)
-
-.then(response=>response.json())
-
-.then(data=>{
-
-document.getElementById("thankyouBox")
-.style.display="block";
-
-let whatsappMessage =
-`PURE GROW FARM
-
-Farmer Training Submitted
-
-Name: ${name}
-
-Phone: ${phone}
-
-Training Date: ${date}
-
-Payment ID: ${payment}
-
-Payment Screenshot Uploaded Successfully`;
-
-window.open(
-`https://wa.me/919067891039?text=${encodeURIComponent(whatsappMessage)}`,
-'_blank'
-);
-
-});
 
 }
 

@@ -1,41 +1,29 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-     <link rel="stylesheet" href="style.css">
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
-</head>
-<body>
-    <script src="script.js"></script>
+<form action="https://formsubmit.co/puregrowfarm011@gmail.com" method="POST">
 
-     <form id="contactForm" onsubmit="submitForm(event)">
-              <input type="text" id="name" placeholder="Your name" required />
-              <input type="tel" id="phone" placeholder="Phone (e.g. 9067891039)" pattern="[0-9]{10}" required />
-              <input type="email" id="email" placeholder="Email" />
-              <input type="date" id="DATE" placeholder="Date" required/>
-              <select id="product">
-                <option value="green">student</option>
-                <option value="dry">farmer</option>
-              </select>
+<!-- Disable Captcha -->
+<input type="hidden" name="_captcha" value="false">
 
-              <select id="quantity">
-                <div class="option" onclick="selectOption('PhonePe')">
-<img src="PS.jpgg">
-PhonePe
-</div>
+<!-- After Submit Redirect -->
+<input type="hidden" name="_next" value="https://puregrowfarm.vercel.app/">
 
-<div class="option" onclick="selectOption('Google Pay')">
-<img src="GS.jpg">
-Google Pay
-</div>
-              </select>
-              <textarea id="message" rows="4" placeholder="Message / Order details"></textarea>
-              <button type="submit">Send Order</button>
-            </form>
-</body>
-</html>
+<input type="text" name="Name" placeholder="Enter Name" required>
 
+<input type="tel" name="Phone" placeholder="Enter Phone Number" required>
 
+<select name="Visitor Type" required>
+<option value="">Select Visitor Type</option>
+<option value="Student Internship">Student Internship</option>
+<option value="Farmer Visit">Farmer Visit</option>
+</select>
 
+<input type="text" name="Enrollment Number" placeholder="Enrollment Number">
 
+<input type="text" name="Degree" placeholder="Degree">
+
+<input type="date" name="Visit Date">
+
+<input type="text" name="Payment ID" placeholder="Payment ID" required>
+
+<button type="submit">Submit Form</button>
+
+</form>

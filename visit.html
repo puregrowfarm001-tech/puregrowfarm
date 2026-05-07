@@ -20,22 +20,7 @@
               </select>
 
               <select id="quantity">
-                <option><img src="PS.JPG">Phonepay</option>
-                <option value=""><IMG src="GS.JPG">Gpay</option>
-              </select>
-              <textarea id="message" rows="4" placeholder="Message / Order details"></textarea>
-              <button type="submit">Send Order</button>
-            </form>
-</body>
-</html>
-
-
-
-
-<!DOCTYPE html>
-<html>
-<head>
-<style>
+               <style>
 
 .custom-select{
 width:300px;
@@ -91,21 +76,15 @@ Select Payment Method
 <div class="options" id="options">
 
 <div class="option" onclick="selectOption('PhonePe')">
-<img src="phonepe.png">
+<img src="PS.jpg">
 PhonePe
 </div>
 
 <div class="option" onclick="selectOption('Google Pay')">
-<img src="gpay.png">
+<img src="GS.jpg">
 Google Pay
 </div>
 
-<div class="option" onclick="selectOption('Paytm')">
-<img src="paytm.png">
-Paytm
-</div>
-
-</div>
 
 <input type="hidden" name="paymentmethod" id="paymentmethod">
 
@@ -124,6 +103,20 @@ document.getElementById("options").style.display="none";
 }
 
 </script>
+              </select>
+              <textarea id="message" rows="4" placeholder="Message / Order details"></textarea>
+              <button type="submit">Send Order</button>
+            </form>
+</body>
+</html>
+
+
+
+
+<!DOCTYPE html>
+<html>
+<head>
+
 
 </body>
 </html>

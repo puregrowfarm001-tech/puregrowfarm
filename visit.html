@@ -1,29 +1,278 @@
-<form action="https://formsubmit.co/puregrowfarm011@gmail.com" method="POST">
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pure Grow Farm Visit Form</title>
 
-<!-- Disable Captcha -->
-<input type="hidden" name="_captcha" value="false">
+<style>
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:Arial, sans-serif;
+}
 
-<!-- After Submit Redirect -->
-<input type="hidden" name="_next" value="https://puregrowfarm.vercel.app/">
+body{
+    background:#f4fff4;
+    padding:20px;
+}
 
-<input type="text" name="Name" placeholder="Enter Name" required>
+.container{
+    max-width:700px;
+    margin:auto;
+    background:#fff;
+    padding:25px;
+    border-radius:15px;
+    box-shadow:0 0 10px rgba(0,0,0,0.1);
+}
 
-<input type="tel" name="Phone" placeholder="Enter Phone Number" required>
+h1{
+    text-align:center;
+    margin-bottom:20px;
+    color:green;
+}
 
-<select name="Visitor Type" required>
-<option value="">Select Visitor Type</option>
-<option value="Student Internship">Student Internship</option>
-<option value="Farmer Visit">Farmer Visit</option>
-</select>
+.buttons{
+    display:flex;
+    gap:10px;
+    margin-bottom:20px;
+}
 
-<input type="text" name="Enrollment Number" placeholder="Enrollment Number">
+.buttons button{
+    flex:1;
+    padding:12px;
+    border:none;
+    background:green;
+    color:white;
+    border-radius:10px;
+    cursor:pointer;
+    font-size:16px;
+}
 
-<input type="text" name="Degree" placeholder="Degree">
+form{
+    display:none;
+}
 
-<input type="date" name="Visit Date">
+form.active{
+    display:block;
+}
 
-<input type="text" name="Payment ID" placeholder="Payment ID" required>
+.input-box{
+    margin-bottom:15px;
+}
 
-<button type="submit">Submit Form</button>
+.input-box label{
+    display:block;
+    margin-bottom:5px;
+    font-weight:bold;
+}
+
+.input-box input{
+    width:100%;
+    padding:12px;
+    border:1px solid #ccc;
+    border-radius:10px;
+}
+
+.submit-btn{
+    width:100%;
+    padding:14px;
+    border:none;
+    background:green;
+    color:white;
+    font-size:18px;
+    border-radius:10px;
+    cursor:pointer;
+}
+
+.location-box{
+    background:#e9ffe9;
+    padding:10px;
+    margin-bottom:15px;
+    border-radius:10px;
+    color:#006400;
+    font-weight:bold;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<h1>Farm Visit Registration</h1>
+
+<div class="buttons">
+    <button onclick="showForm('studentForm')">Student Internship</button>
+    <button onclick="showForm('farmerForm')">Farmer Visit</button>
+</div>
+
+<div class="location-box" id="locationText">
+    Location Loading...
+</div>
+
+<!-- STUDENT FORM -->
+
+<form id="studentForm" class="active">
+
+<div class="input-box">
+<label>Name</label>
+<input type="text" id="s_name" required>
+</div>
+
+<div class="input-box">
+<label>Phone Number</label>
+<input type="text" id="s_phone" required>
+</div>
+
+<div class="input-box">
+<label>Enrollment Number</label>
+<input type="text" id="s_enroll" required>
+</div>
+
+<div class="input-box">
+<label>College Name</label>
+<input type="text" id="s_college" required>
+</div>
+
+<div class="input-box">
+<label>Internship Start Date</label>
+<input type="date" id="s_start" required>
+</div>
+
+<div class="input-box">
+<label>Internship End Date</label>
+<input type="date" id="s_end" required>
+</div>
+
+<div class="input-box">
+<label>Payment ID</label>
+<input type="text" id="s_payment" required>
+</div>
+
+<button type="button" class="submit-btn" onclick="sendStudentData()">
+Submit Student Form
+</button>
 
 </form>
+
+
+<!-- FARMER FORM -->
+
+<form id="farmerForm">
+
+<div class="input-box">
+<label>Name</label>
+<input type="text" id="f_name" required>
+</div>
+
+<div class="input-box">
+<label>Phone Number</label>
+<input type="text" id="f_phone" required>
+</div>
+
+<div class="input-box">
+<label>Visit Date</label>
+<input type="date" id="f_date" required>
+</div>
+
+<div class="input-box">
+<label>Payment ID</label>
+<input type="text" id="f_payment" required>
+</div>
+
+<button type="button" class="submit-btn" onclick="sendFarmerData()">
+Submit Farmer Form
+</button>
+
+</form>
+
+</div>
+
+<script>
+
+let userLocation = "Location Not Found";
+
+function showForm(formId){
+
+document.getElementById('studentForm').classList.remove('active');
+document.getElementById('farmerForm').classList.remove('active');
+
+document.getElementById(formId).classList.add('active');
+
+}
+
+
+// GET USER LOCATION
+
+navigator.geolocation.getCurrentPosition(
+
+(position)=>{
+
+const lat = position.coords.latitude;
+const lon = position.coords.longitude;
+
+userLocation = `Latitude: ${lat}, Longitude: ${lon}`;
+
+document.getElementById("locationText").innerHTML =
+"User Location: " + userLocation;
+
+},
+
+(error)=>{
+
+document.getElementById("locationText").innerHTML =
+"Location Permission Denied";
+
+}
+
+);
+
+
+// WHATSAPP NUMBER
+// YOUR NUMBER
+
+const whatsappNumber = "919067891039";
+
+
+// STUDENT DATA
+
+function sendStudentData(){
+
+let message =
+`*Student Internship Form*%0A%0A
+Name: ${document.getElementById('s_name').value}%0A
+Phone: ${document.getElementById('s_phone').value}%0A
+Enrollment No: ${document.getElementById('s_enroll').value}%0A
+College: ${document.getElementById('s_college').value}%0A
+Start Date: ${document.getElementById('s_start').value}%0A
+End Date: ${document.getElementById('s_end').value}%0A
+Payment ID: ${document.getElementById('s_payment').value}%0A
+Location: ${userLocation}`;
+
+window.open(`https://wa.me/${whatsappNumber}?text=${message}`,'_blank');
+
+}
+
+
+// FARMER DATA
+
+function sendFarmerData(){
+
+let message =
+`*Farmer Visit Form*%0A%0A
+Name: ${document.getElementById('f_name').value}%0A
+Phone: ${document.getElementById('f_phone').value}%0A
+Visit Date: ${document.getElementById('f_date').value}%0A
+Payment ID: ${document.getElementById('f_payment').value}%0A
+Location: ${userLocation}`;
+
+window.open(`https://wa.me/${whatsappNumber}?text=${message}`,'_blank');
+
+}
+
+</script>
+
+</body>
+</html>

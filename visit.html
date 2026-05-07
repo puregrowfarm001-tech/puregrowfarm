@@ -7,20 +7,19 @@
 </head>
 <body>
     <script src="script.js"></script>
-    
+
      <form id="contactForm" onsubmit="submitForm(event)">
               <input type="text" id="name" placeholder="Your name" required />
               <input type="tel" id="phone" placeholder="Phone (e.g. 9067891039)" pattern="[0-9]{10}" required />
               <input type="email" id="email" placeholder="Email" />
-              <input type="address" id="address" placeholder="Address" required/>
+              <input type="date" id="DATE" placeholder="Date" required/>
               <select id="product">
                 <option value="green">student</option>
                 <option value="dry">farmer</option>
               </select>
-              <input type="text" id="weight" placeholder="Weight"  required />
               <select id="quantity">
-                <option value="GM">Phonepay</option>
-                <option value="kg">Gpay</option>
+                <option value=""><img src="PS.JPG">Phonepay</option>
+                <option value=""><IMG src="GS.JPG">Gpay</option>
               </select>
               <textarea id="message" rows="4" placeholder="Message / Order details"></textarea>
               <button type="submit">Send Order</button>

@@ -19,32 +19,111 @@
                 <option value="dry">farmer</option>
               </select>
 
-              
-                
-              <div class="payment-options">
-
-<label id="quantity">
-<input type="radio" name="payment" value="PhonePe">
-
-<img src="PS.JPG" width="40">
-
-PhonePe
-</label>
-
-<label>
-<input type="radio" name="payment" value="Google Pay">
-
-<img src="GS.JPG" width="40">
-
-Google Pay
-</label>
-
-
-</div>
-                
-             
+              <select id="quantity">
+                <option><img src="PS.JPG">Phonepay</option>
+                <option value=""><IMG src="GS.JPG">Gpay</option>
+              </select>
               <textarea id="message" rows="4" placeholder="Message / Order details"></textarea>
               <button type="submit">Send Order</button>
             </form>
+</body>
+</html>
+
+
+
+
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+
+.custom-select{
+width:300px;
+position:relative;
+font-family:Arial;
+}
+
+.select-box{
+border:1px solid #ccc;
+padding:12px;
+border-radius:8px;
+cursor:pointer;
+background:#fff;
+}
+
+.options{
+display:none;
+border:1px solid #ccc;
+border-radius:8px;
+margin-top:5px;
+background:#fff;
+overflow:hidden;
+}
+
+.option{
+padding:10px;
+display:flex;
+align-items:center;
+gap:10px;
+cursor:pointer;
+}
+
+.option:hover{
+background:#f1f1f1;
+}
+
+.option img{
+width:30px;
+height:30px;
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="custom-select">
+
+<div class="select-box" onclick="toggleOptions()">
+Select Payment Method
+</div>
+
+<div class="options" id="options">
+
+<div class="option" onclick="selectOption('PhonePe')">
+<img src="phonepe.png">
+PhonePe
+</div>
+
+<div class="option" onclick="selectOption('Google Pay')">
+<img src="gpay.png">
+Google Pay
+</div>
+
+<div class="option" onclick="selectOption('Paytm')">
+<img src="paytm.png">
+Paytm
+</div>
+
+</div>
+
+<input type="hidden" name="paymentmethod" id="paymentmethod">
+
+</div>
+
+<script>
+
+function toggleOptions(){
+document.getElementById("options").style.display="block";
+}
+
+function selectOption(value){
+document.querySelector(".select-box").innerHTML=value;
+document.getElementById("paymentmethod").value=value;
+document.getElementById("options").style.display="none";
+}
+
+</script>
+
 </body>
 </html>

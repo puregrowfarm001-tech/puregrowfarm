@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pure Grow Farm Visit Form</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Pure Grow Farm Visit</title>
 
 <style>
 *{
@@ -19,33 +19,33 @@ body{
 }
 
 .container{
-    max-width:700px;
+    max-width:900px;
     margin:auto;
-    background:#fff;
+    background:white;
     padding:25px;
     border-radius:15px;
-    box-shadow:0 0 10px rgba(0,0,0,0.1);
+    box-shadow:0 0 15px rgba(0,0,0,0.1);
 }
 
 h1{
     text-align:center;
-    margin-bottom:20px;
     color:green;
-}
-
-.buttons{
-    display:flex;
-    gap:10px;
     margin-bottom:20px;
 }
 
-.buttons button{
-    flex:1;
-    padding:12px;
+.option-buttons{
+    display:flex;
+    gap:20px;
+    justify-content:center;
+    margin-bottom:30px;
+}
+
+.option-buttons button{
+    padding:12px 25px;
     border:none;
+    border-radius:8px;
     background:green;
     color:white;
-    border-radius:10px;
     cursor:pointer;
     font-size:16px;
 }
@@ -54,7 +54,7 @@ form{
     display:none;
 }
 
-form.active{
+.active{
     display:block;
 }
 
@@ -72,27 +72,37 @@ form.active{
     width:100%;
     padding:12px;
     border:1px solid #ccc;
+    border-radius:8px;
+}
+
+.payment-box{
+    background:#eaffea;
+    padding:15px;
     border-radius:10px;
+    margin-bottom:20px;
 }
 
 .submit-btn{
     width:100%;
     padding:14px;
     border:none;
+    border-radius:10px;
     background:green;
     color:white;
     font-size:18px;
-    border-radius:10px;
     cursor:pointer;
 }
 
-.location-box{
-    background:#e9ffe9;
-    padding:10px;
-    margin-bottom:15px;
-    border-radius:10px;
-    color:#006400;
-    font-weight:bold;
+.qr{
+    width:200px;
+    display:block;
+    margin:auto;
+}
+
+.note{
+    text-align:center;
+    color:red;
+    margin-top:10px;
 }
 </style>
 </head>
@@ -101,98 +111,131 @@ form.active{
 
 <div class="container">
 
-<h1>Farm Visit Registration</h1>
+<h1>PURE GROW FARM VISIT</h1>
 
-<div class="buttons">
+<div class="option-buttons">
     <button onclick="showForm('studentForm')">Student Internship</button>
-    <button onclick="showForm('farmerForm')">Farmer Visit</button>
-</div>
-
-<div class="location-box" id="locationText">
-    Location Loading...
+    <button onclick="showForm('farmerForm')">Farmer Training</button>
 </div>
 
 <!-- STUDENT FORM -->
-
 <form id="studentForm" class="active">
+
+<h2 style="margin-bottom:20px;">Student Internship Form</h2>
 
 <div class="input-box">
 <label>Name</label>
-<input type="text" id="s_name" required>
+<input type="text" id="sname" required>
 </div>
 
 <div class="input-box">
 <label>Phone Number</label>
-<input type="text" id="s_phone" required>
+<input type="number" id="sphone" required>
 </div>
 
 <div class="input-box">
 <label>Enrollment Number</label>
-<input type="text" id="s_enroll" required>
+<input type="text" id="senroll" required>
 </div>
 
 <div class="input-box">
 <label>College Name</label>
-<input type="text" id="s_college" required>
+<input type="text" id="scollege" required>
 </div>
 
 <div class="input-box">
 <label>Internship Start Date</label>
-<input type="date" id="s_start" required>
+<input type="date" id="sstart" required>
 </div>
 
 <div class="input-box">
 <label>Internship End Date</label>
-<input type="date" id="s_end" required>
+<input type="date" id="send" required>
 </div>
+
+<div class="payment-box">
+
+<h3>Payment Amount : ₹100</h3>
+
+<p style="margin-top:10px;">
+GPay Number : <b>9067891039</b>
+</p>
+
+<br>
+
+<!-- ADD YOUR PHONEPE QR IMAGE -->
+<img src="GS.jpg" class="qr">
+
+<br>
 
 <div class="input-box">
 <label>Payment ID</label>
-<input type="text" id="s_payment" required>
+<input type="text" id="spayment" required>
+</div>
+
 </div>
 
 <button type="button" class="submit-btn" onclick="sendStudentData()">
-Submit Student Form
+Submit
 </button>
 
 </form>
 
 
 <!-- FARMER FORM -->
-
 <form id="farmerForm">
+
+<h2 style="margin-bottom:20px;">Farmer Training Form</h2>
 
 <div class="input-box">
 <label>Name</label>
-<input type="text" id="f_name" required>
+<input type="text" id="fname" required>
 </div>
 
 <div class="input-box">
 <label>Phone Number</label>
-<input type="text" id="f_phone" required>
+<input type="number" id="fphone" required>
 </div>
 
 <div class="input-box">
 <label>Visit Date</label>
-<input type="date" id="f_date" required>
+<input type="date" id="fdate" required>
 </div>
+
+<div class="payment-box">
+
+<h3>Training Fees : ₹699</h3>
+
+<p style="margin-top:10px;">
+GPay Number : <b>9067891039</b>
+</p>
+
+<br>
+
+<img src="GS.jpg" class="qr">
+
+<br>
 
 <div class="input-box">
 <label>Payment ID</label>
-<input type="text" id="f_payment" required>
+<input type="text" id="fpayment" required>
+</div>
+
 </div>
 
 <button type="button" class="submit-btn" onclick="sendFarmerData()">
-Submit Farmer Form
+Submit
 </button>
 
 </form>
 
+<p class="note">
+After Submit User WhatsApp par Farm Location Open Hoga
+</p>
+
 </div>
 
 <script>
-
-let userLocation = "Location Not Found";
 
 function showForm(formId){
 
@@ -203,72 +246,77 @@ document.getElementById(formId).classList.add('active');
 
 }
 
-
-// GET USER LOCATION
-
-navigator.geolocation.getCurrentPosition(
-
-(position)=>{
-
-const lat = position.coords.latitude;
-const lon = position.coords.longitude;
-
-userLocation = `Latitude: ${lat}, Longitude: ${lon}`;
-
-document.getElementById("locationText").innerHTML =
-"User Location: " + userLocation;
-
-},
-
-(error)=>{
-
-document.getElementById("locationText").innerHTML =
-"Location Permission Denied";
-
-}
-
-);
-
-
-// WHATSAPP NUMBER
-// YOUR NUMBER
-
-const whatsappNumber = "919067891039";
-
-
 // STUDENT DATA
-
 function sendStudentData(){
 
-let message =
-`*Student Internship Form*%0A%0A
-Name: ${document.getElementById('s_name').value}%0A
-Phone: ${document.getElementById('s_phone').value}%0A
-Enrollment No: ${document.getElementById('s_enroll').value}%0A
-College: ${document.getElementById('s_college').value}%0A
-Start Date: ${document.getElementById('s_start').value}%0A
-End Date: ${document.getElementById('s_end').value}%0A
-Payment ID: ${document.getElementById('s_payment').value}%0A
-Location: ${userLocation}`;
+let name = document.getElementById("sname").value;
+let phone = document.getElementById("sphone").value;
+let enroll = document.getElementById("senroll").value;
+let college = document.getElementById("scollege").value;
+let start = document.getElementById("sstart").value;
+let end = document.getElementById("send").value;
+let payment = document.getElementById("spayment").value;
 
-window.open(`https://wa.me/${whatsappNumber}?text=${message}`,'_blank');
+// EMAIL BODY
+let subject = "Student Internship Form";
+let body =
+`Name: ${name}
+Phone: ${phone}
+Enrollment No: ${enroll}
+College: ${college}
+Start Date: ${start}
+End Date: ${end}
+Payment ID: ${payment}`;
+
+window.location.href =
+`mailto:puregrowfarm001@gmail.com?subject=${subject}&body=${body}`;
+
+// WHATSAPP LOCATION
+setTimeout(() => {
+
+window.open(
+"https://wa.me/919067891039?text=Thank%20You%20For%20Student%20Internship%20Booking.%20Farm%20Location:%20https://google.com/maps?um=1&ie=UTF-8&fb=1&gl=in&sa=X&geocode=KZFK8z4xA1g5McbyFQEC-sPP&daddr=Makhiyala,+Gujarat+362011",
+"_blank"
+);
+
+},1000);
+
+alert("Form Submitted Successfully");
 
 }
 
 
 // FARMER DATA
-
 function sendFarmerData(){
 
-let message =
-`*Farmer Visit Form*%0A%0A
-Name: ${document.getElementById('f_name').value}%0A
-Phone: ${document.getElementById('f_phone').value}%0A
-Visit Date: ${document.getElementById('f_date').value}%0A
-Payment ID: ${document.getElementById('f_payment').value}%0A
-Location: ${userLocation}`;
+let name = document.getElementById("fname").value;
+let phone = document.getElementById("fphone").value;
+let date = document.getElementById("fdate").value;
+let payment = document.getElementById("fpayment").value;
 
-window.open(`https://wa.me/${whatsappNumber}?text=${message}`,'_blank');
+let subject = "Farmer Training Form";
+
+let body =
+`Name: ${name}
+Phone: ${phone}
+Visit Date: ${date}
+Payment ID: ${payment}`;
+
+window.location.href =
+`mailto:puregrowfarm001@gmail.com?subject=${subject}&body=${body}`;
+
+
+// WHATSAPP LOCATION
+setTimeout(() => {
+
+window.open(
+"https://wa.me/919067891039?text=Thank%20You%20For%20Farmer%20Training.%20Farm%20Location:%20https://google.com/maps?um=1&ie=UTF-8&fb=1&gl=in&sa=X&geocode=KZFK8z4xA1g5McbyFQEC-sPP&daddr=Makhiyala,+Gujarat+362011",
+"_blank"
+);
+
+},1000);
+
+alert("Form Submitted Successfully");
 
 }
 

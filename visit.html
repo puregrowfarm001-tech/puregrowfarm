@@ -345,3 +345,356 @@ document.getElementById("whatsappLink").href =
 
 </body>
 </html>
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Food Order Website</title>
+
+<style>
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:Arial,sans-serif;
+}
+
+body{
+background:#f5f5f5;
+}
+
+header{
+background:#ff6600;
+color:white;
+text-align:center;
+padding:20px;
+}
+
+.products{
+display:grid;
+grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+gap:20px;
+padding:20px;
+}
+
+.card{
+background:white;
+padding:15px;
+border-radius:10px;
+box-shadow:0 2px 10px rgba(0,0,0,0.2);
+text-align:center;
+}
+
+.card img{
+width:100%;
+height:150px;
+object-fit:cover;
+border-radius:10px;
+}
+
+.card h3{
+margin:10px 0;
+}
+
+.card p{
+color:#ff6600;
+font-weight:bold;
+}
+
+.card button{
+background:#28a745;
+color:white;
+border:none;
+padding:10px;
+border-radius:5px;
+cursor:pointer;
+margin-top:10px;
+}
+
+.cart{
+background:white;
+margin:20px;
+padding:20px;
+border-radius:10px;
+box-shadow:0 2px 10px rgba(0,0,0,0.2);
+}
+
+.cart ul{
+list-style:none;
+margin-top:10px;
+}
+
+.cart li{
+display:flex;
+justify-content:space-between;
+margin:8px 0;
+}
+
+.remove{
+background:red;
+color:white;
+border:none;
+padding:5px 10px;
+cursor:pointer;
+border-radius:5px;
+}
+
+.form-section{
+background:white;
+margin:20px;
+padding:20px;
+border-radius:10px;
+box-shadow:0 2px 10px rgba(0,0,0,0.2);
+}
+
+input,textarea,select{
+width:100%;
+padding:10px;
+margin-top:10px;
+border:1px solid #ccc;
+border-radius:5px;
+}
+
+.order-btn{
+width:100%;
+padding:12px;
+background:#ff6600;
+color:white;
+border:none;
+margin-top:15px;
+cursor:pointer;
+font-size:18px;
+border-radius:5px;
+}
+
+.review-box{
+background:white;
+margin:20px;
+padding:20px;
+border-radius:10px;
+box-shadow:0 2px 10px rgba(0,0,0,0.2);
+}
+
+.review-btn{
+background:#007bff;
+color:white;
+border:none;
+padding:10px;
+margin-top:10px;
+cursor:pointer;
+border-radius:5px;
+}
+
+#reviews{
+margin-top:15px;
+}
+
+.footer{
+text-align:center;
+padding:20px;
+background:#333;
+color:white;
+}
+</style>
+</head>
+<body>
+
+<header>
+<h1>🍔 Food Order Website</h1>
+<p>Order Your Favorite Food Online</p>
+</header>
+
+<div class="products" id="products"></div>
+
+<div class="cart">
+<h2>🛒 Cart</h2>
+<ul id="cartItems"></ul>
+<h3>Total: ₹<span id="total">0</span></h3>
+</div>
+
+<div class="form-section">
+<h2>Customer Details</h2>
+
+<input type="text" id="name" placeholder="Full Name">
+
+<input type="tel" id="phone" placeholder="Phone Number">
+
+<textarea id="address" placeholder="Delivery Address"></textarea>
+
+<select id="payment">
+<option>Google Pay</option>
+<option>PhonePe</option>
+<option>Paytm</option>
+</select>
+
+<button class="order-btn" onclick="placeOrder()">Place Order</button>
+
+<p id="message"></p>
+</div>
+
+<div class="review-box">
+<h2>⭐ Reviews</h2>
+
+<input type="text" id="reviewInput" placeholder="Write Review">
+
+<button class="review-btn" onclick="addReview()">Submit Review</button>
+
+<div id="reviews"></div>
+</div>
+
+<div class="footer">
+Food Ordering Website Demo
+</div>
+
+<script>
+const products = [
+{
+name:"Pizza",
+price:250,
+img:"https://images.unsplash.com/photo-1513104890138-7c749659a591"
+},
+{
+name:"Burger",
+price:120,
+img:"https://images.unsplash.com/photo-1568901346375-23c9450c58cd"
+},
+{
+name:"Sandwich",
+price:100,
+img:"https://images.unsplash.com/photo-1528735602780-2552fd46c7af"
+},
+{
+name:"French Fries",
+price:90,
+img:"https://images.unsplash.com/photo-1573080496219-bb080dd4f877"
+},
+{
+name:"Pasta",
+price:180,
+img:"https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9"
+},
+{
+name:"Noodles",
+price:150,
+img:"https://images.unsplash.com/photo-1617093727343-374698b1b08d"
+},
+{
+name:"Momos",
+price:120,
+img:"https://images.unsplash.com/photo-1625938145744-3c4f8d60b0a6"
+},
+{
+name:"Ice Cream",
+price:80,
+img:"https://images.unsplash.com/photo-1563805042-7684c019e1cb"
+},
+{
+name:"Coffee",
+price:70,
+img:"https://images.unsplash.com/photo-1495474472287-4d71bcdd2085"
+},
+{
+name:"Cake",
+price:300,
+img:"https://images.unsplash.com/photo-1578985545062-69928b1d9587"
+}
+];
+
+let cart = [];
+
+const productsDiv = document.getElementById("products");
+
+products.forEach((product,index)=>{
+productsDiv.innerHTML += `
+<div class="card">
+<img src="${product.img}">
+<h3>${product.name}</h3>
+<p>₹${product.price}</p>
+<button onclick="addToCart(${index})">Add To Cart</button>
+</div>
+`;
+});
+
+function addToCart(index){
+cart.push(products[index]);
+displayCart();
+}
+
+function displayCart(){
+const cartItems=document.getElementById("cartItems");
+const total=document.getElementById("total");
+
+cartItems.innerHTML="";
+let totalPrice=0;
+
+cart.forEach((item,index)=>{
+totalPrice += item.price;
+
+cartItems.innerHTML += `
+<li>
+${item.name} - ₹${item.price}
+<button class="remove" onclick="removeItem(${index})">
+Remove
+</button>
+</li>
+`;
+});
+
+total.innerText=totalPrice;
+}
+
+function removeItem(index){
+cart.splice(index,1);
+displayCart();
+}
+
+function placeOrder(){
+
+const name=document.getElementById("name").value;
+const phone=document.getElementById("phone").value;
+const address=document.getElementById("address").value;
+const payment=document.getElementById("payment").value;
+
+if(name=="" || phone=="" || address==""){
+alert("Please Fill All Details");
+return;
+}
+
+if(cart.length==0){
+alert("Cart Empty");
+return;
+}
+
+document.getElementById("message").innerHTML=
+`
+<h3 style="color:green;">
+✅ Thank You ${name}! <br>
+Your order has been placed successfully.<br>
+Payment Method: ${payment}
+</h3>
+`;
+
+cart=[];
+displayCart();
+}
+
+function addReview(){
+
+let review=document.getElementById("reviewInput").value;
+
+if(review=="") return;
+
+document.getElementById("reviews").innerHTML +=
+`
+<p>⭐ ${review}</p>
+`;
+
+document.getElementById("reviewInput").value="";
+}
+</script>
+
+</body>
+</html>

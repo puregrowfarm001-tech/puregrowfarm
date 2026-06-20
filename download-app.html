@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Download Pure Grow Farm App</title>
+  <meta name="theme-color" content="#2b8a3e">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="apple-touch-icon" href="/app/icon-192.png">
+  <style>
+    :root { --accent: #2b8a3e; --dark: #101820; --muted: #667085; --line: #e5e7eb; --soft: #eef7ee; }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Inter, system-ui, Segoe UI, Roboto, Arial, sans-serif;
+      color: var(--dark);
+      background: linear-gradient(180deg, #f6faf5, #fff);
+      line-height: 1.45;
+    }
+    .wrap { width: min(760px, 100%); margin: 0 auto; padding: 24px; }
+    header, section {
+      margin-top: 18px;
+      padding: 18px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: #fff;
+      box-shadow: 0 6px 22px rgba(12, 18, 20, 0.06);
+    }
+    .brand { display: flex; align-items: center; gap: 12px; }
+    .brand img { width: 64px; height: 64px; border-radius: 14px; }
+    h1 { margin: 0; font-size: 28px; letter-spacing: 0; }
+    h2 { margin: 0 0 8px; font-size: 20px; }
+    p { color: var(--muted); }
+    button, .btn {
+      min-height: 44px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 0;
+      border-radius: 10px;
+      padding: 10px 14px;
+      color: #fff;
+      background: var(--accent);
+      cursor: pointer;
+      font-weight: 750;
+      text-decoration: none;
+    }
+    .ghost { color: var(--dark); background: var(--soft); border: 1px solid var(--line); }
+    ol { padding-left: 22px; color: var(--muted); }
+    li { margin: 8px 0; }
+    .actions { display: flex; gap: 10px; flex-wrap: wrap; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="brand">
+        <img src="/app/icon-192.png" alt="Pure Grow Farm app icon">
+        <div>
+          <h1>Pure Grow Farm App</h1>
+          <p>Install without Play Store.</p>
+        </div>
+      </div>
+    </header>
+
+    <section>
+      <h2>Install App</h2>
+      <p>Android Chrome me button dabao. Agar button na dikhe to browser menu se “Add to Home screen” select karo.</p>
+      <div class="actions">
+        <button type="button" id="installBtn" hidden>Install App</button>
+        <a class="btn ghost" href="/index.html">Open Website</a>
+      </div>
+    </section>
+
+    <section>
+      <h2>Manual Steps</h2>
+      <ol>
+        <li>Phone me Chrome browser open karo.</li>
+        <li>Website open karo: puregrowfarm.vercel.app</li>
+        <li>Three-dot menu dabao.</li>
+        <li>Add to Home screen ya Install app dabao.</li>
+      </ol>
+    </section>
+  </div>
+
+  <script>
+    let installPrompt = null;
+    const installBtn = document.getElementById("installBtn");
+
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("/sw.js");
+    }
+
+    window.addEventListener("beforeinstallprompt", event => {
+      event.preventDefault();
+      installPrompt = event;
+      installBtn.hidden = false;
+    });
+
+    installBtn.addEventListener("click", async () => {
+      if (!installPrompt) return;
+      installPrompt.prompt();
+      await installPrompt.userChoice;
+      installPrompt = null;
+      installBtn.hidden = true;
+    });
+  </script>
+</body>
+</html>

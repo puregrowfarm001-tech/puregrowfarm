@@ -1,4 +1,4 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
@@ -357,7 +357,7 @@
           <ul class="muted">
             <li>Organic substrate and eco-friendly growing methods</li>
             <li>Fresh mushroom, dry mushroom and value-added products</li>
-            <li>Order and visit confirm button dabte hi Excel CSV download hoti hai</li>
+            <li>Order aur visit confirm button dabte hi farm Google Sheet me data save hota hai</li>
           </ul>
         </div>
         <img class="farm-visual" src="mushroom/farm.jpeg" alt="Pure Grow Farm growing room">
@@ -367,7 +367,7 @@
         <div class="section-row">
           <div>
             <h2>Our Products</h2>
-            <p class="muted">Add products to cart, pay online and confirm order. Confirm karte hi Excel file download hogi.</p>
+            <p class="muted">Add products to cart, pay online and confirm order. Confirm karte hi data farm Google Sheet me save hoga.</p>
           </div>
           <div class="search-row">
             <input id="productSearch" type="search" placeholder="Search product">
@@ -398,7 +398,7 @@
               </select>
               <div id="productPaymentHelp" class="notice hidden"></div>
               <input type="text" id="paymentId" placeholder="Online payment transaction ID" required>
-              <button type="submit" id="confirmOrderBtn" disabled>Confirm Order & Save Excel</button>
+              <button type="submit" id="confirmOrderBtn" disabled>Confirm Order & Save</button>
             </form>
           </aside>
         </div>
@@ -418,7 +418,7 @@
 
       <section id="visit" class="visit-section">
         <h2>Visit Pure Grow Farm</h2>
-        <p class="muted">Student internship and farmer training confirm karte hi visit Excel file download hogi.</p>
+        <p class="muted">Student internship aur farmer training confirm karte hi data farm Google Sheet me save hoga.</p>
 
         <div class="visit-tabs">
           <button type="button" data-visit-tab="studentForm">Student Internship</button>
@@ -446,7 +446,7 @@
             Student Internship Fee Rs 100 | UPI ID: sohamgajera01@okhdfcbank
             <button type="button" data-upi="100" style="margin-top:8px">Pay Online</button>
           </div>
-          <button type="submit">Confirm Student Visit & Save Excel</button>
+          <button type="submit">Confirm Student Visit & Save</button>
         </form>
 
         <form id="farmerForm" class="visit-form">
@@ -466,7 +466,7 @@
             Farmer Training Fee Rs 699 | UPI ID: sohamgajera01@okhdfcbank
             <button type="button" data-upi="699" style="margin-top:8px">Pay Online</button>
           </div>
-          <button type="submit">Confirm Farmer Training & Save Excel</button>
+          <button type="submit">Confirm Farmer Training & Save</button>
         </form>
       </section>
 
@@ -518,7 +518,7 @@
       <h2>Data Saved</h2>
       <button type="button" class="ghost" id="invoiceCloseBtn">Close</button>
     </div>
-    <p class="notice">Data browser me save ho gaya aur Excel CSV file download ho gayi. Neeche invoice copy bhi hai.</p>
+    <p class="notice">Data farm ki Google Sheet me save ho gaya. Customer ke browser me Excel download nahi hui. Neeche invoice copy hai.</p>
     <pre id="invoiceText"></pre>
     <div class="dialog-actions">
       <button type="button" id="downloadInvoiceBtn">Download Invoice Text</button>
@@ -534,6 +534,7 @@
       });
     }
 
+    const FARM_API_URL = "YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL";
     const farmEmail = "puregrowfarm001@gmail.com";
     const farmWhatsapp = "919067891039";
     const farmUpiId = "sohamgajera01@okhdfcbank";
@@ -814,6 +815,21 @@ Transaction ID: ${data.payment.transactionId}
 Status: Order confirmed after online payment`;
     }
 
+    async function saveToFarmSheet(type, data) {
+      if (!FARM_API_URL || FARM_API_URL === "YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL") {
+        throw new Error("Google Apps Script Web App URL set nahi hai.");
+      }
+      const response = await fetch(FARM_API_URL, {
+        method: "POST",
+        mode: "cors",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify({ type, data })
+      });
+      const result = await response.json();
+      if (!result.ok) throw new Error(result.message || "Data save failed");
+      return result;
+    }
+
     function showInvoice(invoice, subject) {
       latestInvoice = invoice;
       $("invoiceText").textContent = invoice;
@@ -822,7 +838,7 @@ Status: Order confirmed after online payment`;
       $("invoiceDialog").showModal();
     }
 
-    function confirmOrder(event) {
+    async function confirmOrder(event) {
       event.preventDefault();
       const phone = $("phone").value.trim();
       if (!/^[0-9]{10}$/.test(phone)) {
@@ -847,15 +863,23 @@ Status: Order confirmed after online payment`;
         payment: { mode: $("paymentMode").value, transactionId: $("paymentId").value.trim() },
         status: "Confirmed"
       };
-      const allOrders = addSaved("pgfOrders", data);
-      downloadText(ordersToCsv(allOrders), "pure-grow-farm-orders.csv", "text/csv;charset=utf-8");
-      showInvoice(buildOrderInvoice(data), "Pure Grow Farm Product Invoice");
-      cart.clear();
-      productPaymentOpened = false;
-      $("orderForm").reset();
-      renderCart();
-      updateOrderButton();
-      renderSavedData();
+      $("confirmOrderBtn").disabled = true;
+      $("confirmOrderBtn").textContent = "Saving...";
+      try {
+        await saveToFarmSheet("order", data);
+        addSaved("pgfOrders", data);
+        showInvoice(buildOrderInvoice(data), "Pure Grow Farm Product Invoice");
+        cart.clear();
+        productPaymentOpened = false;
+        $("orderForm").reset();
+        renderCart();
+        renderSavedData();
+      } catch (error) {
+        alert(`Data save nahi hua: ${error.message}`);
+      } finally {
+        $("confirmOrderBtn").textContent = "Confirm Order & Save";
+        updateOrderButton();
+      }
     }
 
     function showVisitForm(formId) {
@@ -890,17 +914,28 @@ Payment ID: ${data.paymentId}
 Status: Visit confirmed after online payment`;
     }
 
-    function saveVisit(data, form) {
+    async function saveVisit(data, form) {
       const record = {
         ...data,
         date: new Date().toLocaleString("en-IN"),
         status: "Confirmed"
       };
-      const allVisits = addSaved("pgfVisits", record);
-      downloadText(visitsToCsv(allVisits), "pure-grow-farm-visits.csv", "text/csv;charset=utf-8");
-      showInvoice(buildVisitInvoice(record), `Pure Grow Farm ${record.visitType} Booking`);
-      form.reset();
-      renderSavedData();
+      const submitButton = form.querySelector("button[type=\"submit\"]");
+      const oldButtonText = submitButton.textContent;
+      submitButton.disabled = true;
+      submitButton.textContent = "Saving...";
+      try {
+        await saveToFarmSheet("visit", record);
+        addSaved("pgfVisits", record);
+        showInvoice(buildVisitInvoice(record), `Pure Grow Farm ${record.visitType} Booking`);
+        form.reset();
+        renderSavedData();
+      } catch (error) {
+        alert(`Data save nahi hua: ${error.message}`);
+      } finally {
+        submitButton.disabled = false;
+        submitButton.textContent = oldButtonText;
+      }
     }
 
     function renderSavedData() {
@@ -992,3 +1027,4 @@ Status: Visit confirmed after online payment`;
   </script>
 </body>
 </html>
+

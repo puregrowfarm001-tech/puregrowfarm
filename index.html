@@ -642,13 +642,7 @@
       return rows.map(row => row.map(csvEscape).join(",")).join("\n");
     }
 
-    function downloadOrdersExcel() {
-      downloadText(ordersToCsv(getSaved("pgfOrders")), "pure-grow-farm-orders.csv", "text/csv;charset=utf-8");
-    }
-
-    function downloadVisitsExcel() {
-      downloadText(visitsToCsv(getSaved("pgfVisits")), "pure-grow-farm-visits.csv", "text/csv;charset=utf-8");
-    }
+    
 
     function renderProducts(list = products) {
       const target = $("productsList");

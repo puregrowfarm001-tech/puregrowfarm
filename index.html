@@ -17,9 +17,7 @@
   --danger: #b42318;
 }
 
-* {
-  box-sizing: border-box;
-}
+* { box-sizing: border-box; }
 
 body {
   margin: 0;
@@ -29,12 +27,7 @@ body {
   background: linear-gradient(180deg, #f6faf5 0%, #ffffff 100%);
 }
 
-.container {
-  max-width: 1100px;
-  margin: 0 auto;
-  padding: 24px;
-  width: 100%;
-}
+.container { max-width: 1100px; margin: 0 auto; padding: 24px; width: 100%; }
 
 header {
   position: sticky;
@@ -54,50 +47,20 @@ header {
   backdrop-filter: blur(12px);
 }
 
-.brand {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  flex: 0 0 auto;
-}
+.brand { display: flex; align-items: center; gap: 12px; flex: 0 0 auto; }
+.logo-img { width: 72px; height: 58px; object-fit: contain; border-radius: 10px; }
+.brand-text { font-weight: 800; font-size: 20px; }
+.brand-subtitle, .muted { color: var(--muted); }
+.brand-subtitle { font-size: 13px; }
 
-.logo-img {
-  width: 72px;
-  height: 58px;
-  object-fit: contain;
-  border-radius: 10px;
-}
-
-.brand-text {
-  font-weight: 800;
-  font-size: 20px;
-}
-
-.brand-subtitle,
-.muted {
-  color: var(--muted);
-}
-
-.brand-subtitle {
-  font-size: 13px;
-}
-
-.nav-wrapper,
-nav,
-.section-row,
-.search-row,
-.dialog-actions {
+.nav-wrapper, nav, .section-row, .search-row, .dialog-actions {
   display: flex;
   align-items: center;
   gap: 12px;
   flex-wrap: wrap;
 }
 
-.dialog-actions .btn,
-.dialog-actions button {
-  flex: 1;
-  min-width: 170px;
-}
+.dialog-actions .btn, .dialog-actions button { flex: 1; min-width: 170px; }
 
 .send-note {
   padding: 10px 12px;
@@ -107,12 +70,7 @@ nav,
   font-weight: 700;
 }
 
-.nav-wrapper {
-  flex-wrap: nowrap;
-  justify-content: flex-end;
-  flex: 1;
-  min-width: 0;
-}
+.nav-wrapper { flex-wrap: nowrap; justify-content: flex-end; flex: 1; min-width: 0; }
 
 nav {
   display: flex;
@@ -124,10 +82,7 @@ nav {
   border-radius: 999px;
 }
 
-nav a,
-a {
-  color: inherit;
-}
+nav a, a { color: inherit; }
 
 nav a {
   display: inline-flex;
@@ -144,14 +99,9 @@ nav a {
   transition: background 0.15s ease, color 0.15s ease;
 }
 
-nav a:hover,
-nav a:focus-visible {
-  color: var(--accent);
-  background: #ffffff;
-}
+nav a:hover, nav a:focus-visible { color: var(--accent); background: #ffffff; }
 
-.btn,
-button {
+.btn, button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -168,17 +118,9 @@ button {
   white-space: nowrap;
 }
 
-button:hover,
-.btn:hover {
-  background: #246e33;
-}
-
-.nav-toggle {
-  display: none;
-  color: var(--dark);
-  background: var(--soft);
-  border: 1px solid var(--line);
-}
+button:hover, .btn:hover { background: #246e33; }
+button:disabled { background: #98a2a8; cursor: not-allowed; }
+.nav-toggle { display: none; color: var(--dark); background: var(--soft); border: 1px solid var(--line); }
 
 .hero {
   display: grid;
@@ -188,53 +130,19 @@ button:hover,
   padding: 28px 0;
 }
 
-.hero h1 {
-  margin: 0 0 10px;
-  font-size: 34px;
-  line-height: 1.2;
-}
-
-.hero p {
-  margin: 0 0 18px;
-}
-
-.cards,
-.review-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-}
-
-.card,
-.product,
-.cart-box,
-.review-card,
-.fast-facts {
+.hero h1 { margin: 0 0 10px; font-size: 34px; line-height: 1.2; }
+.hero p { margin: 0 0 18px; }
+.cards, .review-list { display: flex; flex-wrap: wrap; gap: 12px; }
+.card, .product, .cart-box, .review-card, .fast-facts {
   background: var(--card);
   border-radius: 12px;
   box-shadow: 0 6px 22px rgba(12, 18, 20, 0.06);
 }
 
-.card {
-  flex: 1;
-  min-width: 200px;
-  padding: 12px;
-}
-
-.small-title {
-  font-size: 13px;
-}
-
-.card-title {
-  font-weight: 800;
-  font-size: 18px;
-}
-
-.hero-links {
-  display: grid;
-  gap: 8px;
-  margin-top: 18px;
-}
+.card { flex: 1; min-width: 200px; padding: 12px; }
+.small-title { font-size: 13px; }
+.card-title { font-weight: 800; font-size: 18px; }
+.hero-links { display: grid; gap: 8px; margin-top: 18px; }
 
 .hero-photo {
   padding: 18px;
@@ -243,13 +151,7 @@ button:hover,
   border-radius: 12px;
 }
 
-.hero-photo img {
-  width: 100%;
-  height: 220px;
-  object-fit: cover;
-  border-radius: 10px;
-  margin-bottom: 12px;
-}
+.hero-photo img { width: 100%; height: 220px; object-fit: cover; border-radius: 10px; margin-bottom: 12px; }
 
 .pill {
   display: inline-block;
@@ -262,8 +164,7 @@ button:hover,
   text-decoration: none;
 }
 
-.about,
-.farm-photo-section {
+.about, .farm-photo-section {
   display: flex;
   align-items: center;
   gap: 20px;
@@ -271,13 +172,8 @@ button:hover,
   padding: 20px 0;
 }
 
-.about-content {
-  flex: 1;
-  min-width: 280px;
-}
-
-.about img,
-.farm-photo-section img {
+.about-content { flex: 1; min-width: 280px; }
+.about img, .farm-photo-section img {
   width: 320px;
   height: 220px;
   object-fit: cover;
@@ -285,21 +181,9 @@ button:hover,
   flex-shrink: 0;
 }
 
-.farm-photo-section {
-  padding: 20px;
-  background: #fff;
-  border-radius: 12px;
-}
-
-.section-row {
-  justify-content: space-between;
-  flex-wrap: wrap;
-  margin: 18px 0;
-}
-
-.search-row input {
-  min-width: 250px;
-}
+.farm-photo-section { padding: 20px; background: #fff; border-radius: 12px; }
+.section-row { justify-content: space-between; flex-wrap: wrap; margin: 18px 0; }
+.search-row input { min-width: 250px; }
 
 .shop-layout {
   display: grid;
@@ -308,31 +192,10 @@ button:hover,
   align-items: start;
 }
 
-.products {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 18px;
-}
-
-.product {
-  display: flex;
-  flex-direction: column;
-  padding: 14px;
-}
-
-.product img {
-  width: 100%;
-  aspect-ratio: 4 / 3;
-  height: auto;
-  object-fit: cover;
-  border-radius: 8px;
-  margin-bottom: 12px;
-}
-
-.product h3 {
-  margin: 0 0 8px;
-  font-size: 18px;
-}
+.products { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 18px; }
+.product { display: flex; flex-direction: column; padding: 14px; }
+.product img { width: 100%; aspect-ratio: 4 / 3; height: auto; object-fit: cover; border-radius: 8px; margin-bottom: 12px; }
+.product h3 { margin: 0 0 8px; font-size: 18px; }
 
 .product-actions {
   display: flex;
@@ -343,111 +206,35 @@ button:hover,
   margin-top: auto;
 }
 
-.cart-box {
-  position: sticky;
-  top: 16px;
-  padding: 14px;
-}
+.cart-box { position: sticky; top: 16px; padding: 14px; }
+.cart-items { display: grid; gap: 10px; min-height: 60px; margin: 12px 0; }
+.cart-item, .bill-row { display: flex; justify-content: space-between; gap: 8px; }
+.cart-item { align-items: flex-start; padding: 10px; border: 1px solid var(--line); border-radius: 10px; }
+.qty-actions { display: flex; gap: 6px; margin-top: 8px; }
+.qty-actions button { min-height: 30px; padding: 4px 9px; }
+.remove-btn { background: var(--danger); }
+.bill-row { padding: 7px 0; border-top: 1px solid var(--line); }
+.total { color: var(--accent); font-size: 18px; }
+.payment-help { display: none; padding: 10px 12px; background: #eef7ee; border-radius: 10px; color: #246e33; font-weight: 700; }
+.payment-help.show { display: block; }
 
-.cart-items {
-  display: grid;
-  gap: 10px;
-  min-height: 60px;
-  margin: 12px 0;
-}
+.gallery { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.gallery img { width: 100%; height: 300px; object-fit: cover; border-radius: 8px; }
 
-.cart-item,
-.bill-row {
-  display: flex;
-  justify-content: space-between;
-  gap: 8px;
-}
-
-.cart-item {
-  align-items: flex-start;
-  padding: 10px;
-  border: 1px solid var(--line);
-  border-radius: 10px;
-}
-
-.qty-actions {
-  display: flex;
-  gap: 6px;
-  margin-top: 8px;
-}
-
-.qty-actions button {
-  min-height: 30px;
-  padding: 4px 9px;
-}
-
-.remove-btn {
-  background: var(--danger);
-}
-
-.bill-row {
-  padding: 7px 0;
-  border-top: 1px solid var(--line);
-}
-
-.total {
-  color: var(--accent);
-  font-size: 18px;
-}
-
-.gallery {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 10px;
-}
-
-.gallery img {
-  width: 100%;
-  height: 300px;
-  object-fit: cover;
-  border-radius: 8px;
-}
-
-.reviews,
-.contact {
+.reviews, .contact {
   padding: 20px;
   margin-top: 18px;
   border-radius: 12px;
   background: linear-gradient(180deg, #fff, #f7fff7);
 }
 
-.review-form {
-  display: grid;
-  grid-template-columns: 1fr 130px minmax(220px, 1fr) auto;
-  gap: 10px;
-  margin-bottom: 14px;
-}
+.review-form { display: grid; grid-template-columns: 1fr 130px minmax(220px, 1fr) auto; gap: 10px; margin-bottom: 14px; }
+.review-card { flex: 1; min-width: 220px; padding: 14px; }
+.contact-grid { display: grid; grid-template-columns: 1fr 320px; gap: 16px; align-items: start; }
+.fast-facts { padding: 12px; }
 
-.review-card {
-  flex: 1;
-  min-width: 220px;
-  padding: 14px;
-}
-
-.contact-grid {
-  display: grid;
-  grid-template-columns: 1fr 320px;
-  gap: 16px;
-  align-items: start;
-}
-
-.fast-facts {
-  padding: 12px;
-}
-
-form {
-  display: grid;
-  gap: 10px;
-}
-
-input,
-textarea,
-select {
+form { display: grid; gap: 10px; }
+input, textarea, select {
   width: 100%;
   padding: 10px;
   border: 1px solid var(--line);
@@ -455,284 +242,90 @@ select {
   font-size: 15px;
 }
 
-footer {
-  padding: 28px 0;
-  color: var(--muted);
-  font-size: 14px;
-  text-align: center;
-}
+footer { padding: 28px 0; color: var(--muted); font-size: 14px; text-align: center; }
 
-dialog {
-  width: min(760px, calc(100% - 30px));
-  border: 0;
-  border-radius: 12px;
-  padding: 20px;
-}
+dialog { width: min(760px, calc(100% - 30px)); border: 0; border-radius: 12px; padding: 20px; }
+dialog::backdrop { background: rgba(0, 0, 0, 0.5); }
+.dialog-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+pre { overflow: auto; max-height: 330px; padding: 12px; color: #eef8ef; background: #101711; border-radius: 8px; white-space: pre-wrap; }
 
-dialog::backdrop {
-  background: rgba(0, 0, 0, 0.5);
-}
-
-.dialog-head {
+.invoice-logo-row {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: 12px;
+  padding: 12px;
+  margin-bottom: 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #f8fbf7;
 }
 
-pre {
-  overflow: auto;
-  max-height: 330px;
-  padding: 12px;
-  color: #eef8ef;
-  background: #101711;
-  border-radius: 8px;
-  white-space: pre-wrap;
-}
+.invoice-logo-row img { width: 74px; height: 58px; object-fit: contain; border-radius: 10px; }
+
+.visit-section { padding: 20px; margin-top: 18px; border-radius: 12px; background: linear-gradient(180deg,#fff,#f7fff7); }
+.visit-tabs { display: flex; gap: 10px; margin: 12px 0 18px; }
+.visit-tabs button { flex: 1; }
+.visit-form { display: none; padding: 16px; background: #fff; border-radius: 12px; box-shadow: 0 6px 22px rgba(12,18,20,0.06); }
+.visit-form.active { display: grid; }
+.payment-box, .thankyou { padding: 15px; background: #eef7ee; border-radius: 10px; text-align: center; }
+.thankyou { display: none; margin-top: 16px; }
+.visit-actions { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
 
 @media (max-width: 920px) {
-  .hero,
-  .shop-layout,
-  .contact-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .about,
-  .farm-photo-section {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .about img,
-  .farm-photo-section img {
-    width: 100%;
-    max-width: 460px;
-    height: auto;
-  }
-
-  .gallery {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  .cart-box {
-    position: static;
-  }
-
-  .hero-photo img {
-    height: 280px;
-  }
+  .hero, .shop-layout, .contact-grid { grid-template-columns: 1fr; }
+  .about, .farm-photo-section { flex-direction: column; align-items: flex-start; }
+  .about img, .farm-photo-section img { width: 100%; max-width: 460px; height: auto; }
+  .gallery { grid-template-columns: repeat(2, 1fr); }
+  .cart-box { position: static; }
+  .hero-photo img { height: 280px; }
 }
 
 @media (max-width: 760px) {
-  header {
-    align-items: flex-start;
-  }
-
-  .hero {
-    gap: 18px;
-    padding: 18px 0;
-  }
-
-  .hero h1 {
-    font-size: 30px;
-  }
-
-  .cards {
-    flex-direction: column;
-  }
-
-  .section-row {
-    align-items: stretch;
-  }
-
-  .search-row {
-    width: 100%;
-  }
-
-  .search-row input,
-  .search-row button {
-    width: 100%;
-  }
-
-  .product-actions {
-    align-items: stretch;
-  }
-
-  .product-actions .btn,
-  .product-actions button {
-    flex: 1;
-  }
-
-  input,
-  textarea,
-  select,
-  button,
-  .btn {
-    font-size: 16px;
-  }
+  header { align-items: flex-start; }
+  .hero { gap: 18px; padding: 18px 0; }
+  .hero h1 { font-size: 30px; }
+  .cards { flex-direction: column; }
+  .section-row { align-items: stretch; }
+  .search-row, .search-row input, .search-row button { width: 100%; }
+  .product-actions { align-items: stretch; }
+  .product-actions .btn, .product-actions button { flex: 1; }
+  input, textarea, select, button, .btn { font-size: 16px; }
 }
 
 @media (max-width: 640px) {
-  .container {
-    padding: 16px;
-  }
-
-  header {
-    top: 0;
-    margin: -4px -4px 14px;
-    border-radius: 12px;
-  }
-
-  .brand {
-    width: calc(100% - 92px);
-  }
-
-  .logo-img {
-    width: 54px;
-    height: 46px;
-  }
-
-  .brand-text {
-    font-size: 16px;
-  }
-
-  .brand-subtitle {
-    font-size: 12px;
-  }
-
-  .nav-toggle {
-    display: inline-flex;
-    margin-left: auto;
-    min-width: 78px;
-  }
-
-  .nav-wrapper {
-    width: 100%;
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
-    flex-wrap: wrap;
-  }
-
-  nav {
-    display: none;
-    flex-direction: column;
-    grid-column: 1 / -1;
-    width: 100%;
-    gap: 6px;
-    padding: 8px;
-    background: #fff;
-    border-radius: 12px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  }
-
-  nav a {
-    width: 100%;
-    justify-content: flex-start;
-    min-height: 42px;
-    padding: 10px 12px;
-    background: #f8fbf7;
-  }
-
-  nav.show {
-    display: flex;
-  }
-
-  .nav-wrapper > .btn {
-    width: 100%;
-    min-height: 44px;
-  }
-
-  .hero h1 {
-    font-size: 26px;
-  }
-
-  .products,
-  .gallery,
-  .review-form {
-    grid-template-columns: 1fr;
-  }
-
-  .gallery img {
-    height: 220px;
-  }
-
-  .search-row,
-  .search-row input {
-    width: 100%;
-  }
+  .container { padding: 16px; }
+  header { top: 0; margin: -4px -4px 14px; border-radius: 12px; }
+  .brand { width: calc(100% - 92px); }
+  .logo-img { width: 54px; height: 46px; }
+  .brand-text { font-size: 16px; }
+  .brand-subtitle { font-size: 12px; }
+  .nav-toggle { display: inline-flex; margin-left: auto; min-width: 78px; }
+  .nav-wrapper { width: 100%; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; flex-wrap: wrap; }
+  nav { display: none; flex-direction: column; grid-column: 1 / -1; width: 100%; gap: 6px; padding: 8px; background: #fff; border-radius: 12px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); }
+  nav a { width: 100%; justify-content: flex-start; min-height: 42px; padding: 10px 12px; background: #f8fbf7; }
+  nav.show { display: flex; }
+  .nav-wrapper > .btn { width: 100%; min-height: 44px; }
+  .hero h1 { font-size: 26px; }
+  .products, .gallery, .review-form { grid-template-columns: 1fr; }
+  .gallery img { height: 220px; }
+  .visit-tabs { flex-direction: column; }
 }
 
 @media (max-width: 460px) {
-  .container {
-    padding: 12px;
-  }
-
-  header {
-    padding: 10px;
-  }
-
-  .brand {
-    width: 100%;
-  }
-
-  .nav-toggle {
-    width: 100%;
-    margin-left: 0;
-  }
-
-  .nav-wrapper {
-    grid-template-columns: 1fr;
-  }
-
-  .hero h1 {
-    font-size: 24px;
-  }
-
-  .hero-photo img,
-  .about img,
-  .farm-photo-section img,
-  .gallery img {
-    max-width: 100%;
-    height: 210px;
-  }
-
-  .cart-item {
-    flex-direction: column;
-  }
-
-  .qty-actions {
-    flex-wrap: wrap;
-  }
-
-  dialog {
-    width: calc(100% - 16px);
-    padding: 14px;
-  }
-
-  .dialog-head,
-  .dialog-actions {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  pre {
-    font-size: 13px;
-  }
+  .container { padding: 12px; }
+  header { padding: 10px; }
+  .brand { width: 100%; }
+  .nav-toggle { width: 100%; margin-left: 0; }
+  .nav-wrapper { grid-template-columns: 1fr; }
+  .hero h1 { font-size: 24px; }
+  .hero-photo img, .about img, .farm-photo-section img, .gallery img { max-width: 100%; height: 210px; }
+  .cart-item { flex-direction: column; }
+  .qty-actions { flex-wrap: wrap; }
+  dialog { width: calc(100% - 16px); padding: 14px; }
+  .dialog-head, .dialog-actions { flex-direction: column; align-items: stretch; }
+  pre { font-size: 13px; }
 }
-
-
-    .visit-section { padding: 20px; margin-top: 18px; border-radius: 12px; background: linear-gradient(180deg,#fff,#f7fff7); }
-    .visit-tabs { display: flex; gap: 10px; margin: 12px 0 18px; }
-    .visit-tabs button { flex: 1; }
-    .visit-form { display: none; padding: 16px; background: #fff; border-radius: 12px; box-shadow: 0 6px 22px rgba(12,18,20,0.06); }
-    .visit-form.active { display: grid; }
-    .payment-box, .thankyou { padding: 15px; background: #eef7ee; border-radius: 10px; text-align: center; }
-    .thankyou { display: none; margin-top: 16px; }
-    .visit-actions { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
-    @media (max-width:640px){ .visit-tabs { flex-direction: column; } }
-
-</style>
+  </style>
 </head>
 <body>
   <div class="container">
@@ -842,9 +435,11 @@ pre {
                 <option value="GPay">GPay</option>
                 <option value="PhonePe">PhonePe</option>
                 <option value="Paytm">Paytm</option>
+                <option value="UPI">Any UPI App</option>
               </select>
+              <div id="productPaymentHelp" class="payment-help"></div>
               <input type="text" id="paymentId" placeholder="Online payment transaction ID" required>
-              <button type="submit">Confirm Order After Payment</button>
+              <button type="submit" id="confirmOrderBtn" disabled>Confirm Order After Payment</button>
             </form>
           </aside>
         </div>
@@ -861,7 +456,6 @@ pre {
           <img src="mushroom/12.jpg" alt="Mushroom gallery 6">
         </div>
       </section>
-
 
       <section id="visit" class="visit-section">
         <h2>Visit Pure Grow Farm</h2>
@@ -977,6 +571,15 @@ pre {
       <h2>Order Confirmed</h2>
       <button type="button" onclick="closeInvoice()">Close</button>
     </div>
+    <div class="invoice-logo-row">
+      <img src="mushroom/pgf logo.png" alt="Pure Grow Farm logo">
+      <div>
+        <strong>Pure Grow Farm</strong>
+        <div class="muted">Oyster Mushrooms - Green, Dry, Powder and Food</div>
+        <div class="muted">9067891039 | 8200145732 | puregrowfarm001@gmail.com</div>
+        <div class="muted">Makhiyala, Gujarat 362011</div>
+      </div>
+    </div>
     <p class="muted">Thank you. Your mushroom product invoice is generated.</p>
     <p class="send-note">All product order data is ready below. Tap Send Email or Send WhatsApp to send it to Pure Grow Farm.</p>
     <pre id="invoiceText"></pre>
@@ -990,57 +593,19 @@ pre {
 <script>
 const farmEmail = "puregrowfarm001@gmail.com";
 const farmWhatsapp = "919067891039";
+const farmUpiId = "sohamgajera01@okhdfcbank";
+const farmName = "Pure Grow Farm";
+const farmAddress = "Makhiyala, Gujarat 362011";
+const farmContact = "9067891039 Soham Gajera | 8200145732 Jeet Gajera";
+let productPaymentOpened = false;
 
 const products = [
-  {
-    id: 1,
-    name: "Fresh Green Oyster Mushroom",
-    price: 180,
-    unit: "1 kg",
-    image: "mushroom/Screenshot 2025-10-24 154001.png",
-    detail: "Picked fresh, chilled and delivered within 24-48 hours."
-  },
-  {
-    id: 2,
-    name: "Dried Oyster Mushroom",
-    price: 320,
-    unit: "100 g pack",
-    image: "mushroom/oyst dry.webp",
-    detail: "Slow-dried to preserve flavor and nutrients."
-  },
-  {
-    id: 3,
-    name: "Oyster Mushroom Powder",
-    price: 250,
-    unit: "100 g pack",
-    image: "mushroom/oyster powder.png",
-    detail: "Mushroom powder for soup, curry, health mix and snacks."
-  },
-  {
-    id: 4,
-    name: "Mushroom Khakhra",
-    price: 140,
-    unit: "1 pack",
-    image: "mushroom/bulk.png",
-    detail: "Crispy khakhra prepared with oyster mushroom powder."
-  },
-  {
-    id: 5,
-    name: "Mushroom Papad",
-    price: 120,
-    unit: "1 pack",
-    image: "mushroom/bulk.png",
-    detail: "Papad with mushroom nutrition and farm-made taste."
-  },
-  {
-    id: 6,
-    name: "Bulk and Wholesale",
-    price: 0,
-    unit: "Custom",
-    bulk: true,
-    image: "mushroom/bulk.png",
-    detail: "Supply for restaurants, retailers and local markets. Contact farm for custom rate and quantity."
-  }
+  { id: 1, name: "Fresh Green Oyster Mushroom", price: 180, unit: "1 kg", image: "mushroom/Screenshot 2025-10-24 154001.png", detail: "Picked fresh, chilled and delivered within 24-48 hours." },
+  { id: 2, name: "Dried Oyster Mushroom", price: 320, unit: "100 g pack", image: "mushroom/oyst dry.webp", detail: "Slow-dried to preserve flavor and nutrients." },
+  { id: 3, name: "Oyster Mushroom Powder", price: 250, unit: "100 g pack", image: "mushroom/oyster powder.png", detail: "Mushroom powder for soup, curry, health mix and snacks." },
+  { id: 4, name: "Mushroom Khakhra", price: 140, unit: "1 pack", image: "mushroom/bulk.png", detail: "Crispy khakhra prepared with oyster mushroom powder." },
+  { id: 5, name: "Mushroom Papad", price: 120, unit: "1 pack", image: "mushroom/bulk.png", detail: "Papad with mushroom nutrition and farm-made taste." },
+  { id: 6, name: "Bulk and Wholesale", price: 0, unit: "Custom", bulk: true, image: "mushroom/bulk.png", detail: "Supply for restaurants, retailers and local markets. Contact farm for custom rate and quantity." }
 ];
 
 const cart = new Map();
@@ -1090,9 +655,7 @@ function renderProducts(list = products) {
 
 function searchProducts() {
   const query = document.getElementById("productSearch").value.trim().toLowerCase();
-  const filtered = products.filter(product => {
-    return `${product.name} ${product.detail} ${product.unit}`.toLowerCase().includes(query);
-  });
+  const filtered = products.filter(product => `${product.name} ${product.detail} ${product.unit}`.toLowerCase().includes(query));
   renderProducts(filtered);
 }
 
@@ -1106,7 +669,9 @@ function addToCart(id) {
   }
   const current = cart.get(id);
   cart.set(id, { ...product, qty: current ? current.qty + 1 : 1 });
+  productPaymentOpened = false;
   renderCart();
+  updateOrderButton();
 }
 
 function minusCart(id) {
@@ -1114,12 +679,16 @@ function minusCart(id) {
   if (!item) return;
   if (item.qty === 1) cart.delete(id);
   else cart.set(id, { ...item, qty: item.qty - 1 });
+  productPaymentOpened = false;
   renderCart();
+  updateOrderButton();
 }
 
 function removeCart(id) {
   cart.delete(id);
+  productPaymentOpened = false;
   renderCart();
+  updateOrderButton();
 }
 
 function getTotals() {
@@ -1139,6 +708,7 @@ function renderCart() {
 
   if (!items.length) {
     target.innerHTML = `<p class="muted">Cart is empty.</p>`;
+    updatePaymentHelp("");
     return;
   }
 
@@ -1158,14 +728,82 @@ function renderCart() {
   `).join("");
 }
 
+function buildUpiLink(amount, paymentMode, note) {
+  const params = new URLSearchParams({
+    pa: farmUpiId,
+    pn: farmName,
+    am: String(amount),
+    cu: "INR",
+    tn: note
+  });
+
+  if (paymentMode === "GPay") return `tez://upi/pay?${params.toString()}`;
+  if (paymentMode === "PhonePe") return `phonepe://pay?${params.toString()}`;
+  if (paymentMode === "Paytm") return `paytmmp://pay?${params.toString()}`;
+  return `upi://pay?${params.toString()}`;
+}
+
+function updatePaymentHelp(message) {
+  const help = document.getElementById("productPaymentHelp");
+  help.textContent = message;
+  help.classList.toggle("show", Boolean(message));
+}
+
+function openProductPayment() {
+  const paymentMode = document.getElementById("paymentMode").value;
+  const bill = getTotals();
+
+  productPaymentOpened = false;
+  document.getElementById("paymentId").value = "";
+
+  if (!paymentMode) {
+    updatePaymentHelp("");
+    updateOrderButton();
+    return;
+  }
+
+  if (!cart.size || bill.total <= 0) {
+    alert("Please add at least one product before selecting payment mode.");
+    document.getElementById("paymentMode").value = "";
+    updatePaymentHelp("");
+    updateOrderButton();
+    return;
+  }
+
+  productPaymentOpened = true;
+  updatePaymentHelp(`${paymentMode} app is opening with bill amount Rs ${bill.total}. Complete payment, then enter transaction ID.`);
+  updateOrderButton();
+  window.location.href = buildUpiLink(bill.total, paymentMode, "Pure Grow Farm product order");
+}
+
+function updateOrderButton() {
+  const name = document.getElementById("name").value.trim();
+  const phone = document.getElementById("phone").value.trim();
+  const email = document.getElementById("email").value.trim();
+  const address = document.getElementById("address").value.trim();
+  const paymentMode = document.getElementById("paymentMode").value;
+  const paymentId = document.getElementById("paymentId").value.trim();
+  const ready = cart.size && name && /^[0-9]{10}$/.test(phone) && email && address && paymentMode && productPaymentOpened && paymentId.length >= 6;
+  document.getElementById("confirmOrderBtn").disabled = !ready;
+}
+
+document.getElementById("paymentMode").addEventListener("change", openProductPayment);
+document.getElementById("orderForm").addEventListener("input", updateOrderButton);
+
 function buildOrderInvoice(data) {
   const bill = getTotals();
-  const lines = [...cart.values()].map(item => {
-    return `${item.name} (${item.unit}) x ${item.qty} = ${item.price ? `Rs ${item.price * item.qty}` : "Custom price"}`;
-  }).join("\n");
+  const lines = [...cart.values()].map(item => `${item.name} (${item.unit}) x ${item.qty} = ${item.price ? `Rs ${item.price * item.qty}` : "Custom price"}`).join("\n");
 
   return `PURE GROW FARM - PRODUCT INVOICE
+Logo: mushroom/pgf logo.png
 Invoice No: PGF-${Date.now().toString().slice(-6)}
+
+Farm Details
+Farm Name: ${farmName}
+Address: ${farmAddress}
+Contact: ${farmContact}
+Email: ${farmEmail}
+UPI ID: ${farmUpiId}
 
 Customer
 Name: ${data.name}
@@ -1178,9 +816,9 @@ ${lines}
 
 Subtotal: Rs ${bill.subtotal}
 Delivery: Rs ${bill.delivery}
-Total: Rs ${bill.total}
+Total Paid: Rs ${bill.total}
 Payment Mode: ${data.paymentMode}
-Payment ID: ${data.paymentId}
+Transaction ID: ${data.paymentId}
 Status: Order confirmed after online payment
 
 Thank you for ordering from Pure Grow Farm.`;
@@ -1200,13 +838,24 @@ function confirmOrder(event) {
     return;
   }
 
+  if (!productPaymentOpened) {
+    alert("Please select payment mode and complete online payment first.");
+    return;
+  }
+
+  const paymentId = document.getElementById("paymentId").value.trim();
+  if (paymentId.length < 6) {
+    alert("Please enter valid transaction ID after payment.");
+    return;
+  }
+
   const data = {
     name: document.getElementById("name").value.trim(),
     phone,
     email: document.getElementById("email").value.trim(),
     address: document.getElementById("address").value.trim(),
     paymentMode: document.getElementById("paymentMode").value,
-    paymentId: document.getElementById("paymentId").value.trim()
+    paymentId
   };
 
   latestInvoice = buildOrderInvoice(data);
@@ -1254,7 +903,7 @@ function renderReviews() {
 renderProducts();
 renderCart();
 renderReviews();
-
+updateOrderButton();
 
 let latestVisitInvoice = "";
 
@@ -1265,7 +914,7 @@ function showVisitForm(formId) {
 }
 
 function openVisitUpi(amount) {
-  window.location.href = `upi://pay?pa=sohamgajera01@okhdfcbank&pn=PureGrowFarm&am=${amount}&cu=INR`;
+  window.location.href = `upi://pay?pa=${encodeURIComponent(farmUpiId)}&pn=${encodeURIComponent(farmName)}&am=${amount}&cu=INR`;
 }
 
 function showVisitConfirmation(subject, invoice) {
@@ -1281,6 +930,13 @@ function submitStudentVisit(event) {
   event.preventDefault();
   const invoice = `PURE GROW FARM - STUDENT INTERNSHIP BOOKING
 Booking No: PGF-STU-${Date.now().toString().slice(-6)}
+
+Farm Details
+Farm Name: ${farmName}
+Address: ${farmAddress}
+Contact: ${farmContact}
+Email: ${farmEmail}
+UPI ID: ${farmUpiId}
 
 Name: ${document.getElementById("sname").value.trim()}
 Phone: ${document.getElementById("sphone").value.trim()}
@@ -1302,6 +958,13 @@ function submitFarmerVisit(event) {
   const invoice = `PURE GROW FARM - FARMER TRAINING BOOKING
 Booking No: PGF-FAR-${Date.now().toString().slice(-6)}
 
+Farm Details
+Farm Name: ${farmName}
+Address: ${farmAddress}
+Contact: ${farmContact}
+Email: ${farmEmail}
+UPI ID: ${farmUpiId}
+
 Name: ${document.getElementById("fname").value.trim()}
 Phone: ${document.getElementById("fphone").value.trim()}
 Email: ${document.getElementById("femail").value.trim()}
@@ -1322,7 +985,6 @@ function downloadVisitInvoice() {
   link.click();
   URL.revokeObjectURL(url);
 }
-
 </script>
 </body>
 </html>

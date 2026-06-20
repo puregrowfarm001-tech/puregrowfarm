@@ -1,0 +1,1003 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Pure Grow Farm - Oyster Mushrooms</title>
+  <meta name="description" content="Pure Grow Farm oyster mushroom products, order booking and farm visit booking.">
+  <meta name="theme-color" content="#2b8a3e">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="apple-touch-icon" href="/app/icon-192.png">
+  <style>
+    :root {
+      --accent: #2b8a3e;
+      --accent-dark: #246e33;
+      --ink: #101820;
+      --muted: #667085;
+      --line: #e5e7eb;
+      --soft: #eef7ee;
+      --paper: #fff;
+      --danger: #b42318;
+      --warning: #fff7e6;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      font-family: Inter, ui-sans-serif, system-ui, Segoe UI, Roboto, Arial, sans-serif;
+      color: var(--ink);
+      line-height: 1.45;
+      background: linear-gradient(180deg, #f6faf5 0%, #fff 48%);
+    }
+
+    a { color: inherit; }
+    .container { width: min(1120px, 100%); margin: 0 auto; padding: 24px; }
+    .muted { color: var(--muted); }
+    .hidden { display: none !important; }
+
+    header {
+      position: sticky;
+      top: 10px;
+      z-index: 20;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      padding: 12px 14px;
+      margin-bottom: 16px;
+      background: rgba(255, 255, 255, 0.94);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      box-shadow: 0 10px 28px rgba(12, 18, 20, 0.08);
+      backdrop-filter: blur(12px);
+    }
+
+    .brand { display: flex; align-items: center; gap: 12px; min-width: 230px; }
+    .logo {
+      width: 62px;
+      height: 50px;
+      display: grid;
+      place-items: center;
+      border-radius: 12px;
+      color: var(--accent);
+      background: var(--soft);
+      font-weight: 900;
+      letter-spacing: 0;
+    }
+    .brand-text { font-weight: 850; font-size: 20px; }
+    .brand-subtitle { color: var(--muted); font-size: 13px; }
+
+    .nav-wrapper { display: flex; align-items: center; justify-content: flex-end; gap: 10px; flex: 1; }
+    nav { display: flex; gap: 6px; padding: 5px; border: 1px solid var(--line); border-radius: 999px; background: #f3f8f1; }
+    nav a {
+      min-height: 36px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 8px 12px;
+      border-radius: 999px;
+      color: #334155;
+      font-size: 14px;
+      font-weight: 750;
+      text-decoration: none;
+      white-space: nowrap;
+    }
+    nav a:hover { color: var(--accent); background: #fff; }
+
+    button, .btn {
+      min-height: 40px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      border: 0;
+      border-radius: 10px;
+      padding: 10px 14px;
+      color: #fff;
+      background: var(--accent);
+      cursor: pointer;
+      font-weight: 750;
+      text-align: center;
+      text-decoration: none;
+      white-space: nowrap;
+    }
+    button:hover, .btn:hover { background: var(--accent-dark); }
+    button:disabled { background: #98a2a8; cursor: not-allowed; }
+    .ghost { color: var(--ink); background: var(--soft); border: 1px solid var(--line); }
+    .ghost:hover { background: #dff0df; }
+    .danger { background: var(--danger); }
+    .danger:hover { background: #8f1d14; }
+    .nav-toggle { display: none; }
+
+    h1 { margin: 0 0 10px; font-size: clamp(28px, 4vw, 44px); line-height: 1.08; letter-spacing: 0; }
+    h2 { margin: 0 0 10px; font-size: 26px; letter-spacing: 0; }
+    h3 { margin: 0 0 8px; }
+    p { margin: 0 0 14px; }
+
+    .hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 410px;
+      gap: 28px;
+      align-items: center;
+      padding: 26px 0 18px;
+    }
+
+    .card, .product, .cart-box, .panel, .review-card, .hero-media {
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      box-shadow: 0 6px 22px rgba(12, 18, 20, 0.06);
+    }
+    .hero-media { padding: 18px; background: linear-gradient(135deg, #e8f5e9, #fff); }
+    .hero-photo {
+      width: 100%;
+      aspect-ratio: 4 / 3;
+      display: grid;
+      place-items: center;
+      border-radius: 10px;
+      margin-bottom: 12px;
+      color: #1d5d2c;
+      background:
+        radial-gradient(circle at 25% 30%, #fff 0 10%, transparent 11%),
+        radial-gradient(circle at 47% 42%, #f7fff8 0 12%, transparent 13%),
+        radial-gradient(circle at 68% 31%, #fff 0 10%, transparent 11%),
+        linear-gradient(135deg, #b9d9b9, #f5fbf5);
+      font-size: 44px;
+      font-weight: 900;
+    }
+    .cards, .review-list { display: flex; flex-wrap: wrap; gap: 12px; }
+    .card { flex: 1; min-width: 210px; padding: 14px; }
+    .small-title { font-size: 13px; }
+    .card-title { font-weight: 850; font-size: 18px; }
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      min-height: 30px;
+      padding: 6px 9px;
+      border-radius: 999px;
+      color: var(--accent);
+      background: var(--soft);
+      font-weight: 750;
+      font-size: 13px;
+      text-decoration: none;
+    }
+
+    .about, .farm-photo-section {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      flex-wrap: wrap;
+      padding: 22px 0;
+    }
+    .about-content { flex: 1; min-width: 280px; }
+    .farm-visual {
+      width: 320px;
+      height: 220px;
+      flex-shrink: 0;
+      display: grid;
+      place-items: center;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      color: var(--accent);
+      background: linear-gradient(135deg, #d8ead7, #fff);
+      font-weight: 850;
+    }
+
+    .section-row, .search-row, .dialog-actions, .row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+    .section-row { justify-content: space-between; margin: 22px 0 14px; }
+    .search-row input { min-width: 250px; }
+    input, textarea, select {
+      width: 100%;
+      min-height: 42px;
+      padding: 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      font: inherit;
+      background: #fff;
+    }
+
+    .shop-layout { display: grid; grid-template-columns: minmax(0, 1fr) 350px; gap: 18px; align-items: start; }
+    .products { display: grid; grid-template-columns: repeat(auto-fit, minmax(235px, 1fr)); gap: 18px; }
+    .product { display: flex; flex-direction: column; padding: 14px; min-height: 320px; }
+    .product-img {
+      width: 100%;
+      aspect-ratio: 4 / 3;
+      display: grid;
+      place-items: center;
+      border-radius: 8px;
+      margin-bottom: 12px;
+      color: #1d5d2c;
+      background: linear-gradient(135deg, #dff0df, #fff);
+      font-size: 36px;
+      font-weight: 900;
+    }
+    .product-actions { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; margin-top: auto; }
+    .cart-box { position: sticky; top: 94px; padding: 14px; }
+    .cart-items { display: grid; gap: 10px; min-height: 58px; margin: 12px 0; }
+    .cart-item, .bill-row { display: flex; justify-content: space-between; gap: 8px; }
+    .cart-item { align-items: flex-start; padding: 10px; border: 1px solid var(--line); border-radius: 10px; }
+    .qty-actions { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+    .qty-actions button { min-height: 30px; padding: 4px 9px; }
+    .bill-row { padding: 7px 0; border-top: 1px solid var(--line); }
+    .total { color: var(--accent); font-size: 18px; }
+    form { display: grid; gap: 10px; }
+
+    .notice {
+      padding: 10px 12px;
+      border-radius: 10px;
+      color: #246e33;
+      background: var(--soft);
+      font-weight: 750;
+    }
+    .warning { color: #7a4b00; background: var(--warning); }
+
+    .gallery { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+    .gallery-tile {
+      height: 220px;
+      display: grid;
+      place-items: center;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      color: var(--accent);
+      background: linear-gradient(135deg, #edf8ec, #fff);
+      font-weight: 850;
+    }
+
+    .visit-section, .reviews, .contact, .dashboard {
+      padding: 20px;
+      margin-top: 20px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: linear-gradient(180deg, #fff, #f7fff7);
+    }
+    .visit-tabs { display: flex; gap: 10px; margin: 12px 0 18px; }
+    .visit-tabs button { flex: 1; }
+    .visit-form { display: none; padding: 16px; border: 1px solid var(--line); border-radius: 12px; background: #fff; }
+    .visit-form.active { display: grid; }
+    .review-form { display: grid; grid-template-columns: 1fr 130px minmax(220px, 1fr) auto; gap: 10px; margin-bottom: 14px; }
+    .review-card { flex: 1; min-width: 220px; padding: 14px; }
+    .contact-grid { display: grid; grid-template-columns: 1fr 320px; gap: 16px; align-items: start; }
+    .panel { padding: 14px; }
+
+    .dashboard-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 14px; }
+    .data-list { display: grid; gap: 10px; max-height: 380px; overflow: auto; }
+    .data-item { padding: 12px; border: 1px solid var(--line); border-radius: 10px; background: #fff; }
+    .data-item strong { display: block; }
+    .admin-actions { display: flex; flex-wrap: wrap; gap: 10px; margin: 12px 0; }
+
+    dialog { width: min(780px, calc(100% - 28px)); border: 0; border-radius: 12px; padding: 20px; }
+    dialog::backdrop { background: rgba(0, 0, 0, 0.5); }
+    .dialog-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    pre {
+      max-height: 330px;
+      overflow: auto;
+      padding: 12px;
+      color: #eef8ef;
+      background: #101711;
+      border-radius: 8px;
+      white-space: pre-wrap;
+      font-size: 13px;
+    }
+
+    footer { padding: 28px 0; color: var(--muted); font-size: 14px; text-align: center; }
+
+    @media (max-width: 930px) {
+      .hero, .shop-layout, .contact-grid, .dashboard-grid { grid-template-columns: 1fr; }
+      .cart-box { position: static; }
+      .farm-visual { width: 100%; max-width: 460px; }
+      .gallery { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    @media (max-width: 720px) {
+      .container { padding: 14px; }
+      header { align-items: flex-start; flex-wrap: wrap; top: 0; border-radius: 12px; }
+      .brand { width: calc(100% - 90px); min-width: 0; }
+      .brand-text { font-size: 17px; }
+      .nav-toggle { display: inline-flex; margin-left: auto; }
+      .nav-wrapper { width: 100%; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+      nav { display: none; grid-column: 1 / -1; flex-direction: column; width: 100%; border-radius: 12px; background: #fff; }
+      nav.show { display: flex; }
+      nav a { justify-content: flex-start; border-radius: 9px; background: #f8fbf7; }
+      .nav-wrapper > .btn, .nav-wrapper > button { width: 100%; }
+      .section-row, .search-row, .search-row input, .search-row button, .visit-tabs, .dialog-actions { width: 100%; }
+      .visit-tabs, .dialog-actions { flex-direction: column; align-items: stretch; }
+      .products, .gallery, .review-form { grid-template-columns: 1fr; }
+      .gallery-tile { height: 190px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="brand">
+        <div class="logo">PGF</div>
+        <div>
+          <div class="brand-text">Pure Grow Farm</div>
+          <div class="brand-subtitle">Oyster Mushrooms - fresh, dry, powder and food</div>
+        </div>
+      </div>
+
+      <div class="nav-wrapper">
+        <button class="nav-toggle ghost" type="button" id="navToggle">Menu</button>
+        <nav id="mainNav">
+          <a href="#about">About</a>
+          <a href="#products">Products</a>
+          <a href="#visit">Visit</a>
+          <a href="#contact">Contact</a>
+        </nav>
+        <a class="btn ghost" href="/download-app.html">Download App</a>
+        <a class="btn" href="#visit">Visit Now</a>
+        <a class="btn" href="#products">Order Now</a>
+      </div>
+    </header>
+
+    <main>
+      <section class="hero">
+        <div>
+          <h1>Fresh and Premium Oyster Mushrooms</h1>
+          <p>Pure Grow Farm produces fresh oyster mushrooms, dried mushroom, mushroom powder, khakhra and papad with hygienic packing and direct customer orders.</p>
+          <div class="cards">
+            <div class="card">
+              <div class="muted small-title">Products</div>
+              <div class="card-title">Green, Dry, Powder, Khakhra and Papad</div>
+            </div>
+            <div class="card">
+              <div class="muted small-title">Contact</div>
+              <div class="card-title">9067891039 Soham Gajera and 8200145732 Jeet Gajera</div>
+            </div>
+          </div>
+          <p style="margin-top:16px">
+            <a class="pill" href="mailto:puregrowfarm001@gmail.com">puregrowfarm001@gmail.com</a>
+            <a class="pill" href="https://www.instagram.com/_pure_grow_mushroom_farm_?igsh=bnlpMXdhaGtqMWhq" target="_blank" rel="noreferrer">Instagram</a>
+          </p>
+        </div>
+        <aside class="hero-media">
+          <div class="hero-photo">Oyster</div>
+          <div class="card-title">Organic Oyster Mushrooms</div>
+          <div class="muted small-title">Fresh harvest - packed and delivered</div>
+        </aside>
+      </section>
+
+      <section id="about" class="about">
+        <div class="about-content">
+          <h2>About Pure Grow Farm</h2>
+          <p class="muted">Pure Grow Farm is a family-run mushroom farm focused on sustainable oyster mushroom cultivation, farmer training and student internship visits.</p>
+          <ul class="muted">
+            <li>Organic substrate and eco-friendly growing methods</li>
+            <li>Fresh mushroom, dry mushroom and value-added products</li>
+            <li>Order and visit confirm button dabte hi Excel CSV download hoti hai</li>
+          </ul>
+        </div>
+        <div class="farm-visual">Farm Photo</div>
+      </section>
+
+      <section id="products">
+        <div class="section-row">
+          <div>
+            <h2>Our Products</h2>
+            <p class="muted">Add products to cart, pay online and confirm order. Confirm karte hi Excel file download hogi.</p>
+          </div>
+          <div class="search-row">
+            <input id="productSearch" type="search" placeholder="Search product">
+            <button type="button" id="searchBtn">Search</button>
+          </div>
+        </div>
+
+        <div class="shop-layout">
+          <div class="products" id="productsList"></div>
+          <aside class="cart-box">
+            <h2>Cart</h2>
+            <div id="cartItems" class="cart-items"></div>
+            <div class="bill-row"><span>Subtotal</span><strong id="subtotal">Rs 0</strong></div>
+            <div class="bill-row"><span>Delivery</span><strong id="delivery">Rs 0</strong></div>
+            <div class="bill-row total"><span>Total</span><strong id="total">Rs 0</strong></div>
+
+            <form id="orderForm">
+              <input type="text" id="name" placeholder="Your name" required>
+              <input type="tel" id="phone" placeholder="Phone number" pattern="[0-9]{10}" required>
+              <input type="email" id="email" placeholder="Email" required>
+              <input type="text" id="address" placeholder="Address" required>
+              <select id="paymentMode" required>
+                <option value="">Select online payment mode</option>
+                <option value="GPay">GPay</option>
+                <option value="PhonePe">PhonePe</option>
+                <option value="Paytm">Paytm</option>
+                <option value="UPI">Any UPI App</option>
+              </select>
+              <div id="productPaymentHelp" class="notice hidden"></div>
+              <input type="text" id="paymentId" placeholder="Online payment transaction ID" required>
+              <button type="submit" id="confirmOrderBtn" disabled>Confirm Order & Save Excel</button>
+            </form>
+          </aside>
+        </div>
+      </section>
+
+      <section id="gallery">
+        <h2>Gallery</h2>
+        <div class="gallery">
+          <div class="gallery-tile">Growing Room</div>
+          <div class="gallery-tile">Fresh Harvest</div>
+          <div class="gallery-tile">Dry Mushroom</div>
+          <div class="gallery-tile">Powder</div>
+          <div class="gallery-tile">Khakhra</div>
+          <div class="gallery-tile">Papad</div>
+        </div>
+      </section>
+
+      <section id="visit" class="visit-section">
+        <h2>Visit Pure Grow Farm</h2>
+        <p class="muted">Student internship and farmer training confirm karte hi visit Excel file download hogi.</p>
+
+        <div class="visit-tabs">
+          <button type="button" data-visit-tab="studentForm">Student Internship</button>
+          <button type="button" data-visit-tab="farmerForm">Farmer Training</button>
+        </div>
+
+        <form id="studentForm" class="visit-form active">
+          <input type="text" id="sname" placeholder="Student Name" required>
+          <input type="tel" id="sphone" placeholder="Phone Number" pattern="[0-9]{10}" required>
+          <input type="email" id="semail" placeholder="Email" required>
+          <input type="text" id="senroll" placeholder="Enrollment Number" required>
+          <input type="text" id="scollege" placeholder="College Name" required>
+          <input type="text" id="scourse" placeholder="Course Name" required>
+          <label>Internship Start Date <input type="date" id="sstart" required></label>
+          <label>Internship End Date <input type="date" id="send" required></label>
+          <select id="spaymentMode" required>
+            <option value="">Select online payment mode</option>
+            <option value="GPay">GPay</option>
+            <option value="PhonePe">PhonePe</option>
+            <option value="Paytm">Paytm</option>
+            <option value="UPI">Any UPI App</option>
+          </select>
+          <input type="text" id="spayment" placeholder="Payment Transaction ID" required>
+          <div class="notice">
+            Student Internship Fee Rs 100 | UPI ID: sohamgajera01@okhdfcbank
+            <button type="button" data-upi="100" style="margin-top:8px">Pay Online</button>
+          </div>
+          <button type="submit">Confirm Student Visit & Save Excel</button>
+        </form>
+
+        <form id="farmerForm" class="visit-form">
+          <input type="text" id="fname" placeholder="Farmer Name" required>
+          <input type="tel" id="fphone" placeholder="Phone Number" pattern="[0-9]{10}" required>
+          <input type="email" id="femail" placeholder="Email" required>
+          <label>Training Date <input type="date" id="fdate" required></label>
+          <select id="fpaymentMode" required>
+            <option value="">Select online payment mode</option>
+            <option value="GPay">GPay</option>
+            <option value="PhonePe">PhonePe</option>
+            <option value="Paytm">Paytm</option>
+            <option value="UPI">Any UPI App</option>
+          </select>
+          <input type="text" id="fpayment" placeholder="Payment Transaction ID" required>
+          <div class="notice">
+            Farmer Training Fee Rs 699 | UPI ID: sohamgajera01@okhdfcbank
+            <button type="button" data-upi="699" style="margin-top:8px">Pay Online</button>
+          </div>
+          <button type="submit">Confirm Farmer Training & Save Excel</button>
+        </form>
+      </section>
+
+      <section id="reviews" class="reviews">
+        <h2>Customer Reviews</h2>
+        <form class="review-form" id="reviewForm">
+          <input id="reviewName" type="text" placeholder="Your name" required>
+          <select id="reviewRating" required>
+            <option value="5">5 Star</option>
+            <option value="4">4 Star</option>
+            <option value="3">3 Star</option>
+            <option value="2">2 Star</option>
+            <option value="1">1 Star</option>
+          </select>
+          <textarea id="reviewText" rows="3" placeholder="Write review" required></textarea>
+          <button type="submit">Add Review</button>
+        </form>
+        <div id="reviewList" class="review-list"></div>
+      </section>
+
+      <section id="contact" class="contact">
+        <h2>Contact</h2>
+        <div class="contact-grid">
+          <div>
+            <p class="muted">Call: <a href="tel:+919067891039"><strong>9067891039</strong></a>, <a href="tel:+918200145732"><strong>8200145732</strong></a></p>
+            <p class="muted">Email: <a href="mailto:puregrowfarm001@gmail.com">puregrowfarm001@gmail.com</a></p>
+            <p class="muted">Instagram: <a href="https://www.instagram.com/_pure_grow_mushroom_farm_?igsh=bnlpMXdhaGtqMWhq" target="_blank" rel="noreferrer">@_pure_grow_mushroom_farm_</a></p>
+            <p class="muted">Youtube: <a href="https://www.youtube.com/channel/UC2T-bDe5wEblhgQOYY8RAzQ" target="_blank" rel="noreferrer">Pure Grow Farm</a></p>
+            <p class="muted">Address: Makhiyala, Gujarat 362011</p>
+          </div>
+          <aside class="panel">
+            <h3>Fast Facts</h3>
+            <p class="muted">Delivery areas: local markets and focused delivery zones. For bulk inquiries, please call.</p>
+            <p><strong>Working hours</strong></p>
+            <p class="muted">Mon-Sat: 8:00 AM - 6:00 PM</p>
+          </aside>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <div>Pure Grow Farm - Oyster Mushrooms</div>
+      <div>Phone: 9067891039 | 8200145732 - Email: puregrowfarm001@gmail.com</div>
+    </footer>
+  </div>
+
+  <dialog id="invoiceDialog">
+    <div class="dialog-head">
+      <h2>Data Saved</h2>
+      <button type="button" class="ghost" id="invoiceCloseBtn">Close</button>
+    </div>
+    <p class="notice">Data browser me save ho gaya aur Excel CSV file download ho gayi. Neeche invoice copy bhi hai.</p>
+    <pre id="invoiceText"></pre>
+    <div class="dialog-actions">
+      <button type="button" id="downloadInvoiceBtn">Download Invoice Text</button>
+      <a class="btn" id="emailInvoice" href="#">Send Email</a>
+      <a class="btn" id="whatsappInvoice" href="#" target="_blank" rel="noreferrer">Send WhatsApp</a>
+    </div>
+  </dialog>
+
+  <script>
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register("/sw.js");
+      });
+    }
+
+    const farmEmail = "puregrowfarm001@gmail.com";
+    const farmWhatsapp = "919067891039";
+    const farmUpiId = "sohamgajera01@okhdfcbank";
+    const farmName = "Pure Grow Farm";
+    const farmAddress = "Makhiyala, Gujarat 362011";
+    const farmContact = "9067891039 Soham Gajera | 8200145732 Jeet Gajera";
+
+    const products = [
+      { id: 1, name: "Fresh Green Oyster Mushroom", price: 180, unit: "1 kg", icon: "Fresh", detail: "Picked fresh, chilled and delivered within 24-48 hours." },
+      { id: 2, name: "Dried Oyster Mushroom", price: 320, unit: "100 g pack", icon: "Dry", detail: "Slow-dried to preserve flavor and nutrients." },
+      { id: 3, name: "Oyster Mushroom Powder", price: 250, unit: "100 g pack", icon: "Powder", detail: "Mushroom powder for soup, curry, health mix and snacks." },
+      { id: 4, name: "Mushroom Khakhra", price: 140, unit: "1 pack", icon: "Snack", detail: "Crispy khakhra prepared with oyster mushroom powder." },
+      { id: 5, name: "Mushroom Papad", price: 120, unit: "1 pack", icon: "Papad", detail: "Papad with mushroom nutrition and farm-made taste." },
+      { id: 6, name: "Bulk and Wholesale", price: 0, unit: "Custom", bulk: true, icon: "Bulk", detail: "Supply for restaurants, retailers and local markets." }
+    ];
+
+    const cart = new Map();
+    const reviews = [
+      { name: "Mehul", rating: 5, text: "Fresh mushroom quality is very good." },
+      { name: "Kinjal", rating: 4, text: "Farm visit and training were useful." }
+    ];
+
+    let latestInvoice = "";
+    let productPaymentOpened = false;
+
+    const $ = (id) => document.getElementById(id);
+    const money = (amount) => amount ? `Rs ${amount}` : "Custom";
+    const escapeText = (value) => String(value ?? "").replace(/[&<>"']/g, char => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" }[char]));
+
+    function getSaved(key) {
+      try {
+        return JSON.parse(localStorage.getItem(key) || "[]");
+      } catch {
+        return [];
+      }
+    }
+
+    function setSaved(key, rows) {
+      localStorage.setItem(key, JSON.stringify(rows));
+    }
+
+    function addSaved(key, record) {
+      const rows = getSaved(key);
+      rows.unshift(record);
+      setSaved(key, rows);
+      return rows;
+    }
+
+    function csvEscape(value) {
+      const text = String(value ?? "");
+      return `"${text.replace(/"/g, '""')}"`;
+    }
+
+    function downloadText(text, filename, type) {
+      const blob = new Blob([text], { type });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    }
+
+    function ordersToCsv(orders) {
+      const rows = [["Date", "Invoice", "Customer", "Phone", "Email", "Address", "Items", "Subtotal", "Delivery", "Total", "Payment Mode", "Transaction ID", "Status"]];
+      orders.forEach(order => rows.push([
+        order.date,
+        order.invoiceNo,
+        order.customer.name,
+        order.customer.phone,
+        order.customer.email,
+        order.customer.address,
+        order.items.map(item => `${item.name} x ${item.qty}`).join("; "),
+        order.totals.subtotal,
+        order.totals.delivery,
+        order.totals.total,
+        order.payment.mode,
+        order.payment.transactionId,
+        order.status
+      ]));
+      return rows.map(row => row.map(csvEscape).join(",")).join("\n");
+    }
+
+    function visitsToCsv(visits) {
+      const rows = [["Date", "Booking", "Type", "Name", "Phone", "Email", "Amount", "Payment Mode", "Payment ID", "Enrollment", "College", "Course", "Start Date", "End Date", "Training Date", "Status"]];
+      visits.forEach(visit => rows.push([
+        visit.date,
+        visit.bookingNo,
+        visit.visitType,
+        visit.name,
+        visit.phone,
+        visit.email,
+        visit.amount,
+        visit.paymentMode,
+        visit.paymentId,
+        visit.enrollment || "",
+        visit.college || "",
+        visit.course || "",
+        visit.startDate || "",
+        visit.endDate || "",
+        visit.trainingDate || "",
+        visit.status
+      ]));
+      return rows.map(row => row.map(csvEscape).join(",")).join("\n");
+    }
+
+    function downloadOrdersExcel() {
+      downloadText(ordersToCsv(getSaved("pgfOrders")), "pure-grow-farm-orders.csv", "text/csv;charset=utf-8");
+    }
+
+    function downloadVisitsExcel() {
+      downloadText(visitsToCsv(getSaved("pgfVisits")), "pure-grow-farm-visits.csv", "text/csv;charset=utf-8");
+    }
+
+    function renderProducts(list = products) {
+      const target = $("productsList");
+      if (!list.length) {
+        target.innerHTML = `<p class="muted">No product found.</p>`;
+        return;
+      }
+      target.innerHTML = list.map(product => `
+        <article class="product">
+          <div class="product-img">${escapeText(product.icon)}</div>
+          <h3>${escapeText(product.name)}</h3>
+          <p class="muted">${escapeText(product.detail)}</p>
+          <div class="product-actions">
+            <div class="pill">${money(product.price)} / ${escapeText(product.unit)}</div>
+            ${product.bulk
+              ? `<a class="btn" href="https://wa.me/${farmWhatsapp}?text=${encodeURIComponent("Hello Pure Grow Farm, I want Bulk and Wholesale oyster mushroom order details.")}" target="_blank" rel="noreferrer">WhatsApp</a>`
+              : `<button type="button" data-add-cart="${product.id}">Add Cart</button>`}
+          </div>
+        </article>
+      `).join("");
+    }
+
+    function searchProducts() {
+      const queryText = $("productSearch").value.trim().toLowerCase();
+      renderProducts(products.filter(product => `${product.name} ${product.detail} ${product.unit}`.toLowerCase().includes(queryText)));
+    }
+
+    function addToCart(id) {
+      const product = products.find(item => item.id === id);
+      if (!product || product.bulk) return;
+      const current = cart.get(id);
+      cart.set(id, { ...product, qty: current ? current.qty + 1 : 1 });
+      productPaymentOpened = false;
+      renderCart();
+      updateOrderButton();
+    }
+
+    function minusCart(id) {
+      const item = cart.get(id);
+      if (!item) return;
+      if (item.qty === 1) cart.delete(id);
+      else cart.set(id, { ...item, qty: item.qty - 1 });
+      productPaymentOpened = false;
+      renderCart();
+      updateOrderButton();
+    }
+
+    function removeCart(id) {
+      cart.delete(id);
+      productPaymentOpened = false;
+      renderCart();
+      updateOrderButton();
+    }
+
+    function getTotals() {
+      const subtotal = [...cart.values()].reduce((sum, item) => sum + item.price * item.qty, 0);
+      const delivery = subtotal > 0 ? 50 : 0;
+      return { subtotal, delivery, total: subtotal + delivery };
+    }
+
+    function renderCart() {
+      const items = [...cart.values()];
+      const bill = getTotals();
+      $("subtotal").textContent = `Rs ${bill.subtotal}`;
+      $("delivery").textContent = `Rs ${bill.delivery}`;
+      $("total").textContent = `Rs ${bill.total}`;
+      if (!items.length) {
+        $("cartItems").innerHTML = `<p class="muted">Cart is empty.</p>`;
+        updatePaymentHelp("");
+        return;
+      }
+      $("cartItems").innerHTML = items.map(item => `
+        <div class="cart-item">
+          <div>
+            <strong>${escapeText(item.name)}</strong>
+            <div class="muted">${money(item.price)} x ${item.qty}</div>
+            <div class="qty-actions">
+              <button type="button" data-minus-cart="${item.id}">-</button>
+              <button type="button" data-add-cart="${item.id}">+</button>
+              <button class="danger" type="button" data-remove-cart="${item.id}">Remove</button>
+            </div>
+          </div>
+          <strong>Rs ${item.price * item.qty}</strong>
+        </div>
+      `).join("");
+    }
+
+    function buildUpiLink(amount, paymentMode, note) {
+      const params = new URLSearchParams({ pa: farmUpiId, pn: farmName, am: String(amount), cu: "INR", tn: note });
+      if (paymentMode === "GPay") return `tez://upi/pay?${params.toString()}`;
+      if (paymentMode === "PhonePe") return `phonepe://pay?${params.toString()}`;
+      if (paymentMode === "Paytm") return `paytmmp://pay?${params.toString()}`;
+      return `upi://pay?${params.toString()}`;
+    }
+
+    function updatePaymentHelp(message) {
+      $("productPaymentHelp").textContent = message;
+      $("productPaymentHelp").classList.toggle("hidden", !message);
+    }
+
+    function openProductPayment() {
+      const paymentMode = $("paymentMode").value;
+      const bill = getTotals();
+      productPaymentOpened = false;
+      $("paymentId").value = "";
+      if (!paymentMode) {
+        updatePaymentHelp("");
+        updateOrderButton();
+        return;
+      }
+      if (!cart.size || bill.total <= 0) {
+        alert("Please add at least one product before selecting payment mode.");
+        $("paymentMode").value = "";
+        updatePaymentHelp("");
+        updateOrderButton();
+        return;
+      }
+      productPaymentOpened = true;
+      updatePaymentHelp(`${paymentMode} app is opening with bill amount Rs ${bill.total}. Complete payment, then enter transaction ID.`);
+      updateOrderButton();
+      window.location.href = buildUpiLink(bill.total, paymentMode, "Pure Grow Farm product order");
+    }
+
+    function updateOrderButton() {
+      const ready = cart.size &&
+        $("name").value.trim() &&
+        /^[0-9]{10}$/.test($("phone").value.trim()) &&
+        $("email").value.trim() &&
+        $("address").value.trim() &&
+        $("paymentMode").value &&
+        productPaymentOpened &&
+        $("paymentId").value.trim().length >= 6;
+      $("confirmOrderBtn").disabled = !ready;
+    }
+
+    function buildOrderInvoice(data) {
+      const lines = data.items.map(item => `${item.name} (${item.unit}) x ${item.qty} = Rs ${item.amount}`).join("\n");
+      return `PURE GROW FARM - PRODUCT INVOICE
+Invoice No: ${data.invoiceNo}
+Date: ${data.date}
+
+Farm Details
+Farm Name: ${farmName}
+Address: ${farmAddress}
+Contact: ${farmContact}
+Email: ${farmEmail}
+UPI ID: ${farmUpiId}
+
+Customer
+Name: ${data.customer.name}
+Phone: ${data.customer.phone}
+Email: ${data.customer.email}
+Address: ${data.customer.address}
+
+Products
+${lines}
+
+Subtotal: Rs ${data.totals.subtotal}
+Delivery: Rs ${data.totals.delivery}
+Total Paid: Rs ${data.totals.total}
+Payment Mode: ${data.payment.mode}
+Transaction ID: ${data.payment.transactionId}
+Status: Order confirmed after online payment`;
+    }
+
+    function showInvoice(invoice, subject) {
+      latestInvoice = invoice;
+      $("invoiceText").textContent = invoice;
+      $("emailInvoice").href = `mailto:${farmEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(invoice)}`;
+      $("whatsappInvoice").href = `https://wa.me/${farmWhatsapp}?text=${encodeURIComponent(invoice)}`;
+      $("invoiceDialog").showModal();
+    }
+
+    function confirmOrder(event) {
+      event.preventDefault();
+      const phone = $("phone").value.trim();
+      if (!/^[0-9]{10}$/.test(phone)) {
+        alert("Please enter valid 10-digit phone number.");
+        return;
+      }
+      if (!cart.size) {
+        alert("Please add at least one product.");
+        return;
+      }
+      const data = {
+        date: new Date().toLocaleString("en-IN"),
+        invoiceNo: `PGF-${Date.now().toString().slice(-6)}`,
+        customer: {
+          name: $("name").value.trim(),
+          phone,
+          email: $("email").value.trim(),
+          address: $("address").value.trim()
+        },
+        items: [...cart.values()].map(item => ({ id: item.id, name: item.name, unit: item.unit, price: item.price, qty: item.qty, amount: item.price * item.qty })),
+        totals: getTotals(),
+        payment: { mode: $("paymentMode").value, transactionId: $("paymentId").value.trim() },
+        status: "Confirmed"
+      };
+      const allOrders = addSaved("pgfOrders", data);
+      downloadText(ordersToCsv(allOrders), "pure-grow-farm-orders.csv", "text/csv;charset=utf-8");
+      showInvoice(buildOrderInvoice(data), "Pure Grow Farm Product Invoice");
+      cart.clear();
+      productPaymentOpened = false;
+      $("orderForm").reset();
+      renderCart();
+      updateOrderButton();
+      renderSavedData();
+    }
+
+    function showVisitForm(formId) {
+      $("studentForm").classList.remove("active");
+      $("farmerForm").classList.remove("active");
+      $(formId).classList.add("active");
+    }
+
+    function openVisitUpi(amount) {
+      window.location.href = buildUpiLink(amount, "UPI", "Pure Grow Farm visit booking");
+    }
+
+    function buildVisitInvoice(data) {
+      return `PURE GROW FARM - ${data.visitType.toUpperCase()} BOOKING
+Booking No: ${data.bookingNo}
+Date: ${data.date}
+
+Farm Details
+Farm Name: ${farmName}
+Address: ${farmAddress}
+Contact: ${farmContact}
+Email: ${farmEmail}
+UPI ID: ${farmUpiId}
+
+Name: ${data.name}
+Phone: ${data.phone}
+Email: ${data.email}
+${data.enrollment ? `Enrollment No: ${data.enrollment}\nCollege Name: ${data.college}\nCourse Name: ${data.course}\nStart Date: ${data.startDate}\nEnd Date: ${data.endDate}` : `Training Date: ${data.trainingDate}`}
+Amount: Rs ${data.amount}
+Payment Mode: ${data.paymentMode}
+Payment ID: ${data.paymentId}
+Status: Visit confirmed after online payment`;
+    }
+
+    function saveVisit(data, form) {
+      const record = {
+        ...data,
+        date: new Date().toLocaleString("en-IN"),
+        status: "Confirmed"
+      };
+      const allVisits = addSaved("pgfVisits", record);
+      downloadText(visitsToCsv(allVisits), "pure-grow-farm-visits.csv", "text/csv;charset=utf-8");
+      showInvoice(buildVisitInvoice(record), `Pure Grow Farm ${record.visitType} Booking`);
+      form.reset();
+      renderSavedData();
+    }
+
+    function renderSavedData() {
+      return true;
+    }
+
+    function renderReviews() {
+      $("reviewList").innerHTML = reviews.map(review => `
+        <article class="review-card">
+          <strong>${escapeText(review.name)}</strong>
+          <p class="muted">Rating: ${review.rating}/5</p>
+          <p>${escapeText(review.text)}</p>
+        </article>
+      `).join("");
+    }
+
+    $("navToggle").addEventListener("click", () => $("mainNav").classList.toggle("show"));
+    document.querySelectorAll("nav a").forEach(link => link.addEventListener("click", () => $("mainNav").classList.remove("show")));
+    $("productsList").addEventListener("click", event => {
+      const addId = event.target.closest("[data-add-cart]")?.dataset.addCart;
+      if (addId) addToCart(Number(addId));
+    });
+    $("cartItems").addEventListener("click", event => {
+      const addId = event.target.closest("[data-add-cart]")?.dataset.addCart;
+      const minusId = event.target.closest("[data-minus-cart]")?.dataset.minusCart;
+      const removeId = event.target.closest("[data-remove-cart]")?.dataset.removeCart;
+      if (addId) addToCart(Number(addId));
+      if (minusId) minusCart(Number(minusId));
+      if (removeId) removeCart(Number(removeId));
+    });
+    $("productSearch").addEventListener("input", searchProducts);
+    $("searchBtn").addEventListener("click", searchProducts);
+    $("paymentMode").addEventListener("change", openProductPayment);
+    $("orderForm").addEventListener("input", updateOrderButton);
+    $("orderForm").addEventListener("submit", confirmOrder);
+
+    document.querySelectorAll("[data-visit-tab]").forEach(button => button.addEventListener("click", () => showVisitForm(button.dataset.visitTab)));
+    document.querySelectorAll("[data-upi]").forEach(button => button.addEventListener("click", () => openVisitUpi(button.dataset.upi)));
+
+    $("studentForm").addEventListener("submit", event => {
+      event.preventDefault();
+      saveVisit({
+        visitType: "student internship",
+        bookingNo: `PGF-STU-${Date.now().toString().slice(-6)}`,
+        name: $("sname").value.trim(),
+        phone: $("sphone").value.trim(),
+        email: $("semail").value.trim(),
+        enrollment: $("senroll").value.trim(),
+        college: $("scollege").value.trim(),
+        course: $("scourse").value.trim(),
+        startDate: $("sstart").value,
+        endDate: $("send").value,
+        amount: 100,
+        paymentMode: $("spaymentMode").value,
+        paymentId: $("spayment").value.trim()
+      }, event.target);
+    });
+
+    $("farmerForm").addEventListener("submit", event => {
+      event.preventDefault();
+      saveVisit({
+        visitType: "farmer training",
+        bookingNo: `PGF-FAR-${Date.now().toString().slice(-6)}`,
+        name: $("fname").value.trim(),
+        phone: $("fphone").value.trim(),
+        email: $("femail").value.trim(),
+        trainingDate: $("fdate").value,
+        amount: 699,
+        paymentMode: $("fpaymentMode").value,
+        paymentId: $("fpayment").value.trim()
+      }, event.target);
+    });
+
+    $("reviewForm").addEventListener("submit", event => {
+      event.preventDefault();
+      reviews.unshift({ name: $("reviewName").value.trim(), rating: Number($("reviewRating").value), text: $("reviewText").value.trim() });
+      event.target.reset();
+      renderReviews();
+    });
+
+    $("downloadInvoiceBtn").addEventListener("click", () => downloadText(latestInvoice, "pure-grow-farm-invoice.txt", "text/plain;charset=utf-8"));
+    $("invoiceCloseBtn").addEventListener("click", () => $("invoiceDialog").close());
+
+    renderProducts();
+    renderCart();
+    renderReviews();
+    renderSavedData();
+    updateOrderButton();
+  </script>
+</body>
+</html>

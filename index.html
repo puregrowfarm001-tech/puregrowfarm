@@ -65,6 +65,13 @@
       font-weight: 900;
       letter-spacing: 0;
     }
+    .logo-img {
+      width: 62px;
+      height: 50px;
+      object-fit: contain;
+      border-radius: 12px;
+      background: var(--soft);
+    }
     .brand-text { font-weight: 850; font-size: 20px; }
     .brand-subtitle { color: var(--muted); font-size: 13px; }
 
@@ -133,18 +140,10 @@
     .hero-photo {
       width: 100%;
       aspect-ratio: 4 / 3;
-      display: grid;
-      place-items: center;
+      display: block;
+      object-fit: cover;
       border-radius: 10px;
       margin-bottom: 12px;
-      color: #1d5d2c;
-      background:
-        radial-gradient(circle at 25% 30%, #fff 0 10%, transparent 11%),
-        radial-gradient(circle at 47% 42%, #f7fff8 0 12%, transparent 13%),
-        radial-gradient(circle at 68% 31%, #fff 0 10%, transparent 11%),
-        linear-gradient(135deg, #b9d9b9, #f5fbf5);
-      font-size: 44px;
-      font-weight: 900;
     }
     .cards, .review-list { display: flex; flex-wrap: wrap; gap: 12px; }
     .card { flex: 1; min-width: 210px; padding: 14px; }
@@ -175,13 +174,10 @@
       width: 320px;
       height: 220px;
       flex-shrink: 0;
-      display: grid;
-      place-items: center;
+      display: block;
+      object-fit: cover;
       border: 1px solid var(--line);
       border-radius: 12px;
-      color: var(--accent);
-      background: linear-gradient(135deg, #d8ead7, #fff);
-      font-weight: 850;
     }
 
     .section-row, .search-row, .dialog-actions, .row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
@@ -203,14 +199,10 @@
     .product-img {
       width: 100%;
       aspect-ratio: 4 / 3;
-      display: grid;
-      place-items: center;
+      display: block;
+      object-fit: cover;
       border-radius: 8px;
       margin-bottom: 12px;
-      color: #1d5d2c;
-      background: linear-gradient(135deg, #dff0df, #fff);
-      font-size: 36px;
-      font-weight: 900;
     }
     .product-actions { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; margin-top: auto; }
     .cart-box { position: sticky; top: 94px; padding: 14px; }
@@ -235,13 +227,11 @@
     .gallery { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
     .gallery-tile {
       height: 220px;
-      display: grid;
-      place-items: center;
       border: 1px solid var(--line);
       border-radius: 8px;
-      color: var(--accent);
-      background: linear-gradient(135deg, #edf8ec, #fff);
-      font-weight: 850;
+      object-fit: cover;
+      width: 100%;
+      display: block;
     }
 
     .visit-section, .reviews, .contact, .dashboard {
@@ -293,6 +283,7 @@
       .container { padding: 14px; }
       header { align-items: flex-start; flex-wrap: wrap; top: 0; border-radius: 12px; }
       .brand { width: calc(100% - 90px); min-width: 0; }
+      .logo-img { width: 54px; height: 46px; }
       .brand-text { font-size: 17px; }
       .nav-toggle { display: inline-flex; margin-left: auto; }
       .nav-wrapper { width: 100%; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
@@ -311,7 +302,7 @@
   <div class="container">
     <header>
       <div class="brand">
-        <div class="logo">PGF</div>
+        <img class="logo-img" src="mushroom/pgf logo.png" alt="Pure Grow Farm logo">
         <div>
           <div class="brand-text">Pure Grow Farm</div>
           <div class="brand-subtitle">Oyster Mushrooms - fresh, dry, powder and food</div>
@@ -353,7 +344,7 @@
           </p>
         </div>
         <aside class="hero-media">
-          <div class="hero-photo">Oyster</div>
+          <img class="hero-photo" src="mushroom/home.png" alt="Fresh oyster mushrooms">
           <div class="card-title">Organic Oyster Mushrooms</div>
           <div class="muted small-title">Fresh harvest - packed and delivered</div>
         </aside>
@@ -369,7 +360,7 @@
             <li>Order and visit confirm button dabte hi Excel CSV download hoti hai</li>
           </ul>
         </div>
-        <div class="farm-visual">Farm Photo</div>
+        <img class="farm-visual" src="mushroom/farm.jpeg" alt="Pure Grow Farm growing room">
       </section>
 
       <section id="products">
@@ -416,12 +407,12 @@
       <section id="gallery">
         <h2>Gallery</h2>
         <div class="gallery">
-          <div class="gallery-tile">Growing Room</div>
-          <div class="gallery-tile">Fresh Harvest</div>
-          <div class="gallery-tile">Dry Mushroom</div>
-          <div class="gallery-tile">Powder</div>
-          <div class="gallery-tile">Khakhra</div>
-          <div class="gallery-tile">Papad</div>
+          <img class="gallery-tile" src="mushroom/7.jpg" alt="Mushroom gallery 1">
+          <img class="gallery-tile" src="mushroom/8.jpg" alt="Mushroom gallery 2">
+          <img class="gallery-tile" src="mushroom/9.jpg" alt="Mushroom gallery 3">
+          <img class="gallery-tile" src="mushroom/10.jpg" alt="Mushroom gallery 4">
+          <img class="gallery-tile" src="mushroom/11.jpg" alt="Mushroom gallery 5">
+          <img class="gallery-tile" src="mushroom/12.jpg" alt="Mushroom gallery 6">
         </div>
       </section>
 
@@ -551,12 +542,12 @@
     const farmContact = "9067891039 Soham Gajera | 8200145732 Jeet Gajera";
 
     const products = [
-      { id: 1, name: "Fresh Green Oyster Mushroom", price: 180, unit: "1 kg", icon: "Fresh", detail: "Picked fresh, chilled and delivered within 24-48 hours." },
-      { id: 2, name: "Dried Oyster Mushroom", price: 320, unit: "100 g pack", icon: "Dry", detail: "Slow-dried to preserve flavor and nutrients." },
-      { id: 3, name: "Oyster Mushroom Powder", price: 250, unit: "100 g pack", icon: "Powder", detail: "Mushroom powder for soup, curry, health mix and snacks." },
-      { id: 4, name: "Mushroom Khakhra", price: 140, unit: "1 pack", icon: "Snack", detail: "Crispy khakhra prepared with oyster mushroom powder." },
-      { id: 5, name: "Mushroom Papad", price: 120, unit: "1 pack", icon: "Papad", detail: "Papad with mushroom nutrition and farm-made taste." },
-      { id: 6, name: "Bulk and Wholesale", price: 0, unit: "Custom", bulk: true, icon: "Bulk", detail: "Supply for restaurants, retailers and local markets." }
+      { id: 1, name: "Fresh Green Oyster Mushroom", price: 180, unit: "1 kg", image: "mushroom/Screenshot 2025-10-24 154001.png", detail: "Picked fresh, chilled and delivered within 24-48 hours." },
+      { id: 2, name: "Dried Oyster Mushroom", price: 320, unit: "100 g pack", image: "mushroom/oyst dry.webp", detail: "Slow-dried to preserve flavor and nutrients." },
+      { id: 3, name: "Oyster Mushroom Powder", price: 250, unit: "100 g pack", image: "mushroom/oyster powder.png", detail: "Mushroom powder for soup, curry, health mix and snacks." },
+      { id: 4, name: "Mushroom Khakhra", price: 140, unit: "1 pack", image: "mushroom/bulk.png", detail: "Crispy khakhra prepared with oyster mushroom powder." },
+      { id: 5, name: "Mushroom Papad", price: 120, unit: "1 pack", image: "mushroom/bulk.png", detail: "Papad with mushroom nutrition and farm-made taste." },
+      { id: 6, name: "Bulk and Wholesale", price: 0, unit: "Custom", bulk: true, image: "mushroom/bulk.png", detail: "Supply for restaurants, retailers and local markets." }
     ];
 
     const cart = new Map();
@@ -667,7 +658,7 @@
       }
       target.innerHTML = list.map(product => `
         <article class="product">
-          <div class="product-img">${escapeText(product.icon)}</div>
+          <img class="product-img" src="${escapeText(product.image)}" alt="${escapeText(product.name)}">
           <h3>${escapeText(product.name)}</h3>
           <p class="muted">${escapeText(product.detail)}</p>
           <div class="product-actions">

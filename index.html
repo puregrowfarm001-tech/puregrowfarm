@@ -889,7 +889,7 @@ saveToSheet({
   total: bill.total,
   paymentMode: data.paymentMode,
   paymentId: data.paymentId,
-  status: "Order Confirmed"
+  status: "Pending"
 });
   document.getElementById("invoiceText").textContent = latestInvoice;
   document.getElementById("emailInvoice").href = `mailto:${farmEmail}?subject=${encodeURIComponent("Pure Grow Farm Product Invoice")}&body=${encodeURIComponent(latestInvoice)}`;
@@ -997,7 +997,7 @@ saveToSheet({
   amount: 100,
   paymentMode: document.getElementById("spaymentMode").value,
   paymentId: document.getElementById("spayment").value.trim(),
-  status: "Confirmed"
+  status: "Pending"
 });
   showVisitConfirmation("Pure Grow Farm Student Internship Booking", invoice);
 }
@@ -1033,7 +1033,7 @@ saveToSheet({
   amount: 699,
   paymentMode: document.getElementById("fpaymentMode").value,
   paymentId: document.getElementById("fpayment").value.trim(),
-  status: "Confirmed"
+  status: "Pending"
 });
   showVisitConfirmation("Pure Grow Farm Farmer Training Booking", invoice);
 }

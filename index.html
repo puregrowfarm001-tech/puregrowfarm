@@ -600,7 +600,7 @@ const farmAddress = "Makhiyala, Gujarat 362011";
 const farmContact = "9067891039 Soham Gajera | 8200145732 Jeet Gajera";
 let productPaymentOpened = false;
 
-const SHEET_URL = "https://docs.google.com/spreadsheets/d/1N145ucGfOFuMs6g41RdpzIZRp-1jKnfH3q4x6aDGH_Q/edit?gid=0#gid=0";
+const SHEET_URL = "https://script.google.com/macros/s/AKfycbzmZo_gD3kCTTUZxOfislsm4O-0chSDla0EGUHDUMN3QttmnGhHk52RKM6HTRowB7yB/exec";
 
 const products = [
   { id: 1, name: "Fresh Green Oyster Mushroom", price: 180, unit: "1kg", image: "mushroom/Screenshot 2025-10-24 154001.png", detail: "Picked fresh, chilled and delivered within 24-48 hours." },
@@ -623,8 +623,11 @@ async function saveToSheet(data) {
   try {
     await fetch(SHEET_URL, {
       method: "POST",
+      mode: "no-cors",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data)
     });
+    alert("Data sent successfully!");
   } catch (err) {
     console.log(err);
   }

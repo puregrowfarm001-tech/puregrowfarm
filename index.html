@@ -590,6 +590,7 @@ pre { overflow: auto; max-height: 330px; padding: 12px; color: #eef8ef; backgrou
     </div>
   </dialog>
 
+  
 <script>
 const farmEmail = "puregrowfarm001@gmail.com";
 const farmWhatsapp = "919067891039";
@@ -598,6 +599,8 @@ const farmName = "Pure Grow Farm";
 const farmAddress = "Makhiyala, Gujarat 362011";
 const farmContact = "9067891039 Soham Gajera | 8200145732 Jeet Gajera";
 let productPaymentOpened = false;
+
+const SHEET_URL = "https://script.google.com/macros/s/AKfycbz07N-61QfYoz5SNShUrAhgbDrZUvvkEZ8mhJEIpoP0zJTMPxeuKipuIzyd9pCsy8Rc/exec";
 
 const products = [
   { id: 1, name: "Fresh Green Oyster Mushroom", price: 180, unit: "1kg", image: "mushroom/Screenshot 2025-10-24 154001.png", detail: "Picked fresh, chilled and delivered within 24-48 hours." },
@@ -615,6 +618,17 @@ const reviews = [
 ];
 
 let latestInvoice = "";
+
+async function saveToSheet(data) {
+  try {
+    await fetch(SHEET_URL, {
+      method: "POST",
+      body: JSON.stringify(data)
+    });
+  } catch (err) {
+    console.log(err);
+  }
+}
 
 function money(amount) {
   return amount ? `Rs ${amount}` : "Custom";
@@ -859,6 +873,24 @@ function confirmOrder(event) {
   };
 
   latestInvoice = buildOrderInvoice(data);
+  const bill = getTotals();
+
+saveToSheet({
+  type: "order",
+  invoiceNo: "PGF-" + Date.now(),
+  name: data.name,
+  phone: data.phone,
+  email: data.email,
+  address: data.address,
+  product: [...cart.values()].map(item => item.name).join(", "),
+  qty: [...cart.values()].map(item => item.qty).join(", "),
+  subtotal: bill.subtotal,
+  delivery: bill.delivery,
+  total: bill.total,
+  paymentMode: data.paymentMode,
+  paymentId: data.paymentId,
+  status: "Order Confirmed"
+});
   document.getElementById("invoiceText").textContent = latestInvoice;
   document.getElementById("emailInvoice").href = `mailto:${farmEmail}?subject=${encodeURIComponent("Pure Grow Farm Product Invoice")}&body=${encodeURIComponent(latestInvoice)}`;
   document.getElementById("whatsappInvoice").href = `https://wa.me/${farmWhatsapp}?text=${encodeURIComponent(latestInvoice)}`;
@@ -950,6 +982,23 @@ Amount: Rs 100
 Payment Mode: ${document.getElementById("spaymentMode").value}
 Payment ID: ${document.getElementById("spayment").value.trim()}
 Status: Student internship confirmed after online payment`;
+saveToSheet({
+  type: "visit",
+  visitType: "Student",
+  bookingNo: "PGF-STU-" + Date.now(),
+  name: document.getElementById("sname").value.trim(),
+  phone: document.getElementById("sphone").value.trim(),
+  email: document.getElementById("semail").value.trim(),
+  enrollment: document.getElementById("senroll").value.trim(),
+  college: document.getElementById("scollege").value.trim(),
+  course: document.getElementById("scourse").value.trim(),
+  startDate: document.getElementById("sstart").value,
+  endDate: document.getElementById("send").value,
+  amount: 100,
+  paymentMode: document.getElementById("spaymentMode").value,
+  paymentId: document.getElementById("spayment").value.trim(),
+  status: "Confirmed"
+});
   showVisitConfirmation("Pure Grow Farm Student Internship Booking", invoice);
 }
 
@@ -973,6 +1022,19 @@ Amount: Rs 699
 Payment Mode: ${document.getElementById("fpaymentMode").value}
 Payment ID: ${document.getElementById("fpayment").value.trim()}
 Status: Farmer training confirmed after online payment`;
+saveToSheet({
+  type: "visit",
+  visitType: "Farmer",
+  bookingNo: "PGF-FAR-" + Date.now(),
+  name: document.getElementById("fname").value.trim(),
+  phone: document.getElementById("fphone").value.trim(),
+  email: document.getElementById("femail").value.trim(),
+  trainingDate: document.getElementById("fdate").value,
+  amount: 699,
+  paymentMode: document.getElementById("fpaymentMode").value,
+  paymentId: document.getElementById("fpayment").value.trim(),
+  status: "Confirmed"
+});
   showVisitConfirmation("Pure Grow Farm Farmer Training Booking", invoice);
 }
 

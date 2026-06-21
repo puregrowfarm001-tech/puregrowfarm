@@ -600,13 +600,13 @@ const farmAddress = "Makhiyala, Gujarat 362011";
 const farmContact = "9067891039 Soham Gajera | 8200145732 Jeet Gajera";
 let productPaymentOpened = false;
 
-const SHEET_URL = "https://script.google.com/macros/s/AKfycbzmZo_gD3kCTTUZxOfislsm4O-0chSDla0EGUHDUMN3QttmnGhHk52RKM6HTRowB7yB/exec";
+const SHEET_URL = "https://script.google.com/macros/s/AKfycbz07N-61QfYoz5SNShUrAhgbDrZUvvkEZ8mhJEIpoP0zJTMPxeuKipuIzyd9pCsy8Rc/exec";
 
 const products = [
   { id: 1, name: "Fresh Green Oyster Mushroom", price: 180, unit: "1kg", image: "mushroom/Screenshot 2025-10-24 154001.png", detail: "Picked fresh, chilled and delivered within 24-48 hours." },
   { id: 2, name: "Dried Oyster Mushroom", price: 800, unit: "1kg pack", image: "mushroom/oyst dry.webp", detail: "Slow-dried to preserve flavor and nutrients." },
   { id: 3, name: "Oyster Mushroom Powder", price: 130, unit: "100gm pack", image: "mushroom/oyster powder.png", detail: "Mushroom powder for soup, curry, health mix and snacks." },
-  { id: 4, name: "Methi Mushroom Khakhra", price: 70, unit: "200gm pack", image: "mushroom/Methi khakhra 2.png", detail: "Crispy khakhra prepared with oyster mushroom powder." },
+  { id: 4, name: "Methi Mushroom Khakhra", price: 70, unit: "200gm pack", image: "Methi khakhra 2.png", detail: "Crispy khakhra prepared with oyster mushroom powder." },
  // { id: 5, name: "Adad Mushroom Papad", price: 120, unit: "1 pack", image: "mushroom/bulk.png", detail: "Papad with mushroom nutrition and farm-made taste." },
   { id: 6, name: "Bulk and Wholesale", price: 0, unit: "Custom", bulk: true, image: "mushroom/bulk.png", detail: "Supply for restaurants, retailers and local markets. Contact farm for custom rate and quantity." }
 ];
@@ -623,11 +623,8 @@ async function saveToSheet(data) {
   try {
     await fetch(SHEET_URL, {
       method: "POST",
-      mode: "no-cors",
-      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data)
     });
-    alert("Data sent successfully!");
   } catch (err) {
     console.log(err);
   }
@@ -892,7 +889,7 @@ saveToSheet({
   total: bill.total,
   paymentMode: data.paymentMode,
   paymentId: data.paymentId,
-  status: "Pending"
+  status: "Order Confirmed"
 });
   document.getElementById("invoiceText").textContent = latestInvoice;
   document.getElementById("emailInvoice").href = `mailto:${farmEmail}?subject=${encodeURIComponent("Pure Grow Farm Product Invoice")}&body=${encodeURIComponent(latestInvoice)}`;
@@ -1000,7 +997,7 @@ saveToSheet({
   amount: 100,
   paymentMode: document.getElementById("spaymentMode").value,
   paymentId: document.getElementById("spayment").value.trim(),
-  status: "Pending"
+  status: "Confirmed"
 });
   showVisitConfirmation("Pure Grow Farm Student Internship Booking", invoice);
 }
@@ -1036,7 +1033,7 @@ saveToSheet({
   amount: 699,
   paymentMode: document.getElementById("fpaymentMode").value,
   paymentId: document.getElementById("fpayment").value.trim(),
-  status: "Pending"
+  status: "Confirmed"
 });
   showVisitConfirmation("Pure Grow Farm Farmer Training Booking", invoice);
 }

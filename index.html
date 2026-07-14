@@ -620,14 +620,32 @@ const reviews = [
 let latestInvoice = "";
 
 async function saveToSheet(data) {
+
   try {
-    await fetch(SHEET_URL, {
+
+    const response = await fetch(SHEET_URL, {
       method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
       body: JSON.stringify(data)
     });
-  } catch (err) {
-    console.log(err);
+
+    const result = await response.text();
+
+    console.log("Sheet Response:", result);
+
+    if (result !== "Success") {
+      alert("Google Sheet Error: " + result);
+    }
+
+  } catch (error) {
+
+    console.error(error);
+    alert("Connection Error");
+
   }
+
 }
 
 function money(amount) {

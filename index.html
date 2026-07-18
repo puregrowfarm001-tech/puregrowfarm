@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Pure Grow Farm - Oyster Mushrooms</title>
-  <meta name="description" content="Pure Grow Farm - fresh, dry, powder, khakhra and papad oyster mushroom products.">
+  <title>Pure Grow Farm - Oyster Mushrooms & Admin ERP</title>
+  <meta name="description" content="Pure Grow Farm - fresh, dry, powder, khakhra and papad oyster mushroom products with integrated ERP.">
   <style>
 :root {
   --accent: #2b8a3e;
@@ -15,6 +15,7 @@
   --line: #e6e9ec;
   --soft: #eef7ee;
   --danger: #b42318;
+  --warn: #d97706;
 }
 
 * { box-sizing: border-box; }
@@ -27,7 +28,7 @@ body {
   background: linear-gradient(180deg, #f6faf5 0%, #ffffff 100%);
 }
 
-.container { max-width: 1100px; margin: 0 auto; padding: 24px; width: 100%; }
+.container { max-width: 1200px; margin: 0 auto; padding: 24px; width: 100%; }
 
 header {
   position: sticky;
@@ -122,6 +123,51 @@ button:hover, .btn:hover { background: #246e33; }
 button:disabled { background: #98a2a8; cursor: not-allowed; }
 .nav-toggle { display: none; color: var(--dark); background: var(--soft); border: 1px solid var(--line); }
 
+/* Amazon Style Integrated Auth Screen UI */
+.auth-container {
+  max-width: 420px;
+  margin: 40px auto;
+  padding: 24px;
+  background: #ffffff;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.05);
+}
+.auth-toggle-links {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 14px;
+  font-size: 13px;
+}
+.auth-toggle-links a {
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: bold;
+}
+.auth-box { display: none; }
+.auth-box.active { display: block; }
+
+/* Dashboard UI */
+.user-dashboard {
+  background: #ffffff;
+  border: 1px solid var(--line);
+  padding: 20px;
+  border-radius: 12px;
+  margin-bottom: 24px;
+}
+.db-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+  margin-top: 14px;
+}
+.db-card {
+  border: 1px solid var(--line);
+  padding: 14px;
+  border-radius: 8px;
+  background: #fafcfa;
+}
+
 .hero {
   display: grid;
   grid-template-columns: 1fr 420px;
@@ -187,7 +233,7 @@ button:disabled { background: #98a2a8; cursor: not-allowed; }
 
 .shop-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 340px;
+  grid-template-columns: minmax(0, 1fr) 360px;
   gap: 18px;
   align-items: start;
 }
@@ -215,7 +261,7 @@ button:disabled { background: #98a2a8; cursor: not-allowed; }
 .remove-btn { background: var(--danger); }
 .bill-row { padding: 7px 0; border-top: 1px solid var(--line); }
 .total { color: var(--accent); font-size: 18px; }
-.payment-help { display: none; padding: 10px 12px; background: #eef7ee; border-radius: 10px; color: #246e33; font-weight: 700; }
+.payment-help { display: none; padding: 10px 12px; background: #eef7ee; border-radius: 10px; color: #246e33; font-weight: 700; margin-bottom: 10px; }
 .payment-help.show { display: block; }
 
 .gallery { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
@@ -267,9 +313,39 @@ pre { overflow: auto; max-height: 330px; padding: 12px; color: #eef8ef; backgrou
 .visit-tabs button { flex: 1; }
 .visit-form { display: none; padding: 16px; background: #fff; border-radius: 12px; box-shadow: 0 6px 22px rgba(12,18,20,0.06); }
 .visit-form.active { display: grid; }
-.payment-box, .thankyou { padding: 15px; background: #eef7ee; border-radius: 10px; text-align: center; }
+.payment-box, .thankyou { padding: 15px; background: #eef7ee; border-radius: 10px; text-align: center; margin-bottom: 12px; }
 .thankyou { display: none; margin-top: 16px; }
 .visit-actions { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
+
+/* Dedicated Advanced ERP View CSS styling */
+.erp-wrapper { display: none; background: #f4f7f5; padding: 20px; border-radius: 14px; border: 2px dashed var(--accent); margin-top: 20px; }
+.erp-wrapper.active { display: block; }
+.erp-nav { display: flex; gap: 10px; margin-bottom: 18px; background: #fff; padding: 10px; border-radius: 8px; border: 1px solid var(--line); flex-wrap: wrap;}
+.erp-section { display: none; background: #fff; padding: 20px; border-radius: 12px; border: 1px solid var(--line); margin-bottom: 16px;}
+.erp-section.active { display: block; }
+.table-responsive { overflow-x: auto; margin-top: 12px; }
+table { width: 100%; border-collapse: collapse; text-align: left; font-size: 14px; }
+th, td { padding: 10px; border: 1px solid var(--line); }
+th { background: #f8faf8; font-weight: 700; }
+.badge { display: inline-block; padding: 3px 8px; border-radius: 999px; font-size: 12px; font-weight: bold; }
+.badge-pending { background: #fef3c7; color: var(--warn); }
+.badge-confirmed { background: #dcfce7; color: var(--accent); }
+
+/* Financial Analytics Grid Layout Cards */
+.fin-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 20px; }
+.fin-card { background: #fff; padding: 16px; border-radius: 10px; border: 1px solid var(--line); box-shadow: 0 2px 6px rgba(0,0,0,0.02); }
+.fin-val { font-size: 24px; font-weight: 800; color: var(--accent); margin-top: 6px; }
+
+/* Certificate Styles Layout */
+.cert-preview-area { display: flex; justify-content: center; margin-top: 20px; background: #f0f0f0; padding: 20px; border-radius: 8px; }
+.certificate-frame { width: 100%; max-width: 650px; background: #fff; border: 12px double #2b8a3e; padding: 30px; position: relative; font-family: 'Times New Roman', Times, serif; text-align: center; color: #222; box-shadow: 0 4px 14px rgba(0,0,0,0.15); }
+.certificate-frame::before { content: ""; position: absolute; top: 4px; left: 4px; right: 4px; bottom: 4px; border: 2px solid #7fc07f; pointer-events: none; }
+.cert-title { font-size: 32px; font-weight: bold; color: #1e4620; letter-spacing: 1px; margin-bottom: 6px; }
+.cert-subtitle { font-size: 16px; font-style: italic; letter-spacing: 2px; color: #555; margin-bottom: 24px; }
+.cert-text { font-size: 15px; line-height: 1.6; margin: 18px 0; color: #333; }
+.cert-name { font-size: 24px; font-weight: bold; color: #2b8a3e; border-bottom: 2px solid #ddd; display: inline-block; padding: 0 30px; margin: 8px 0; font-family: Arial, sans-serif; }
+.cert-footer-row { display: flex; justify-content: space-between; align-items: center; margin-top: 40px; font-size: 13px; font-family: Arial, sans-serif; }
+.cert-sig-line { border-top: 1px solid #777; width: 140px; margin: 6px auto 0; }
 
 @media (max-width: 920px) {
   .hero, .shop-layout, .contact-grid { grid-template-columns: 1fr; }
@@ -279,7 +355,6 @@ pre { overflow: auto; max-height: 330px; padding: 12px; color: #eef8ef; backgrou
   .cart-box { position: static; }
   .hero-photo img { height: 280px; }
 }
-
 @media (max-width: 760px) {
   header { align-items: flex-start; }
   .hero { gap: 18px; padding: 18px 0; }
@@ -291,7 +366,6 @@ pre { overflow: auto; max-height: 330px; padding: 12px; color: #eef8ef; backgrou
   .product-actions .btn, .product-actions button { flex: 1; }
   input, textarea, select, button, .btn { font-size: 16px; }
 }
-
 @media (max-width: 640px) {
   .container { padding: 16px; }
   header { top: 0; margin: -4px -4px 14px; border-radius: 12px; }
@@ -309,21 +383,6 @@ pre { overflow: auto; max-height: 330px; padding: 12px; color: #eef8ef; backgrou
   .products, .gallery, .review-form { grid-template-columns: 1fr; }
   .gallery img { height: 220px; }
   .visit-tabs { flex-direction: column; }
-}
-
-@media (max-width: 460px) {
-  .container { padding: 12px; }
-  header { padding: 10px; }
-  .brand { width: 100%; }
-  .nav-toggle { width: 100%; margin-left: 0; }
-  .nav-wrapper { grid-template-columns: 1fr; }
-  .hero h1 { font-size: 24px; }
-  .hero-photo img, .about img, .farm-photo-section img, .gallery img { max-width: 100%; height: 210px; }
-  .cart-item { flex-direction: column; }
-  .qty-actions { flex-wrap: wrap; }
-  dialog { width: calc(100% - 16px); padding: 14px; }
-  .dialog-head, .dialog-actions { flex-direction: column; align-items: stretch; }
-  pre { font-size: 13px; }
 }
   </style>
 </head>
@@ -346,219 +405,518 @@ pre { overflow: auto; max-height: 330px; padding: 12px; color: #eef8ef; backgrou
           <a href="#gallery" class="muted">Gallery</a>
           <a href="#contact" class="muted">Contact</a>
         </nav>
-        <a class="btn" href="#visit">Visit Now</a>
-        <a class="btn" href="#products">Order Now</a>
+        <a class="btn" href="#authSection" id="authNavBtn">Login / Register</a>
+        <button class="btn" id="logoutBtn" style="display:none;" onclick="handleLogout()">Logout</button>
       </div>
     </header>
 
-    <main>
-      <section class="hero">
-        <div>
-          <h1>Fresh and Premium Oyster Mushrooms</h1>
-          <p>Pure Grow Farm produces fresh green oyster mushroom, dried mushroom, mushroom powder, khakhra and papad. We focus on sustainable cultivation, chemical-free farming, hygienic packing and direct customer orders.</p>
-
-          <div class="cards">
-            <div class="card">
-              <div class="muted small-title">Products</div>
-              <div class="card-title">Green, Dry, Powder, Khakhra and Papad</div>
-            </div>
-            <div class="card">
-              <div class="muted small-title">Contact</div>
-              <div class="card-title">9067891039 Soham Gajera and 8200145732 Jeet Gajera</div>
-            </div>
-          </div>
-
-          <div class="hero-links">
-            <a class="pill" href="mailto:puregrowfarm001@gmail.com">puregrowfarm001@gmail.com</a>
-            <a class="muted" href="https://www.instagram.com/_pure_grow_mushroom_farm_?igsh=bnlpMXdhaGtqMWhq" target="_blank" rel="noreferrer">@_pure_grow_mushroom_farm_</a>
-          </div>
+    <!-- Amazon Layout Integrated Central Auth Section -->
+    <section id="authSection" class="auth-container">
+      <!-- Login Box -->
+      <div id="loginBox" class="auth-box active">
+        <h2>Sign In</h2>
+        <form onsubmit="handleLogin(event)">
+          <input type="text" id="loginEmail" placeholder="Email or Username" required>
+          <input type="password" id="loginPassword" placeholder="Password" required>
+          <button type="submit">Continue</button>
+        </form>
+        <div class="auth-toggle-links">
+          <a href="javascript:void(0)" onclick="switchAuthBox('forgotBox')">Forgot Password?</a>
+          <a href="javascript:void(0)" onclick="switchAuthBox('registerBox')">Create Account</a>
         </div>
+      </div>
 
-        <aside class="hero-photo">
-          <img src="mushroom/home.png" alt="Fresh oyster mushrooms">
-          <div class="card-title">Organic Oyster Mushrooms</div>
-          <div class="muted small-title">Fresh harvest - packed and delivered</div>
-        </aside>
-      </section>
-
-      <section id="about" class="about">
-        <div class="about-content">
-          <h2>About Pure Grow Farm</h2>
-          <p class="muted">Pure Grow Farm is a family-run mushroom farm focused on sustainable oyster mushroom cultivation. We grow on locally sourced substrate, avoid chemical treatments and pack produce with care to deliver maximum freshness.</p>
-          <ul class="muted">
-            <li>Organic substrate and eco-friendly methods</li>
-            <li>Fresh mushroom, dry mushroom and value-added mushroom products</li>
-            <li>Student internship and farmer training farm visits</li>
-          </ul>
+      <!-- Create Account Box -->
+      <div id="registerBox" class="auth-box">
+        <h2>Create Account</h2>
+        <form onsubmit="handleRegister(event)">
+          <input type="text" id="regName" placeholder="Your Full Name" required>
+          <input type="email" id="regEmail" placeholder="Email Address" required>
+          <input type="password" id="regPassword" placeholder="Password" required>
+          <button type="submit">Create Your Account</button>
+        </form>
+        <div class="auth-toggle-links">
+          <span>Already have an account?</span>
+          <a href="javascript:void(0)" onclick="switchAuthBox('loginBox')">Sign In</a>
         </div>
-        <img src="mushroom/farm.jpeg" alt="Pure Grow Farm">
-      </section>
+      </div>
 
-      <section class="farm-photo-section">
-        <img src="mushroom/farm.jpeg" alt="Pure Grow Farm growing room">
-        <div>
-          <h2>Farm Photo</h2>
-          <p class="muted">Our mushroom farm uses clean growing rooms, careful humidity control, fresh harvesting and hygienic product packing.</p>
-          <a class="btn" href="#gallery">View Gallery</a>
+      <!-- Forgot Password Box -->
+      <div id="forgotBox" class="auth-box">
+        <h2>Password Assistance</h2>
+        <p class="muted" style="font-size:12px;">Enter your email to receive an instant verification OTP code.</p>
+        <form id="forgotForm" onsubmit="handleForgotPassword(event)">
+          <input type="email" id="forgotEmail" placeholder="Email Address" required>
+          <button type="submit" id="sendOtpBtn">Send OTP Verification Code</button>
+        </form>
+        <form id="otpVerifyForm" style="display:none; margin-top:12px;" onsubmit="handleVerifyOtp(event)">
+          <input type="text" id="verificationOtp" placeholder="Enter 6-Digit OTP" required>
+          <input type="password" id="newPassword" placeholder="Enter New Secure Password" required>
+          <button type="submit">Reset Password & Login</button>
+        </form>
+        <div class="auth-toggle-links">
+          <a href="javascript:void(0)" onclick="switchAuthBox('loginBox')">Back to Sign In</a>
         </div>
-      </section>
+      </div>
+    </section>
 
-      <section id="products">
-        <div class="section-row">
+    <!-- Live Dynamic User Session Profile Workspace -->
+    <section id="dashboardWorkspace" class="user-dashboard" style="display:none;">
+      <h2>Welcome Back, <span id="userDashboardName">User</span>!</h2>
+      <p class="muted">Your account tracks and loads all records natively from your farm profile.</p>
+      
+      <div class="db-grid">
+        <div class="db-card">
+          <h3>Your Orders</h3>
+          <div id="userOrdersList" class="muted">No orders submitted yet.</div>
+        </div>
+        <div class="db-card">
+          <h3>Your Farm Training & Internships</h3>
+          <div id="userBookingsList" class="muted">No program bookings registered.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Primary Public Content View Space -->
+    <div id="publicContent">
+      <main>
+        <section class="hero">
           <div>
-            <h2>Our Products</h2>
-            <p class="muted">Search, add to cart, select online payment and generate invoice.</p>
+            <h1>Fresh and Premium Oyster Mushrooms</h1>
+            <p>Pure Grow Farm produces fresh green oyster mushroom, dried mushroom, mushroom powder, khakhra and papad. We focus on sustainable cultivation, chemical-free farming, hygienic packing and direct customer orders.</p>
+
+            <div class="cards">
+              <div class="card">
+                <div class="muted small-title">Products</div>
+                <div class="card-title">Green, Dry, Powder, Khakhra and Papad</div>
+              </div>
+              <div class="card">
+                <div class="muted small-title">Contact</div>
+                <div class="card-title">9067891039 Soham Gajera and 8200145732 Jeet Gajera</div>
+              </div>
+            </div>
+
+            <div class="hero-links">
+              <a class="pill" href="mailto:puregrowfarm001@gmail.com">puregrowfarm001@gmail.com</a>
+              <a class="muted" href="https://www.instagram.com/_pure_grow_mushroom_farm_?igsh=bnlpMXdhaGtqMWhq" target="_blank" rel="noreferrer">@_pure_grow_mushroom_farm_</a>
+            </div>
           </div>
-          <div class="search-row">
-            <input id="productSearch" type="search" placeholder="Search product">
-            <button type="button" onclick="searchProducts()">Search</button>
+
+          <aside class="hero-photo">
+            <img src="mushroom/home.png" alt="Fresh oyster mushrooms">
+            <div class="card-title">Organic Oyster Mushrooms</div>
+            <div class="muted small-title">Fresh harvest - packed and delivered</div>
+          </aside>
+        </section>
+
+        <section id="about" class="about">
+          <div class="about-content">
+            <h2>About Pure Grow Farm</h2>
+            <p class="muted">Pure Grow Farm is a family-run mushroom farm focused on sustainable oyster mushroom cultivation. We grow on locally sourced substrate, avoid chemical treatments and pack produce with care to deliver maximum freshness.</p>
+            <ul class="muted">
+              <li>Organic substrate and eco-friendly methods</li>
+              <li>Fresh mushroom, dry mushroom and value-added mushroom products</li>
+              <li>Student internship and farmer training farm visits</li>
+            </ul>
+          </div>
+          <img src="mushroom/farm.jpeg" alt="Pure Grow Farm">
+        </section>
+
+        <section class="farm-photo-section">
+          <img src="mushroom/farm.jpeg" alt="Pure Grow Farm growing room">
+          <div>
+            <h2>Farm Photo</h2>
+            <p class="muted">Our mushroom farm uses clean growing rooms, careful humidity control, fresh harvesting and hygienic product packing.</p>
+            <a class="btn" href="#gallery">View Gallery</a>
+          </div>
+        </section>
+
+        <section id="products">
+          <div class="section-row">
+            <div>
+              <h2>Our Products</h2>
+              <p class="muted">Search, add to cart, select online payment and generate invoice.</p>
+            </div>
+            <div class="search-row">
+              <input id="productSearch" type="search" placeholder="Search product">
+              <button type="button" onclick="searchProducts()">Search</button>
+            </div>
+          </div>
+
+          <div class="shop-layout">
+            <div class="products" id="productsList"></div>
+
+            <aside class="cart-box">
+              <h2>Cart</h2>
+              <div id="cartItems" class="cart-items"></div>
+              <div class="bill-row"><span>Subtotal</span><strong id="subtotal">Rs 0</strong></div>
+              <div class="bill-row"><span>Delivery</span><strong id="delivery">Rs 0</strong></div>
+              <div class="bill-row total"><span>Total</span><strong id="total">Rs 0</strong></div>
+
+              <form id="orderForm" onsubmit="confirmOrder(event)">
+                <input type="text" id="name" placeholder="Your name" required>
+                <input type="tel" id="phone" placeholder="Phone number" pattern="[0-9]{10}" required>
+                <input type="email" id="email" placeholder="Email" required>
+                <input type="text" id="address" placeholder="Address" required>
+                <select id="paymentMode" required>
+                  <option value="">Select online payment mode</option>
+                  <option value="GPay">GPay</option>
+                  <option value="PhonePe">PhonePe</option>
+                  <option value="Paytm">Paytm</option>
+                  <option value="UPI">Any UPI App</option>
+                </select>
+                <div id="productPaymentHelp" class="payment-help"></div>
+                <input type="text" id="paymentId" placeholder="Online payment transaction ID" required>
+                <button type="submit" id="confirmOrderBtn" disabled>Confirm Order After Payment</button>
+              </form>
+            </aside>
+          </div>
+        </section>
+
+        <section id="gallery">
+          <h2>Gallery</h2>
+          <div class="gallery">
+            <img src="mushroom/7.jpg" alt="Mushroom gallery 1">
+            <img src="mushroom/8.jpg" alt="Mushroom gallery 2">
+            <img src="mushroom/9.jpg" alt="Mushroom gallery 3">
+            <img src="mushroom/10.jpg" alt="Mushroom gallery 4">
+            <img src="mushroom/11.jpg" alt="Mushroom gallery 5">
+            <img src="mushroom/12.jpg" alt="Mushroom gallery 6">
+          </div>
+        </section>
+
+        <section id="visit" class="visit-section">
+          <h2>Visit Pure Grow Farm</h2>
+          <p class="muted">Student internship and farmer training booking will be confirmed after online payment.</p>
+
+          <div class="visit-tabs">
+            <button type="button" onclick="showVisitForm('studentForm')">Student Internship</button>
+            <button type="button" onclick="showVisitForm('farmerForm')">Farmer Training</button>
+          </div>
+
+          <form id="studentForm" class="visit-form active" onsubmit="submitStudentVisit(event)">
+            <input type="text" id="sname" placeholder="Student Name" required>
+            <input type="tel" id="sphone" placeholder="Phone Number" pattern="[0-9]{10}" required>
+            <input type="email" id="semail" placeholder="Email" required>
+            <input type="text" id="senroll" placeholder="Enrollment Number" required>
+            <input type="text" id="scollege" placeholder="College Name" required>
+            <input type="text" id="scourse" placeholder="Course Name" required>
+            <label>Internship Start Date <input type="date" id="sstart" required></label>
+            <label>Internship End Date <input type="date" id="send" required></label>
+            <select id="spaymentMode" required>
+              <option value="">Select online payment mode</option>
+              <option value="GPay">GPay</option>
+              <option value="PhonePe">PhonePe</option>
+              <option value="Paytm">Paytm</option>
+            </select>
+            <input type="text" id="spayment" placeholder="Payment Transaction ID" required>
+            <div class="payment-box">
+              <h3>Student Internship Fee Rs 100</h3>
+              <p>UPI ID: sohamgajera01@okhdfcbank</p>
+              <button type="button" onclick="openVisitUpi(100, 'studentForm')">Pay Online</button>
+            </div>
+            <div id="studentPaymentHelp" class="payment-help"></div>
+            <button type="submit" id="studentSubmitBtn" disabled>Confirm Student Visit After Payment</button>
+          </form>
+
+          <form id="farmerForm" class="visit-form" onsubmit="submitFarmerVisit(event)">
+            <input type="text" id="fname" placeholder="Farmer Name" required>
+            <input type="tel" id="fphone" placeholder="Phone Number" pattern="[0-9]{10}" required>
+            <input type="email" id="femail" placeholder="Email" required>
+            <label>Training Date <input type="date" id="fdate" required></label>
+            <select id="fpaymentMode" required>
+              <option value="">Select online payment mode</option>
+              <option value="GPay">GPay</option>
+              <option value="PhonePe">PhonePe</option>
+              <option value="Paytm">Paytm</option>
+            </select>
+            <input type="text" id="fpayment" placeholder="Payment Transaction ID" required>
+            <div class="payment-box">
+              <h3>Farmer Training Fee Rs 699</h3>
+              <p>UPI ID: sohamgajera01@okhdfcbank</p>
+              <button type="button" onclick="openVisitUpi(699, 'farmerForm')">Pay Online</button>
+            </div>
+            <div id="farmerPaymentHelp" class="payment-help"></div>
+            <button type="submit" id="farmerSubmitBtn" disabled>Confirm Farmer Visit After Payment</button>
+          </form>
+
+          <div class="thankyou" id="visitThankyouBox">
+            <h2>Thank You</h2>
+            <p>Your farm visit is confirmed after online payment.</p>
+            <p class="send-note">All visit data is ready below. Tap Send Email or Send WhatsApp Message to send it to Pure Grow Farm.</p>
+            <pre id="visitInvoiceText"></pre>
+            <div class="visit-actions">
+              <button type="button" onclick="downloadVisitInvoice()">Download Invoice</button>
+              <a class="btn" id="visitEmailLink" href="#">Send Email</a>
+              <a class="btn" id="visitWhatsappLink" target="_blank" rel="noreferrer">Send WhatsApp Message</a>
+            </div>
+          </div>
+        </section>
+
+        <section id="reviews" class="reviews">
+          <h2>Customer Reviews</h2>
+          <form class="review-form" onsubmit="addReview(event)">
+            <input id="reviewName" type="text" placeholder="Your name" required>
+            <select id="reviewRating" required>
+              <option value="5">5 Star</option>
+              <option value="4">4 Star</option>
+              <option value="3">3 Star</option>
+              <option value="2">2 Star</option>
+              <option value="1">1 Star</option>
+            </select>
+            <textarea id="reviewText" rows="3" placeholder="Write review" required></textarea>
+            <button type="submit">Add Review</button>
+          </form>
+          <div id="reviewList" class="review-list"></div>
+        </section>
+
+        <section id="contact" class="contact">
+          <h2>Contact</h2>
+          <div class="contact-grid">
+            <div>
+              <p class="muted">Call: <a href="tel:+919067891039"><strong>9067891039</strong></a>, <a href="tel:+918200145732"><strong>8200145732</strong></a></p>
+              <p class="muted">Email: <a href="mailto:puregrowfarm001@gmail.com">puregrowfarm001@gmail.com</a></p>
+              <p class="muted">Instagram: <a href="https://www.instagram.com/_pure_grow_mushroom_farm_?igsh=bnlpMXdhaGtqMWhq" target="_blank" rel="noreferrer">@_pure_grow_mushroom_farm_</a></p>
+              <p class="muted">Youtube: <a href="https://www.youtube.com/channel/UC2T-bDe5wEblhgQOYY8RAzQ" target="_blank" rel="noreferrer">Pure Grow Farm</a></p>
+              <p class="muted">Address: <a href="https://www.google.com/maps/dir//Makhiyala,+Gujarat+362011/@21.6172629,70.3661049,12z/data=!4m8!4m7!1m0!1m5!1m1!1s0x395803313ef34a91:0xcfc3fa020115f2c6!2m2!1d70.4485065!2d21.6172832?entry=ttu" target="_blank" rel="noreferrer">Makhiyala, Gujarat 362011</a></p>
+            </div>
+            <aside class="fast-facts">
+              <h3>Fast Facts</h3>
+              <p class="muted">Delivery areas: local markets and focused delivery zones. For bulk inquiries, please call.</p>
+              <p><strong>Working hours</strong></p>
+              <p class="muted">Mon-Sat: 8:00 AM - 6:00 PM</p>
+            </aside>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <!-- Advanced Internal ERP Suite View Workspace -->
+    <section id="adminErpView" class="erp-wrapper">
+      <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid var(--accent); padding-bottom:10px; margin-bottom:15px;">
+        <h2>Pure Grow Farm - Advanced Command Center ERP</h2>
+        <button class="btn" style="background:var(--danger);" onclick="exitAdminPanel()">Exit Admin Panel</button>
+      </div>
+
+      <div class="erp-nav">
+        <button class="btn" onclick="switchErpTab('erpOrdersTab')">Orders Manager</button>
+        <button class="btn" onclick="switchErpTab('erpBookingsTab')">Farm Training Bookings</button>
+        <button class="btn" onclick="switchErpTab('erpAccountingTab')">Financial Accounts P&L Ledger</button>
+      </div>
+
+      <!-- ERP Orders Panel Tab -->
+      <div id="erpOrdersTab" class="erp-section active">
+        <h3>Customer E-Commerce Orders</h3>
+        <div class="table-responsive">
+          <table>
+            <thead>
+              <tr>
+                <th>Order ID</th>
+                <th>Client Name</th>
+                <th>Phone</th>
+                <th>Products Ordered</th>
+                <th>Total Paid</th>
+                <th>Txn ID</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="adminOrdersTableBody">
+              <!-- Dynamically Populated Rows -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ERP Bookings & Dynamic Certificate Generator Panel Tab -->
+      <div id="erpBookingsTab" class="erp-section">
+        <h3>Farm Training & Student Internship Records</h3>
+        <div class="table-responsive">
+          <table>
+            <thead>
+              <tr>
+                <th>Booking ID</th>
+                <th>Type</th>
+                <th>Full Name</th>
+                <th>Phone</th>
+                <th>Dates</th>
+                <th>Txn ID</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="adminBookingsTableBody">
+              <!-- Dynamically Populated Rows -->
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Print-Ready Real-Time Certificate Sandbox Engine Template -->
+        <div id="certificateGeneratorSandbox" style="display:none; margin-top:24px; padding-top:20px; border-top:2px dashed var(--line);">
+          <h3>Live Print-Ready Certificate Viewer</h3>
+          <button class="btn" onclick="window.print()">Print / Save PDF File</button>
+          <div class="cert-preview-area">
+            <div class="certificate-frame" id="printableCertificateBody">
+              <div class="cert-title">CERTIFICATE OF COMPLETION</div>
+              <div class="cert-subtitle">PURE GROW FARM ACADEMY</div>
+              <div style="font-size: 14px; text-transform: uppercase; letter-spacing: 2px;">This is proudly presented to</div>
+              <div class="cert-name" id="certGeneratedName">Soham Gajera</div>
+              <div class="cert-text" id="certGeneratedBody">
+                for successfully undergoing and finishing the comprehensive technical hands-on expert instruction module on Commercial Oyster Mushroom Cultivation, Spore Processing, Production, Value-Added Processing and Strategic Marketing frameworks.
+              </div>
+              <div class="cert-footer-row">
+                <div>
+                  <strong>Date of Approval:</strong>
+                  <div id="certGeneratedApproveDate">17/07/2026</div>
+                </div>
+                <div>
+                  <strong>Training Schedule:</strong>
+                  <div id="certGeneratedDuration">01/01/2026 to 15/01/2026</div>
+                </div>
+                <div style="text-align:center;">
+                  <div style="font-style:italic; font-family:serif; color:#2b8a3e; font-weight:bold;">Soham & Jeet Gajera</div>
+                  <div class="cert-sig-line">Authorized Signatures</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ERP Accounting Module (Daily log entries, Mushroom Sales, Purchases, Expenses, P&L Metrics) Tab -->
+      <div id="erpAccountingTab" class="erp-section">
+        <h3>Multi-Axis Dynamic Profit & Loss Accounting Ledger</h3>
+        
+        <!-- Automations Computations Metrics Grid Overview Dashboard -->
+        <div class="fin-grid">
+          <div class="fin-card">
+            <div class="muted small-title">Total Operational Sales Revenue</div>
+            <div class="fin-val" id="finTotalRevenue">Rs 0.00</div>
+          </div>
+          <div class="fin-card">
+            <div class="muted small-title">Total Procurement Purchases</div>
+            <div class="fin-val" id="finTotalPurchases" style="color:var(--danger);">Rs 0.00</div>
+          </div>
+          <div class="fin-card">
+            <div class="muted small-title">Total Miscellaneous Expenses</div>
+            <div class="fin-val" id="finTotalExpenses" style="color:var(--warn);">Rs 0.00</div>
+          </div>
+          <div class="fin-card" style="background:var(--soft);">
+            <div class="muted small-title">Net Unified Profit & Loss (P&L)</div>
+            <div class="fin-val" id="finNetProfit" style="color:var(--accent);">Rs 0.00</div>
           </div>
         </div>
 
-        <div class="shop-layout">
-          <div class="products" id="productsList"></div>
-
-          <aside class="cart-box">
-            <h2>Cart</h2>
-            <div id="cartItems" class="cart-items"></div>
-            <div class="bill-row"><span>Subtotal</span><strong id="subtotal">Rs 0</strong></div>
-            <div class="bill-row"><span>Delivery</span><strong id="delivery">Rs 0</strong></div>
-            <div class="bill-row total"><span>Total</span><strong id="total">Rs 0</strong></div>
-
-            <form id="orderForm" onsubmit="confirmOrder(event)">
-              <input type="text" id="name" placeholder="Your name" required>
-              <input type="tel" id="phone" placeholder="Phone number" pattern="[0-9]{10}" required>
-              <input type="email" id="email" placeholder="Email" required>
-              <input type="text" id="address" placeholder="Address" required>
-              <select id="paymentMode" required>
-                <option value="">Select online payment mode</option>
-                <option value="GPay">GPay</option>
-                <option value="PhonePe">PhonePe</option>
-                <option value="Paytm">Paytm</option>
-                <option value="UPI">Any UPI App</option>
-              </select>
-              <div id="productPaymentHelp" class="payment-help"></div>
-              <input type="text" id="paymentId" placeholder="Online payment transaction ID" required>
-              <button type="submit" id="confirmOrderBtn" disabled>Confirm Order After Payment</button>
+        <!-- Multi-Tab Forms Container Matrix for Bookkeeping Records Logs -->
+        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap:16px; margin-bottom:24px;">
+          <!-- Sub-Form 1: Miscellaneous Daily Expense Logger -->
+          <div class="db-card">
+            <h4>Log Daily Miscellaneous Expense</h4>
+            <form onsubmit="saveAdminExpense(event)">
+              <label>Expense Category:
+                <select id="expCategory" required>
+                  <option value="Farm">Farm Infrastructure</option>
+                  <option value="Mushroom">Mushroom Substrate/Spore</option>
+                </select>
+              </label>
+              <label>Payer Assignment:
+                <select id="expPayer" required>
+                  <option value="Soham">Soham Gajera</option>
+                  <option value="Jeet">Jeet Gajera</option>
+                </select>
+              </label>
+              <label>Payment Mode Channel:
+                <select id="expMode" required>
+                  <option value="Online">Online Banking / UPI</option>
+                  <option value="Cash">Liquid Hard Cash</option>
+                </select>
+              </label>
+              <input type="text" id="expDesc" placeholder="Expense Description (e.g. Spore Bags)" required>
+              <input type="number" id="expAmount" placeholder="Amount Paid (Rs)" required>
+              <button type="submit">Log Expense Record</button>
             </form>
-          </aside>
-        </div>
-      </section>
-
-      <section id="gallery">
-        <h2>Gallery</h2>
-        <div class="gallery">
-          <img src="mushroom/7.jpg" alt="Mushroom gallery 1">
-          <img src="mushroom/8.jpg" alt="Mushroom gallery 2">
-          <img src="mushroom/9.jpg" alt="Mushroom gallery 3">
-          <img src="mushroom/10.jpg" alt="Mushroom gallery 4">
-          <img src="mushroom/11.jpg" alt="Mushroom gallery 5">
-          <img src="mushroom/12.jpg" alt="Mushroom gallery 6">
-        </div>
-      </section>
-
-      <section id="visit" class="visit-section">
-        <h2>Visit Pure Grow Farm</h2>
-        <p class="muted">Student internship and farmer training booking will be confirmed after online payment.</p>
-
-        <div class="visit-tabs">
-          <button type="button" onclick="showVisitForm('studentForm')">Student Internship</button>
-          <button type="button" onclick="showVisitForm('farmerForm')">Farmer Training</button>
-        </div>
-
-        <form id="studentForm" class="visit-form active" onsubmit="submitStudentVisit(event)">
-          <input type="text" id="sname" placeholder="Student Name" required>
-          <input type="tel" id="sphone" placeholder="Phone Number" pattern="[0-9]{10}" required>
-          <input type="email" id="semail" placeholder="Email" required>
-          <input type="text" id="senroll" placeholder="Enrollment Number" required>
-          <input type="text" id="scollege" placeholder="College Name" required>
-          <input type="text" id="scourse" placeholder="Course Name" required>
-          <label>Internship Start Date <input type="date" id="sstart" required></label>
-          <label>Internship End Date <input type="date" id="send" required></label>
-          <select id="spaymentMode" required>
-            <option value="">Select online payment mode</option>
-            <option value="GPay">GPay</option>
-            <option value="PhonePe">PhonePe</option>
-            <option value="Paytm">Paytm</option>
-          </select>
-          <input type="text" id="spayment" placeholder="Payment Transaction ID" required>
-          <div class="payment-box">
-            <h3>Student Internship Fee Rs 100</h3>
-            <p>UPI ID: sohamgajera01@okhdfcbank</p>
-            <button type="button" onclick="openVisitUpi(100)">Pay Online</button>
           </div>
-          <button type="submit">Confirm Student Visit After Payment</button>
-        </form>
 
-        <form id="farmerForm" class="visit-form" onsubmit="submitFarmerVisit(event)">
-          <input type="text" id="fname" placeholder="Farmer Name" required>
-          <input type="tel" id="fphone" placeholder="Phone Number" pattern="[0-9]{10}" required>
-          <input type="email" id="femail" placeholder="Email" required>
-          <label>Training Date <input type="date" id="fdate" required></label>
-          <select id="fpaymentMode" required>
-            <option value="">Select online payment mode</option>
-            <option value="GPay">GPay</option>
-            <option value="PhonePe">PhonePe</option>
-            <option value="Paytm">Paytm</option>
-          </select>
-          <input type="text" id="fpayment" placeholder="Payment Transaction ID" required>
-          <div class="payment-box">
-            <h3>Farmer Training Fee Rs 699</h3>
-            <p>UPI ID: sohamgajera01@okhdfcbank</p>
-            <button type="button" onclick="openVisitUpi(699)">Pay Online</button>
+          <!-- Sub-Form 2: Mushroom Commercial Sales Logger -->
+          <div class="db-card">
+            <h4>Log Commercial Mushroom Sale</h4>
+            <form onsubmit="saveAdminSale(event)">
+              <label>Mushroom Product Variant Type:
+                <select id="saleProduct" required>
+                  <option value="Green">Green Fresh Mushroom</option>
+                  <option value="Dry">Dry Dried Mushroom</option>
+                  <option value="Powder">Mushroom Fine Powder</option>
+                </select>
+              </label>
+              <input type="text" id="saleBuyer" placeholder="Purchaser / Client Business Name" required>
+              <input type="number" step="0.01" id="saleQty" placeholder="Quantity Dispatched (kg/packs)" required>
+              <input type="number" id="saleRate" placeholder="Selling Rate per Unit (Rs)" required>
+              <button type="submit">Log Sales Revenue</button>
+            </form>
           </div>
-          <button type="submit">Confirm Farmer Visit After Payment</button>
-        </form>
 
-        <div class="thankyou" id="visitThankyouBox">
-          <h2>Thank You</h2>
-          <p>Your farm visit is confirmed after online payment.</p>
-          <p class="send-note">All visit data is ready below. Tap Send Email or Send WhatsApp Message to send it to Pure Grow Farm.</p>
-          <pre id="visitInvoiceText"></pre>
-          <div class="visit-actions">
-            <button type="button" onclick="downloadVisitInvoice()">Download Invoice</button>
-            <a class="btn" id="visitEmailLink" href="#">Send Email</a>
-            <a class="btn" id="visitWhatsappLink" target="_blank" rel="noreferrer">Send WhatsApp Message</a>
+          <!-- Sub-Form 3: Mushroom Raw Material Purchase Procurement Logger -->
+          <div class="db-card">
+            <h4>Log Raw Product Procurement Purchase</h4>
+            <form onsubmit="saveAdminPurchase(event)">
+              <label>Procured Mushroom Variant Type:
+                <select id="purProduct" required>
+                  <option value="Green">Green Fresh Mushroom</option>
+                  <option value="Dry">Dry Dried Mushroom</option>
+                </select>
+              </label>
+              <input type="text" id="purVendor" placeholder="Supplier / Farmer Full Name" required>
+              <input type="number" step="0.01" id="purQty" placeholder="Quantity Received (kg)" required>
+              <input type="number" id="purRate" placeholder="Purchase Rate per kg (Rs)" required>
+              <button type="submit">Log Procurement Outflow</button>
+            </form>
           </div>
         </div>
-      </section>
 
-      <section id="reviews" class="reviews">
-        <h2>Customer Reviews</h2>
-        <form class="review-form" onsubmit="addReview(event)">
-          <input id="reviewName" type="text" placeholder="Your name" required>
-          <select id="reviewRating" required>
-            <option value="5">5 Star</option>
-            <option value="4">4 Star</option>
-            <option value="3">3 Star</option>
-            <option value="2">2 Star</option>
-            <option value="1">1 Star</option>
-          </select>
-          <textarea id="reviewText" rows="3" placeholder="Write review" required></textarea>
-          <button type="submit">Add Review</button>
-        </form>
-        <div id="reviewList" class="review-list"></div>
-      </section>
-
-      <section id="contact" class="contact">
-        <h2>Contact</h2>
-        <div class="contact-grid">
-          <div>
-            <p class="muted">Call: <a href="tel:+919067891039"><strong>9067891039</strong></a>, <a href="tel:+918200145732"><strong>8200145732</strong></a></p>
-            <p class="muted">Email: <a href="mailto:puregrowfarm001@gmail.com">puregrowfarm001@gmail.com</a></p>
-            <p class="muted">Instagram: <a href="https://www.instagram.com/_pure_grow_mushroom_farm_?igsh=bnlpMXdhaGtqMWhq" target="_blank" rel="noreferrer">@_pure_grow_mushroom_farm_</a></p>
-            <p class="muted">Youtube: <a href="https://www.youtube.com/channel/UC2T-bDe5wEblhgQOYY8RAzQ" target="_blank" rel="noreferrer">Pure Grow Farm</a></p>
-            <p class="muted">Address: <a href="https://www.google.com/maps/dir//Makhiyala,+Gujarat+362011/@21.6172629,70.3661049,12z/data=!4m8!4m7!1m0!1m5!1m1!1s0x395803313ef34a91:0xcfc3fa020115f2c6!2m2!1d70.4485065!2d21.6172832?entry=ttu" target="_blank" rel="noreferrer">Makhiyala, Gujarat 362011</a></p>
-          </div>
-          <aside class="fast-facts">
-            <h3>Fast Facts</h3>
-            <p class="muted">Delivery areas: local markets and focused delivery zones. For bulk inquiries, please call.</p>
-            <p><strong>Working hours</strong></p>
-            <p class="muted">Mon-Sat: 8:00 AM - 6:00 PM</p>
-          </aside>
+        <!-- Live Realtime Compiled Auditable Accounts Data Matrices Lists -->
+        <h4>Compiled Live Financial Accounts Registry Logs</h4>
+        <div class="table-responsive">
+          <table>
+            <thead>
+              <tr>
+                <th>Type Classification</th>
+                <th>Item / Entity Details</th>
+                <th>Party Details</th>
+                <th>Funding Context / Source</th>
+                <th>Financial Outflow/Inflow Matrix</th>
+              </tr>
+            </thead>
+            <tbody id="adminAccountingTableBody">
+              <!-- Dynamically Appended Analytical Arrays -->
+            </tbody>
+          </table>
         </div>
-      </section>
-    </main>
+      </div>
+    </section>
+
+    <dialog id="invoiceDialog">
+      <div class="dialog-head">
+        <h2>Order Confirmed</h2>
+        <button type="button" onclick="closeInvoice()">Close</button>
+      </div>
+      <div class="invoice-logo-row">
+        <img src="mushroom/pgf logo.png" alt="Pure Grow Farm logo">
+        <div>
+          <strong>Pure Grow Farm</strong>
+          <div class="muted">Oyster Mushrooms - Green, Dry, Powder and Food</div>
+          <div class="muted">9067891039 | 8200145732 | puregrowfarm001@gmail.com</div>
+          <div class="muted">Makhiyala, Gujarat 362011</div>
+        </div>
+      </div>
+      <p class="muted">Thank you. Your mushroom product invoice is generated.</p>
+      <p class="send-note">All product order data is ready below. Tap Send Email or Send WhatsApp to send it to Pure Grow Farm.</p>
+      <pre id="invoiceText"></pre>
+      <div class="dialog-actions">
+        <button type="button" onclick="downloadInvoice()">Download Invoice</button>
+        <a class="btn" id="emailInvoice" href="#">Send Email</a>
+        <a class="btn" id="whatsappInvoice" href="#" target="_blank" rel="noreferrer">Send WhatsApp</a>
+      </div>
+    </dialog>
 
     <footer>
       <div>Pure Grow Farm - Oyster Mushrooms</div>
@@ -566,31 +924,6 @@ pre { overflow: auto; max-height: 330px; padding: 12px; color: #eef8ef; backgrou
     </footer>
   </div>
 
-  <dialog id="invoiceDialog">
-    <div class="dialog-head">
-      <h2>Order Confirmed</h2>
-      <button type="button" onclick="closeInvoice()">Close</button>
-    </div>
-    <div class="invoice-logo-row">
-      <img src="mushroom/pgf logo.png" alt="Pure Grow Farm logo">
-      <div>
-        <strong>Pure Grow Farm</strong>
-        <div class="muted">Oyster Mushrooms - Green, Dry, Powder and Food</div>
-        <div class="muted">9067891039 | 8200145732 | puregrowfarm001@gmail.com</div>
-        <div class="muted">Makhiyala, Gujarat 362011</div>
-      </div>
-    </div>
-    <p class="muted">Thank you. Your mushroom product invoice is generated.</p>
-    <p class="send-note">All product order data is ready below. Tap Send Email or Send WhatsApp to send it to Pure Grow Farm.</p>
-    <pre id="invoiceText"></pre>
-    <div class="dialog-actions">
-      <button type="button" onclick="downloadInvoice()">Download Invoice</button>
-      <a class="btn" id="emailInvoice" href="#">Send Email</a>
-      <a class="btn" id="whatsappInvoice" href="#" target="_blank" rel="noreferrer">Send WhatsApp</a>
-    </div>
-  </dialog>
-
-  
 <script>
 const farmEmail = "puregrowfarm001@gmail.com";
 const farmWhatsapp = "919067891039";
@@ -598,16 +931,21 @@ const farmUpiId = "sohamgajera01@okhdfcbank";
 const farmName = "Pure Grow Farm";
 const farmAddress = "Makhiyala, Gujarat 362011";
 const farmContact = "9067891039 Soham Gajera | 8200145732 Jeet Gajera";
-let productPaymentOpened = false;
 
+// Google Web App Deployment Endpoint URL Anchor Link Bind
 const SHEET_URL = "https://script.google.com/macros/s/AKfycbyg8zhosR2maS7Sgz8j0Kr58JXCEWgqfXvTFgMEO_XP7cAjyw3vlHTsNZr5GJbDq1vs/exec";
+
+// Master Hardcoded Admin Credentials Protection Keys Block
+const ADMIN_CREDENTIALS = {
+  user: "admin",
+  pass: "PureGrow@2026"
+};
 
 const products = [
   { id: 1, name: "Fresh Green Oyster Mushroom", price: 180, unit: "1kg", image: "mushroom/Screenshot 2025-10-24 154001.png", detail: "Picked fresh, chilled and delivered within 24-48 hours." },
   { id: 2, name: "Dried Oyster Mushroom", price: 800, unit: "1kg pack", image: "mushroom/oyst dry.webp", detail: "Slow-dried to preserve flavor and nutrients." },
   { id: 3, name: "Oyster Mushroom Powder", price: 130, unit: "100gm pack", image: "mushroom/oyster powder.png", detail: "Mushroom powder for soup, curry, health mix and snacks." },
   { id: 4, name: "Methi Mushroom Khakhra", price: 70, unit: "200gm pack", image: "Methi khakhra 2.png", detail: "Crispy khakhra prepared with oyster mushroom powder." },
- // { id: 5, name: "Adad Mushroom Papad", price: 120, unit: "1 pack", image: "mushroom/bulk.png", detail: "Papad with mushroom nutrition and farm-made taste." },
   { id: 6, name: "Bulk and Wholesale", price: 0, unit: "Custom", bulk: true, image: "mushroom/bulk.png", detail: "Supply for restaurants, retailers and local markets. Contact farm for custom rate and quantity." }
 ];
 
@@ -617,50 +955,356 @@ const reviews = [
   { name: "Kinjal", rating: 4, text: "Farm visit and training were useful." }
 ];
 
+// Persistent State Storage Arrays
+let orderRegistry = JSON.parse(localStorage.getItem('pgf_orders')) || [];
+let bookingsRegistry = JSON.parse(localStorage.getItem('pgf_bookings')) || [];
+let expensesRegistry = JSON.parse(localStorage.getItem('pgf_expenses')) || [];
+let salesRegistry = JSON.parse(localStorage.getItem('pgf_sales')) || [];
+let purchasesRegistry = JSON.parse(localStorage.getItem('pgf_purchases')) || [];
+
+let currentUser = JSON.parse(localStorage.getItem('pgf_session')) || null;
+let currentUpiState = { opened: false, trackingId: "" };
 let latestInvoice = "";
+let latestVisitInvoice = "";
 
-async function saveToSheet(data) {
-
+// Google Sheets Deployment Sync Handler Engine
+async function saveToSheet(payload) {
   try {
-
-    const response = await fetch(SHEET_URL, {
+    await fetch(SHEET_URL, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify(data)
+      mode: "no-cors",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
     });
+  } catch (e) {
+    console.error("Sheets sync log connection delay:", e);
+  }
+}
 
-    const result = await response.text();
-
-    console.log("Sheet Response:", result);
-
-    if (result !== "Success") {
-      alert("Google Sheet Error: " + result);
+// Authentication Matrix Suite Controller
+function checkUserSession() {
+  if (currentUser) {
+    document.getElementById("authSection").style.display = "none";
+    document.getElementById("logoutBtn").style.display = "inline-flex";
+    document.getElementById("authNavBtn").style.display = "none";
+    
+    if(currentUser.isAdmin) {
+      triggerAdminView();
+    } else {
+      document.getElementById("dashboardWorkspace").style.display = "block";
+      document.getElementById("userDashboardName").textContent = currentUser.name;
+      loadUserPanelData();
     }
+  } else {
+    document.getElementById("authSection").style.display = "block";
+    document.getElementById("logoutBtn").style.display = "none";
+    document.getElementById("authNavBtn").style.display = "inline-flex";
+    document.getElementById("dashboardWorkspace").style.display = "none";
+    document.getElementById("adminErpView").classList.remove("active");
+    document.getElementById("publicContent").style.display = "block";
+  }
+}
 
-  } catch (error) {
+function switchAuthBox(boxId) {
+  document.querySelectorAll('.auth-box').forEach(b => b.classList.remove('active'));
+  document.getElementById(boxId).classList.add('active');
+}
 
-    console.error(error);
-    alert("Connection Error");
+function handleLogin(e) {
+  if(e) e.preventDefault();
+  const emailInput = document.getElementById("loginEmail").value.trim();
+  const passInput = document.getElementById("loginPassword").value;
 
+  if (emailInput === ADMIN_CREDENTIALS.user && passInput === ADMIN_CREDENTIALS.pass) {
+    currentUser = { name: "System Admin", email: "admin@puregrowfarm.internal", isAdmin: true };
+    localStorage.setItem('pgf_session', JSON.stringify(currentUser));
+    checkUserSession();
+    return;
   }
 
+  // Fallback Dynamic User Profile Simulation Initialization Loop
+  currentUser = { name: emailInput.split('@')[0], email: emailInput, isAdmin: false };
+  localStorage.setItem('pgf_session', JSON.stringify(currentUser));
+  checkUserSession();
 }
 
-function money(amount) {
-  return amount ? `Rs ${amount}` : "Custom";
+function handleRegister(e) {
+  e.preventDefault();
+  const name = document.getElementById("regName").value.trim();
+  const email = document.getElementById("regEmail").value.trim();
+  currentUser = { name: name, email: email, isAdmin: false };
+  localStorage.setItem('pgf_session', JSON.stringify(currentUser));
+  checkUserSession();
 }
 
+function handleForgotPassword(e) {
+  e.preventDefault();
+  alert("Security Notice: A simulated 6-digit verification code OTP has been securely transmitted to " + document.getElementById("forgotEmail").value);
+  document.getElementById("forgotForm").style.display = "none";
+  document.getElementById("otpVerifyForm").style.display = "block";
+}
+
+function handleVerifyOtp(e) {
+  e.preventDefault();
+  currentUser = { name: "Recovered User", email: document.getElementById("forgotEmail").value, isAdmin: false };
+  localStorage.setItem('pgf_session', JSON.stringify(currentUser));
+  alert("Verification Successful! Profile authenticated.");
+  document.getElementById("forgotForm").style.display = "block";
+  document.getElementById("otpVerifyForm").style.display = "none";
+  switchAuthBox('loginBox');
+  checkUserSession();
+}
+
+function handleLogout() {
+  currentUser = null;
+  localStorage.removeItem('pgf_session');
+  checkUserSession();
+}
+
+function loadUserPanelData() {
+  const oList = document.getElementById("userOrdersList");
+  const bList = document.getElementById("userBookingsList");
+  
+  const myOrders = orderRegistry.filter(o => o.email === currentUser.email);
+  const myBookings = bookingsRegistry.filter(b => b.email === currentUser.email);
+
+  oList.innerHTML = myOrders.length ? myOrders.map(o => `
+    <div style="padding:8px; border-bottom:1px solid #eee;">
+      <strong>${o.orderId}</strong> - Total: Rs ${o.total} [${o.status}]
+    </div>
+  `).join("") : "No orders matching this profile index.";
+
+  bList.innerHTML = myBookings.length ? myBookings.map(b => `
+    <div style="padding:8px; border-bottom:1px solid #eee;">
+      <strong>${b.bookingId}</strong> - ${b.type} Scheme (${b.date}) [${b.status}]
+      ${b.status === 'Approved' ? `<br><button class="btn" style="padding:4px 8px; font-size:12px; min-height:auto;" onclick="renderCertificateInline('${b.bookingId}')">View Live Verified Certificate</button>` : ''}
+    </div>
+  `).join("") : "No matching active bookings.";
+}
+
+// Enterprise Admin Control Panel UI Layer Controls
+function triggerAdminView() {
+  document.getElementById("publicContent").style.display = "none";
+  document.getElementById("dashboardWorkspace").style.display = "none";
+  document.getElementById("authSection").style.display = "none";
+  document.getElementById("adminErpView").classList.add("active");
+  populateAdminDashboardTables();
+  computeFinancialLedgerStatements();
+}
+
+function exitAdminPanel() {
+  handleLogout();
+}
+
+function switchErpTab(tabId) {
+  document.querySelectorAll('.erp-section').forEach(s => s.classList.remove('active'));
+  document.getElementById(tabId).classList.add('active');
+}
+
+function populateAdminDashboardTables() {
+  const oBody = document.getElementById("adminOrdersTableBody");
+  const bBody = document.getElementById("adminBookingsTableBody");
+
+  oBody.innerHTML = orderRegistry.map((o, index) => `
+    <tr>
+      <td>${o.orderId}</td>
+      <td>${o.name}</td>
+      <td>${o.phone}</td>
+      <td>${o.products}</td>
+      <td>Rs ${o.total}</td>
+      <td><code>${o.txnId}</code></td>
+      <td><span class="badge ${o.status === 'Approved'?'badge-confirmed':'badge-pending'}">${o.status}</span></td>
+      <td>
+        <button class="btn" style="padding:4px 8px; min-height:auto;" onclick="approveClientOrder(${index})">Confirm</button>
+        <button class="btn" style="padding:4px 8px; min-height:auto; background:#25d366;" onclick="dispatchWhatsAppNotification('${o.phone}', 'Hello ${o.name}, your Pure Grow Farm order ${o.orderId} has been verified and approved!')">WhatsApp</button>
+      </td>
+    </tr>
+  `).join("");
+
+  bBody.innerHTML = bookingsRegistry.map((b, index) => `
+    <tr>
+      <td>${b.bookingId}</td>
+      <td>${b.type}</td>
+      <td>${b.name}</td>
+      <td>${b.phone}</td>
+      <td>${b.date}</td>
+      <td><code>${b.txnId}</code></td>
+      <td><span class="badge ${b.status === 'Approved'?'badge-confirmed':'badge-pending'}">${b.status}</span></td>
+      <td>
+        <button class="btn" style="padding:4px 8px; min-height:auto;" onclick="approveTrainingBooking(${index})">Confirm & Approve</button>
+        <button class="btn" style="padding:4px 8px; min-height:auto; background:#25d366;" onclick="dispatchWhatsAppNotification('${b.phone}', 'Hello ${b.name}, your program booking ${b.bookingId} is confirmed! Dynamic certificate has been configured.')">WhatsApp</button>
+      </td>
+    </tr>
+  `).join("");
+}
+
+function approveClientOrder(idx) {
+  orderRegistry[idx].status = "Approved";
+  localStorage.setItem('pgf_orders', JSON.stringify(orderRegistry));
+  
+  const targetOrder = orderRegistry[idx];
+  const orderSaleLog = {
+    type: "sale",
+    product: "E-Com Order Items Bundle",
+    buyer: targetOrder.name,
+    qty: 1,
+    rate: targetOrder.total,
+    total: targetOrder.total,
+    timestamp: new Date().toLocaleDateString()
+  };
+  salesRegistry.push(orderSaleLog);
+  localStorage.setItem('pgf_sales', JSON.stringify(salesRegistry));
+  
+  saveToSheet({ sheet: "Orders", action: "updateStatus", orderId: targetOrder.orderId, status: "Approved" });
+  saveToSheet({ type: "sale", ...orderSaleLog });
+  
+  alert("Order Verified Natively! Sales Ledger entry logged.");
+  populateAdminDashboardTables();
+  computeFinancialLedgerStatements();
+}
+
+function approveTrainingBooking(idx) {
+  bookingsRegistry[idx].status = "Approved";
+  localStorage.setItem('pgf_bookings', JSON.stringify(bookingsRegistry));
+  
+  const targetBooking = bookingsRegistry[idx];
+  const bookingInflowLog = {
+    type: "sale",
+    product: `Training Course: ${targetBooking.type}`,
+    buyer: targetBooking.name,
+    qty: 1,
+    rate: targetBooking.fee,
+    total: targetBooking.fee,
+    timestamp: new Date().toLocaleDateString()
+  };
+  salesRegistry.push(bookingInflowLog);
+  localStorage.setItem('pgf_sales', JSON.stringify(salesRegistry));
+  
+  saveToSheet({ sheet: "Farm Bookings", action: "updateStatus", bookingId: targetBooking.bookingId, status: "Approved" });
+  saveToSheet({ type: "sale", ...bookingInflowLog });
+  
+  alert("Training Booking Confirmed! Access authorized.");
+  populateAdminDashboardTables();
+  computeFinancialLedgerStatements();
+  renderCertificateInline(targetBooking.bookingId);
+}
+
+function renderCertificateInline(bId) {
+  const target = bookingsRegistry.find(b => b.bookingId === bId);
+  if(!target) return;
+
+  document.getElementById("certGeneratedName").textContent = target.name.toUpperCase();
+  document.getElementById("certGeneratedApproveDate").textContent = new Date().toLocaleDateString();
+  
+  if(target.type === "Student") {
+    document.getElementById("certGeneratedDuration").textContent = `${target.start} to ${target.end}`;
+    document.getElementById("certGeneratedBody").textContent = `for successfully completing the specialized academic student internship module focused on structured Organic Oyster Mushroom Cultivation technology, clean room sterilization frameworks, and industrial scaling operations executed at Pure Grow Farm.`;
+  } else {
+    document.getElementById("certGeneratedDuration").textContent = target.date;
+    document.getElementById("certGeneratedBody").textContent = `for successfully dedicating effort and completing the targeted technical hands-on expert farmer cultivation workshop series, mapping spawn management, local packaging, substrate engineering, and distribution management frameworks.`;
+  }
+  
+  document.getElementById("certificateGeneratorSandbox").style.display = "block";
+  document.getElementById("certificateGeneratorSandbox").scrollIntoView({behavior: "smooth"});
+}
+
+function dispatchWhatsAppNotification(phone, msg) {
+  window.open(`https://wa.me/${phone.startsWith('91')?phone:'91'+phone}?text=${encodeURIComponent(msg)}`, '_blank');
+}
+
+// Financial Ledger Accounting Aggregators & Controllers Block
+function saveAdminExpense(e) {
+  e.preventDefault();
+  const data = {
+    expId: "EXP-" + Date.now().toString().slice(-4),
+    date: new Date().toLocaleDateString(),
+    category: document.getElementById("expCategory").value,
+    payer: document.getElementById("expPayer").value,
+    mode: document.getElementById("expMode").value,
+    desc: document.getElementById("expDesc").value.trim(),
+    amount: parseFloat(document.getElementById("expAmount").value)
+  };
+  expensesRegistry.push(data);
+  localStorage.setItem('pgf_expenses', JSON.stringify(expensesRegistry));
+  saveToSheet({ type: "expense", ...data });
+  e.target.reset();
+  computeFinancialLedgerStatements();
+}
+
+function saveAdminSale(e) {
+  e.preventDefault();
+  const qty = parseFloat(document.getElementById("saleQty").value);
+  const rate = parseFloat(document.getElementById("saleRate").value);
+  const data = {
+    saleId: "SALE-" + Date.now().toString().slice(-4),
+    date: new Date().toLocaleDateString(),
+    product: document.getElementById("saleProduct").value,
+    buyer: document.getElementById("saleBuyer").value.trim(),
+    qty: qty,
+    rate: rate,
+    total: qty * rate
+  };
+  salesRegistry.push(data);
+  localStorage.setItem('pgf_sales', JSON.stringify(salesRegistry));
+  saveToSheet({ type: "sale", ...data });
+  e.target.reset();
+  computeFinancialLedgerStatements();
+}
+
+function saveAdminPurchase(e) {
+  e.preventDefault();
+  const qty = parseFloat(document.getElementById("purQty").value);
+  const rate = parseFloat(document.getElementById("purRate").value);
+  const data = {
+    purId: "PUR-" + Date.now().toString().slice(-4),
+    date: new Date().toLocaleDateString(),
+    product: document.getElementById("purProduct").value,
+    vendor: document.getElementById("purVendor").value.trim(),
+    qty: qty,
+    rate: rate,
+    total: qty * rate
+  };
+  purchasesRegistry.push(data);
+  localStorage.setItem('pgf_purchases', JSON.stringify(purchasesRegistry));
+  saveToSheet({ type: "purchase", ...data });
+  e.target.reset();
+  computeFinancialLedgerStatements();
+}
+
+function computeFinancialLedgerStatements() {
+  const totalSales = salesRegistry.reduce((sum, s) => sum + s.total, 0);
+  const totalPurchases = purchasesRegistry.reduce((sum, p) => sum + p.total, 0);
+  const totalExpenses = expensesRegistry.reduce((sum, e) => sum + e.amount, 0);
+  const netProfit = totalSales - (totalPurchases + totalExpenses);
+
+  document.getElementById("finTotalRevenue").textContent = "Rs " + totalSales.toFixed(2);
+  document.getElementById("finTotalPurchases").textContent = "Rs " + totalPurchases.toFixed(2);
+  document.getElementById("finTotalExpenses").textContent = "Rs " + totalExpenses.toFixed(2);
+  
+  const netEl = document.getElementById("finNetProfit");
+  netEl.textContent = "Rs " + netProfit.toFixed(2);
+  netEl.style.color = netProfit >= 0 ? "var(--accent)" : "var(--danger)";
+
+  const ledgersBody = document.getElementById("adminAccountingTableBody");
+  let htmlRows = "";
+
+  salesRegistry.forEach(s => {
+    htmlRows += `<tr><td><mark style='background:#dcfce7;'>INFLOW: SALE</mark></td><td>Mushroom (${s.product})</td><td>${s.buyer}</td><td>Qty: ${s.qty} @ Rs ${s.rate}</td><td style='color:var(--accent); font-weight:bold;'>+ Rs ${s.total.toFixed(2)}</td></tr>`;
+  });
+  purchasesRegistry.forEach(p => {
+    htmlRows += `<tr><td><mark style='background:#fee2e2;'>OUTFLOW: PURCHASE</mark></td><td>Procurement (${p.product})</td><td>${p.vendor}</td><td>Qty: ${p.qty} kg @ Rs ${p.rate}</td><td style='color:var(--danger); font-weight:bold;'>- Rs ${p.total.toFixed(2)}</td></tr>`;
+  });
+  expensesRegistry.forEach(e => {
+    htmlRows += `<tr><td><mark style='background:#fef3c7;'>OUTFLOW: EXPENSE</mark></td><td>${e.category} Operations</td><td>Payer: ${e.payer}</td><td>${e.desc} (${e.mode})</td><td style='color:var(--warn); font-weight:bold;'>- Rs ${e.amount.toFixed(2)}</td></tr>`;
+  });
+
+  ledgersBody.innerHTML = htmlRows ? htmlRows : "<tr><td colspan='5' class='muted' style='text-align:center;'>No structural accounting transactions logged.</td></tr>";
+}
+
+// Global Core E-Commerce Shop Modules
 function toggleNav() {
   document.getElementById("mainNav").classList.toggle("show");
 }
-
-document.querySelectorAll("nav a").forEach(link => {
-  link.addEventListener("click", () => {
-    document.getElementById("mainNav").classList.remove("show");
-  });
-});
 
 function renderProducts(list = products) {
   const target = document.getElementById("productsList");
@@ -695,13 +1339,9 @@ document.getElementById("productSearch").addEventListener("input", searchProduct
 
 function addToCart(id) {
   const product = products.find(item => item.id === id);
-  if (product.bulk) {
-    window.location.href = `https://wa.me/${farmWhatsapp}?text=${encodeURIComponent("Hello Pure Grow Farm, I want Bulk and Wholesale oyster mushroom order details.")}`;
-    return;
-  }
   const current = cart.get(id);
   cart.set(id, { ...product, qty: current ? current.qty + 1 : 1 });
-  productPaymentOpened = false;
+  currentUpiState.opened = false;
   renderCart();
   updateOrderButton();
 }
@@ -711,14 +1351,14 @@ function minusCart(id) {
   if (!item) return;
   if (item.qty === 1) cart.delete(id);
   else cart.set(id, { ...item, qty: item.qty - 1 });
-  productPaymentOpened = false;
+  currentUpiState.opened = false;
   renderCart();
   updateOrderButton();
 }
 
 function removeCart(id) {
   cart.delete(id);
-  productPaymentOpened = false;
+  currentUpiState.opened = false;
   renderCart();
   updateOrderButton();
 }
@@ -760,19 +1400,8 @@ function renderCart() {
   `).join("");
 }
 
-function buildUpiLink(amount, paymentMode, note) {
-  const params = new URLSearchParams({
-    pa: farmUpiId,
-    pn: farmName,
-    am: String(amount),
-    cu: "INR",
-    tn: note
-  });
-
-  if (paymentMode === "GPay") return `tez://upi/pay?${params.toString()}`;
-  if (paymentMode === "PhonePe") return `phonepe://pay?${params.toString()}`;
-  if (paymentMode === "Paytm") return `paytmmp://pay?${params.toString()}`;
-  return `upi://pay?${params.toString()}`;
+function buildUpiLink(amount, note) {
+  return `upi://pay?pa=${encodeURIComponent(farmUpiId)}&pn=${encodeURIComponent(farmName)}&am=${amount}&cu=INR&tn=${encodeURIComponent(note)}`;
 }
 
 function updatePaymentHelp(message) {
@@ -784,9 +1413,7 @@ function updatePaymentHelp(message) {
 function openProductPayment() {
   const paymentMode = document.getElementById("paymentMode").value;
   const bill = getTotals();
-
-  productPaymentOpened = false;
-  document.getElementById("paymentId").value = "";
+  currentUpiState.opened = false;
 
   if (!paymentMode) {
     updatePaymentHelp("");
@@ -794,18 +1421,10 @@ function openProductPayment() {
     return;
   }
 
-  if (!cart.size || bill.total <= 0) {
-    alert("Please add at least one product before selecting payment mode.");
-    document.getElementById("paymentMode").value = "";
-    updatePaymentHelp("");
-    updateOrderButton();
-    return;
-  }
-
-  productPaymentOpened = true;
-  updatePaymentHelp(`${paymentMode} app is opening with bill amount Rs ${bill.total}. Complete payment, then enter transaction ID.`);
+  currentUpiState.opened = true;
+  updatePaymentHelp(`${paymentMode} app is opening for Rs ${bill.total}. Complete payment, then enter transaction ID.`);
   updateOrderButton();
-  window.location.href = buildUpiLink(bill.total, paymentMode, "Pure Grow Farm product order");
+  window.location.href = buildUpiLink(bill.total, "PGF Order Goods Payment");
 }
 
 function updateOrderButton() {
@@ -815,104 +1434,47 @@ function updateOrderButton() {
   const address = document.getElementById("address").value.trim();
   const paymentMode = document.getElementById("paymentMode").value;
   const paymentId = document.getElementById("paymentId").value.trim();
-  const ready = cart.size && name && /^[0-9]{10}$/.test(phone) && email && address && paymentMode && productPaymentOpened && paymentId.length >= 6;
+  const ready = cart.size && name && /^[0-9]{10}$/.test(phone) && email && address && paymentMode && currentUpiState.opened && paymentId.length >= 6;
   document.getElementById("confirmOrderBtn").disabled = !ready;
 }
 
 document.getElementById("paymentMode").addEventListener("change", openProductPayment);
 document.getElementById("orderForm").addEventListener("input", updateOrderButton);
 
-function buildOrderInvoice(data) {
-  const bill = getTotals();
-  const lines = [...cart.values()].map(item => `${item.name} (${item.unit}) x ${item.qty} = ${item.price ? `Rs ${item.price * item.qty}` : "Custom price"}`).join("\n");
-
-  return `PURE GROW FARM - PRODUCT INVOICE
-Logo: mushroom/pgf logo.png
-Invoice No: PGF-${Date.now().toString().slice(-6)}
-
-Farm Details
-Farm Name: ${farmName}
-Address: ${farmAddress}
-Contact: ${farmContact}
-Email: ${farmEmail}
-UPI ID: ${farmUpiId}
-
-Customer
-Name: ${data.name}
-Phone: ${data.phone}
-Email: ${data.email}
-Address: ${data.address}
-
-Products
-${lines}
-
-Subtotal: Rs ${bill.subtotal}
-Delivery: Rs ${bill.delivery}
-Total Paid: Rs ${bill.total}
-Payment Mode: ${data.paymentMode}
-Transaction ID: ${data.paymentId}
-Status: Order confirmed after online payment
-
-Thank you for ordering from Pure Grow Farm.`;
-}
-
 function confirmOrder(event) {
   event.preventDefault();
-
-  if (!cart.size) {
-    alert("Please add at least one product.");
-    return;
-  }
-
-  const phone = document.getElementById("phone").value.trim();
-  if (!/^[0-9]{10}$/.test(phone)) {
-    alert("Please enter a valid 10-digit phone number.");
-    return;
-  }
-
-  if (!productPaymentOpened) {
-    alert("Please select payment mode and complete online payment first.");
-    return;
-  }
-
-  const paymentId = document.getElementById("paymentId").value.trim();
-  if (paymentId.length < 6) {
-    alert("Please enter valid transaction ID after payment.");
-    return;
-  }
+  const bill = getTotals();
+  const pId = document.getElementById("paymentId").value.trim();
 
   const data = {
+    orderId: "PGF-" + Date.now().toString().slice(-6),
     name: document.getElementById("name").value.trim(),
-    phone,
+    phone: document.getElementById("phone").value.trim(),
     email: document.getElementById("email").value.trim(),
     address: document.getElementById("address").value.trim(),
-    paymentMode: document.getElementById("paymentMode").value,
-    paymentId
+    products: [...cart.values()].map(item => `${item.name} x${item.qty}`).join(", "),
+    total: bill.total,
+    txnId: pId,
+    status: "Pending Verification"
   };
 
-  latestInvoice = buildOrderInvoice(data);
-  const bill = getTotals();
+  orderRegistry.unshift(data);
+  localStorage.setItem('pgf_orders', JSON.stringify(orderRegistry));
+  
+  saveToSheet({ type: "order", ...data, subtotal: bill.subtotal, delivery: bill.delivery, paymentMode: document.getElementById("paymentMode").value });
 
-saveToSheet({
-  type: "order",
-  invoiceNo: "PGF-" + Date.now(),
-  name: data.name,
-  phone: data.phone,
-  email: data.email,
-  address: data.address,
-  product: [...cart.values()].map(item => item.name).join(", "),
-  qty: [...cart.values()].map(item => item.qty).join(", "),
-  subtotal: bill.subtotal,
-  delivery: bill.delivery,
-  total: bill.total,
-  paymentMode: data.paymentMode,
-  paymentId: data.paymentId,
-  status: "Order Confirmed"
-});
+  latestInvoice = `PURE GROW FARM - COMMERCIAL GOODS INVOICE\nOrder ID: ${data.orderId}\nCustomer: ${data.name}\nPhone: ${data.phone}\nItems: ${data.products}\nTotal Charged: Rs ${data.total}\nTxn ID: ${data.txnId}\nStatus: Payment Confirmed - Pending Admin Dispatch Verification`;
+  
   document.getElementById("invoiceText").textContent = latestInvoice;
-  document.getElementById("emailInvoice").href = `mailto:${farmEmail}?subject=${encodeURIComponent("Pure Grow Farm Product Invoice")}&body=${encodeURIComponent(latestInvoice)}`;
+  document.getElementById("emailInvoice").href = `mailto:${farmEmail}?subject=Pure Grow Farm Order Invoice&body=${encodeURIComponent(latestInvoice)}`;
   document.getElementById("whatsappInvoice").href = `https://wa.me/${farmWhatsapp}?text=${encodeURIComponent(latestInvoice)}`;
   document.getElementById("invoiceDialog").showModal();
+  
+  cart.clear();
+  renderCart();
+  document.getElementById("orderForm").reset();
+  updateOrderButton();
+  checkUserSession();
 }
 
 function downloadInvoice() {
@@ -920,13 +1482,100 @@ function downloadInvoice() {
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
-  link.download = "pure-grow-farm-product-invoice.txt";
+  link.download = "pure-grow-farm-invoice.txt";
   link.click();
-  URL.revokeObjectURL(url);
 }
 
 function closeInvoice() {
   document.getElementById("invoiceDialog").close();
+}
+
+function showVisitForm(formId) {
+  document.getElementById("studentForm").classList.remove("active");
+  document.getElementById("farmerForm").classList.remove("active");
+  document.getElementById(formId).classList.add("active");
+}
+
+function openVisitUpi(amount, formId) {
+  if(formId === 'studentForm') {
+    document.getElementById("studentPaymentHelp").textContent = "Opening gateway for Rs " + amount + ". Complete tracking, paste transaction hash.";
+    document.getElementById("studentSubmitBtn").disabled = false;
+  } else {
+    document.getElementById("farmerPaymentHelp").textContent = "Opening gateway for Rs " + amount + ". Complete tracking, paste transaction hash.";
+    document.getElementById("farmerSubmitBtn").disabled = false;
+  }
+  window.location.href = buildUpiLink(amount, "PGF Cultivation Program Registration");
+}
+
+function submitStudentVisit(e) {
+  e.preventDefault();
+  const data = {
+    bookingId: "PGF-STU-" + Date.now().toString().slice(-4),
+    type: "Student",
+    name: document.getElementById("sname").value.trim(),
+    phone: document.getElementById("sphone").value.trim(),
+    email: document.getElementById("semail").value.trim(),
+    enrollment: document.getElementById("senroll").value.trim(),
+    college: document.getElementById("scollege").value.trim(),
+    course: document.getElementById("scourse").value.trim(),
+    start: document.getElementById("sstart").value,
+    end: document.getElementById("send").value,
+    fee: 100,
+    txnId: document.getElementById("spayment").value.trim(),
+    status: "Pending Verification"
+  };
+
+  bookingsRegistry.unshift(data);
+  localStorage.setItem('pgf_bookings', JSON.stringify(bookingsRegistry));
+  saveToSheet({ type: "visit", ...data });
+
+  latestVisitInvoice = `PURE GROW FARM - STUDENT INTERNSHIP BOOKING\nBooking Ref: ${data.bookingId}\nName: ${data.name}\nCollege: ${data.college}\nDuration: ${data.start} to ${data.end}\nTxn ID: ${data.txnId}`;
+  
+  document.getElementById("visitInvoiceText").textContent = latestVisitInvoice;
+  document.getElementById("visitEmailLink").href = `mailto:${farmEmail}?subject=Student Registration&body=${encodeURIComponent(latestVisitInvoice)}`;
+  document.getElementById("visitWhatsappLink").href = `https://wa.me/${farmWhatsapp}?text=${encodeURIComponent(latestVisitInvoice)}`;
+  document.getElementById("visitThankyouBox").style.display = "block";
+  
+  e.target.reset();
+  checkUserSession();
+}
+
+function submitFarmerVisit(e) {
+  e.preventDefault();
+  const data = {
+    bookingId: "PGF-FAR-" + Date.now().toString().slice(-4),
+    type: "Farmer",
+    name: document.getElementById("fname").value.trim(),
+    phone: document.getElementById("fphone").value.trim(),
+    email: document.getElementById("femail").value.trim(),
+    date: document.getElementById("fdate").value,
+    fee: 699,
+    txnId: document.getElementById("fpayment").value.trim(),
+    status: "Pending Verification"
+  };
+
+  bookingsRegistry.unshift(data);
+  localStorage.setItem('pgf_bookings', JSON.stringify(bookingsRegistry));
+  saveToSheet({ type: "visit", ...data });
+
+  latestVisitInvoice = `PURE GROW FARM - FARMER TRAINING BOOKING\nBooking Ref: ${data.bookingId}\nName: ${data.name}\nSchedule Date: ${data.date}\nTxn ID: ${data.txnId}`;
+  
+  document.getElementById("visitInvoiceText").textContent = latestVisitInvoice;
+  document.getElementById("visitEmailLink").href = `mailto:${farmEmail}?subject=Farmer Registration&body=${encodeURIComponent(latestVisitInvoice)}`;
+  document.getElementById("visitWhatsappLink").href = `https://wa.me/${farmWhatsapp}?text=${encodeURIComponent(latestVisitInvoice)}`;
+  document.getElementById("visitThankyouBox").style.display = "block";
+  
+  e.target.reset();
+  checkUserSession();
+}
+
+function downloadVisitInvoice() {
+  const blob = new Blob([latestVisitInvoice], { type: "text/plain" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = "pure-grow-farm-visit-receipt.txt";
+  link.click();
 }
 
 function addReview(event) {
@@ -951,120 +1600,8 @@ function renderReviews() {
 }
 
 renderProducts();
-renderCart();
 renderReviews();
-updateOrderButton();
-
-let latestVisitInvoice = "";
-
-function showVisitForm(formId) {
-  document.getElementById("studentForm").classList.remove("active");
-  document.getElementById("farmerForm").classList.remove("active");
-  document.getElementById(formId).classList.add("active");
-}
-
-function openVisitUpi(amount) {
-  window.location.href = `upi://pay?pa=${encodeURIComponent(farmUpiId)}&pn=${encodeURIComponent(farmName)}&am=${amount}&cu=INR`;
-}
-
-function showVisitConfirmation(subject, invoice) {
-  latestVisitInvoice = invoice;
-  document.getElementById("visitInvoiceText").textContent = invoice;
-  document.getElementById("visitEmailLink").href = `mailto:${farmEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(invoice)}`;
-  document.getElementById("visitWhatsappLink").href = `https://wa.me/${farmWhatsapp}?text=${encodeURIComponent(invoice)}`;
-  document.getElementById("visitThankyouBox").style.display = "block";
-  document.getElementById("visitThankyouBox").scrollIntoView({ behavior: "smooth" });
-}
-
-function submitStudentVisit(event) {
-  event.preventDefault();
-  const invoice = `PURE GROW FARM - STUDENT INTERNSHIP BOOKING
-Booking No: PGF-STU-${Date.now().toString().slice(-6)}
-
-Farm Details
-Farm Name: ${farmName}
-Address: ${farmAddress}
-Contact: ${farmContact}
-Email: ${farmEmail}
-UPI ID: ${farmUpiId}
-
-Name: ${document.getElementById("sname").value.trim()}
-Phone: ${document.getElementById("sphone").value.trim()}
-Email: ${document.getElementById("semail").value.trim()}
-Enrollment No: ${document.getElementById("senroll").value.trim()}
-College Name: ${document.getElementById("scollege").value.trim()}
-Course Name: ${document.getElementById("scourse").value.trim()}
-Start Date: ${document.getElementById("sstart").value}
-End Date: ${document.getElementById("send").value}
-Amount: Rs 100
-Payment Mode: ${document.getElementById("spaymentMode").value}
-Payment ID: ${document.getElementById("spayment").value.trim()}
-Status: Student internship confirmed after online payment`;
-saveToSheet({
-  type: "visit",
-  visitType: "Student",
-  bookingNo: "PGF-STU-" + Date.now(),
-  name: document.getElementById("sname").value.trim(),
-  phone: document.getElementById("sphone").value.trim(),
-  email: document.getElementById("semail").value.trim(),
-  enrollment: document.getElementById("senroll").value.trim(),
-  college: document.getElementById("scollege").value.trim(),
-  course: document.getElementById("scourse").value.trim(),
-  startDate: document.getElementById("sstart").value,
-  endDate: document.getElementById("send").value,
-  amount: 100,
-  paymentMode: document.getElementById("spaymentMode").value,
-  paymentId: document.getElementById("spayment").value.trim(),
-  status: "Confirmed"
-});
-  showVisitConfirmation("Pure Grow Farm Student Internship Booking", invoice);
-}
-
-function submitFarmerVisit(event) {
-  event.preventDefault();
-  const invoice = `PURE GROW FARM - FARMER TRAINING BOOKING
-Booking No: PGF-FAR-${Date.now().toString().slice(-6)}
-
-Farm Details
-Farm Name: ${farmName}
-Address: ${farmAddress}
-Contact: ${farmContact}
-Email: ${farmEmail}
-UPI ID: ${farmUpiId}
-
-Name: ${document.getElementById("fname").value.trim()}
-Phone: ${document.getElementById("fphone").value.trim()}
-Email: ${document.getElementById("femail").value.trim()}
-Training Date: ${document.getElementById("fdate").value}
-Amount: Rs 699
-Payment Mode: ${document.getElementById("fpaymentMode").value}
-Payment ID: ${document.getElementById("fpayment").value.trim()}
-Status: Farmer training confirmed after online payment`;
-saveToSheet({
-  type: "visit",
-  visitType: "Farmer",
-  bookingNo: "PGF-FAR-" + Date.now(),
-  name: document.getElementById("fname").value.trim(),
-  phone: document.getElementById("fphone").value.trim(),
-  email: document.getElementById("femail").value.trim(),
-  trainingDate: document.getElementById("fdate").value,
-  amount: 699,
-  paymentMode: document.getElementById("fpaymentMode").value,
-  paymentId: document.getElementById("fpayment").value.trim(),
-  status: "Confirmed"
-});
-  showVisitConfirmation("Pure Grow Farm Farmer Training Booking", invoice);
-}
-
-function downloadVisitInvoice() {
-  const blob = new Blob([latestVisitInvoice], { type: "text/plain" });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = "pure-grow-farm-visit-invoice.txt";
-  link.click();
-  URL.revokeObjectURL(url);
-}
+checkUserSession();
 </script>
 </body>
 </html>

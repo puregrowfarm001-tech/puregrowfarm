@@ -83,7 +83,7 @@ nav {
   border-radius: 999px;
 }
 
-nav a, a { color: inherit; }
+nav a, a { color: inherit; text-decoration: none; }
 
 nav a {
   display: inline-flex;
@@ -95,7 +95,6 @@ nav a {
   color: #334155;
   font-size: 14px;
   font-weight: 700;
-  text-decoration: none;
   white-space: nowrap;
   transition: background 0.15s ease, color 0.15s ease;
 }
@@ -115,7 +114,6 @@ nav a:hover, nav a:focus-visible { color: var(--accent); background: #ffffff; }
   cursor: pointer;
   font-weight: 700;
   text-align: center;
-  text-decoration: none;
   white-space: nowrap;
 }
 
@@ -143,6 +141,7 @@ button:disabled { background: #98a2a8; cursor: not-allowed; }
   color: var(--accent);
   text-decoration: none;
   font-weight: bold;
+  cursor: pointer;
 }
 .auth-box { display: none; }
 .auth-box.active { display: block; }
@@ -155,18 +154,40 @@ button:disabled { background: #98a2a8; cursor: not-allowed; }
   border-radius: 12px;
   margin-bottom: 24px;
 }
-.db-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 16px;
-  margin-top: 14px;
+
+/* Isolated Pop-up Screen overlay styles for History Logs Page */
+.data-popup-modal {
+  display: none;
+  position: fixed;
+  top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(0,0,0,0.6);
+  z-index: 1000;
+  justify-content: center;
+  align-items: center;
+  padding: 15px;
 }
-.db-card {
-  border: 1px solid var(--line);
-  padding: 14px;
-  border-radius: 8px;
-  background: #fafcfa;
+.data-popup-modal.active-modal { display: flex; }
+.popup-content-box {
+  background: #fff;
+  border-radius: 14px;
+  width: 100%;
+  max-width: 750px;
+  max-height: 85vh;
+  overflow-y: auto;
+  padding: 24px;
+  position: relative;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.25);
 }
+.close-popup-btn {
+  position: absolute;
+  top: 15px; right: 15px;
+  background: var(--danger);
+  color: #fff; border: 0;
+  border-radius: 6px; padding: 6px 14px;
+  cursor: pointer; font-weight: bold;
+}
+.grid-data-layout { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; margin-top: 12px; }
+.data-item-card { background: #f9fbf9; border: 1px solid var(--line); border-radius: 10px; padding: 14px; margin-bottom: 10px; }
 
 .hero {
   display: grid;
@@ -196,7 +217,6 @@ button:disabled { background: #98a2a8; cursor: not-allowed; }
   background: linear-gradient(135deg, #e8f5e9, #ffffff);
   border-radius: 12px;
 }
-
 .hero-photo img { width: 100%; height: 220px; object-fit: cover; border-radius: 10px; margin-bottom: 12px; }
 
 .pill {
@@ -207,28 +227,19 @@ button:disabled { background: #98a2a8; cursor: not-allowed; }
   background: var(--soft);
   font-weight: 700;
   font-size: 13px;
-  text-decoration: none;
 }
 
-.about, .farm-photo-section {
+.about {
   display: flex;
   align-items: center;
   gap: 20px;
   flex-wrap: wrap;
   padding: 20px 0;
 }
-
 .about-content { flex: 1; min-width: 280px; }
-.about img, .farm-photo-section img {
-  width: 320px;
-  height: 220px;
-  object-fit: cover;
-  border-radius: 12px;
-  flex-shrink: 0;
-}
 
-.farm-photo-section { padding: 20px; background: #fff; border-radius: 12px; }
 .section-row { justify-content: space-between; flex-wrap: wrap; margin: 18px 0; }
+.search-row { display: flex; gap: 8px; }
 .search-row input { min-width: 250px; }
 
 .shop-layout {
@@ -239,7 +250,7 @@ button:disabled { background: #98a2a8; cursor: not-allowed; }
 }
 
 .products { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 18px; }
-.product { display: flex; flex-direction: column; padding: 14px; }
+.product { display: flex; flex-direction: column; padding: 14px; border: 1px solid var(--line); }
 .product img { width: 100%; aspect-ratio: 4 / 3; height: auto; object-fit: cover; border-radius: 8px; margin-bottom: 12px; }
 .product h3 { margin: 0 0 8px; font-size: 18px; }
 
@@ -258,9 +269,8 @@ button:disabled { background: #98a2a8; cursor: not-allowed; }
 .cart-item { align-items: flex-start; padding: 10px; border: 1px solid var(--line); border-radius: 10px; }
 .qty-actions { display: flex; gap: 6px; margin-top: 8px; }
 .qty-actions button { min-height: 30px; padding: 4px 9px; }
-.remove-btn { background: var(--danger); }
 .bill-row { padding: 7px 0; border-top: 1px solid var(--line); }
-.total { color: var(--accent); font-size: 18px; }
+.total { color: var(--accent); font-size: 18px; font-weight: bold; }
 .payment-help { display: none; padding: 10px 12px; background: #eef7ee; border-radius: 10px; color: #246e33; font-weight: 700; margin-bottom: 10px; }
 .payment-help.show { display: block; }
 
@@ -305,7 +315,6 @@ pre { overflow: auto; max-height: 330px; padding: 12px; color: #eef8ef; backgrou
   border-radius: 12px;
   background: #f8fbf7;
 }
-
 .invoice-logo-row img { width: 74px; height: 58px; object-fit: contain; border-radius: 10px; }
 
 .visit-section { padding: 20px; margin-top: 18px; border-radius: 12px; background: linear-gradient(180deg,#fff,#f7fff7); }
@@ -321,6 +330,9 @@ pre { overflow: auto; max-height: 330px; padding: 12px; color: #eef8ef; backgrou
 .erp-wrapper { display: none; background: #f4f7f5; padding: 20px; border-radius: 14px; border: 2px dashed var(--accent); margin-top: 20px; }
 .erp-wrapper.active { display: block; }
 .erp-nav { display: flex; gap: 10px; margin-bottom: 18px; background: #fff; padding: 10px; border-radius: 8px; border: 1px solid var(--line); flex-wrap: wrap;}
+.erp-nav button { background: #e2ede5; color: #111; }
+.erp-nav button.active-tab { background: var(--accent) !important; color: #fff !important; }
+
 .erp-section { display: none; background: #fff; padding: 20px; border-radius: 12px; border: 1px solid var(--line); margin-bottom: 16px;}
 .erp-section.active { display: block; }
 .table-responsive { overflow-x: auto; margin-top: 12px; }
@@ -335,54 +347,19 @@ th { background: #f8faf8; font-weight: 700; }
 .fin-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 20px; }
 .fin-card { background: #fff; padding: 16px; border-radius: 10px; border: 1px solid var(--line); box-shadow: 0 2px 6px rgba(0,0,0,0.02); }
 .fin-val { font-size: 24px; font-weight: 800; color: var(--accent); margin-top: 6px; }
+.partner-cash-card { background: var(--soft); padding: 10px; border-radius: 8px; font-weight: bold; font-size: 14px; margin-top: 8px; }
 
 /* Certificate Styles Layout */
 .cert-preview-area { display: flex; justify-content: center; margin-top: 20px; background: #f0f0f0; padding: 20px; border-radius: 8px; }
-.certificate-frame { width: 100%; max-width: 650px; background: #fff; border: 12px double #2b8a3e; padding: 30px; position: relative; font-family: 'Times New Roman', Times, serif; text-align: center; color: #222; box-shadow: 0 4px 14px rgba(0,0,0,0.15); }
-.certificate-frame::before { content: ""; position: absolute; top: 4px; left: 4px; right: 4px; bottom: 4px; border: 2px solid #7fc07f; pointer-events: none; }
-.cert-title { font-size: 32px; font-weight: bold; color: #1e4620; letter-spacing: 1px; margin-bottom: 6px; }
-.cert-subtitle { font-size: 16px; font-style: italic; letter-spacing: 2px; color: #555; margin-bottom: 24px; }
-.cert-text { font-size: 15px; line-height: 1.6; margin: 18px 0; color: #333; }
-.cert-name { font-size: 24px; font-weight: bold; color: #2b8a3e; border-bottom: 2px solid #ddd; display: inline-block; padding: 0 30px; margin: 8px 0; font-family: Arial, sans-serif; }
-.cert-footer-row { display: flex; justify-content: space-between; align-items: center; margin-top: 40px; font-size: 13px; font-family: Arial, sans-serif; }
+.certificate-frame { width: 100%; max-width: 650px; background: #fff; border: 12px double #2b8a3e; padding: 30px; position: relative; text-align: center; color: #222; }
+.cert-title { font-size: 32px; font-weight: bold; color: #1e4620; }
+.cert-name { font-size: 24px; font-weight: bold; color: #2b8a3e; border-bottom: 2px solid #ddd; display: inline-block; padding: 0 30px; margin: 8px 0; }
+.cert-footer-row { display: flex; justify-content: space-between; align-items: center; margin-top: 40px; font-size: 13px; }
 .cert-sig-line { border-top: 1px solid #777; width: 140px; margin: 6px auto 0; }
 
 @media (max-width: 920px) {
-  .hero, .shop-layout, .contact-grid { grid-template-columns: 1fr; }
-  .about, .farm-photo-section { flex-direction: column; align-items: flex-start; }
-  .about img, .farm-photo-section img { width: 100%; max-width: 460px; height: auto; }
+  .hero, .shop-layout { grid-template-columns: 1fr; }
   .gallery { grid-template-columns: repeat(2, 1fr); }
-  .cart-box { position: static; }
-  .hero-photo img { height: 280px; }
-}
-@media (max-width: 760px) {
-  header { align-items: flex-start; }
-  .hero { gap: 18px; padding: 18px 0; }
-  .hero h1 { font-size: 30px; }
-  .cards { flex-direction: column; }
-  .section-row { align-items: stretch; }
-  .search-row, .search-row input, .search-row button { width: 100%; }
-  .product-actions { align-items: stretch; }
-  .product-actions .btn, .product-actions button { flex: 1; }
-  input, textarea, select, button, .btn { font-size: 16px; }
-}
-@media (max-width: 640px) {
-  .container { padding: 16px; }
-  header { top: 0; margin: -4px -4px 14px; border-radius: 12px; }
-  .brand { width: calc(100% - 92px); }
-  .logo-img { width: 54px; height: 46px; }
-  .brand-text { font-size: 16px; }
-  .brand-subtitle { font-size: 12px; }
-  .nav-toggle { display: inline-flex; margin-left: auto; min-width: 78px; }
-  .nav-wrapper { width: 100%; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; flex-wrap: wrap; }
-  nav { display: none; flex-direction: column; grid-column: 1 / -1; width: 100%; gap: 6px; padding: 8px; background: #fff; border-radius: 12px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); }
-  nav a { width: 100%; justify-content: flex-start; min-height: 42px; padding: 10px 12px; background: #f8fbf7; }
-  nav.show { display: flex; }
-  .nav-wrapper > .btn { width: 100%; min-height: 44px; }
-  .hero h1 { font-size: 26px; }
-  .products, .gallery, .review-form { grid-template-columns: 1fr; }
-  .gallery img { height: 220px; }
-  .visit-tabs { flex-direction: column; }
 }
   </style>
 </head>
@@ -393,17 +370,15 @@ th { background: #f8faf8; font-weight: 700; }
         <img src="mushroom/pgf logo.png" alt="Pure Grow Farm logo" class="logo-img">
         <div>
           <div class="brand-text">Pure Grow Farm</div>
-          <div class="brand-subtitle">Oyster Mushrooms - Green, Dry, Powder and Food</div>
+          <div class="brand-subtitle">Oyster Mushrooms - Green, Dry, Powder and Food Essentials</div>
         </div>
       </div>
 
       <div class="nav-wrapper">
-        <button class="nav-toggle" onclick="toggleNav()" aria-label="Toggle menu">Menu</button>
         <nav id="mainNav">
           <a href="#about" class="muted">About</a>
           <a href="#products" class="muted">Products</a>
           <a href="#gallery" class="muted">Gallery</a>
-          <a href="#contact" class="muted">Contact</a>
         </nav>
         <a class="btn" href="#authSection" id="authNavBtn">Login / Register</a>
         <button class="btn" id="logoutBtn" style="display:none;" onclick="handleLogout()">Logout</button>
@@ -416,13 +391,13 @@ th { background: #f8faf8; font-weight: 700; }
       <div id="loginBox" class="auth-box active">
         <h2>Sign In</h2>
         <form onsubmit="handleLogin(event)">
-          <input type="text" id="loginEmail" placeholder="Email or Username" required>
+          <input type="text" id="loginEmail" placeholder="Email Address / Username ('admin' for ERP)" required>
           <input type="password" id="loginPassword" placeholder="Password" required>
           <button type="submit">Continue</button>
         </form>
         <div class="auth-toggle-links">
-          <a href="javascript:void(0)" onclick="switchAuthBox('forgotBox')">Forgot Password?</a>
-          <a href="javascript:void(0)" onclick="switchAuthBox('registerBox')">Create Account</a>
+          <a onclick="switchAuthBox('forgotBox')">Forgot Password?</a>
+          <a onclick="switchAuthBox('registerBox')">Create Account</a>
         </div>
       </div>
 
@@ -431,51 +406,57 @@ th { background: #f8faf8; font-weight: 700; }
         <h2>Create Account</h2>
         <form onsubmit="handleRegister(event)">
           <input type="text" id="regName" placeholder="Your Full Name" required>
+          <input type="text" id="regPhone" placeholder="Mobile Number" required>
           <input type="email" id="regEmail" placeholder="Email Address" required>
           <input type="password" id="regPassword" placeholder="Password" required>
           <button type="submit">Create Your Account</button>
         </form>
         <div class="auth-toggle-links">
           <span>Already have an account?</span>
-          <a href="javascript:void(0)" onclick="switchAuthBox('loginBox')">Sign In</a>
+          <a onclick="switchAuthBox('loginBox')">Sign In</a>
         </div>
       </div>
 
       <!-- Forgot Password Box -->
       <div id="forgotBox" class="auth-box">
         <h2>Password Assistance</h2>
-        <p class="muted" style="font-size:12px;">Enter your email to receive an instant verification OTP code.</p>
+        <p class="muted" style="font-size:12px;">Apna email dalein, fir WhatsApp par OTP/Help ke liye redirect kiya jayega.</p>
         <form id="forgotForm" onsubmit="handleForgotPassword(event)">
           <input type="email" id="forgotEmail" placeholder="Email Address" required>
-          <button type="submit" id="sendOtpBtn">Send OTP Verification Code</button>
-        </form>
-        <form id="otpVerifyForm" style="display:none; margin-top:12px;" onsubmit="handleVerifyOtp(event)">
-          <input type="text" id="verificationOtp" placeholder="Enter 6-Digit OTP" required>
-          <input type="password" id="newPassword" placeholder="Enter New Secure Password" required>
-          <button type="submit">Reset Password & Login</button>
+          <button type="submit" id="sendOtpBtn">Get Help via WhatsApp</button>
         </form>
         <div class="auth-toggle-links">
-          <a href="javascript:void(0)" onclick="switchAuthBox('loginBox')">Back to Sign In</a>
+          <a onclick="switchAuthBox('loginBox')">Back to Sign In</a>
         </div>
       </div>
     </section>
 
     <!-- Live Dynamic User Session Profile Workspace -->
     <section id="dashboardWorkspace" class="user-dashboard" style="display:none;">
-      <h2>Welcome Back, <span id="userDashboardName">User</span>!</h2>
+      <h2>Welcome Back, <span id="userDashboardName">Grower</span>!</h2>
       <p class="muted">Your account tracks and loads all records natively from your farm profile.</p>
-      
-      <div class="db-grid">
-        <div class="db-card">
-          <h3>Your Orders</h3>
-          <div id="userOrdersList" class="muted">No orders submitted yet.</div>
-        </div>
-        <div class="db-card">
-          <h3>Your Farm Training & Internships</h3>
-          <div id="userBookingsList" class="muted">No program bookings registered.</div>
-        </div>
+      <div style="margin-top:10px;">
+        <button type="button" class="btn" onclick="openHistoryModal()">📦 View Order & Booking History</button>
       </div>
     </section>
+
+    <!-- Isolated Screen Modal For Activity History Pop-up Page -->
+    <div id="userHistoryModal" class="data-popup-modal" onclick="closeHistoryModalOutside(event)">
+      <div class="popup-content-box">
+        <button type="button" class="close-popup-btn" onclick="closeHistoryModal()">Close (X)</button>
+        <h2>Your Activity Logs History Page</h2>
+        <div class="grid-data-layout">
+          <div class="data-item-card">
+            <h3>Your Dispatched Orders</h3>
+            <div id="userOrdersList" class="muted">No orders submitted yet.</div>
+          </div>
+          <div class="data-item-card">
+            <h3>Your Farm Training Workshops</h3>
+            <div id="userBookingsList" class="muted">No program bookings registered.</div>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <!-- Primary Public Content View Space -->
     <div id="publicContent">
@@ -487,59 +468,34 @@ th { background: #f8faf8; font-weight: 700; }
 
             <div class="cards">
               <div class="card">
-                <div class="muted small-title">Products</div>
-                <div class="card-title">Green, Dry, Powder, Khakhra and Papad</div>
+                <div class="muted small-title">Products Available</div>
+                <div class="card-title">Green, Dry, Powder, Khakhra and Papad Veg Packs</div>
               </div>
               <div class="card">
-                <div class="muted small-title">Contact</div>
-                <div class="card-title">9067891039 Soham Gajera and 8200145732 Jeet Gajera</div>
+                <div class="muted small-title">Direct Helpline Contact</div>
+                <div class="card-title">9067891039 Soham Gajera | 8200145732 Jeet Gajera</div>
               </div>
-            </div>
-
-            <div class="hero-links">
-              <a class="pill" href="mailto:puregrowfarm001@gmail.com">puregrowfarm001@gmail.com</a>
-              <a class="muted" href="https://www.instagram.com/_pure_grow_mushroom_farm_?igsh=bnlpMXdhaGtqMWhq" target="_blank" rel="noreferrer">@_pure_grow_mushroom_farm_</a>
             </div>
           </div>
 
           <aside class="hero-photo">
             <img src="mushroom/home.png" alt="Fresh oyster mushrooms">
             <div class="card-title">Organic Oyster Mushrooms</div>
-            <div class="muted small-title">Fresh harvest - packed and delivered</div>
           </aside>
         </section>
 
         <section id="about" class="about">
           <div class="about-content">
             <h2>About Pure Grow Farm</h2>
-            <p class="muted">Pure Grow Farm is a family-run mushroom farm focused on sustainable oyster mushroom cultivation. We grow on locally sourced substrate, avoid chemical treatments and pack produce with care to deliver maximum freshness.</p>
-            <ul class="muted">
-              <li>Organic substrate and eco-friendly methods</li>
-              <li>Fresh mushroom, dry mushroom and value-added mushroom products</li>
-              <li>Student internship and farmer training farm visits</li>
-            </ul>
-          </div>
-          <img src="mushroom/farm.jpeg" alt="Pure Grow Farm">
-        </section>
-
-        <section class="farm-photo-section">
-          <img src="mushroom/farm.jpeg" alt="Pure Grow Farm growing room">
-          <div>
-            <h2>Farm Photo</h2>
-            <p class="muted">Our mushroom farm uses clean growing rooms, careful humidity control, fresh harvesting and hygienic product packing.</p>
-            <a class="btn" href="#gallery">View Gallery</a>
+            <p class="muted">Pure Grow Farm is a family-run mushroom farm focused on sustainable oyster mushroom cultivation under technical expert supervision of Soham Gajera and Jeet Gajera.</p>
           </div>
         </section>
 
         <section id="products">
           <div class="section-row">
-            <div>
-              <h2>Our Products</h2>
-              <p class="muted">Search, add to cart, select online payment and generate invoice.</p>
-            </div>
+            <h2>Our Commercial Products Catalog</h2>
             <div class="search-row">
-              <input id="productSearch" type="search" placeholder="Search product">
-              <button type="button" onclick="searchProducts()">Search</button>
+              <input id="productSearch" type="search" placeholder="Filter catalog...">
             </div>
           </div>
 
@@ -547,166 +503,131 @@ th { background: #f8faf8; font-weight: 700; }
             <div class="products" id="productsList"></div>
 
             <aside class="cart-box">
-              <h2>Cart</h2>
+              <h2>Your Selection Basket</h2>
               <div id="cartItems" class="cart-items"></div>
               <div class="bill-row"><span>Subtotal</span><strong id="subtotal">Rs 0</strong></div>
-              <div class="bill-row"><span>Delivery</span><strong id="delivery">Rs 0</strong></div>
-              <div class="bill-row total"><span>Total</span><strong id="total">Rs 0</strong></div>
+              <div class="bill-row"><span>Delivery Logistics</span><strong id="delivery">Rs 0</strong></div>
+              <div class="bill-row total"><span>Grand Total</span><strong id="total">Rs 0</strong></div>
 
-              <form id="orderForm" onsubmit="confirmOrder(event)">
-                <input type="text" id="name" placeholder="Your name" required>
-                <input type="tel" id="phone" placeholder="Phone number" pattern="[0-9]{10}" required>
-                <input type="email" id="email" placeholder="Email" required>
-                <input type="text" id="address" placeholder="Address" required>
+              <div id="checkoutGuardBlock">
+                <div class="gate-lock-alert" style="padding:12px; background:#fee2e2; color:#991b1b; border-radius:8px; text-align:center; font-weight:bold;">⚠️ Please Login / Register Your Account First to Unlock Checkout Form.</div>
+              </div>
+
+              <form id="orderForm" style="display:none;" onsubmit="confirmOrder(event)">
+                <input type="text" id="name" placeholder="Your name" readonly required style="background:#f3f4f6; cursor:not-allowed;">
+                <input type="tel" id="phone" placeholder="Phone number" readonly required style="background:#f3f4f6; cursor:not-allowed;">
+                <input type="email" id="email" placeholder="Email" readonly required style="background:#f3f4f6; cursor:not-allowed;">
+                <input type="text" id="address" placeholder="Complete Shipping Address" required>
                 <select id="paymentMode" required>
                   <option value="">Select online payment mode</option>
-                  <option value="GPay">GPay</option>
-                  <option value="PhonePe">PhonePe</option>
-                  <option value="Paytm">Paytm</option>
-                  <option value="UPI">Any UPI App</option>
+                  <option value="GPay">GPay App</option>
+                  <option value="PhonePe">PhonePe App</option>
+                  <option value="Paytm">Paytm App</option>
                 </select>
                 <div id="productPaymentHelp" class="payment-help"></div>
                 <input type="text" id="paymentId" placeholder="Online payment transaction ID" required>
-                <button type="submit" id="confirmOrderBtn" disabled>Confirm Order After Payment</button>
+                <button type="submit" id="confirmOrderBtn" disabled>Confirm Purchase Order</button>
               </form>
             </aside>
           </div>
         </section>
 
         <section id="gallery">
-          <h2>Gallery</h2>
+          <h2>Gallery Space</h2>
           <div class="gallery">
             <img src="mushroom/7.jpg" alt="Mushroom gallery 1">
             <img src="mushroom/8.jpg" alt="Mushroom gallery 2">
             <img src="mushroom/9.jpg" alt="Mushroom gallery 3">
-            <img src="mushroom/10.jpg" alt="Mushroom gallery 4">
-            <img src="mushroom/11.jpg" alt="Mushroom gallery 5">
-            <img src="mushroom/12.jpg" alt="Mushroom gallery 6">
           </div>
         </section>
 
         <section id="visit" class="visit-section">
-          <h2>Visit Pure Grow Farm</h2>
-          <p class="muted">Student internship and farmer training booking will be confirmed after online payment.</p>
-
-          <div class="visit-tabs">
-            <button type="button" onclick="showVisitForm('studentForm')">Student Internship</button>
-            <button type="button" onclick="showVisitForm('farmerForm')">Farmer Training</button>
+          <h2>Academic Internships & Farmer Training Registrations</h2>
+          
+          <div id="trainingGuardBlock">
+            <div class="gate-lock-alert" style="padding:12px; background:#fee2e2; color:#991b1b; border-radius:8px; text-align:center; font-weight:bold;">⚠️ Account Authentication Token Required. Kindly Login to Unlock Course Bookings.</div>
           </div>
 
-          <form id="studentForm" class="visit-form active" onsubmit="submitStudentVisit(event)">
-            <input type="text" id="sname" placeholder="Student Name" required>
-            <input type="tel" id="sphone" placeholder="Phone Number" pattern="[0-9]{10}" required>
-            <input type="email" id="semail" placeholder="Email" required>
-            <input type="text" id="senroll" placeholder="Enrollment Number" required>
-            <input type="text" id="scollege" placeholder="College Name" required>
-            <input type="text" id="scourse" placeholder="Course Name" required>
-            <label>Internship Start Date <input type="date" id="sstart" required></label>
-            <label>Internship End Date <input type="date" id="send" required></label>
-            <select id="spaymentMode" required>
-              <option value="">Select online payment mode</option>
-              <option value="GPay">GPay</option>
-              <option value="PhonePe">PhonePe</option>
-              <option value="Paytm">Paytm</option>
-            </select>
-            <input type="text" id="spayment" placeholder="Payment Transaction ID" required>
-            <div class="payment-box">
-              <h3>Student Internship Fee Rs 100</h3>
-              <p>UPI ID: sohamgajera01@okhdfcbank</p>
-              <button type="button" onclick="openVisitUpi(100, 'studentForm')">Pay Online</button>
+          <div id="trainingMainContent" style="display:none;">
+            <div class="visit-tabs">
+              <button type="button" class="btn" onclick="showVisitForm('studentForm')">Student Internship Block</button>
+              <button type="button" class="btn" onclick="showVisitForm('farmerForm')">Farmer Training Workshop Block</button>
             </div>
-            <div id="studentPaymentHelp" class="payment-help"></div>
-            <button type="submit" id="studentSubmitBtn" disabled>Confirm Student Visit After Payment</button>
-          </form>
 
-          <form id="farmerForm" class="visit-form" onsubmit="submitFarmerVisit(event)">
-            <input type="text" id="fname" placeholder="Farmer Name" required>
-            <input type="tel" id="fphone" placeholder="Phone Number" pattern="[0-9]{10}" required>
-            <input type="email" id="femail" placeholder="Email" required>
-            <label>Training Date <input type="date" id="fdate" required></label>
-            <select id="fpaymentMode" required>
-              <option value="">Select online payment mode</option>
-              <option value="GPay">GPay</option>
-              <option value="PhonePe">PhonePe</option>
-              <option value="Paytm">Paytm</option>
-            </select>
-            <input type="text" id="fpayment" placeholder="Payment Transaction ID" required>
-            <div class="payment-box">
-              <h3>Farmer Training Fee Rs 699</h3>
-              <p>UPI ID: sohamgajera01@okhdfcbank</p>
-              <button type="button" onclick="openVisitUpi(699, 'farmerForm')">Pay Online</button>
-            </div>
-            <div id="farmerPaymentHelp" class="payment-help"></div>
-            <button type="submit" id="farmerSubmitBtn" disabled>Confirm Farmer Visit After Payment</button>
-          </form>
+            <form id="studentForm" class="visit-form active" onsubmit="submitStudentVisit(event)">
+              <input type="text" id="sname" placeholder="Student Name" readonly required style="background:#f3f4f6; cursor:not-allowed;">
+              <input type="tel" id="sphone" placeholder="Phone Number" readonly required style="background:#f3f4f6; cursor:not-allowed;">
+              <input type="email" id="semail" placeholder="Email" readonly required style="background:#f3f4f6; cursor:not-allowed;">
+              <input type="text" id="senroll" placeholder="Enrollment Number" required>
+              <input type="text" id="scollege" placeholder="College Name" required>
+              <input type="text" id="scourse" placeholder="Course Name" required>
+              <label>Target Internship Start Date <input type="date" id="sstart" required></label>
+              <label>Target Internship End Date <input type="date" id="send" required></label>
+              <select id="spaymentMode" required>
+                <option value="">Select online payment mode</option>
+                <option value="GPay">GPay</option>
+                <option value="PhonePe">PhonePe</option>
+              </select>
+              <input type="text" id="spayment" placeholder="Payment Transaction ID" required>
+              <div class="payment-box">
+                <h3>Student Internship Fee Rs 100</h3>
+                <p>UPI ID: sohamgajera01@okhdfcbank</p>
+                <button type="button" onclick="openVisitUpi(100, 'studentForm')">Pay Online Gateway</button>
+              </div>
+              <div id="studentPaymentHelp" class="payment-help"></div>
+              <button type="submit" id="studentSubmitBtn" disabled>Confirm Student Registration</button>
+            </form>
+
+            <form id="farmerForm" class="visit-form" onsubmit="submitFarmerVisit(event)">
+              <input type="text" id="fname" placeholder="Farmer Name" readonly required style="background:#f3f4f6; cursor:not-allowed;">
+              <input type="tel" id="fphone" placeholder="Phone Number" readonly required style="background:#f3f4f6; cursor:not-allowed;">
+              <input type="email" id="femail" placeholder="Email" readonly required style="background:#f3f4f6; cursor:not-allowed;">
+              <label>Target Training Session Date <input type="date" id="fdate" required></label>
+              <select id="fpaymentMode" required>
+                <option value="">Select online payment mode</option>
+                <option value="GPay">GPay</option>
+                <option value="PhonePe">PhonePe</option>
+              </select>
+              <input type="text" id="fpayment" placeholder="Payment Transaction ID" required>
+              <div class="payment-box">
+                <h3>Farmer Training Fee Rs 699</h3>
+                <p>UPI ID: sohamgajera01@okhdfcbank</p>
+                <button type="button" onclick="openVisitUpi(699, 'farmerForm')">Pay Online Gateway</button>
+              </div>
+              <div id="farmerPaymentHelp" class="payment-help"></div>
+              <button type="submit" id="farmerSubmitBtn" disabled>Confirm Farmer Training Seat</button>
+            </form>
+          </div>
 
           <div class="thankyou" id="visitThankyouBox">
-            <h2>Thank You</h2>
-            <p>Your farm visit is confirmed after online payment.</p>
-            <p class="send-note">All visit data is ready below. Tap Send Email or Send WhatsApp Message to send it to Pure Grow Farm.</p>
+            <h2>Registration Parameters Generated</h2>
             <pre id="visitInvoiceText"></pre>
             <div class="visit-actions">
               <button type="button" onclick="downloadVisitInvoice()">Download Invoice</button>
-              <a class="btn" id="visitEmailLink" href="#">Send Email</a>
-              <a class="btn" id="visitWhatsappLink" target="_blank" rel="noreferrer">Send WhatsApp Message</a>
+              <a class="btn" id="visitWorkspaceWhatsAppBtn" target="_blank" rel="noreferrer" style="background:#25d366;">Send WhatsApp Message</a>
             </div>
-          </div>
-        </section>
-
-        <section id="reviews" class="reviews">
-          <h2>Customer Reviews</h2>
-          <form class="review-form" onsubmit="addReview(event)">
-            <input id="reviewName" type="text" placeholder="Your name" required>
-            <select id="reviewRating" required>
-              <option value="5">5 Star</option>
-              <option value="4">4 Star</option>
-              <option value="3">3 Star</option>
-              <option value="2">2 Star</option>
-              <option value="1">1 Star</option>
-            </select>
-            <textarea id="reviewText" rows="3" placeholder="Write review" required></textarea>
-            <button type="submit">Add Review</button>
-          </form>
-          <div id="reviewList" class="review-list"></div>
-        </section>
-
-        <section id="contact" class="contact">
-          <h2>Contact</h2>
-          <div class="contact-grid">
-            <div>
-              <p class="muted">Call: <a href="tel:+919067891039"><strong>9067891039</strong></a>, <a href="tel:+918200145732"><strong>8200145732</strong></a></p>
-              <p class="muted">Email: <a href="mailto:puregrowfarm001@gmail.com">puregrowfarm001@gmail.com</a></p>
-              <p class="muted">Instagram: <a href="https://www.instagram.com/_pure_grow_mushroom_farm_?igsh=bnlpMXdhaGtqMWhq" target="_blank" rel="noreferrer">@_pure_grow_mushroom_farm_</a></p>
-              <p class="muted">Youtube: <a href="https://www.youtube.com/channel/UC2T-bDe5wEblhgQOYY8RAzQ" target="_blank" rel="noreferrer">Pure Grow Farm</a></p>
-              <p class="muted">Address: <a href="https://www.google.com/maps/dir//Makhiyala,+Gujarat+362011/@21.6172629,70.3661049,12z/data=!4m8!4m7!1m0!1m5!1m1!1s0x395803313ef34a91:0xcfc3fa020115f2c6!2m2!1d70.4485065!2d21.6172832?entry=ttu" target="_blank" rel="noreferrer">Makhiyala, Gujarat 362011</a></p>
-            </div>
-            <aside class="fast-facts">
-              <h3>Fast Facts</h3>
-              <p class="muted">Delivery areas: local markets and focused delivery zones. For bulk inquiries, please call.</p>
-              <p><strong>Working hours</strong></p>
-              <p class="muted">Mon-Sat: 8:00 AM - 6:00 PM</p>
-            </aside>
           </div>
         </section>
       </main>
     </div>
 
-    <!-- Advanced Internal ERP Suite View Workspace -->
+    <!-- Core Dynamic Advanced ERP Module Console Workspace -->
     <section id="adminErpView" class="erp-wrapper">
-      <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid var(--accent); padding-bottom:10px; margin-bottom:15px;">
-        <h2>Pure Grow Farm - Advanced Command Center ERP</h2>
-        <button class="btn" style="background:var(--danger);" onclick="exitAdminPanel()">Exit Admin Panel</button>
+      <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid var(--accent); padding-bottom:12px; margin-bottom:15px;">
+        <h2>Pure Grow Farm - Operational Core ERP Console Hub</h2>
+        <button class="btn" style="background:var(--danger);" onclick="exitAdminPanel()">Exit Admin Console</button>
       </div>
 
-      <div class="erp-nav">
-        <button class="btn" onclick="switchErpTab('erpOrdersTab')">Orders Manager</button>
-        <button class="btn" onclick="switchErpTab('erpBookingsTab')">Farm Training Bookings</button>
-        <button class="btn" onclick="switchErpTab('erpAccountingTab')">Financial Accounts P&L Ledger</button>
+      <div class="erp-nav" id="erpNavbarBlock">
+        <button class="btn active-tab" id="tabNavOrders" onclick="switchErpTab('erpOrdersTab', 'tabNavOrders')">Orders Manager Page</button>
+        <button class="btn" id="tabNavBookings" onclick="switchErpTab('erpBookingsTab', 'tabNavBookings')">Farm Training Bookings Page</button>
+        <button class="btn" id="tabNavAccounting" onclick="switchErpTab('erpAccountingTab', 'tabNavAccounting')">Farm Core Financial Data Page</button>
+        <button class="btn" id="tabNavUsers" onclick="switchErpTab('erpUsersTab', 'tabNavUsers')">Registered Accounts Ledger</button>
       </div>
 
-      <!-- ERP Orders Panel Tab -->
+      <!-- ERP Segment 1: Orders Tab View Screen -->
       <div id="erpOrdersTab" class="erp-section active">
-        <h3>Customer E-Commerce Orders</h3>
+        <h3>E-Commerce Customer Orders Grid Ledger</h3>
         <div class="table-responsive">
           <table>
             <thead>
@@ -714,213 +635,247 @@ th { background: #f8faf8; font-weight: 700; }
                 <th>Order ID</th>
                 <th>Client Name</th>
                 <th>Phone</th>
+                <th>Shipping Address</th>
                 <th>Products Ordered</th>
-                <th>Total Paid</th>
-                <th>Txn ID</th>
-                <th>Status</th>
-                <th>Actions</th>
+                <th>Total Balance</th>
+                <th>Txn Hash ID</th>
+                <th>Order Received Date</th>
+                <th>Status State</th>
               </tr>
             </thead>
-            <tbody id="adminOrdersTableBody">
-              <!-- Dynamically Populated Rows -->
-            </tbody>
+            <tbody id="adminOrdersTableBody"></tbody>
           </table>
         </div>
       </div>
 
-      <!-- ERP Bookings & Dynamic Certificate Generator Panel Tab -->
+      <!-- ERP Segment 2: Course Bookings Tab View Screen -->
       <div id="erpBookingsTab" class="erp-section">
-        <h3>Farm Training & Student Internship Records</h3>
+        <h3>Farm Training Workshop & Student Internship Bookings Ledger</h3>
         <div class="table-responsive">
           <table>
             <thead>
               <tr>
                 <th>Booking ID</th>
-                <th>Type</th>
+                <th>Classification</th>
                 <th>Full Name</th>
-                <th>Phone</th>
-                <th>Dates</th>
-                <th>Txn ID</th>
-                <th>Status</th>
-                <th>Actions</th>
+                <th>Phone Line</th>
+                <th>Scheduled Training Date</th>
+                <th>Txn Code Reference</th>
+                <th>Booking Request Date</th>
+                <th>Status State</th>
+                <th>Operations Execution</th>
               </tr>
             </thead>
-            <tbody id="adminBookingsTableBody">
-              <!-- Dynamically Populated Rows -->
-            </tbody>
+            <tbody id="adminBookingsTableBody"></tbody>
           </table>
         </div>
 
-        <!-- Print-Ready Real-Time Certificate Sandbox Engine Template -->
         <div id="certificateGeneratorSandbox" style="display:none; margin-top:24px; padding-top:20px; border-top:2px dashed var(--line);">
-          <h3>Live Print-Ready Certificate Viewer</h3>
+          <h3>Live Print-Ready Certificate Engine Viewer Workspace</h3>
           <button class="btn" onclick="window.print()">Print / Save PDF File</button>
           <div class="cert-preview-area">
             <div class="certificate-frame" id="printableCertificateBody">
               <div class="cert-title">CERTIFICATE OF COMPLETION</div>
-              <div class="cert-subtitle">PURE GROW FARM ACADEMY</div>
-              <div style="font-size: 14px; text-transform: uppercase; letter-spacing: 2px;">This is proudly presented to</div>
-              <div class="cert-name" id="certGeneratedName">Soham Gajera</div>
-              <div class="cert-text" id="certGeneratedBody">
-                for successfully undergoing and finishing the comprehensive technical hands-on expert instruction module on Commercial Oyster Mushroom Cultivation, Spore Processing, Production, Value-Added Processing and Strategic Marketing frameworks.
-              </div>
+              <div class="cert-name" id="certGeneratedName">SOHAM GAJERA</div>
+              <div class="cert-text" id="certGeneratedBody"></div>
               <div class="cert-footer-row">
-                <div>
-                  <strong>Date of Approval:</strong>
-                  <div id="certGeneratedApproveDate">17/07/2026</div>
-                </div>
-                <div>
-                  <strong>Training Schedule:</strong>
-                  <div id="certGeneratedDuration">01/01/2026 to 15/01/2026</div>
-                </div>
-                <div style="text-align:center;">
-                  <div style="font-style:italic; font-family:serif; color:#2b8a3e; font-weight:bold;">Soham & Jeet Gajera</div>
-                  <div class="cert-sig-line">Authorized Signatures</div>
-                </div>
+                <div><strong>Verification Approved Date:</strong><div id="certGeneratedApproveDate"></div></div>
+                <div><strong>Operational Log Duration:</strong><div id="certGeneratedDuration"></div></div>
+                <div><strong>Signatures:</strong><br>Soham & Jeet Gajera</div>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- ERP Accounting Module (Daily log entries, Mushroom Sales, Purchases, Expenses, P&L Metrics) Tab -->
+      <!-- ERP Segment 3: Financial Accounting Desk View Screen -->
       <div id="erpAccountingTab" class="erp-section">
-        <h3>Multi-Axis Dynamic Profit & Loss Accounting Ledger</h3>
+        <h3>Multi-Axis Complete Production Ledger Statements Dashboard</h3>
         
-        <!-- Automations Computations Metrics Grid Overview Dashboard -->
         <div class="fin-grid">
           <div class="fin-card">
-            <div class="muted small-title">Total Operational Sales Revenue</div>
+            <div class="muted small-title">Total Website Sales Revenue</div>
             <div class="fin-val" id="finTotalRevenue">Rs 0.00</div>
           </div>
           <div class="fin-card">
-            <div class="muted small-title">Total Procurement Purchases</div>
+            <div class="muted small-title">Total Procurement Purchases Outflow</div>
             <div class="fin-val" id="finTotalPurchases" style="color:var(--danger);">Rs 0.00</div>
           </div>
           <div class="fin-card">
-            <div class="muted small-title">Total Miscellaneous Expenses</div>
+            <div class="muted small-title">Total Miscellaneous Expenses Outflow</div>
             <div class="fin-val" id="finTotalExpenses" style="color:var(--warn);">Rs 0.00</div>
           </div>
           <div class="fin-card" style="background:var(--soft);">
-            <div class="muted small-title">Net Unified Profit & Loss (P&L)</div>
+            <div class="muted small-title">Unified Net Profit Statement (P&L)</div>
             <div class="fin-val" id="finNetProfit" style="color:var(--accent);">Rs 0.00</div>
           </div>
         </div>
 
-        <!-- Multi-Tab Forms Container Matrix for Bookkeeping Records Logs -->
+        <!-- System Inventory Stock Display Counters Widget Module -->
+        <div style="background:#fafafa; border:1px solid var(--line); padding:16px; border-radius:10px; margin-bottom:20px;">
+          <h4 style="margin-top:0;">Live System Dynamic Inventory Stock Matrix</h4>
+          <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap:12px;">
+            <div style="background:#fff; padding:12px; border:1px solid var(--line); border-radius:6px; text-align:center;">
+              <strong>Dry Mushroom Stock</strong>
+              <div style="font-size:20px; font-weight:800; color:var(--accent);" id="stockValDry">150 kg</div>
+            </div>
+            <div style="background:#fff; padding:12px; border:1px solid var(--line); border-radius:6px; text-align:center;">
+              <strong>Mushroom Khakhra Stock</strong>
+              <div style="font-size:20px; font-weight:800; color:var(--accent);" id="stockValKhakhra">85 Packs</div>
+            </div>
+            <div style="background:#fff; padding:12px; border:1px solid var(--line); border-radius:6px; text-align:center;">
+              <strong>Mushroom Papad Stock</strong>
+              <div style="font-size:20px; font-weight:800; color:var(--accent);" id="stockValPapad">120 Packs</div>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap:12px; margin-bottom:20px;">
+          <div class="partner-cash-card" style="background:#eef2ff; color:#3730a3;">👤 Soham Gajera Hand Cash: <span id="cashSoham">Rs 0.00</span></div>
+          <div class="partner-cash-card" style="background:#fef3c7; color:#92400e;">👤 Jeet Gajera Hand Cash: <span id="cashJeet">Rs 0.00</span></div>
+          <div class="partner-cash-card" style="background:#dcfce7; color:#166534;">🏢 Farm Vault Main Cash Balance: <span id="cashFarm">Rs 0.00</span></div>
+        </div>
+
         <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap:16px; margin-bottom:24px;">
-          <!-- Sub-Form 1: Miscellaneous Daily Expense Logger -->
+          <!-- Miscellaneous Expense & Damages Collection Logger Block -->
           <div class="db-card">
-            <h4>Log Daily Miscellaneous Expense</h4>
+            <h4>Log Operational Outflow / Damages Inward</h4>
             <form onsubmit="saveAdminExpense(event)">
-              <label>Expense Category:
+              <label>Log Classification Strategy Type:
                 <select id="expCategory" required>
-                  <option value="Farm">Farm Infrastructure</option>
-                  <option value="Mushroom">Mushroom Substrate/Spore</option>
+                  <option value="Farm">Farm Infrastructure Expansion Outflow</option>
+                  <option value="Mushroom">Mushroom Substrate Media Outflow</option>
+                  <option value="Damage Received">Paise Received From Damage Lots (Inflow)</option>
                 </select>
               </label>
-              <label>Payer Assignment:
+              <label>Assigned Resource Party (Payer/Receiver):
                 <select id="expPayer" required>
                   <option value="Soham">Soham Gajera</option>
                   <option value="Jeet">Jeet Gajera</option>
+                  <option value="Farm">Farm Account General Vault</option>
                 </select>
               </label>
-              <label>Payment Mode Channel:
+              <label>Transaction Channel System:
                 <select id="expMode" required>
-                  <option value="Online">Online Banking / UPI</option>
-                  <option value="Cash">Liquid Hard Cash</option>
+                  <option value="Online">Online Network Link/UPI</option>
+                  <option value="Cash">Liquid Cash Vault Handover</option>
                 </select>
               </label>
-              <input type="text" id="expDesc" placeholder="Expense Description (e.g. Spore Bags)" required>
-              <input type="number" id="expAmount" placeholder="Amount Paid (Rs)" required>
-              <button type="submit">Log Expense Record</button>
+              <input type="text" id="expDesc" placeholder="Item Context Specification Summary" required>
+              <input type="number" id="expAmount" placeholder="Amount Value Factor (Rs)" required>
+              <button type="submit">Log Outflow Ledger Row</button>
             </form>
           </div>
 
-          <!-- Sub-Form 2: Mushroom Commercial Sales Logger -->
+          <!-- Wholesale Manual Offline Direct Sale Logger Block -->
           <div class="db-card">
-            <h4>Log Commercial Mushroom Sale</h4>
+            <h4>Log Manual Wholesale Production Sale (Direct Offline Inflow)</h4>
             <form onsubmit="saveAdminSale(event)">
-              <label>Mushroom Product Variant Type:
+              <label>Mushroom Catalog Stock Variant Type:
                 <select id="saleProduct" required>
-                  <option value="Green">Green Fresh Mushroom</option>
-                  <option value="Dry">Dry Dried Mushroom</option>
-                  <option value="Powder">Mushroom Fine Powder</option>
+                  <option value="Green">Fresh Green Oyster Mushroom Bulk Lot</option>
+                  <option value="Dry">Dry Dehydrated Mushroom Pack Lot</option>
+                  <option value="Powder">Fine Ground Spore Mushroom Powder Lot</option>
                 </select>
               </label>
-              <input type="text" id="saleBuyer" placeholder="Purchaser / Client Business Name" required>
-              <input type="number" step="0.01" id="saleQty" placeholder="Quantity Dispatched (kg/packs)" required>
-              <input type="number" id="saleRate" placeholder="Selling Rate per Unit (Rs)" required>
-              <button type="submit">Log Sales Revenue</button>
+              <label>Financial Asset Collector Location:
+                <select id="saleCollector" required>
+                  <option value="Farm">Farm Account General Vault (Automated Default)</option>
+                  <option value="Soham">Soham Gajera Pocket Cash</option>
+                  <option value="Jeet">Jeet Gajera Pocket Cash</option>
+                </select>
+              </label>
+              <input type="text" id="saleBuyer" placeholder="Client Purchaser Name / Business Firm" required>
+              <input type="number" step="0.01" id="saleQty" placeholder="Dispatched Weight Lots (kg/Packs)" required>
+              <input type="number" id="saleRate" placeholder="Agreed Unit Spot Valuation Cost (Rs)" required>
+              <button type="submit">Log Operational Sales Inflow</button>
             </form>
           </div>
 
-          <!-- Sub-Form 3: Mushroom Raw Material Purchase Procurement Logger -->
+          <!-- Production Resource Procurement Raw Material Bulk Inward Logger Block -->
           <div class="db-card">
-            <h4>Log Raw Product Procurement Purchase</h4>
+            <h4>Log Raw Inventory Material Bulk Buy Outflow</h4>
             <form onsubmit="saveAdminPurchase(event)">
-              <label>Procured Mushroom Variant Type:
+              <label>Procurement Resource Inward Lot:
                 <select id="purProduct" required>
-                  <option value="Green">Green Fresh Mushroom</option>
-                  <option value="Dry">Dry Dried Mushroom</option>
+                  <option value="Green">Green Mushroom Base Inward Spores</option>
+                  <option value="Dry">Dry Bulk Base Inward Lots</option>
+                  <option value="Khakhra Lots">Khakhra Production Raw Multi-Lots</option>
+                  <option value="Papad Lots">Papad Production Raw Multi-Lots</option>
                 </select>
               </label>
-              <input type="text" id="purVendor" placeholder="Supplier / Farmer Full Name" required>
-              <input type="number" step="0.01" id="purQty" placeholder="Quantity Received (kg)" required>
-              <input type="number" id="purRate" placeholder="Purchase Rate per kg (Rs)" required>
-              <button type="submit">Log Procurement Outflow</button>
+              <label>Funding Inward Resource Channel Provider:
+                <select id="purFunder" required>
+                  <option value="Farm">Farm Account General Vault</option>
+                  <option value="Soham">Soham Gajera Personal Assets</option>
+                  <option value="Jeet">Jeet Gajera Personal Assets</option>
+                </select>
+              </label>
+              <input type="text" id="purVendor" placeholder="Vendor Farmer Source Entity Name" required>
+              <input type="number" step="0.01" id="purQty" placeholder="InwardLot Bulk Weight Volume Units" required>
+              <input type="number" id="purRate" placeholder="Purchase Valuation per Unit Cost Factor (Rs)" required>
+              <button type="submit">Execute Inventory Buy Inflow</button>
             </form>
           </div>
         </div>
 
-        <!-- Live Realtime Compiled Auditable Accounts Data Matrices Lists -->
-        <h4>Compiled Live Financial Accounts Registry Logs</h4>
+        <h4>Analytical Comprehensive Financial Log History Matrix View</h4>
         <div class="table-responsive">
           <table>
             <thead>
               <tr>
-                <th>Type Classification</th>
-                <th>Item / Entity Details</th>
-                <th>Party Details</th>
-                <th>Funding Context / Source</th>
-                <th>Financial Outflow/Inflow Matrix</th>
+                <th>Classification Matrix</th>
+                <th>Target Item Context</th>
+                <th>Involved Partner Party</th>
+                <th>Resource Summary</th>
+                <th>Valuation Impact Ledger</th>
               </tr>
             </thead>
-            <tbody id="adminAccountingTableBody">
-              <!-- Dynamically Appended Analytical Arrays -->
-            </tbody>
+            <tbody id="adminAccountingTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ERP Segment 4: Registered Users Tab View Screen -->
+      <div id="erpUsersTab" class="erp-section">
+        <h3>Registered Customer Profiles Directory Database Workspace</h3>
+        <div class="table-responsive">
+          <table>
+            <thead>
+              <tr>
+                <th>Index No</th>
+                <th>Client Legal Name</th>
+                <th>Registered Mobile Line</th>
+                <th>Email Authentication ID</th>
+                <th>Secure Entry Key Password Token</th>
+              </tr>
+            </thead>
+            <tbody id="adminUsersTableBody"></tbody>
           </table>
         </div>
       </div>
     </section>
 
+    <!-- Interactive Receipt Modal Overlay Element -->
     <dialog id="invoiceDialog">
-      <div class="dialog-head">
-        <h2>Order Confirmed</h2>
-        <button type="button" onclick="closeInvoice()">Close</button>
-      </div>
+      <div class="dialog-head"><h2>Order Confirmed Successfully</h2><button type="button" onclick="closeInvoice()">Dismiss</button></div>
       <div class="invoice-logo-row">
         <img src="mushroom/pgf logo.png" alt="Pure Grow Farm logo">
         <div>
-          <strong>Pure Grow Farm</strong>
-          <div class="muted">Oyster Mushrooms - Green, Dry, Powder and Food</div>
-          <div class="muted">9067891039 | 8200145732 | puregrowfarm001@gmail.com</div>
-          <div class="muted">Makhiyala, Gujarat 362011</div>
+          <strong>Pure Grow Farm Global Industries Ltd.</strong>
+          <div class="muted">Makhiyala, Gujarat 362011 | Contact Desk Helpline: +91 9067891039</div>
         </div>
       </div>
-      <p class="muted">Thank you. Your mushroom product invoice is generated.</p>
-      <p class="send-note">All product order data is ready below. Tap Send Email or Send WhatsApp to send it to Pure Grow Farm.</p>
+      <p class="muted">Your commercial transaction receipt parameters have been calculated by the script matrix.</p>
       <pre id="invoiceText"></pre>
       <div class="dialog-actions">
-        <button type="button" onclick="downloadInvoice()">Download Invoice</button>
-        <a class="btn" id="emailInvoice" href="#">Send Email</a>
-        <a class="btn" id="whatsappInvoice" href="#" target="_blank" rel="noreferrer">Send WhatsApp</a>
+        <button type="button" class="btn" onclick="downloadInvoice()">Extract Invoice Text Slip File</button>
+        <a class="btn" id="whatsappInvoice" href="#" target="_blank" rel="noreferrer" style="background:#25d366;">Send WhatsApp Verification Slip</a>
       </div>
     </dialog>
 
     <footer>
-      <div>Pure Grow Farm - Oyster Mushrooms</div>
-      <div>Phone: 9067891039 | 8200145732 - Email: puregrowfarm001@gmail.com</div>
+      <div>Pure Grow Farm - Oyster Mushrooms Enterprise © 2026</div>
     </footer>
   </div>
 
@@ -929,24 +884,18 @@ const farmEmail = "puregrowfarm001@gmail.com";
 const farmWhatsapp = "919067891039";
 const farmUpiId = "sohamgajera01@okhdfcbank";
 const farmName = "Pure Grow Farm";
-const farmAddress = "Makhiyala, Gujarat 362011";
-const farmContact = "9067891039 Soham Gajera | 8200145732 Jeet Gajera";
 
-// Google Web App Deployment Endpoint URL Anchor Link Bind
 const SHEET_URL = "https://script.google.com/macros/s/AKfycbyg8zhosR2maS7Sgz8j0Kr58JXCEWgqfXvTFgMEO_XP7cAjyw3vlHTsNZr5GJbDq1vs/exec";
 
-// Master Hardcoded Admin Credentials Protection Keys Block
-const ADMIN_CREDENTIALS = {
-  user: "admin",
-  pass: "PureGrow@2026"
-};
+const ADMIN_CREDENTIALS = { user: "admin", pass: "PureGrow@2026" };
 
 const products = [
-  { id: 1, name: "Fresh Green Oyster Mushroom", price: 180, unit: "1kg", image: "mushroom/Screenshot 2025-10-24 154001.png", detail: "Picked fresh, chilled and delivered within 24-48 hours." },
-  { id: 2, name: "Dried Oyster Mushroom", price: 800, unit: "1kg pack", image: "mushroom/oyst dry.webp", detail: "Slow-dried to preserve flavor and nutrients." },
-  { id: 3, name: "Oyster Mushroom Powder", price: 130, unit: "100gm pack", image: "mushroom/oyster powder.png", detail: "Mushroom powder for soup, curry, health mix and snacks." },
-  { id: 4, name: "Methi Mushroom Khakhra", price: 70, unit: "200gm pack", image: "Methi khakhra 2.png", detail: "Crispy khakhra prepared with oyster mushroom powder." },
-  { id: 6, name: "Bulk and Wholesale", price: 0, unit: "Custom", bulk: true, image: "mushroom/bulk.png", detail: "Supply for restaurants, retailers and local markets. Contact farm for custom rate and quantity." }
+  { id: 1, name: "Fresh Green Oyster Mushroom", price: 180, unit: "1kg", image: "mushroom/Screenshot 2025-10-24 154001.png", detail: "Picked fresh, chilled and delivered within 24-48 hours.", type: "green" },
+  { id: 2, name: "Dried Oyster Mushroom", price: 800, unit: "1kg pack", image: "mushroom/oyst dry.webp", detail: "Slow-dried to preserve flavor and nutrients.", type: "dry" },
+  { id: 3, name: "Oyster Mushroom Powder", price: 130, unit: "100gm pack", image: "mushroom/oyster powder.png", detail: "Mushroom powder for soup, curry, health mix and snacks.", type: "powder" },
+  { id: 4, name: "Methi Mushroom Khakhra", price: 70, unit: "200gm pack", image: "Methi khakhra 2.png", detail: "Crispy khakhra prepared with oyster mushroom powder.", type: "khakhra" },
+  { id: 5, name: "Adad Mushroom Papad", price: 120, unit: "1 pack", image: "mushroom/bulk.png", detail: "Papad enriched with mushroom nutrition.", type: "papad" },
+  { id: 6, name: "Bulk and Wholesale Supply", price: 0, unit: "Custom", bulk: true, image: "mushroom/bulk.png", detail: "Supply for restaurants, retailers and local markets." }
 ];
 
 const cart = new Map();
@@ -955,7 +904,9 @@ const reviews = [
   { name: "Kinjal", rating: 4, text: "Farm visit and training were useful." }
 ];
 
-// Persistent State Storage Arrays
+// CORE STATE INITIALIZATIONS FIXED & VERIFIED NATIVELY
+let currentInventoryStock = JSON.parse(localStorage.getItem('pgf_stock_counters')) || { dry: 150, khakhra: 85, papad: 120 };
+let usersDatabase = JSON.parse(localStorage.getItem('pgf_user_db')) || [];
 let orderRegistry = JSON.parse(localStorage.getItem('pgf_orders')) || [];
 let bookingsRegistry = JSON.parse(localStorage.getItem('pgf_bookings')) || [];
 let expensesRegistry = JSON.parse(localStorage.getItem('pgf_expenses')) || [];
@@ -963,26 +914,45 @@ let salesRegistry = JSON.parse(localStorage.getItem('pgf_sales')) || [];
 let purchasesRegistry = JSON.parse(localStorage.getItem('pgf_purchases')) || [];
 
 let currentUser = JSON.parse(localStorage.getItem('pgf_session')) || null;
-let currentUpiState = { opened: false, trackingId: "" };
+let currentUpiState = { opened: false };
 let latestInvoice = "";
 let latestVisitInvoice = "";
 
-// Google Sheets Deployment Sync Handler Engine
 async function saveToSheet(payload) {
-  try {
-    await fetch(SHEET_URL, {
-      method: "POST",
-      mode: "no-cors",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
-    });
-  } catch (e) {
-    console.error("Sheets sync log connection delay:", e);
-  }
+  try { await fetch(SHEET_URL, { method: "POST", mode: "no-cors", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) }); } catch(e) {}
 }
 
-// Authentication Matrix Suite Controller
+function updateStockDisplayCounters() {
+  localStorage.setItem('pgf_stock_counters', JSON.stringify(currentInventoryStock));
+  if(document.getElementById("stockValDry")) document.getElementById("stockValDry").textContent = currentInventoryStock.dry + " kg";
+  if(document.getElementById("stockValKhakhra")) document.getElementById("stockValKhakhra").textContent = currentInventoryStock.khakhra + " Packs";
+  if(document.getElementById("stockValPapad")) document.getElementById("stockValPapad").textContent = currentInventoryStock.papad + " Packs";
+}
+
+function openHistoryModal() { document.getElementById("userHistoryModal").classList.add("active-modal"); }
+function closeHistoryModal() { document.getElementById("userHistoryModal").classList.remove("active-modal"); }
+function closeHistoryModalOutside(e) { if(e.target.id === "userHistoryModal") closeHistoryModal(); }
+
+function switchAuthBox(boxId) {
+  document.querySelectorAll('.auth-box').forEach(b => b.classList.remove('active'));
+  document.getElementById(boxId).classList.add('active');
+}
+
+function triggerAdminView() {
+  document.getElementById("authSection").style.display = "none";
+  document.getElementById("dashboardWorkspace").style.display = "none";
+  document.getElementById("publicContent").style.display = "none";
+  document.getElementById("adminErpView").classList.add("active");
+  populateAdminDashboardTables();
+  computeFinancialLedgerStatements();
+}
+
+function exitAdminPanel() {
+  handleLogout();
+}
+
 function checkUserSession() {
+  updateStockDisplayCounters();
   if (currentUser) {
     document.getElementById("authSection").style.display = "none";
     document.getElementById("logoutBtn").style.display = "inline-flex";
@@ -993,6 +963,22 @@ function checkUserSession() {
     } else {
       document.getElementById("dashboardWorkspace").style.display = "block";
       document.getElementById("userDashboardName").textContent = currentUser.name;
+      
+      document.getElementById("checkoutGuardBlock").style.display = "none";
+      document.getElementById("orderForm").style.display = "grid";
+      document.getElementById("name").value = currentUser.name;
+      document.getElementById("phone").value = currentUser.phone || "";
+      document.getElementById("email").value = currentUser.email;
+
+      document.getElementById("trainingGuardBlock").style.display = "none";
+      document.getElementById("trainingMainContent").style.display = "block";
+      document.getElementById("sname").value = currentUser.name;
+      document.getElementById("sphone").value = currentUser.phone || "";
+      document.getElementById("semail").value = currentUser.email;
+      document.getElementById("fname").value = currentUser.name;
+      document.getElementById("fphone").value = currentUser.phone || "";
+      document.getElementById("femail").value = currentUser.email;
+
       loadUserPanelData();
     }
   } else {
@@ -1002,57 +988,86 @@ function checkUserSession() {
     document.getElementById("dashboardWorkspace").style.display = "none";
     document.getElementById("adminErpView").classList.remove("active");
     document.getElementById("publicContent").style.display = "block";
+
+    document.getElementById("checkoutGuardBlock").style.display = "block";
+    document.getElementById("orderForm").style.display = "none";
+    document.getElementById("trainingGuardBlock").style.display = "block";
+    document.getElementById("trainingMainContent").style.display = "none";
   }
 }
 
-function switchAuthBox(boxId) {
-  document.querySelectorAll('.auth-box').forEach(b => b.classList.remove('active'));
-  document.getElementById(boxId).classList.add('active');
-}
-
 function handleLogin(e) {
-  if(e) e.preventDefault();
-  const emailInput = document.getElementById("loginEmail").value.trim();
+  e.preventDefault();
+  const userInput = document.getElementById("loginEmail").value.trim();
   const passInput = document.getElementById("loginPassword").value;
 
-  if (emailInput === ADMIN_CREDENTIALS.user && passInput === ADMIN_CREDENTIALS.pass) {
+  if (userInput === ADMIN_CREDENTIALS.user && passInput === ADMIN_CREDENTIALS.pass) {
     currentUser = { name: "System Admin", email: "admin@puregrowfarm.internal", isAdmin: true };
     localStorage.setItem('pgf_session', JSON.stringify(currentUser));
     checkUserSession();
     return;
   }
 
-  // Fallback Dynamic User Profile Simulation Initialization Loop
-  currentUser = { name: emailInput.split('@')[0], email: emailInput, isAdmin: false };
-  localStorage.setItem('pgf_session', JSON.stringify(currentUser));
-  checkUserSession();
+  const match = usersDatabase.find(u => u.email.toLowerCase() === userInput.toLowerCase());
+  if (match && match.password === passInput) {
+    currentUser = { name: match.name, email: match.email, phone: match.phone, isAdmin: false };
+    localStorage.setItem('pgf_session', JSON.stringify(currentUser));
+    checkUserSession();
+  } else {
+    alert("❌ Error: Invalid credentials or Account does not exist!");
+  }
 }
 
 function handleRegister(e) {
   e.preventDefault();
   const name = document.getElementById("regName").value.trim();
+  const phone = document.getElementById("regPhone").value.trim();
   const email = document.getElementById("regEmail").value.trim();
-  currentUser = { name: name, email: email, isAdmin: false };
+  const password = document.getElementById("regPassword").value;
+
+  if (!name || !phone || !email || !password) {
+    alert("❌ Error: Kripya sabhi fields ko thik se bharein.");
+    return;
+  }
+
+  const existing = usersDatabase.find(u => u.email.toLowerCase() === email.toLowerCase());
+  if(existing) {
+    alert("❌ Error: Is Email ID se account pehle se bana hua hai!");
+    switchAuthBox('loginBox');
+    return;
+  }
+
+  const newUser = { name, phone, email, password };
+  usersDatabase.push(newUser);
+  localStorage.setItem('pgf_user_db', JSON.stringify(usersDatabase));
+
+  currentUser = { name, email, phone, isAdmin: false };
   localStorage.setItem('pgf_session', JSON.stringify(currentUser));
+  
+  alert("🎉 Account Registered Successfully! Aapka account ban gaya hai.");
+  e.target.reset();
   checkUserSession();
 }
 
 function handleForgotPassword(e) {
   e.preventDefault();
-  alert("Security Notice: A simulated 6-digit verification code OTP has been securely transmitted to " + document.getElementById("forgotEmail").value);
-  document.getElementById("forgotForm").style.display = "none";
-  document.getElementById("otpVerifyForm").style.display = "block";
-}
+  const emailInput = document.getElementById("forgotEmail").value.trim();
+  
+  if(!emailInput) {
+    alert("Kripya apna registered email dalein.");
+    return;
+  }
 
-function handleVerifyOtp(e) {
-  e.preventDefault();
-  currentUser = { name: "Recovered User", email: document.getElementById("forgotEmail").value, isAdmin: false };
-  localStorage.setItem('pgf_session', JSON.stringify(currentUser));
-  alert("Verification Successful! Profile authenticated.");
-  document.getElementById("forgotForm").style.display = "block";
-  document.getElementById("otpVerifyForm").style.display = "none";
-  switchAuthBox('loginBox');
-  checkUserSession();
+  // Check if user exists in local database
+  const match = usersDatabase.find(u => u.email.toLowerCase() === emailInput.toLowerCase());
+  
+  let msg = `Hello Pure Grow Farm Team, main apna account password bhool gaya hu. Kripya meri sahayata karein.\n\nRegistered Email: ${emailInput}`;
+  if(match) {
+    msg += `\nName: ${match.name}\nPhone: ${match.phone}`;
+  }
+
+  alert("Redirecting to WhatsApp for Account Verification Help...");
+  window.open(`https://wa.me/${farmWhatsapp}?text=${encodeURIComponent(msg)}`, '_blank');
 }
 
 function handleLogout() {
@@ -1069,150 +1084,105 @@ function loadUserPanelData() {
   const myBookings = bookingsRegistry.filter(b => b.email === currentUser.email);
 
   oList.innerHTML = myOrders.length ? myOrders.map(o => `
-    <div style="padding:8px; border-bottom:1px solid #eee;">
-      <strong>${o.orderId}</strong> - Total: Rs ${o.total} [${o.status}]
+    <div class="data-item-card">
+      <strong>Order ID: ${o.orderId}</strong><br>
+      <small>Date Received: ${o.dateLogged}</small><br>
+      <span>Items: ${o.products}</span><br>
+      <strong>Total: Rs ${o.total} [${o.status}]</strong>
     </div>
-  `).join("") : "No orders matching this profile index.";
+  `).join("") : "No active orders mapped for this profile index.";
 
   bList.innerHTML = myBookings.length ? myBookings.map(b => `
-    <div style="padding:8px; border-bottom:1px solid #eee;">
-      <strong>${b.bookingId}</strong> - ${b.type} Scheme (${b.date}) [${b.status}]
-      ${b.status === 'Approved' ? `<br><button class="btn" style="padding:4px 8px; font-size:12px; min-height:auto;" onclick="renderCertificateInline('${b.bookingId}')">View Live Verified Certificate</button>` : ''}
+    <div class="data-item-card">
+      <strong>Booking ID: ${b.bookingId}</strong><br>
+      <small>Booked On: ${b.dateLogged}</small><br>
+      <small>Schedule Date: ${b.date || b.start}</small><br>
+      <strong>Scheme: ${b.type} Visit [${b.status}]</strong>
+      ${b.status==='Approved'?`<br><button class='btn' style='padding:4px 6px; font-size:11px; min-height:auto;' onclick="closeHistoryModal(); renderCertificateInline('${b.bookingId}')">📜 View Certificate</button>`:''}
     </div>
-  `).join("") : "No matching active bookings.";
+  `).join("") : "No course training applications logged.";
 }
 
-// Enterprise Admin Control Panel UI Layer Controls
-function triggerAdminView() {
-  document.getElementById("publicContent").style.display = "none";
-  document.getElementById("dashboardWorkspace").style.display = "none";
-  document.getElementById("authSection").style.display = "none";
-  document.getElementById("adminErpView").classList.add("active");
-  populateAdminDashboardTables();
-  computeFinancialLedgerStatements();
-}
-
-function exitAdminPanel() {
-  handleLogout();
-}
-
-function switchErpTab(tabId) {
+function switchErpTab(tabId, buttonId) {
   document.querySelectorAll('.erp-section').forEach(s => s.classList.remove('active'));
   document.getElementById(tabId).classList.add('active');
+  document.querySelectorAll('#erpNavbarBlock button').forEach(btn => btn.classList.remove('active-tab'));
+  document.getElementById(buttonId).classList.add('active-tab');
 }
 
 function populateAdminDashboardTables() {
-  const oBody = document.getElementById("adminOrdersTableBody");
-  const bBody = document.getElementById("adminBookingsTableBody");
-
-  oBody.innerHTML = orderRegistry.map((o, index) => `
+  document.getElementById("adminOrdersTableBody").innerHTML = orderRegistry.map((o, idx) => `
     <tr>
-      <td>${o.orderId}</td>
+      <td><strong>${o.orderId}</strong></td>
       <td>${o.name}</td>
       <td>${o.phone}</td>
+      <td>${o.address}</td>
       <td>${o.products}</td>
       <td>Rs ${o.total}</td>
       <td><code>${o.txnId}</code></td>
-      <td><span class="badge ${o.status === 'Approved'?'badge-confirmed':'badge-pending'}">${o.status}</span></td>
-      <td>
-        <button class="btn" style="padding:4px 8px; min-height:auto;" onclick="approveClientOrder(${index})">Confirm</button>
-        <button class="btn" style="padding:4px 8px; min-height:auto; background:#25d366;" onclick="dispatchWhatsAppNotification('${o.phone}', 'Hello ${o.name}, your Pure Grow Farm order ${o.orderId} has been verified and approved!')">WhatsApp</button>
-      </td>
+      <td><strong>${o.dateLogged}</strong></td>
+      <td><span class="badge ${o.status==='Approved'?'badge-confirmed':'badge-pending'}">${o.status}</span></td>
     </tr>
   `).join("");
 
-  bBody.innerHTML = bookingsRegistry.map((b, index) => `
+  document.getElementById("adminBookingsTableBody").innerHTML = bookingsRegistry.map((b, idx) => `
     <tr>
-      <td>${b.bookingId}</td>
+      <td><strong>${b.bookingId}</strong></td>
       <td>${b.type}</td>
       <td>${b.name}</td>
       <td>${b.phone}</td>
-      <td>${b.date}</td>
+      <td><strong>${b.date || b.start}</strong></td>
       <td><code>${b.txnId}</code></td>
-      <td><span class="badge ${b.status === 'Approved'?'badge-confirmed':'badge-pending'}">${b.status}</span></td>
+      <td><strong>${b.dateLogged}</strong></td>
+      <td><span class="badge ${b.status==='Approved'?'badge-confirmed':'badge-pending'}">${b.status}</span></td>
       <td>
-        <button class="btn" style="padding:4px 8px; min-height:auto;" onclick="approveTrainingBooking(${index})">Confirm & Approve</button>
-        <button class="btn" style="padding:4px 8px; min-height:auto; background:#25d366;" onclick="dispatchWhatsAppNotification('${b.phone}', 'Hello ${b.name}, your program booking ${b.bookingId} is confirmed! Dynamic certificate has been configured.')">WhatsApp</button>
+        <button class="btn" style="padding:4px 8px; min-height:auto;" onclick="approveTrainingBooking(${idx})">Approve</button>
       </td>
     </tr>
   `).join("");
-}
 
-function approveClientOrder(idx) {
-  orderRegistry[idx].status = "Approved";
-  localStorage.setItem('pgf_orders', JSON.stringify(orderRegistry));
-  
-  const targetOrder = orderRegistry[idx];
-  const orderSaleLog = {
-    type: "sale",
-    product: "E-Com Order Items Bundle",
-    buyer: targetOrder.name,
-    qty: 1,
-    rate: targetOrder.total,
-    total: targetOrder.total,
-    timestamp: new Date().toLocaleDateString()
-  };
-  salesRegistry.push(orderSaleLog);
-  localStorage.setItem('pgf_sales', JSON.stringify(salesRegistry));
-  
-  saveToSheet({ sheet: "Orders", action: "updateStatus", orderId: targetOrder.orderId, status: "Approved" });
-  saveToSheet({ type: "sale", ...orderSaleLog });
-  
-  alert("Order Verified Natively! Sales Ledger entry logged.");
-  populateAdminDashboardTables();
-  computeFinancialLedgerStatements();
+  document.getElementById("adminUsersTableBody").innerHTML = usersDatabase.map((u, idx) => `
+    <tr>
+      <td>${idx + 1}</td>
+      <td><strong>${u.name}</strong></td>
+      <td>${u.phone}</td>
+      <td><code>${u.email}</code></td>
+      <td><mark style="background:#f3f4f6; padding:2px 4px; border-radius:4px;">${u.password}</mark></td>
+    </tr>
+  `).join("");
 }
 
 function approveTrainingBooking(idx) {
   bookingsRegistry[idx].status = "Approved";
   localStorage.setItem('pgf_bookings', JSON.stringify(bookingsRegistry));
+  const target = bookingsRegistry[idx];
   
-  const targetBooking = bookingsRegistry[idx];
-  const bookingInflowLog = {
-    type: "sale",
-    product: `Training Course: ${targetBooking.type}`,
-    buyer: targetBooking.name,
-    qty: 1,
-    rate: targetBooking.fee,
-    total: targetBooking.fee,
-    timestamp: new Date().toLocaleDateString()
-  };
-  salesRegistry.push(bookingInflowLog);
+  const saleLog = { type: "sale", product: `Training Entry: ${target.type} Program`, collector: "Farm", buyer: target.name, qty: 1, rate: target.fee, total: target.fee, date: new Date().toLocaleDateString() };
+  salesRegistry.push(saleLog);
   localStorage.setItem('pgf_sales', JSON.stringify(salesRegistry));
   
-  saveToSheet({ sheet: "Farm Bookings", action: "updateStatus", bookingId: targetBooking.bookingId, status: "Approved" });
-  saveToSheet({ type: "sale", ...bookingInflowLog });
-  
-  alert("Training Booking Confirmed! Access authorized.");
+  alert("Course Booking authorized successfully.");
   populateAdminDashboardTables();
   computeFinancialLedgerStatements();
-  renderCertificateInline(targetBooking.bookingId);
+  renderCertificateInline(target.bookingId);
 }
 
 function renderCertificateInline(bId) {
   const target = bookingsRegistry.find(b => b.bookingId === bId);
   if(!target) return;
-
   document.getElementById("certGeneratedName").textContent = target.name.toUpperCase();
   document.getElementById("certGeneratedApproveDate").textContent = new Date().toLocaleDateString();
   
   if(target.type === "Student") {
     document.getElementById("certGeneratedDuration").textContent = `${target.start} to ${target.end}`;
-    document.getElementById("certGeneratedBody").textContent = `for successfully completing the specialized academic student internship module focused on structured Organic Oyster Mushroom Cultivation technology, clean room sterilization frameworks, and industrial scaling operations executed at Pure Grow Farm.`;
+    document.getElementById("certGeneratedBody").textContent = `for successfully finishing the core intensive practical student internship framework module hosted inside Pure Grow Farm.`;
   } else {
     document.getElementById("certGeneratedDuration").textContent = target.date;
-    document.getElementById("certGeneratedBody").textContent = `for successfully dedicating effort and completing the targeted technical hands-on expert farmer cultivation workshop series, mapping spawn management, local packaging, substrate engineering, and distribution management frameworks.`;
+    document.getElementById("certGeneratedBody").textContent = `for actively undertaking and completing the technical commercial farmer cultivation development workshop program at Pure Grow Farm.`;
   }
-  
   document.getElementById("certificateGeneratorSandbox").style.display = "block";
-  document.getElementById("certificateGeneratorSandbox").scrollIntoView({behavior: "smooth"});
 }
 
-function dispatchWhatsAppNotification(phone, msg) {
-  window.open(`https://wa.me/${phone.startsWith('91')?phone:'91'+phone}?text=${encodeURIComponent(msg)}`, '_blank');
-}
-
-// Financial Ledger Accounting Aggregators & Controllers Block
 function saveAdminExpense(e) {
   e.preventDefault();
   const data = {
@@ -1226,7 +1196,6 @@ function saveAdminExpense(e) {
   };
   expensesRegistry.push(data);
   localStorage.setItem('pgf_expenses', JSON.stringify(expensesRegistry));
-  saveToSheet({ type: "expense", ...data });
   e.target.reset();
   computeFinancialLedgerStatements();
 }
@@ -1235,372 +1204,332 @@ function saveAdminSale(e) {
   e.preventDefault();
   const qty = parseFloat(document.getElementById("saleQty").value);
   const rate = parseFloat(document.getElementById("saleRate").value);
+  const pVariant = document.getElementById("saleProduct").value;
+
   const data = {
     saleId: "SALE-" + Date.now().toString().slice(-4),
     date: new Date().toLocaleDateString(),
-    product: document.getElementById("saleProduct").value,
+    product: pVariant,
+    collector: document.getElementById("saleCollector").value,
     buyer: document.getElementById("saleBuyer").value.trim(),
     qty: qty,
     rate: rate,
     total: qty * rate
   };
+
+  if(pVariant === "Dry") currentInventoryStock.dry = Math.max(0, currentInventoryStock.dry - qty);
   salesRegistry.push(data);
   localStorage.setItem('pgf_sales', JSON.stringify(salesRegistry));
-  saveToSheet({ type: "sale", ...data });
+  updateStockDisplayCounters();
   e.target.reset();
   computeFinancialLedgerStatements();
+  renderProducts();
 }
 
 function saveAdminPurchase(e) {
   e.preventDefault();
   const qty = parseFloat(document.getElementById("purQty").value);
   const rate = parseFloat(document.getElementById("purRate").value);
+  const itemVariant = document.getElementById("purProduct").value;
+
   const data = {
     purId: "PUR-" + Date.now().toString().slice(-4),
     date: new Date().toLocaleDateString(),
-    product: document.getElementById("purProduct").value,
+    product: itemVariant,
+    funder: document.getElementById("purFunder").value,
     vendor: document.getElementById("purVendor").value.trim(),
     qty: qty,
     rate: rate,
     total: qty * rate
   };
+
+  if(itemVariant === "Dry") currentInventoryStock.dry += qty;
+  if(itemVariant === "Khakhra Lots") currentInventoryStock.khakhra += qty;
+  if(itemVariant === "Papad Lots") currentInventoryStock.papad += qty;
+
   purchasesRegistry.push(data);
   localStorage.setItem('pgf_purchases', JSON.stringify(purchasesRegistry));
-  saveToSheet({ type: "purchase", ...data });
+  updateStockDisplayCounters();
   e.target.reset();
   computeFinancialLedgerStatements();
+  renderProducts();
 }
 
 function computeFinancialLedgerStatements() {
   const totalSales = salesRegistry.reduce((sum, s) => sum + s.total, 0);
   const totalPurchases = purchasesRegistry.reduce((sum, p) => sum + p.total, 0);
-  const totalExpenses = expensesRegistry.reduce((sum, e) => sum + e.amount, 0);
-  const netProfit = totalSales - (totalPurchases + totalExpenses);
+  const totalExpenses = expensesRegistry.reduce((sum, e) => sum + (e.category !== "Damage Received" ? e.amount : 0), 0);
+  const totalDamagesReceived = expensesRegistry.reduce((sum, e) => sum + (e.category === "Damage Received" ? e.amount : 0), 0);
+
+  const netProfit = (totalSales + totalDamagesReceived) - (totalPurchases + totalExpenses);
 
   document.getElementById("finTotalRevenue").textContent = "Rs " + totalSales.toFixed(2);
   document.getElementById("finTotalPurchases").textContent = "Rs " + totalPurchases.toFixed(2);
   document.getElementById("finTotalExpenses").textContent = "Rs " + totalExpenses.toFixed(2);
-  
-  const netEl = document.getElementById("finNetProfit");
-  netEl.textContent = "Rs " + netProfit.toFixed(2);
-  netEl.style.color = netProfit >= 0 ? "var(--accent)" : "var(--danger)";
+  document.getElementById("finNetProfit").textContent = "Rs " + netProfit.toFixed(2);
+
+  let cashBalances = { Soham: 0, Jeet: 0, Farm: 0 };
+  salesRegistry.forEach(s => { if(cashBalances[s.collector] !== undefined) cashBalances[s.collector] += s.total; });
+  expensesRegistry.forEach(e => {
+    if(e.category === "Damage Received") {
+      if(cashBalances[e.payer] !== undefined) cashBalances[e.payer] += e.amount;
+    } else {
+      if(cashBalances[e.payer] !== undefined) cashBalances[e.payer] -= e.amount;
+    }
+  });
+  purchasesRegistry.forEach(p => { if(cashBalances[p.funder] !== undefined) cashBalances[p.funder] -= p.total; });
+
+  document.getElementById("cashSoham").textContent = "Rs " + cashBalances.Soham.toFixed(2);
+  document.getElementById("cashJeet").textContent = "Rs " + cashBalances.Jeet.toFixed(2);
+  document.getElementById("cashFarm").textContent = "Rs " + cashBalances.Farm.toFixed(2);
 
   const ledgersBody = document.getElementById("adminAccountingTableBody");
   let htmlRows = "";
 
   salesRegistry.forEach(s => {
-    htmlRows += `<tr><td><mark style='background:#dcfce7;'>INFLOW: SALE</mark></td><td>Mushroom (${s.product})</td><td>${s.buyer}</td><td>Qty: ${s.qty} @ Rs ${s.rate}</td><td style='color:var(--accent); font-weight:bold;'>+ Rs ${s.total.toFixed(2)}</td></tr>`;
+    htmlRows += `<tr><td><mark style='background:#dcfce7; color:#166534;'>INFLOW: SALE</mark></td><td>${s.product}</td><td>Firm: ${s.buyer}</td><td>Holder: ${s.collector}</td><td style='color:var(--accent); font-weight:bold;'>+ Rs ${s.total.toFixed(2)}</td></tr>`;
   });
   purchasesRegistry.forEach(p => {
-    htmlRows += `<tr><td><mark style='background:#fee2e2;'>OUTFLOW: PURCHASE</mark></td><td>Procurement (${p.product})</td><td>${p.vendor}</td><td>Qty: ${p.qty} kg @ Rs ${p.rate}</td><td style='color:var(--danger); font-weight:bold;'>- Rs ${p.total.toFixed(2)}</td></tr>`;
+    htmlRows += `<tr><td><mark style='background:#fee2e2; color:#991b1b;'>OUTFLOW: PURCHASE</mark></td><td>Material: ${p.product}</td><td>To: ${p.vendor}</td><td>Funder: ${p.funder}</td><td style='color:var(--danger); font-weight:bold;'>- Rs ${p.total.toFixed(2)}</td></tr>`;
   });
   expensesRegistry.forEach(e => {
-    htmlRows += `<tr><td><mark style='background:#fef3c7;'>OUTFLOW: EXPENSE</mark></td><td>${e.category} Operations</td><td>Payer: ${e.payer}</td><td>${e.desc} (${e.mode})</td><td style='color:var(--warn); font-weight:bold;'>- Rs ${e.amount.toFixed(2)}</td></tr>`;
+    if(e.category === "Damage Received") {
+      htmlRows += `<tr><td><mark style='background:#e0f2fe; color:#0369a1;'>INFLOW: DAMAGE FUNDS</mark></td><td>Lot: ${e.desc}</td><td>Damages Compensation</td><td>Receiver: ${e.payer}</td><td style='color:#0369a1; font-weight:bold;'>+ Rs ${e.amount.toFixed(2)}</td></tr>`;
+    } else {
+      htmlRows += `<tr><td><mark style='background:#fef3c7; color:#92400e;'>OUTFLOW: FARM EXPENSE</mark></td><td>${e.category} Operations (${e.desc})</td><td>Mode: ${e.mode}</td><td>Payer: ${e.payer}</td><td style='color:var(--warn); font-weight:bold;'>- Rs ${e.amount.toFixed(2)}</td></tr>`;
+    }
   });
-
-  ledgersBody.innerHTML = htmlRows ? htmlRows : "<tr><td colspan='5' class='muted' style='text-align:center;'>No structural accounting transactions logged.</td></tr>";
-}
-
-// Global Core E-Commerce Shop Modules
-function toggleNav() {
-  document.getElementById("mainNav").classList.toggle("show");
+  ledgersBody.innerHTML = htmlRows;
 }
 
 function renderProducts(list = products) {
-  const target = document.getElementById("productsList");
-  if (!list.length) {
-    target.innerHTML = `<p class="muted">No product found.</p>`;
-    return;
-  }
+  document.getElementById("productsList").innerHTML = list.map(product => {
+    let stockStatus = product.bulk ? "" : `<span class="badge badge-confirmed">Available In Stock</span>`;
+    if(product.type === "dry" && currentInventoryStock.dry <= 0) stockStatus = `<span class="badge" style="background:#fee2e2; color:var(--danger);">Out of Stock</span>`;
+    if(product.type === "khakhra" && currentInventoryStock.khakhra <= 0) stockStatus = `<span class="badge" style="background:#fee2e2; color:var(--danger);">Out of Stock</span>`;
+    if(product.type === "papad" && currentInventoryStock.papad <= 0) stockStatus = `<span class="badge" style="background:#fee2e2; color:var(--danger);">Out of Stock</span>`;
 
-  target.innerHTML = list.map(product => `
-    <article class="product">
-      <img src="${product.image}" alt="${product.name}">
-      <h3>${product.name}</h3>
-      <p class="muted">${product.detail}</p>
-      <div class="product-actions">
-        <div class="pill">${money(product.price)} / ${product.unit}</div>
-        ${product.bulk ? `
-          <a class="btn" href="#contact">Contact</a>
-          <a class="btn" href="https://wa.me/${farmWhatsapp}?text=${encodeURIComponent(`Hello Pure Grow Farm, I want Bulk and Wholesale oyster mushroom order details.`)}" target="_blank" rel="noreferrer">WhatsApp</a>
-        ` : `<button type="button" onclick="addToCart(${product.id})">Add Cart</button>`}
-      </div>
-    </article>
-  `).join("");
+    return `
+      <article class="product">
+        <img src="${product.image}" alt="${product.name}">
+        <h3>${product.name}</h3>
+        <p class="muted">${product.detail}</p>
+        <div style="margin-top:auto;">
+          <div style="margin-bottom:6px;">${stockStatus}</div>
+          <div class="product-actions">
+            <div class="pill">Rs ${product.price} / ${product.unit}</div>
+            ${product.bulk ? `<button type="button" onclick="window.open('https://wa.me/${farmWhatsapp}')">Contact Bulk</button>` : `<button type="button" onclick="addToCart(${product.id})">Add Cart</button>`}
+          </div>
+        </div>
+      </article>
+    `;
+  }).join("");
 }
-
-function searchProducts() {
-  const query = document.getElementById("productSearch").value.trim().toLowerCase();
-  const filtered = products.filter(product => `${product.name} ${product.detail} ${product.unit}`.toLowerCase().includes(query));
-  renderProducts(filtered);
-}
-
-document.getElementById("productSearch").addEventListener("input", searchProducts);
 
 function addToCart(id) {
   const product = products.find(item => item.id === id);
   const current = cart.get(id);
   cart.set(id, { ...product, qty: current ? current.qty + 1 : 1 });
-  currentUpiState.opened = false;
   renderCart();
   updateOrderButton();
 }
-
 function minusCart(id) {
   const item = cart.get(id);
   if (!item) return;
   if (item.qty === 1) cart.delete(id);
   else cart.set(id, { ...item, qty: item.qty - 1 });
-  currentUpiState.opened = false;
   renderCart();
   updateOrderButton();
 }
-
-function removeCart(id) {
-  cart.delete(id);
-  currentUpiState.opened = false;
-  renderCart();
-  updateOrderButton();
-}
-
-function getTotals() {
-  const subtotal = [...cart.values()].reduce((sum, item) => sum + item.price * item.qty, 0);
-  const delivery = subtotal > 0 ? 50 : 0;
-  return { subtotal, delivery, total: subtotal + delivery };
-}
-
 function renderCart() {
-  const target = document.getElementById("cartItems");
-  const items = [...cart.values()];
   const bill = getTotals();
-
   document.getElementById("subtotal").textContent = `Rs ${bill.subtotal}`;
   document.getElementById("delivery").textContent = `Rs ${bill.delivery}`;
   document.getElementById("total").textContent = `Rs ${bill.total}`;
 
-  if (!items.length) {
-    target.innerHTML = `<p class="muted">Cart is empty.</p>`;
-    updatePaymentHelp("");
-    return;
-  }
-
-  target.innerHTML = items.map(item => `
+  if (!cart.size) { document.getElementById("cartItems").innerHTML = `<p class="muted">Cart selection is empty.</p>`; return; }
+  document.getElementById("cartItems").innerHTML = [...cart.values()].map(item => `
     <div class="cart-item">
-      <div>
-        <strong>${item.name}</strong>
-        <div class="muted">${money(item.price)} x ${item.qty}</div>
-        <div class="qty-actions">
-          <button type="button" onclick="minusCart(${item.id})">-</button>
-          <button type="button" onclick="addToCart(${item.id})">+</button>
-          <button class="remove-btn" type="button" onclick="removeCart(${item.id})">Remove</button>
-        </div>
+      <div><strong>${item.name}</strong><br><span class="muted">Rs ${item.price} x ${item.qty}</span></div>
+      <div class="qty-actions">
+        <button type="button" onclick="minusCart(${item.id})">-</button>
+        <button type="button" onclick="addToCart(${item.id})">+</button>
       </div>
-      <strong>${item.price ? `Rs ${item.price * item.qty}` : "Custom"}</strong>
     </div>
   `).join("");
 }
 
-function buildUpiLink(amount, note) {
-  return `upi://pay?pa=${encodeURIComponent(farmUpiId)}&pn=${encodeURIComponent(farmName)}&am=${amount}&cu=INR&tn=${encodeURIComponent(note)}`;
-}
-
-function updatePaymentHelp(message) {
-  const help = document.getElementById("productPaymentHelp");
-  help.textContent = message;
-  help.classList.toggle("show", Boolean(message));
-}
-
 function openProductPayment() {
-  const paymentMode = document.getElementById("paymentMode").value;
+  const mode = document.getElementById("paymentMode").value;
   const bill = getTotals();
-  currentUpiState.opened = false;
-
-  if (!paymentMode) {
-    updatePaymentHelp("");
-    updateOrderButton();
-    return;
-  }
-
+  if(!mode || !cart.size) return;
   currentUpiState.opened = true;
-  updatePaymentHelp(`${paymentMode} app is opening for Rs ${bill.total}. Complete payment, then enter transaction ID.`);
+  document.getElementById("productPaymentHelp").style.display = "block";
+  document.getElementById("productPaymentHelp").textContent = `Launching UPI Payment link for Rs ${bill.total}.`;
+  window.location.href = `upi://pay?pa=${encodeURIComponent(farmUpiId)}&pn=${encodeURIComponent(farmName)}&am=${bill.total}&cu=INR`;
   updateOrderButton();
-  window.location.href = buildUpiLink(bill.total, "PGF Order Goods Payment");
 }
+document.getElementById("paymentMode").onchange = openProductPayment;
 
 function updateOrderButton() {
-  const name = document.getElementById("name").value.trim();
-  const phone = document.getElementById("phone").value.trim();
-  const email = document.getElementById("email").value.trim();
-  const address = document.getElementById("address").value.trim();
-  const paymentMode = document.getElementById("paymentMode").value;
-  const paymentId = document.getElementById("paymentId").value.trim();
-  const ready = cart.size && name && /^[0-9]{10}$/.test(phone) && email && address && paymentMode && currentUpiState.opened && paymentId.length >= 6;
+  if(!currentUser) return;
+  const ready = cart.size && document.getElementById("address").value.trim().length > 4 && document.getElementById("paymentId").value.trim().length >= 6;
   document.getElementById("confirmOrderBtn").disabled = !ready;
 }
+document.getElementById("orderForm").oninput = updateOrderButton;
 
-document.getElementById("paymentMode").addEventListener("change", openProductPayment);
-document.getElementById("orderForm").addEventListener("input", updateOrderButton);
-
-function confirmOrder(event) {
-  event.preventDefault();
+function confirmOrder(e) {
+  e.preventDefault();
   const bill = getTotals();
-  const pId = document.getElementById("paymentId").value.trim();
+  const currentTimestamp = new Date().toLocaleString();
+
+  cart.forEach(item => {
+    if(item.type === "dry") currentInventoryStock.dry = Math.max(0, currentInventoryStock.dry - item.qty);
+    if(item.type === "khakhra") currentInventoryStock.khakhra = Math.max(0, currentInventoryStock.khakhra - item.qty);
+    if(item.type === "papad") currentInventoryStock.papad = Math.max(0, currentInventoryStock.papad - item.qty);
+  });
 
   const data = {
     orderId: "PGF-" + Date.now().toString().slice(-6),
-    name: document.getElementById("name").value.trim(),
-    phone: document.getElementById("phone").value.trim(),
-    email: document.getElementById("email").value.trim(),
+    name: currentUser.name,
+    phone: currentUser.phone,
+    email: currentUser.email,
     address: document.getElementById("address").value.trim(),
-    products: [...cart.values()].map(item => `${item.name} x${item.qty}`).join(", "),
+    products: [...cart.values()].map(i => `${i.name} [x${i.qty}]`).join(", "),
     total: bill.total,
-    txnId: pId,
+    txnId: document.getElementById("paymentId").value.trim(),
+    dateLogged: currentTimestamp,
     status: "Pending Verification"
   };
 
   orderRegistry.unshift(data);
   localStorage.setItem('pgf_orders', JSON.stringify(orderRegistry));
   
-  saveToSheet({ type: "order", ...data, subtotal: bill.subtotal, delivery: bill.delivery, paymentMode: document.getElementById("paymentMode").value });
+  const salesLog = { type: "sale", product: `Client E-Com Order [${data.products}]`, collector: "Farm", buyer: data.name, qty: 1, rate: data.total, total: data.total, date: currentTimestamp };
+  salesRegistry.unshift(salesLog);
+  localStorage.setItem('pgf_sales', JSON.stringify(salesRegistry));
 
-  latestInvoice = `PURE GROW FARM - COMMERCIAL GOODS INVOICE\nOrder ID: ${data.orderId}\nCustomer: ${data.name}\nPhone: ${data.phone}\nItems: ${data.products}\nTotal Charged: Rs ${data.total}\nTxn ID: ${data.txnId}\nStatus: Payment Confirmed - Pending Admin Dispatch Verification`;
-  
+  saveToSheet({ type: "order", ...data });
+  updateStockDisplayCounters();
+
+  latestInvoice = `PURE GROW FARM BILL INVOICE\nOrder Ref: ${data.orderId}\nCustomer: ${data.name}\nPhone: ${data.phone}\nAddress Shipping: ${data.address}\nItems Dispatched: ${data.products}\nTotal Paid Factor: Rs ${data.total}\nOrder Date Mapped: ${data.dateLogged}`;
   document.getElementById("invoiceText").textContent = latestInvoice;
-  document.getElementById("emailInvoice").href = `mailto:${farmEmail}?subject=Pure Grow Farm Order Invoice&body=${encodeURIComponent(latestInvoice)}`;
-  document.getElementById("whatsappInvoice").href = `https://wa.me/${farmWhatsapp}?text=${encodeURIComponent(latestInvoice)}`;
+  
+  alert("Thank you! Your purchase checkout has been logged successfully.");
   document.getElementById("invoiceDialog").showModal();
+  
+  window.open(`https://wa.me/${farmWhatsapp}?text=${encodeURIComponent("NEW E-COM GOODS ORDER VERIFICATION FLOW:\n" + latestInvoice)}`, '_blank');
   
   cart.clear();
   renderCart();
   document.getElementById("orderForm").reset();
-  updateOrderButton();
   checkUserSession();
 }
 
 function downloadInvoice() {
   const blob = new Blob([latestInvoice], { type: "text/plain" });
-  const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
-  link.href = url;
-  link.download = "pure-grow-farm-invoice.txt";
+  link.href = URL.createObjectURL(blob);
+  link.download = "pgf-invoice-slip.txt";
   link.click();
 }
+function closeInvoice() { document.getElementById("invoiceDialog").close(); }
 
-function closeInvoice() {
-  document.getElementById("invoiceDialog").close();
-}
-
-function showVisitForm(formId) {
+function showVisitForm(id) {
   document.getElementById("studentForm").classList.remove("active");
   document.getElementById("farmerForm").classList.remove("active");
-  document.getElementById(formId).classList.add("active");
+  document.getElementById(id).classList.add("active");
 }
 
 function openVisitUpi(amount, formId) {
-  if(formId === 'studentForm') {
-    document.getElementById("studentPaymentHelp").textContent = "Opening gateway for Rs " + amount + ". Complete tracking, paste transaction hash.";
-    document.getElementById("studentSubmitBtn").disabled = false;
-  } else {
-    document.getElementById("farmerPaymentHelp").textContent = "Opening gateway for Rs " + amount + ". Complete tracking, paste transaction hash.";
-    document.getElementById("farmerSubmitBtn").disabled = false;
-  }
-  window.location.href = buildUpiLink(amount, "PGF Cultivation Program Registration");
+  const helpId = formId === "studentForm" ? "studentPaymentHelp" : "farmerPaymentHelp";
+  document.getElementById(helpId).style.display = "block";
+  document.getElementById(helpId).textContent = `UPI open active for Rs ${amount}.`;
+  if(formId === "studentForm") document.getElementById("studentSubmitBtn").disabled = false;
+  else document.getElementById("farmerSubmitBtn").disabled = false;
+  window.location.href = `upi://pay?pa=${encodeURIComponent(farmUpiId)}&pn=${encodeURIComponent(farmName)}&am=${amount}&cu=INR`;
 }
 
 function submitStudentVisit(e) {
   e.preventDefault();
+  const currentTimestamp = new Date().toLocaleString();
   const data = {
     bookingId: "PGF-STU-" + Date.now().toString().slice(-4),
     type: "Student",
-    name: document.getElementById("sname").value.trim(),
-    phone: document.getElementById("sphone").value.trim(),
-    email: document.getElementById("semail").value.trim(),
-    enrollment: document.getElementById("senroll").value.trim(),
-    college: document.getElementById("scollege").value.trim(),
-    course: document.getElementById("scourse").value.trim(),
+    name: currentUser.name,
+    phone: currentUser.phone,
+    email: currentUser.email,
+    enrollment: document.getElementById("senroll").value,
+    college: document.getElementById("scollege").value,
+    course: document.getElementById("scourse").value,
     start: document.getElementById("sstart").value,
     end: document.getElementById("send").value,
     fee: 100,
     txnId: document.getElementById("spayment").value.trim(),
+    dateLogged: currentTimestamp,
     status: "Pending Verification"
   };
-
   bookingsRegistry.unshift(data);
   localStorage.setItem('pgf_bookings', JSON.stringify(bookingsRegistry));
   saveToSheet({ type: "visit", ...data });
 
-  latestVisitInvoice = `PURE GROW FARM - STUDENT INTERNSHIP BOOKING\nBooking Ref: ${data.bookingId}\nName: ${data.name}\nCollege: ${data.college}\nDuration: ${data.start} to ${data.end}\nTxn ID: ${data.txnId}`;
-  
+  latestVisitInvoice = `ACADEMIC INTERNSHIP APPLICATION DETAILS:\nBooking Ref ID: ${data.bookingId}\nName: ${data.name}\nDuration Schedule: ${data.start} to ${data.end}\nUTR Tracking Number: ${data.txnId}\nBooking Logged Date: ${data.dateLogged}`;
   document.getElementById("visitInvoiceText").textContent = latestVisitInvoice;
-  document.getElementById("visitEmailLink").href = `mailto:${farmEmail}?subject=Student Registration&body=${encodeURIComponent(latestVisitInvoice)}`;
-  document.getElementById("visitWhatsappLink").href = `https://wa.me/${farmWhatsapp}?text=${encodeURIComponent(latestVisitInvoice)}`;
-  document.getElementById("visitThankyouBox").style.display = "block";
   
+  alert("Thank you! Your specialized student internship has been logged.");
+  document.getElementById("visitThankyouBox").style.display = "block";
+  window.open(`https://wa.me/${farmWhatsapp}?text=${encodeURIComponent("NEW STUDENT INTERNSHIP REGISTRATION:\n" + latestVisitInvoice)}`, '_blank');
   e.target.reset();
   checkUserSession();
 }
 
 function submitFarmerVisit(e) {
   e.preventDefault();
+  const currentTimestamp = new Date().toLocaleString();
   const data = {
     bookingId: "PGF-FAR-" + Date.now().toString().slice(-4),
     type: "Farmer",
-    name: document.getElementById("fname").value.trim(),
-    phone: document.getElementById("fphone").value.trim(),
-    email: document.getElementById("femail").value.trim(),
+    name: currentUser.name,
+    phone: currentUser.phone,
+    email: currentUser.email,
     date: document.getElementById("fdate").value,
     fee: 699,
     txnId: document.getElementById("fpayment").value.trim(),
+    dateLogged: currentTimestamp,
     status: "Pending Verification"
   };
-
   bookingsRegistry.unshift(data);
   localStorage.setItem('pgf_bookings', JSON.stringify(bookingsRegistry));
   saveToSheet({ type: "visit", ...data });
 
-  latestVisitInvoice = `PURE GROW FARM - FARMER TRAINING BOOKING\nBooking Ref: ${data.bookingId}\nName: ${data.name}\nSchedule Date: ${data.date}\nTxn ID: ${data.txnId}`;
-  
+  latestVisitInvoice = `TECHNICAL FARMER TRAINING WORKSHOP DETAILS:\nBooking Ref ID: ${data.bookingId}\nName: ${data.name}\nTarget Attending Date: ${data.date}\nUTR Tracking Number: ${data.txnId}\nBooking Logged Date: ${data.dateLogged}`;
   document.getElementById("visitInvoiceText").textContent = latestVisitInvoice;
-  document.getElementById("visitEmailLink").href = `mailto:${farmEmail}?subject=Farmer Registration&body=${encodeURIComponent(latestVisitInvoice)}`;
-  document.getElementById("visitWhatsappLink").href = `https://wa.me/${farmWhatsapp}?text=${encodeURIComponent(latestVisitInvoice)}`;
-  document.getElementById("visitThankyouBox").style.display = "block";
   
+  alert("Thank you! Your farmer workshop registration has been logged.");
+  document.getElementById("visitThankyouBox").style.display = "block";
+  window.open(`https://wa.me/${farmWhatsapp}?text=${encodeURIComponent("NEW FARMER TRAINING BOOKING:\n" + latestVisitInvoice)}`, '_blank');
   e.target.reset();
   checkUserSession();
 }
 
 function downloadVisitInvoice() {
   const blob = new Blob([latestVisitInvoice], { type: "text/plain" });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = "pure-grow-farm-visit-receipt.txt";
-  link.click();
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "pgf-visit-receipt.txt";
+  a.click();
 }
 
-function addReview(event) {
-  event.preventDefault();
-  reviews.unshift({
-    name: document.getElementById("reviewName").value.trim(),
-    rating: Number(document.getElementById("reviewRating").value),
-    text: document.getElementById("reviewText").value.trim()
-  });
-  event.target.reset();
-  renderReviews();
+function getTotals() {
+  const subtotal = [...cart.values()].reduce((sum, item) => sum + item.price * item.qty, 0);
+  return { subtotal, delivery: subtotal > 0 ? 50 : 0, total: subtotal > 0 ? subtotal + 50 : 0 };
 }
 
-function renderReviews() {
-  document.getElementById("reviewList").innerHTML = reviews.map(review => `
-    <article class="review-card">
-      <strong>${review.name}</strong>
-      <p class="muted">Rating: ${review.rating}/5</p>
-      <p>${review.text}</p>
-    </article>
-  `).join("");
+function toggleNav() {
+  document.getElementById("mainNav").classList.toggle("show");
 }
 
 renderProducts();
-renderReviews();
 checkUserSession();
 </script>
 </body>

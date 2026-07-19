@@ -90,11 +90,12 @@
       </div>
     </section>
 
-   <!-- Activity History Logs Popup Screen -->
+    <!-- Activity History Logs Popup Screen -->
     <div id="userHistoryModal" class="data-popup-modal" onclick="closeHistoryModalOutside(event)">
       <div class="popup-content-box">
         <button type="button" class="close-popup-btn" onclick="closeHistoryModal()">Close (X)</button>
         <h2>Your Activity Logs History Page</h2>
+        
         <div class="grid-data-layout">
           <div class="data-item-card">
             <h3>Your Dispatched Orders</h3>
@@ -104,7 +105,7 @@
             <h3>Your Farm Training Workshops</h3>
             <div id="userBookingsList" class="muted">No program bookings registered.</div>
             
-            <!-- NEW: Yaha certificate ki history dikhegi -->
+            <!-- HISTORY MODAL INSIDE CERTIFICATE CONTAINER -->
             <div id="historyCertificateWrapper" style="margin-top: 20px; border-top: 1px dashed var(--line); padding-top: 15px; display: none;">
               <h4 style="color: var(--accent); margin-bottom: 10px;">📜 Issued Certificates</h4>
               <div id="historyCertificatesContainer"></div>
@@ -114,15 +115,16 @@
       </div>
     </div>
 
-    <!-- NEW: PDF Download ke liye hidden frame (isse footer se pehle kahi bhi rakh dein) -->
+    <!-- Print target dynamic container for exactly 1-page PDF -->
     <div id="certificatePrintPrintoutFrame" style="display: none;"></div>
+
     <!-- Primary Public Content View Space -->
     <div id="publicContent">
       <main>
         <section class="hero">
           <div>
             <h1>Fresh and Premium Oyster Mushrooms</h1>
-            <p>Pure Grow Farm produces fresh green oyster mushroom, dried mushroom, mushroom powder, khakhra and papad[cite: 2]. We focus on sustainable cultivation, chemical-free farming, hygienic packing and direct customer orders[cite: 2].</p>
+            <p>Pure Grow Farm produces fresh green oyster mushroom, dried mushroom, mushroom powder, khakhra and papad. We focus on sustainable cultivation, chemical-free farming, hygienic packing and direct customer orders.</p>
 
             <div class="cards">
               <div class="card">
@@ -131,7 +133,7 @@
               </div>
               <div class="card">
                 <div class="muted small-title">Direct Helpline Contact</div>
-                <div class="card-title">9067891039 Soham Gajera | 8200145732 Jeet Gajera[cite: 2]</div>
+                <div class="card-title">9067891039 Soham Gajera | 8200145732 Jeet Gajera</div>
               </div>
             </div>
           </div>
@@ -145,7 +147,7 @@
         <section id="about" class="about">
           <div class="about-content">
             <h2>About Pure Grow Farm</h2>
-            <p class="muted">Pure Grow Farm is a family-run mushroom farm focused on sustainable oyster mushroom cultivation under technical expert supervision of Soham Gajera and Jeet Gajera[cite: 2].</p>
+            <p class="muted">Pure Grow Farm is a family-run mushroom farm focused on sustainable oyster mushroom cultivation under technical expert supervision of Soham Gajera and Jeet Gajera.</p>
           </div>
         </section>
 
@@ -222,8 +224,8 @@
               <label>Target Internship Start Date <input type="date" id="sstart" required></label>
               <label>Target Internship End Date <input type="date" id="send" required></label>
               <div class="payment-box">
-                <h3>Student Internship Fee Rs 100[cite: 2]</h3>
-                <p>UPI ID: sohamgajera01@okhdfcbank[cite: 2]</p>
+                <h3>Student Internship Fee Rs 100</h3>
+                <p>UPI ID: sohamgajera01@okhdfcbank</p>
                 <button type="button" onclick="openVisitUpi(100, 'studentForm')">Pay Online Gateway</button>
               </div>
               <select id="spaymentMode" required style="display:none;">
@@ -240,8 +242,8 @@
               <input type="email" id="femail" placeholder="Email" readonly required style="background:#f3f4f6; cursor:not-allowed;">
               <label>Target Training Session Date <input type="date" id="fdate" required></label>
               <div class="payment-box">
-                <h3>Farmer Training Fee Rs 699[cite: 2]</h3>
-                <p>UPI ID: sohamgajera01@okhdfcbank[cite: 2]</p>
+                <h3>Farmer Training Fee Rs 699</h3>
+                <p>UPI ID: sohamgajera01@okhdfcbank</p>
                 <button type="button" onclick="openVisitUpi(699, 'farmerForm')">Pay Online Gateway</button>
               </div>
               <select id="fpaymentMode" required style="display:none;">
@@ -333,19 +335,19 @@
         <div class="fin-grid">
           <div class="fin-card">
             <div class="muted small-title">Total Website Sales Revenue</div>
-            <div class="fin-val" id="finTotalRevenue">Rs 0.00[cite: 2]</div>
+            <div class="fin-val" id="finTotalRevenue">Rs 0.00</div>
           </div>
           <div class="fin-card">
             <div class="muted small-title">Total Procurement Purchases Outflow</div>
-            <div class="fin-val" id="finTotalPurchases" style="color:var(--danger);">Rs 0.00[cite: 2]</div>
+            <div class="fin-val" id="finTotalPurchases" style="color:var(--danger);">Rs 0.00</div>
           </div>
           <div class="fin-card">
             <div class="muted small-title">Total Miscellaneous Expenses Outflow</div>
-            <div class="fin-val" id="finTotalExpenses" style="color:var(--warn);">Rs 0.00[cite: 2]</div>
+            <div class="fin-val" id="finTotalExpenses" style="color:var(--warn);">Rs 0.00</div>
           </div>
           <div class="fin-card" style="background:var(--soft);">
             <div class="muted small-title">Unified Net Profit Statement (P&L)</div>
-            <div class="fin-val" id="finNetProfit" style="color:var(--accent);">Rs 0.00[cite: 2]</div>
+            <div class="fin-val" id="finNetProfit" style="color:var(--accent);">Rs 0.00</div>
           </div>
         </div>
 
@@ -372,21 +374,21 @@
                 <label>Select Operation Date: <input type="date" id="expLogDate" required></label>
                 <label>Log Classification Strategy Type:
                   <select id="expCategory" required>
-                    <option value="Farm">Farm Infrastructure Expansion Outflow[cite: 2]</option>
-                    <option value="Mushroom">Mushroom Substrate Media Outflow[cite: 2]</option>
+                    <option value="Farm">Farm Infrastructure Expansion Outflow</option>
+                    <option value="Mushroom">Mushroom Substrate Media Outflow</option>
                   </select>
                 </label>
                 <label>Assigned Resource Party:
                   <select id="expPayer" required>
-                    <option value="Soham">Soham Gajera[cite: 2]</option>
-                    <option value="Jeet">Jeet Gajera[cite: 2]</option>
-                    <option value="Farm">Farm Account General Vault[cite: 2]</option>
+                    <option value="Soham">Soham Gajera</option>
+                    <option value="Jeet">Jeet Gajera</option>
+                    <option value="Farm">Farm Account General Vault</option>
                   </select>
                 </label>
                 <label>Transaction Channel System:
                   <select id="expMode" required>
-                    <option value="Online">Online Network Link/UPI[cite: 2]</option>
-                    <option value="Cash">Liquid Cash Vault Handover[cite: 2]</option>
+                    <option value="Online">Online Network Link/UPI</option>
+                    <option value="Cash">Liquid Cash Vault Handover</option>
                   </select>
                 </label>
                 <input type="text" id="expDesc" placeholder="Item Context Specification Summary" required>
@@ -407,16 +409,16 @@
                 <label>Select Sale Date: <input type="date" id="saleLogDate" required></label>
                 <label>Mushroom Catalog Stock Variant Type:
                   <select id="saleProduct" required>
-                    <option value="Green">Fresh Green Oyster Mushroom Bulk Lot[cite: 2]</option>
-                    <option value="Dry">Dry Dehydrated Mushroom Pack Lot[cite: 2]</option>
-                    <option value="Powder">Fine Ground Spore Mushroom Powder Lot[cite: 2]</option>
+                    <option value="Green">Fresh Green Oyster Mushroom Bulk Lot</option>
+                    <option value="Dry">Dry Dehydrated Mushroom Pack Lot</option>
+                    <option value="Powder">Fine Ground Spore Mushroom Powder Lot</option>
                   </select>
                 </label>
                 <label>Financial Asset Collector Location:
                   <select id="saleCollector" required>
-                    <option value="Farm">Farm Account General Vault (Automated Default)[cite: 2]</option>
-                    <option value="Soham">Soham Gajera Pocket Cash[cite: 2]</option>
-                    <option value="Jeet">Jeet Gajera Pocket Cash[cite: 2]</option>
+                    <option value="Farm">Farm Account General Vault (Automated Default)</option>
+                    <option value="Soham">Soham Gajera Pocket Cash</option>
+                    <option value="Jeet">Jeet Gajera Pocket Cash</option>
                   </select>
                 </label>
                 <input type="text" id="saleBuyer" placeholder="Client Purchaser Name" required>
@@ -438,17 +440,17 @@
                 <label>Select Purchase Date: <input type="date" id="purLogDate" required></label>
                 <label>Procurement Resource Inward Lot:
                   <select id="purProduct" required>
-                    <option value="Green">Green Mushroom Base Inward Spores[cite: 2]</option>
-                    <option value="Dry">Dry Bulk Base Inward Lots[cite: 2]</option>
-                    <option value="Khakhra Lots">Khakhra Production Raw Multi-Lots[cite: 2]</option>
-                    <option value="Papad Lots">Papad Production Raw Multi-Lots[cite: 2]</option>
+                    <option value="Green">Green Mushroom Base Inward Spores</option>
+                    <option value="Dry">Dry Bulk Base Inward Lots</option>
+                    <option value="Khakhra Lots">Khakhra Production Raw Multi-Lots</option>
+                    <option value="Papad Lots">Papad Production Raw Multi-Lots</option>
                   </select>
                 </label>
                 <label>Funding Inward Resource Channel Provider:
                   <select id="purFunder" required>
-                    <option value="Farm">Farm Account General Vault[cite: 2]</option>
-                    <option value="Soham">Soham Gajera Personal Assets[cite: 2]</option>
-                    <option value="Jeet">Jeet Gajera Personal Assets[cite: 2]</option>
+                    <option value="Farm">Farm Account General Vault</option>
+                    <option value="Soham">Soham Gajera Personal Assets</option>
+                    <option value="Jeet">Jeet Gajera Personal Assets</option>
                   </select>
                 </label>
                 <input type="text" id="purVendor" placeholder="Vendor Farmer Source Entity Name" required>
@@ -470,9 +472,9 @@
                 <label>Select Damage Log Date: <input type="date" id="dmgLogDate" required></label>
                 <label>Resource Target Party Location:
                   <select id="dmgPayer" required>
-                    <option value="Farm">Farm General Account General Vault[cite: 2]</option>
-                    <option value="Soham">Soham Gajera Account[cite: 2]</option>
-                    <option value="Jeet">Jeet Gajera Account[cite: 2]</option>
+                    <option value="Farm">Farm General Account General Vault</option>
+                    <option value="Soham">Soham Gajera Account</option>
+                    <option value="Jeet">Jeet Gajera Account</option>
                   </select>
                 </label>
                 <input type="text" id="dmgDesc" placeholder="Damage Reason Context" required>
@@ -546,22 +548,22 @@
         
         <div style="display:flex; justify-content:space-between; flex-wrap:wrap; gap:15px;">
           <div style="flex:1; min-width:240px; font-size:13px; line-height:1.6;">
-            <strong>Payment Method:</strong> UPI / Online Transfer[cite: 5]<br>
-            <strong>Bank Name:</strong> HDFC Bank[cite: 5]<br>
-            <strong>Account No:</strong> sohamgajera01@okhdfcbank (UPI)[cite: 2, 5]<br>
-            <p style="font-style:italic; color:var(--accent); font-weight:bold; margin-top:10px;">Thank you for your purchase![cite: 5]</p>
+            <strong>Payment Method:</strong> UPI / Online Transfer<br>
+            <strong>Bank Name:</strong> HDFC Bank<br>
+            <strong>Account No:</strong> sohamgajera01@okhdfcbank (UPI)<br>
+            <p style="font-style:italic; color:var(--accent); font-weight:bold; margin-top:10px;">Thank you for your purchase!</p>
           </div>
           <div style="width:220px; text-align:right; font-size:14px;">
-            <div style="padding:4px 0;">Sub-total: <span id="invSub" style="font-weight:bold;">Rs 0</span>[cite: 5]</div>
-            <div style="padding:4px 0;">Tax (0%): <span style="font-weight:bold;">Rs 0.00</span>[cite: 5]</div>
+            <div style="padding:4px 0;">Sub-total: <span id="invSub" style="font-weight:bold;">Rs 0</span></div>
+            <div style="padding:4px 0;">Tax (0%): <span style="font-weight:bold;">Rs 0.00</span></div>
             <hr style="border:0; border-top:1px solid var(--line);">
-            <div style="padding:6px 0; font-size:18px; color:var(--accent); font-weight:bold;">Total: <span id="invTotal">Rs 0</span>[cite: 5]</div>
+            <div style="padding:6px 0; font-size:18px; color:var(--accent); font-weight:bold;">Total: <span id="invTotal">Rs 0</span></div>
           </div>
         </div>
         
         <div style="margin-top:20px; padding-top:15px; border-top:1px solid var(--line); font-size:11px; text-align:center; color:var(--muted);">
-          <strong>Contact Us:</strong> 9067891039 & 8200145732 | puregrowfarm001@gmail.com[cite: 2, 5]<br>
-          Makhiyala, Junagadh, Gujarat, 362011.[cite: 5]
+          <strong>Contact Us:</strong> 9067891039 & 8200145732 | puregrowfarm001@gmail.com<br>
+          Makhiyala, Junagadh, Gujarat, 362011.
         </div>
       </div>
       
@@ -572,7 +574,7 @@
     </dialog>
 
     <footer>
-      <div>Pure Grow Farm - Oyster Mushrooms Enterprise © 2026</div>
+      <div>Pure Grow Farm - Oyster Mushrooms cultivation & Traning © 2024</div>
     </footer>
   </div>
 </body>

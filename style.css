@@ -113,7 +113,6 @@ button:hover, .btn:hover { background: #246e33; }
 button:disabled { background: #98a2a8; cursor: not-allowed; }
 .nav-toggle { display: none; color: var(--dark); background: var(--soft); border: 1px solid var(--line); }
 
-/* Amazon Style Integrated Auth Screen UI */
 .auth-container {
   max-width: 420px;
   margin: 40px auto;
@@ -138,7 +137,6 @@ button:disabled { background: #98a2a8; cursor: not-allowed; }
 .auth-box { display: none; }
 .auth-box.active { display: block; }
 
-/* Dashboard UI */
 .user-dashboard {
   background: #ffffff;
   border: 1px solid var(--line);
@@ -147,7 +145,6 @@ button:disabled { background: #98a2a8; cursor: not-allowed; }
   margin-bottom: 24px;
 }
 
-/* Isolated Pop-up Screen overlay styles for History Logs Page */
 .data-popup-modal {
   display: none;
   position: fixed;
@@ -313,7 +310,6 @@ pre { overflow: auto; max-height: 330px; padding: 12px; color: #eef8ef; backgrou
 .thankyou { display: none; margin-top: 16px; }
 .visit-actions { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
 
-/* Dedicated Advanced ERP View CSS styling */
 .erp-wrapper { display: none; background: #f4f7f5; padding: 20px; border-radius: 14px; border: 2px dashed var(--accent); margin-top: 20px; }
 .erp-wrapper.active { display: block; }
 .erp-nav { display: flex; gap: 10px; margin-bottom: 18px; background: #fff; padding: 10px; border-radius: 8px; border: 1px solid var(--line); flex-wrap: wrap;}
@@ -330,13 +326,11 @@ th { background: #f8faf8; font-weight: 700; }
 .badge-pending { background: #fef3c7; color: var(--warn); }
 .badge-confirmed { background: #dcfce7; color: var(--accent); }
 
-/* Financial Analytics Grid Layout Cards */
 .fin-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 20px; }
 .fin-card { background: #fff; padding: 16px; border-radius: 10px; border: 1px solid var(--line); box-shadow: 0 2px 6px rgba(0,0,0,0.02); }
 .fin-val { font-size: 24px; font-weight: 800; color: var(--accent); margin-top: 6px; }
 .partner-cash-card { background: var(--soft); padding: 10px; border-radius: 8px; font-weight: bold; font-size: 14px; margin-top: 8px; }
 
-/* Certificate Styles Layout */
 .cert-preview-area { display: flex; justify-content: center; margin-top: 20px; background: #f0f0f0; padding: 20px; border-radius: 8px; }
 .certificate-frame { width: 100%; max-width: 650px; background: #fff; border: 12px double #2b8a3e; padding: 30px; position: relative; text-align: center; color: #222; }
 .cert-title { font-size: 32px; font-weight: bold; color: #1e4620; }
@@ -349,38 +343,49 @@ th { background: #f8faf8; font-weight: 700; }
   .gallery { grid-template-columns: repeat(2, 1fr); }
 }
 
-/* Print Specific Isolation Logic to hide everything except the target Certificate Body container */
-/* Print Configuration for Single Page PDF Generation */
+/* Fixed 1-Page PDF Download Engine */
 @media print {
-  /* Hide every element on the screen */
+  /* Hide every single component layout completely to prevent extra blank pages */
   body * {
-    visibility: hidden;
-    background: none !important;
-    box-shadow: none !important;
+    display: none !important;
   }
   
-  /* Show only the target printout frame */
-  #certificatePrintPrintoutFrame, #certificatePrintPrintoutFrame * {
-    visibility: visible;
-  }
-  
-  #certificatePrintPrintoutFrame {
+  /* ONLY display the print frame container */
+  #certificatePrintPrintoutFrame, 
+  #certificatePrintPrintoutFrame * {
     display: block !important;
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 100%;
-    margin: 0;
-    padding: 0;
   }
   
-  /* Single A4 / Page management boundaries */
+  /* Flex elements layout correction inside print box */
+  #certificatePrintPrintoutFrame div {
+    display: block !important;
+  }
+  #certificatePrintPrintoutFrame .cert-header-top,
+  #certificatePrintPrintoutFrame style + div + div + div + div {
+    display: flex !important; 
+  }
+
+  /* Force absolute single page alignment */
+  #certificatePrintPrintoutFrame {
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+  
   .certificate-frame {
     page-break-inside: avoid !important;
     page-break-after: avoid !important;
     page-break-before: avoid !important;
     margin: 0 auto !important;
     border: 8px solid #1e4620 !important;
+    background: #ffffff !important;
+  }
+
+  @page {
+    size: A4 portrait;
+    margin: 10mm;
   }
 }
-

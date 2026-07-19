@@ -224,12 +224,10 @@ function loadUserPanelData() {
 
       const actualApprovedDate = b.approvedDate ? b.approvedDate : new Date(b.dateLogged).toLocaleDateString();
 
+      // Certificate removed watermark background from inline view as well
       const standardCertTemplate = `
         <div class="certificate-frame" id="cert-render-idx-${index}" style="width: 100%; max-width: 680px; background: #fff; border: 8px solid #1e4620; padding: 30px; position: relative; text-align: center; color: #222; margin: 0 auto 20px auto; box-shadow: 0 4px 20px rgba(0,0,0,0.08); overflow: hidden; box-sizing: border-box;">
-          <div style="position: absolute; top: 50%; left: 50%; width: 75%; height: auto; transform: translate(-50%, -50%); opacity: 0.05; pointer-events: none; z-index: 1;">
-            <img src="mushroom/g mushroom.png" alt="Watermark" style="width: 100%; height: auto; object-fit: contain;">
-          </div>
-          <div style="border: 2px solid #d97706; padding: 20px; position: relative; z-index: 2; background: rgba(255,255,255,0.93);">
+          <div style="border: 2px solid #d97706; padding: 20px; position: relative; z-index: 2; background: #ffffff;">
             <div class="cert-header-top" style="display: flex; justify-content: center; align-items: center; gap: 15px;">
               <img src="mushroom/pgf logo.png" alt="Logo" style="width: 65px; height: auto;">
               <div style="text-align:left;">
@@ -267,7 +265,6 @@ function loadUserPanelData() {
 
       dynamicCertHtml += standardCertTemplate;
 
-      // History panel ke andar download button ke sath item add karna
       historyCertHtml += `
         <div style="padding: 10px; background: #fff; border: 1px solid var(--line); border-radius: 8px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
           <div>
@@ -288,67 +285,6 @@ function loadUserPanelData() {
     document.getElementById("userInlineCertificateSandbox").style.display = "none";
     historyCertWrapper.style.display = "none";
   }
-}
-
-// Naya Function: Ise script.js ke sabse niche paste kar dein
-function downloadCertificatePDF(bookingId) {
-  const targetBooking = bookingsRegistry.find(b => b.bookingId === bookingId);
-  if (!targetBooking) return alert("Certificate not found.");
-
-  const titleText = targetBooking.type === "Student" ? "Certificate of Internship" : "Certificate of Farming";
-  const descText = targetBooking.type === "Student" 
-    ? `has successfully completed an internship program in Oyster Mushroom Cultivation at Pure Grow Mushroom Farm, at Makhiyala, Gujarat.`
-    : `has successfully completed the practical farmer training framework module in Oyster Mushroom Cultivation at Pure Grow Mushroom Farm, at Makhiyala, Gujarat.`;
-  
-  const durationContent = targetBooking.type === "Student" 
-    ? `from ${targetBooking.start} to ${targetBooking.end}`
-    : `on target session date ${targetBooking.date}`;
-
-  const actualApprovedDate = targetBooking.approvedDate ? targetBooking.approvedDate : new Date(targetBooking.dateLogged).toLocaleDateString();
-
-  const printFrame = document.getElementById("certificatePrintPrintoutFrame");
-  printFrame.innerHTML = `
-    <div class="certificate-frame" style="width: 100%; max-width: 700px; background: #fff; border: 8px solid #1e4620; padding: 30px; position: relative; text-align: center; color: #222; margin: 0 auto; box-sizing: border-box; overflow: hidden; page-break-inside: avoid;">
-      <div style="position: absolute; top: 50%; left: 50%; width: 75%; height: auto; transform: translate(-50%, -50%); opacity: 0.05; pointer-events: none; z-index: 1;">
-        <img src="mushroom/g mushroom.png" alt="Watermark" style="width: 100%; height: auto; object-fit: contain;">
-      </div>
-      <div style="border: 2px solid #d97706; padding: 20px; position: relative; z-index: 2; background: rgba(255,255,255,0.93);">
-        <div style="display: flex; justify-content: center; align-items: center; gap: 15px;">
-          <img src="mushroom/pgf logo.png" alt="Logo" style="width: 65px; height: auto;">
-          <div style="text-align:left;">
-            <h2 style="color: #1e4620; margin: 0; font-size: 22px; letter-spacing: 0.5px; font-weight: 800;">PURE GROW MUSHROOM FARM</h2>
-            <p style="margin: 3px 0 0 0; font-size: 12px; color:#6b7280;">Makhiyala, Gujarat, 362011 | puregrowfarm001@gmail.com</p>
-          </div>
-        </div>
-        <hr style="border:0; border-top: 2px solid #2b8a3e; margin: 15px 0;">
-        <div style="font-size: 26px; font-weight: bold; color: #1e4620; text-align: center; text-transform: uppercase; letter-spacing: 1px; font-family: 'Times New Roman', Times, serif;">${titleText}</div>
-        <p style="text-align: center; font-style: italic; margin: 8px 0; color: #555; font-size: 14px;">This is to certify that</p>
-        <div style="font-size: 24px; font-weight: bold; color: #2b8a3e; border-bottom: 2px solid #d97706; display: inline-block; padding: 0 25px; margin: 5px auto; text-align: center; font-family: 'Times New Roman', Times, serif;">${targetBooking.name.toUpperCase()}</div>
-        <p style="text-align: center; font-style: italic; margin: 12px 0; color: #555; font-size: 14px;">${descText}</p>
-        <p style="font-size: 14px; line-height: 1.8; text-align: justify; margin: 15px auto; max-width: 580px; color: #222;">
-          The program execution guidelines were conducted ${durationContent}. 
-          During this framework index period, the candidate gained foundational knowledge in mushroom biology, substrate preparation, and crop management, demonstrating an excellent work ethic.
-        </p>
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 35px; padding: 0 10px;">
-          <div style="text-align: left; font-size: 13px; width: 30%;">
-            <strong>Approved Date:</strong><br>
-            <span style="display: inline-block; margin-top: 5px; color: #333; font-weight: 600;">${actualApprovedDate}</span>
-          </div>
-          <div style="text-align: center; width: 30%;">
-            <img src="mushroom/pgf logo.png" alt="Pure Grow Farm Logo" style="width: 85px; height: auto; object-fit: contain;">
-            <div style="font-size: 9px; font-weight: 800; color: #1e4620; margin-top: 5px; letter-spacing: 0.5px;">PURE GROW FARM</div>
-          </div>
-          <div style="text-align: right; width: 35%;">
-            <img src="mushroom/soham sign.png" alt="Soham Gajera Signature" style="width: 125px; height: auto; display: block; margin: 0 0 2px auto; mix-blend-mode: multiply;">
-            <div style="border-top: 1px solid #333; padding-top: 4px; font-size: 12px; font-weight: bold; text-align: center; color: #1e4620;">Soham Gajera</div>
-            <div style="font-size: 10px; color: #6b7280; text-align: center;">Authorized Signatory</div>
-          </div>
-        </div>
-      </div>
-    </div>
-  `;
-
-  window.print();
 }
 
 function switchErpTab(tabId, buttonId) {
@@ -502,23 +438,19 @@ function computeFinancialLedgerStatements() {
   document.getElementById("cashJeet").textContent = "Rs " + cashBalances.Jeet.toFixed(2);
   document.getElementById("cashFarm").textContent = "Rs " + cashBalances.Farm.toFixed(2);
 
-  // 1. Render Sub Expense Table
   const expRows = expensesRegistry.filter(e => e.category !== "Damage Received");
   document.getElementById("subExpenseTableBody").innerHTML = expRows.map(e => `
     <tr><td>${e.date}</td><td>${e.category}</td><td>${e.payer}</td><td>${e.desc}</td><td style="color:var(--warn); font-weight:bold;">Rs ${e.amount}</td></tr>
   `).join("");
 
-  // 2. Render Sub Sell Table
   document.getElementById("subSellTableBody").innerHTML = salesRegistry.map(s => `
     <tr><td>${s.date}</td><td>${s.product}</td><td>${s.buyer}</td><td>${s.qty}</td><td style="color:var(--accent); font-weight:bold;">Rs ${s.total}</td><td><button type="button" class="btn" style="padding:2px 6px; min-height:auto; font-size:11px;" onclick="downloadOfflineSaleInvoice('${s.saleId}')">Receipt</button></td></tr>
   `).join("");
 
-  // 3. Render Sub Buy Table
   document.getElementById("subBuyTableBody").innerHTML = purchasesRegistry.map(p => `
     <tr><td>${p.date}</td><td>${p.product}</td><td>${p.vendor}</td><td>${p.qty}</td><td style="color:var(--danger); font-weight:bold;">Rs ${p.total}</td></tr>
   `).join("");
 
-  // 4. Render Sub Damage Table
   const dmgRows = expensesRegistry.filter(e => e.category === "Damage Received");
   document.getElementById("subDamageTableBody").innerHTML = dmgRows.map(d => `
     <tr><td>${d.date}</td><td>${d.desc}</td><td>${d.payer}</td><td style="color:var(--danger); font-weight:bold;">Rs ${d.amount}</td></tr>
@@ -651,6 +583,12 @@ function minusCart(id) {
   if (item.qty === 1) cart.delete(id);
   else cart.set(id, { ...item, qty: item.qty - 1 });
   renderCart();
+}
+
+function getTotals() {
+  const subtotal = [...cart.values()].reduce((sum, item) => sum + (item.price * item.qty), 0);
+  const delivery = subtotal > 0 ? (subtotal > 1000 ? 0 : 50) : 0;
+  return { subtotal, delivery, total: subtotal + delivery };
 }
 
 function renderCart() {
@@ -887,6 +825,65 @@ if (document.getElementById("productSearch")) {
     });
     renderProducts(filteredProducts);
   });
+}
+
+// 1-Page Fixed PDF Download Function
+function downloadCertificatePDF(bookingId) {
+  const targetBooking = bookingsRegistry.find(b => b.bookingId === bookingId);
+  if (!targetBooking) return alert("Certificate not found.");
+
+  const titleText = targetBooking.type === "Student" ? "Certificate of Internship" : "Certificate of Farming";
+  const descText = targetBooking.type === "Student" 
+    ? `has successfully completed an internship program in Oyster Mushroom Cultivation at Pure Grow Mushroom Farm, at Makhiyala, Gujarat.`
+    : `has successfully completed the practical farmer training framework module in Oyster Mushroom Cultivation at Pure Grow Mushroom Farm, at Makhiyala, Gujarat.`;
+  
+  const durationContent = targetBooking.type === "Student" 
+    ? `from ${targetBooking.start} to ${targetBooking.end}`
+    : `on target session date ${targetBooking.date}`;
+
+  const actualApprovedDate = targetBooking.approvedDate ? targetBooking.approvedDate : new Date(targetBooking.dateLogged).toLocaleDateString();
+
+  const printFrame = document.getElementById("certificatePrintPrintoutFrame");
+  
+  printFrame.innerHTML = `
+    <div class="certificate-frame" style="width: 100%; max-width: 700px; background: #fff; border: 8px solid #1e4620; padding: 30px; position: relative; text-align: center; color: #222; margin: 0 auto; box-sizing: border-box; overflow: hidden;">
+      <div style="border: 2px solid #d97706; padding: 20px; position: relative; z-index: 2; background: #ffffff;">
+        <div style="display: flex; justify-content: center; align-items: center; gap: 15px;">
+          <img src="mushroom/pgf logo.png" alt="Logo" style="width: 65px; height: auto;">
+          <div style="text-align:left;">
+            <h2 style="color: #1e4620; margin: 0; font-size: 22px; letter-spacing: 0.5px; font-weight: 800;">PURE GROW MUSHROOM FARM</h2>
+            <p style="margin: 3px 0 0 0; font-size: 12px; color:#6b7280;">Makhiyala, Gujarat, 362011 | puregrowfarm001@gmail.com</p>
+          </div>
+        </div>
+        <hr style="border:0; border-top: 2px solid #2b8a3e; margin: 15px 0;">
+        <div style="font-size: 26px; font-weight: bold; color: #1e4620; text-align: center; text-transform: uppercase; letter-spacing: 1px; font-family: 'Times New Roman', Times, serif;">${titleText}</div>
+        <p style="text-align: center; font-style: italic; margin: 8px 0; color: #555; font-size: 14px;">This is to certify that</p>
+        <div style="font-size: 24px; font-weight: bold; color: #2b8a3e; border-bottom: 2px solid #d97706; display: inline-block; padding: 0 25px; margin: 5px auto; text-align: center; font-family: 'Times New Roman', Times, serif;">${targetBooking.name.toUpperCase()}</div>
+        <p style="text-align: center; font-style: italic; margin: 12px 0; color: #555; font-size: 14px;">${descText}</p>
+        <p style="font-size: 14px; line-height: 1.8; text-align: justify; margin: 15px auto; max-width: 580px; color: #222;">
+          The program execution guidelines were conducted ${durationContent}. 
+          During this framework index period, the candidate gained foundational knowledge in mushroom biology, substrate preparation, and crop management, demonstrating an excellent work ethic.
+        </p>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 35px; padding: 0 10px;">
+          <div style="text-align: left; font-size: 13px; width: 30%;">
+            <strong>Approved Date:</strong><br>
+            <span style="display: inline-block; margin-top: 5px; color: #333; font-weight: 600;">${actualApprovedDate}</span>
+          </div>
+          <div style="text-align: center; width: 30%;">
+            <img src="mushroom/pgf logo.png" alt="Pure Grow Farm Logo" style="width: 85px; height: auto; object-fit: contain;">
+            <div style="font-size: 9px; font-weight: 800; color: #1e4620; margin-top: 5px; letter-spacing: 0.5px;">PURE GROW FARM</div>
+          </div>
+          <div style="text-align: right; width: 35%;">
+            <img src="mushroom/soham sign.png" alt="Soham Gajera Signature" style="width: 125px; height: auto; display: block; margin: 0 0 2px auto; mix-blend-mode: multiply;">
+            <div style="border-top: 1px solid #333; padding-top: 4px; font-size: 12px; font-weight: bold; text-align: center; color: #1e4620;">Soham Gajera</div>
+            <div style="font-size: 10px; color: #6b7280; text-align: center;">Authorized Signatory</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  window.print();
 }
 
 renderProducts();

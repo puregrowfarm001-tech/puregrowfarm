@@ -30,7 +30,7 @@
       </div>
     </header>
 
-    <!-- Amazon Layout Integrated Central Auth Section -->
+    <!-- Central Auth Section -->
     <section id="authSection" class="auth-container">
       <div id="loginBox" class="auth-box active">
         <h2>Sign In</h2>
@@ -73,7 +73,7 @@
       </div>
     </section>
 
-    <!-- Live Dynamic User Session Profile Workspace -->
+    <!-- Dynamic User Session Dashboard Workspace -->
     <section id="dashboardWorkspace" class="user-dashboard" style="display:none;">
       <h2>Welcome Back, <span id="userDashboardName">Grower</span>!</h2>
       <p class="muted">Your account tracks and loads all records natively from your farm profile.</p>
@@ -81,26 +81,61 @@
         <button type="button" class="btn" onclick="openHistoryModal()">📦 View Order & Booking History</button>
       </div>
 
-      <!-- Inline Certificate View Section inside User Dashboard if approved -->
+      <!-- Updated Clean Certificate Section with Stamp & Soham Gajera Sign Box -->
       <div id="userInlineCertificateSandbox" style="display:none; margin-top:24px; padding-top:20px; border-top:2px dashed var(--line);">
         <h3>Your Approved Certificate of Completion</h3>
         <button class="btn" onclick="window.print()">Print / Save PDF File</button>
         <div class="cert-preview-area">
           <div class="certificate-frame" id="userPrintableCertificateBody">
-            <div class="cert-title">CERTIFICATE OF COMPLETION</div>
-            <div class="cert-name" id="userCertGeneratedName">USER NAME</div>
-            <div class="cert-text" id="userCertGeneratedBody"></div>
-            <div class="cert-footer-row">
-              <div><strong>Verification Approved Date:</strong><div id="userCertGeneratedApproveDate"></div></div>
-              <div><strong>Operational Log Duration:</strong><div id="userCertGeneratedDuration"></div></div>
-              <div><strong>Signatures:</strong><br>Soham & Jeet Gajera</div>
+            <div class="cert-header-top" style="display: block; text-align: center;">
+              <div style="text-align:center;">
+                <h2 style="color: #1e4620; margin: 0; font-size: 26px; letter-spacing: 1px;">PURE GROW MUSHROOM FARM</h2>
+                <p class="muted" style="margin: 5px 0 0 0; font-size: 13px;">
+                  Makhiyala, Gujarat, 362011 | puregrowfarm001@gmail.com
+                </p>
+              </div>
+            </div>
+            
+            <hr style="border:1px solid #2b8a3e; margin:15px 0;">
+            <div class="cert-title" style="font-size: 32px; font-weight: bold; color: #1e4620; text-align: center;">Certificate of Internship</div>
+            <p class="cert-meta-txt" style="text-align: center; font-style: italic; margin: 10px 0;">This is to certify that</p>
+            <div class="cert-name" id="userCertGeneratedName" style="font-size: 24px; font-weight: bold; color: #2b8a3e; border-bottom: 2px solid #ddd; display: inline-block; padding: 0 30px; margin: 8px auto; text-align: center; display: table;">USER NAME</div>
+            <p class="cert-meta-txt" style="text-align: center; font-style: italic; margin: 15px 0;">has successfully completed an internship program in Oyster Mushroom Cultivation at Pure Grow Mushroom Farm, at Makhiyala, Gujarat.</p>
+            
+            <p class="cert-body-main" style="font-size: 14px; line-height: 1.8; text-align: justify; margin: 20px auto; max-width: 580px; color: #222;">
+              The internship was conducted from <span id="userCertStart" style="font-weight:bold; border-bottom:1px solid #333;">_</span> to <span id="userCertEnd" style="font-weight:bold; border-bottom:1px solid #333;">_</span>. 
+              During this period, the intern gained foundational knowledge in mushroom biology, substrate preparation, and crop management. 
+              He/She has demonstrated a diligent work ethic and a keen interest in mycological processes. We wish them the very best in their future endeavors.
+            </p>
+            
+            <div class="cert-footer-row" style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: 40px; padding: 0 20px;">
+              <div style="text-align: left;">
+                <strong>Date:</strong> <span id="userCertGeneratedApproveDate"></span>
+              </div>
+              
+              <!-- Custom Badged Circular Stamp -->
+              <div style="text-align: center; border: 2px dashed #1e4620; padding: 8px 15px; border-radius: 50%; width: 130px; height: 130px; display: flex; flex-direction: column; justify-content: center; align-items: center; background: #fcfdfc; opacity: 0.85;">
+                <span style="font-size: 9px; color: #1e4620; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px;">Pure Grow Farm</span>
+                <hr style="width: 80%; border: 0; border-top: 1px solid #1e4620; margin: 4px 0;">
+                <span style="font-size: 11px; color: #1e4620; font-weight: 900; letter-spacing: 1px;">PARTNER</span>
+              </div>
+
+              <!-- Signature Space -->
+              <div style="text-align: right; width: 160px;">
+                <div style="font-family: 'Courier New', monospace; font-style: italic; font-weight: bold; font-size: 16px; margin-bottom: 5px; color: #1a3a1e;">Soham Gajera</div>
+                <div style="border-top: 1px solid #333; padding-top: 4px; font-size: 13px; font-weight: bold;">Authorized Signatory</div>
+              </div>
+            </div>
+            
+            <div class="cert-sub-footer" style="font-size:10px; margin-top:30px; color:var(--muted); text-align:center;">
+              Patrapasar, Junagadh, Gujarat, 362011. | puregrowfarm001@gmail.com
             </div>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- Isolated Screen Modal For Activity History Pop-up Page -->
+    <!-- Activity History Logs Popup Screen -->
     <div id="userHistoryModal" class="data-popup-modal" onclick="closeHistoryModalOutside(event)">
       <div class="popup-content-box">
         <button type="button" class="close-popup-btn" onclick="closeHistoryModal()">Close (X)</button>
@@ -178,14 +213,14 @@
                 <input type="tel" id="phone" placeholder="Phone number" readonly required style="background:#f3f4f6; cursor:not-allowed;">
                 <input type="email" id="email" placeholder="Email" readonly required style="background:#f3f4f6; cursor:not-allowed;">
                 <input type="text" id="address" placeholder="Complete Shipping Address" required>
-                <select id="paymentMode" required>
+                <select id="paymentMode" required onchange="openProductPayment()">
                   <option value="">Select online payment mode</option>
                   <option value="GPay">GPay App</option>
                   <option value="PhonePe">PhonePe App</option>
                   <option value="Paytm">Paytm App</option>
                 </select>
                 <div id="productPaymentHelp" class="payment-help"></div>
-                <input type="text" id="paymentId" placeholder="Online payment transaction ID" required>
+                <input type="text" id="paymentId" placeholder="Online payment transaction ID" disabled required oninput="validateOrderForm()">
                 <button type="submit" id="confirmOrderBtn" disabled>Confirm Purchase Order</button>
               </form>
             </aside>
@@ -223,18 +258,16 @@
               <input type="text" id="scourse" placeholder="Course Name" required>
               <label>Target Internship Start Date <input type="date" id="sstart" required></label>
               <label>Target Internship End Date <input type="date" id="send" required></label>
-              <select id="spaymentMode" required>
-                <option value="">Select online payment mode</option>
-                <option value="GPay">GPay</option>
-                <option value="PhonePe">PhonePe</option>
-              </select>
-              <input type="text" id="spayment" placeholder="Payment Transaction ID" required>
               <div class="payment-box">
                 <h3>Student Internship Fee Rs 100[cite: 2]</h3>
                 <p>UPI ID: sohamgajera01@okhdfcbank[cite: 2]</p>
                 <button type="button" onclick="openVisitUpi(100, 'studentForm')">Pay Online Gateway</button>
               </div>
+              <select id="spaymentMode" required style="display:none;">
+                <option value="UPI">UPI App Linked Gateway</option>
+              </select>
               <div id="studentPaymentHelp" class="payment-help"></div>
+              <input type="text" id="spayment" placeholder="Payment Transaction ID" disabled required oninput="validateStudentForm()">
               <button type="submit" id="studentSubmitBtn" disabled>Confirm Student Registration</button>
             </form>
 
@@ -243,18 +276,16 @@
               <input type="tel" id="fphone" placeholder="Phone Number" readonly required style="background:#f3f4f6; cursor:not-allowed;">
               <input type="email" id="femail" placeholder="Email" readonly required style="background:#f3f4f6; cursor:not-allowed;">
               <label>Target Training Session Date <input type="date" id="fdate" required></label>
-              <select id="fpaymentMode" required>
-                <option value="">Select online payment mode</option>
-                <option value="GPay">GPay</option>
-                <option value="PhonePe">PhonePe</option>
-              </select>
-              <input type="text" id="fpayment" placeholder="Payment Transaction ID" required>
               <div class="payment-box">
                 <h3>Farmer Training Fee Rs 699[cite: 2]</h3>
                 <p>UPI ID: sohamgajera01@okhdfcbank[cite: 2]</p>
                 <button type="button" onclick="openVisitUpi(699, 'farmerForm')">Pay Online Gateway</button>
               </div>
+              <select id="fpaymentMode" required style="display:none;">
+                <option value="UPI">UPI App Linked Gateway</option>
+              </select>
               <div id="farmerPaymentHelp" class="payment-help"></div>
+              <input type="text" id="fpayment" placeholder="Payment Transaction ID" disabled required oninput="validateFarmerForm()">
               <button type="submit" id="farmerSubmitBtn" disabled>Confirm Farmer Training Seat</button>
             </form>
           </div>
@@ -511,21 +542,69 @@
       </div>
     </section>
 
-    <!-- Interactive Receipt Modal Overlay Element -->
+    <!-- Professional Dynamic Column Invoice Modal -->
     <dialog id="invoiceDialog">
-      <div class="dialog-head"><h2>Order Confirmed Successfully</h2><button type="button" onclick="closeInvoice()">Dismiss</button></div>
-      <div class="invoice-logo-row">
-        <img src="mushroom/pgf logo.png" alt="Pure Grow Farm logo">
-        <div>
-          <strong>Pure Grow Farm Global Industries Ltd.</strong>
-          <div class="muted">Makhiyala, Gujarat 362011 | Contact Desk Helpline: +91 9067891039</div>
+      <div class="dialog-head">
+        <h2>Pure Grow Farm - INVOICE</h2>
+        <button type="button" onclick="closeInvoice()" style="background:var(--danger); border:0; color:#fff; border-radius:4px; padding:4px 10px; cursor:pointer;">Dismiss</button>
+      </div>
+      
+      <div class="invoice-box-layout" style="border:1px solid var(--line); padding:20px; border-radius:10px; background:#fff; font-family:sans-serif;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+          <div>
+            <h1 style="color:var(--accent); margin:0;">INVOICE</h1>
+            <p class="muted" style="margin:4px 0;">Invoice No: <span id="invNum" style="font-weight:bold;"></span></p>
+            <p class="muted" style="margin:4px 0;">Date: <span id="invDate"></span></p>
+          </div>
+          <div style="text-align:right;">
+            <img src="mushroom/pgf logo.png" alt="Logo" style="width:60px; height:auto;"><br>
+            <strong>Pure Grow Farm</strong>
+          </div>
+        </div>
+        
+        <div style="margin-bottom:20px; border-bottom:1px solid var(--line); padding-bottom:10px;">
+          <strong>Invoice to:</strong>
+          <div id="invClientName" style="font-size:16px; font-weight:bold; margin-top:4px;"></div>
+          <div id="invClientEmail" class="muted"></div>
+          <div id="invClientAddr" class="muted" style="font-size:13px;"></div>
+        </div>
+        
+        <table style="width:100%; border-collapse:collapse; margin-bottom:20px;">
+          <thead>
+            <tr style="background:var(--soft); color:var(--dark);">
+              <th style="padding:10px; text-align:left; border:1px solid var(--line);">SERVICE / PRODUCT</th>
+              <th style="padding:10px; text-align:right; border:1px solid var(--line);">PRICE</th>
+              <th style="padding:10px; text-align:center; border:1px solid var(--line);">QTY</th>
+              <th style="padding:10px; text-align:right; border:1px solid var(--line);">TOTAL</th>
+            </tr>
+          </thead>
+          <tbody id="invoiceTableItemsBody"></tbody>
+        </table>
+        
+        <div style="display:flex; justify-content:space-between; flex-wrap:wrap; gap:15px;">
+          <div style="flex:1; min-width:240px; font-size:13px; line-height:1.6;">
+            <strong>Payment Method:</strong> UPI / Online Transfer<br>
+            <strong>Bank Name:</strong> HDFC Bank<br>
+            <strong>Account No:</strong> sohamgajera01@okhdfcbank (UPI)<br>
+            <p style="font-style:italic; color:var(--accent); font-weight:bold; margin-top:10px;">Thank you for your purchase!</p>
+          </div>
+          <div style="width:220px; text-align:right; font-size:14px;">
+            <div style="padding:4px 0;">Sub-total: <span id="invSub" style="font-weight:bold;">Rs 0</span></div>
+            <div style="padding:4px 0;">Tax (0%): <span style="font-weight:bold;">Rs 0.00</span></div>
+            <hr style="border:0; border-top:1px solid var(--line);">
+            <div style="padding:6px 0; font-size:18px; color:var(--accent); font-weight:bold;">Total: <span id="invTotal">Rs 0</span></div>
+          </div>
+        </div>
+        
+        <div style="margin-top:20px; padding-top:15px; border-top:1px solid var(--line); font-size:11px; text-align:center; color:var(--muted);">
+          <strong>Contact Us:</strong> 9067891039 & 8200145732 | puregrowfarm001@gmail.com<br>
+          Makhiyala, Junagadh, Gujarat, 362011.
         </div>
       </div>
-      <p class="muted">Your commercial transaction receipt parameters have been calculated by the script matrix.</p>
-      <pre id="invoiceText"></pre>
-      <div class="dialog-actions">
-        <button type="button" class="btn" onclick="downloadInvoice()">Extract Invoice Text Slip File</button>
-        <a class="btn" id="whatsappInvoice" href="#" target="_blank" rel="noreferrer" style="background:#25d366;">Send WhatsApp Verification Slip</a>
+      
+      <div class="dialog-actions" style="margin-top:15px; display:flex; gap:10px;">
+        <button type="button" class="btn" onclick="window.print()">Print Invoice Slip</button>
+        <a class="btn" id="whatsappInvoice" target="_blank" rel="noreferrer" style="background:#25d366;">Send WhatsApp Verification</a>
       </div>
     </dialog>
 

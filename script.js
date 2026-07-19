@@ -26,7 +26,6 @@ let salesRegistry = JSON.parse(localStorage.getItem('pgf_sales')) || [];
 let purchasesRegistry = JSON.parse(localStorage.getItem('pgf_purchases')) || [];
 
 let currentUser = JSON.parse(localStorage.getItem('pgf_session')) || null;
-let currentUpiState = { opened: false };
 let latestInvoice = "";
 let latestVisitInvoice = "";
 
@@ -204,6 +203,13 @@ function loadUserPanelData() {
       </div>
     `;
   }).join("") : "No course training applications logged.";
+
+  const approvedBooking = myBookings.find(b => b.status === "Approved");
+  if (approvedBooking) {
+    renderUserCertificateInline(approvedBooking.bookingId);
+  } else {
+    document.getElementById("userInlineCertificateSandbox").style.display = "none";
+  }
 }
 
 function switchErpTab(tabId, buttonId) {
@@ -213,7 +219,6 @@ function switchErpTab(tabId, buttonId) {
   document.getElementById(buttonId).classList.add('active-tab');
 }
 
-/* Sub tabs function for Financial Accounting Page */
 function switchSubAccountingTab(subTabId) {
   document.querySelectorAll('.sub-accounting-section').forEach(section => section.style.display = 'none');
   document.getElementById(subTabId).style.display = 'block';
@@ -228,7 +233,6 @@ function switchSubAccountingTab(subTabId) {
 }
 
 function populateAdminDashboardTables() {
-  // Orders Ledger Setup with Approve and Reject Logic
   document.getElementById("adminOrdersTableBody").innerHTML = orderRegistry.map((o, idx) => `
     <tr>
       <td><strong>${o.orderId}</strong></td>
@@ -249,7 +253,6 @@ function populateAdminDashboardTables() {
     </tr>
   `).join("");
 
-  // Bookings Ledger Setup with Approve and Reject Logic
   document.getElementById("adminBookingsTableBody").innerHTML = bookingsRegistry.map((b, idx) => `
     <tr>
       <td><strong>${b.bookingId}</strong></td>
@@ -280,7 +283,6 @@ function populateAdminDashboardTables() {
   `).join("");
 }
 
-// Order Approval & Rejection Handlers
 function approveCustomerOrder(idx) {
   orderRegistry[idx].status = "Approved";
   localStorage.setItem('pgf_orders', JSON.stringify(orderRegistry));
@@ -301,7 +303,6 @@ function rejectCustomerOrder(idx) {
   computeFinancialLedgerStatements();
 }
 
-// Training Booking Approval & Rejection Handlers
 function approveTrainingBooking(idx) {
   bookingsRegistry[idx].status = "Approved";
   localStorage.setItem('pgf_bookings', JSON.stringify(bookingsRegistry));
@@ -337,7 +338,23 @@ function rejectTrainingBooking(idx) {
   computeFinancialLedgerStatements();
 }
 
-// Separate Sub Pages Data Render Architecture inside Financial Segment
+function renderUserCertificateInline(bId) {
+  const target = bookingsRegistry.find(b => b.bookingId === bId);
+  if(!target) return;
+  
+  document.getElementById("userCertGeneratedName").textContent = target.name.toUpperCase();
+  document.getElementById("userCertGeneratedApproveDate").textContent = new Date(target.dateLogged).toLocaleDateString();
+  
+  if(target.type === "Student") {
+    document.getElementById("userCertStart").textContent = target.start || "_";
+    document.getElementById("userCertEnd").textContent = target.end || "_";
+  } else {
+    document.getElementById("userCertStart").textContent = target.date || "_";
+    document.getElementById("userCertEnd").textContent = "One Day Session";
+  }
+  document.getElementById("userInlineCertificateSandbox").style.display = "block";
+}
+
 function computeFinancialLedgerStatements() {
   const totalSales = salesRegistry.reduce((sum, s) => sum + s.total, 0);
   const totalPurchases = purchasesRegistry.reduce((sum, p) => sum + p.total, 0);
@@ -453,7 +470,6 @@ function saveAdminPurchase(e) {
   computeFinancialLedgerStatements();
 }
 
-/* 4. Damage Entry Formulation Form Data Handler Function */
 function saveAdminDamage(e) {
   e.preventDefault();
   const rawDate = document.getElementById("dmgLogDate").value;
@@ -513,13 +529,22 @@ function minusCart(id) {
   else cart.set(id, { ...item, qty: item.qty - 1 });
   renderCart();
 }
+
 function renderCart() {
   const bill = getTotals();
   document.getElementById("subtotal").textContent = `Rs ${bill.subtotal}`;
   document.getElementById("delivery").textContent = `Rs ${bill.delivery}`;
   document.getElementById("total").textContent = `Rs ${bill.total}`;
 
-  if (!cart.size) { document.getElementById("cartItems").innerHTML = `<p class="muted">Cart selection is empty.</p>`; return; }
+  if (!cart.size) { 
+    document.getElementById("cartItems").innerHTML = `<p class="muted">Cart selection is empty.</p>`; 
+    document.getElementById("paymentMode").value = "";
+    document.getElementById("paymentId").value = "";
+    document.getElementById("paymentId").disabled = true;
+    document.getElementById("confirmOrderBtn").disabled = true;
+    return; 
+  }
+  
   document.getElementById("cartItems").innerHTML = [...cart.values()].map(item => `
     <div class="cart-item">
       <div><strong>${item.name}</strong><br><span class="muted">Rs ${item.price} x ${item.qty}</span></div>
@@ -529,16 +554,51 @@ function renderCart() {
       </div>
     </div>
   `).join("");
-  if(currentUser) document.getElementById("confirmOrderBtn").disabled = false;
+  validateOrderForm();
+}
+
+// STAGE 1: Order Form Payment trigger flow handler
+function openProductPayment() {
+  const mode = document.getElementById("paymentMode").value;
+  const bill = getTotals();
+  if(!mode || !cart.size) {
+    document.getElementById("paymentId").value = "";
+    document.getElementById("paymentId").disabled = true;
+    validateOrderForm();
+    return;
+  }
+  
+  document.getElementById("productPaymentHelp").style.display = "block";
+  document.getElementById("productPaymentHelp").textContent = `Launching UPI Payment app link for Rs ${bill.total}. Input transaction hash id below after completion.`;
+  
+  // Launch payment intent with dynamic basket grand total factor factor setup
+  window.location.href = `upi://pay?pa=${encodeURIComponent(farmUpiId)}&pn=${encodeURIComponent(farmName)}&am=${bill.total}&cu=INR`;
+  
+  // Enable step 2 entry box immediately after execution context routing
+  document.getElementById("paymentId").disabled = false;
+  validateOrderForm();
+}
+
+function validateOrderForm() {
+  const address = document.getElementById("address").value.trim();
+  const mode = document.getElementById("paymentMode").value;
+  const txnId = document.getElementById("paymentId").value.trim();
+  
+  const isValid = cart.size > 0 && address.length > 4 && mode !== "" && txnId.length >= 6;
+  document.getElementById("confirmOrderBtn").disabled = !isValid;
+}
+if(document.getElementById("address")) {
+  document.getElementById("address").addEventListener("input", validateOrderForm);
 }
 
 function confirmOrder(e) {
   e.preventDefault();
   const bill = getTotals();
   const currentTimestamp = new Date().toLocaleString();
+  const generatedOrderId = "PGF-INV-" + Date.now().toString().slice(-5);
 
   const data = {
-    orderId: "PGF-" + Date.now().toString().slice(-6),
+    orderId: generatedOrderId,
     name: currentUser.name,
     phone: currentUser.phone,
     email: currentUser.email,
@@ -552,14 +612,41 @@ function confirmOrder(e) {
 
   orderRegistry.unshift(data);
   localStorage.setItem('pgf_orders', JSON.stringify(orderRegistry));
+  
+  document.getElementById("invNum").textContent = data.orderId;
+  document.getElementById("invDate").textContent = new Date().toLocaleDateString();
+  document.getElementById("invClientName").textContent = data.name;
+  document.getElementById("invClientEmail").textContent = data.email + " | Ph: " + data.phone;
+  document.getElementById("invClientAddr").textContent = data.address;
+  
+  document.getElementById("invoiceTableItemsBody").innerHTML = [...cart.values()].map(item => `
+    <tr>
+      <td style="padding:10px; border:1px solid var(--line);">${item.name} (${item.unit})</td>
+      <td style="padding:10px; text-align:right; border:1px solid var(--line);">Rs ${item.price}</td>
+      <td style="padding:10px; text-align:center; border:1px solid var(--line);">${item.qty}</td>
+      <td style="padding:10px; text-align:right; border:1px solid var(--line);">Rs ${item.price * item.qty}</td>
+    </tr>
+  `).join("");
+  
+  document.getElementById("invSub").textContent = "Rs " + bill.subtotal;
+  document.getElementById("invTotal").textContent = "Rs " + bill.total;
+
   saveToSheet({ type: "order", ...data });
   
-  alert("Order submitted!");
+  const waMessage = `NEW GOODS ORDER VERIFICATION FLOW:\n----------------------------------------\nInvoice Ref Code: ${data.orderId}\nClient Legal Name: ${data.name}\nProducts Mapped: ${data.products}\nTotal Paid Amount: Rs ${data.total}\nPayment Method: ${document.getElementById("paymentMode").value}\nTransaction Hash ID Code: ${data.txnId}\n----------------------------------------`;
+  
+  alert("Order authorized! Opening WhatsApp automation link channel framework.");
+  window.open(`https://wa.me/${farmWhatsapp}?text=${encodeURIComponent(waMessage)}`, '_blank');
+  
+  document.getElementById("invoiceDialog").showModal();
+  
   cart.clear();
   renderCart();
   document.getElementById("orderForm").reset();
   checkUserSession();
 }
+
+function closeInvoice() { document.getElementById("invoiceDialog").close(); }
 
 function showVisitForm(id) {
   document.getElementById("studentForm").classList.remove("active");
@@ -567,10 +654,51 @@ function showVisitForm(id) {
   document.getElementById(id).classList.add("active");
 }
 
+// STAGE 2 & 3: Academic / Farmer Course Booking application routing blocks
 function openVisitUpi(amount, formId) {
-  if(formId === "studentForm") document.getElementById("studentSubmitBtn").disabled = false;
-  else document.getElementById("farmerSubmitBtn").disabled = false;
+  const helpId = formId === "studentForm" ? "studentPaymentHelp" : "farmerPaymentHelp";
+  const txnInputId = formId === "studentForm" ? "spayment" : "fpayment";
+  
+  document.getElementById(helpId).style.display = "block";
+  document.getElementById(helpId).textContent = `UPI app launched for dynamic program fee value factor Rs ${amount}. Complete it to write receipt code.`;
+  
   window.location.href = `upi://pay?pa=${encodeURIComponent(farmUpiId)}&pn=${encodeURIComponent(farmName)}&am=${amount}&cu=INR`;
+  
+  document.getElementById(txnInputId).disabled = false;
+  if(formId === "studentForm") validateStudentForm();
+  else validateFarmerForm();
+}
+
+function validateStudentForm() {
+  const enroll = document.getElementById("senroll").value.trim();
+  const college = document.getElementById("scollege").value.trim();
+  const course = document.getElementById("scourse").value.trim();
+  const start = document.getElementById("sstart").value;
+  const end = document.getElementById("send").value;
+  const txn = document.getElementById("spayment").value.trim();
+  const isDisabled = document.getElementById("spayment").disabled;
+  
+  const isValid = !isDisabled && enroll !== "" && college !== "" && course !== "" && start !== "" && end !== "" && txn.length >= 6;
+  document.getElementById("studentSubmitBtn").disabled = !isValid;
+}
+
+function validateFarmerForm() {
+  const date = document.getElementById("fdate").value;
+  const txn = document.getElementById("fpayment").value.trim();
+  const isDisabled = document.getElementById("fpayment").disabled;
+  
+  const isValid = !isDisabled && date !== "" && txn.length >= 6;
+  document.getElementById("farmerSubmitBtn").disabled = !isValid;
+}
+
+// Attach logic hooks natively to catch form elements inputs states tracking shifts
+if(document.getElementById("studentForm")) {
+  ['senroll', 'scollege', 'scourse', 'sstart', 'send'].forEach(id => {
+    document.getElementById(id).addEventListener("input", validateStudentForm);
+  });
+}
+if(document.getElementById("farmerForm")) {
+  document.getElementById("fdate").addEventListener("input", validateFarmerForm);
 }
 
 function submitStudentVisit(e) {
@@ -593,7 +721,15 @@ function submitStudentVisit(e) {
   };
   bookingsRegistry.unshift(data);
   localStorage.setItem('pgf_bookings', JSON.stringify(bookingsRegistry));
-  alert("Internship Request Sent!");
+  saveToSheet({ type: "visit", ...data });
+
+  const waText = `NEW STUDENT INTERNSHIP REGISTRATION:\n----------------------------------------\nBooking Ref ID: ${data.bookingId}\nName: ${data.name}\nUniversity Enrollment Code: ${data.enrollment}\nCollege Entity Context: ${data.college}\nTarget Course Schema: ${data.course}\nDuration: ${data.start} to ${data.end}\nUTR Tracking Number: ${data.txnId}\nTotal Paid Amount: Rs ${data.fee}\n----------------------------------------`;
+  
+  alert("Student Registration data mapped! Sending WhatsApp transaction data stream.");
+  window.open(`https://wa.me/${farmWhatsapp}?text=${encodeURIComponent(waText)}`, '_blank');
+  
+  document.getElementById("studentForm").reset();
+  document.getElementById("spayment").disabled = true;
   checkUserSession();
 }
 
@@ -613,7 +749,15 @@ function submitFarmerVisit(e) {
   };
   bookingsRegistry.unshift(data);
   localStorage.setItem('pgf_bookings', JSON.stringify(bookingsRegistry));
-  alert("Training Request Sent!");
+  saveToSheet({ type: "visit", ...data });
+
+  const waText = `NEW FARMER TRAINING BOOKING:\n----------------------------------------\nBooking Ref ID: ${data.bookingId}\nName: ${data.name}\nContact Mobile: ${data.phone}\nScheduled Workshop Target Date: ${data.date}\nUTR Tracking Number: ${data.txnId}\nTotal Paid Amount: Rs ${data.fee}\n----------------------------------------`;
+  
+  alert("Farmer Seat registration mapped! Routing confirmation payload framework to admin helpline.");
+  window.open(`https://wa.me/${farmWhatsapp}?text=${encodeURIComponent(waText)}`, '_blank');
+  
+  document.getElementById("farmerForm").reset();
+  document.getElementById("fpayment").disabled = true;
   checkUserSession();
 }
 
@@ -622,21 +766,16 @@ function getTotals() {
   return { subtotal, delivery: subtotal > 0 ? 50 : 0, total: subtotal > 0 ? subtotal + 50 : 0 };
 }
 
-renderProducts();
-checkUserSession();
-
-// Search filter implementation functionality logic
 if (document.getElementById("productSearch")) {
   document.getElementById("productSearch").addEventListener("input", function(e) {
     const searchTerm = e.target.value.toLowerCase().trim();
-    
-    // Products filter matrix logic based on name or description text match
     const filteredProducts = products.filter(product => {
       return product.name.toLowerCase().includes(searchTerm) || 
              product.detail.toLowerCase().includes(searchTerm);
     });
-    
-    // Render the filtered subset to screen layout canvas
     renderProducts(filteredProducts);
   });
 }
+
+renderProducts();
+checkUserSession();

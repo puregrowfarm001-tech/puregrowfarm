@@ -90,7 +90,7 @@
       </div>
     </section>
 
-    <!-- Activity History Logs Popup Screen -->
+   <!-- Activity History Logs Popup Screen -->
     <div id="userHistoryModal" class="data-popup-modal" onclick="closeHistoryModalOutside(event)">
       <div class="popup-content-box">
         <button type="button" class="close-popup-btn" onclick="closeHistoryModal()">Close (X)</button>
@@ -103,11 +103,19 @@
           <div class="data-item-card">
             <h3>Your Farm Training Workshops</h3>
             <div id="userBookingsList" class="muted">No program bookings registered.</div>
+            
+            <!-- NEW: Yaha certificate ki history dikhegi -->
+            <div id="historyCertificateWrapper" style="margin-top: 20px; border-top: 1px dashed var(--line); padding-top: 15px; display: none;">
+              <h4 style="color: var(--accent); margin-bottom: 10px;">📜 Issued Certificates</h4>
+              <div id="historyCertificatesContainer"></div>
+            </div>
           </div>
         </div>
       </div>
     </div>
 
+    <!-- NEW: PDF Download ke liye hidden frame (isse footer se pehle kahi bhi rakh dein) -->
+    <div id="certificatePrintPrintoutFrame" style="display: none;"></div>
     <!-- Primary Public Content View Space -->
     <div id="publicContent">
       <main>

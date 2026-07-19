@@ -350,10 +350,37 @@ th { background: #f8faf8; font-weight: 700; }
 }
 
 /* Print Specific Isolation Logic to hide everything except the target Certificate Body container */
+/* Print Configuration for Single Page PDF Generation */
 @media print {
-  body * { visibility: hidden; }
-  .cert-preview-area, .cert-preview-area * { visibility: visible; }
-  .cert-preview-area { position: absolute; left: 0; top: 0; width: 100%; padding: 0; background: none; }
-  .certificate-frame { border: 12px double #2b8a3e !important; max-width: 100%; width: 100%; }
+  /* Hide every element on the screen */
+  body * {
+    visibility: hidden;
+    background: none !important;
+    box-shadow: none !important;
+  }
+  
+  /* Show only the target printout frame */
+  #certificatePrintPrintoutFrame, #certificatePrintPrintoutFrame * {
+    visibility: visible;
+  }
+  
+  #certificatePrintPrintoutFrame {
+    display: block !important;
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+  }
+  
+  /* Single A4 / Page management boundaries */
+  .certificate-frame {
+    page-break-inside: avoid !important;
+    page-break-after: avoid !important;
+    page-break-before: avoid !important;
+    margin: 0 auto !important;
+    border: 8px solid #1e4620 !important;
+  }
 }
 

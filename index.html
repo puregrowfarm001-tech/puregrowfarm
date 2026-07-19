@@ -1,15 +1,12 @@
 <!doctype html>
 <html lang="en">
 <head>
-   
   <link rel="stylesheet" href="style.css">
   <script src="script.js" defer></script>
-
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Pure Grow Farm - Oyster Mushrooms Farming & Traning </title>
+  <title>Pure Grow Farm - Oyster Mushrooms Farming & Training</title>
   <meta name="description" content="Pure Grow Farm - fresh, dry, powder, khakhra and papad oyster mushroom products with integrated ERP.">
-
 </head>
 <body>
   <div class="container">
@@ -132,7 +129,7 @@
             <div class="cards">
               <div class="card">
                 <div class="muted small-title">Products Available</div>
-                <div class="card-title">Green, Dry, Powder, Khakhra and Papad </div>
+                <div class="card-title">Green, Dry, Powder, Khakhra and Papad</div>
               </div>
               <div class="card">
                 <div class="muted small-title">Direct Helpline Contact</div>
@@ -302,7 +299,7 @@
                 <th>Products Ordered</th>
                 <th>Total Balance</th>
                 <th>Txn Hash ID</th>
-                <th>Order Received Date</th>
+                <th>Date Received</th>
                 <th>Status State</th>
                 <th>Execution Management</th>
               </tr>
@@ -323,9 +320,9 @@
                 <th>Classification</th>
                 <th>Full Name</th>
                 <th>Phone Line</th>
-                <th>Scheduled Training Date</th>
-                <th>Txn Code Reference</th>
-                <th>Booking Request Date</th>
+                <th>Scheduled Date</th>
+                <th>Txn Code</th>
+                <th>Booking Date</th>
                 <th>Status State</th>
                 <th>Operations Execution</th>
               </tr>
@@ -333,26 +330,9 @@
             <tbody id="adminBookingsTableBody"></tbody>
           </table>
         </div>
-
-        <div id="certificateGeneratorSandbox" style="display:none; margin-top:24px; padding-top:20px; border-top:2px dashed var(--line);">
-          <h3>Live Print-Ready Certificate Engine Viewer Workspace</h3>
-          <button class="btn" onclick="window.print()">Print / Save PDF File</button>
-          <div class="cert-preview-area">
-            <div class="certificate-frame" id="printableCertificateBody">
-              <div class="cert-title">CERTIFICATE OF COMPLETION</div>
-              <div class="cert-name" id="certGeneratedName">SOHAM GAJERA</div>
-              <div class="cert-text" id="certGeneratedBody"></div>
-              <div class="cert-footer-row">
-                <div><strong>Verification Approved Date:</strong><div id="certGeneratedApproveDate"></div></div>
-                <div><strong>Operational Log Duration:</strong><div id="certGeneratedDuration"></div></div>
-                <div><strong>Signatures:</strong><br>Soham & Jeet Gajera</div>
-              </div>
-            </div>
-          </div>
-        </div>
       </div>
 
-      <!-- ERP Segment 3: Financial Accounting Desk View Screen -->
+      <!-- ERP Segment 3: Financial Accounting Desk View Screen Split into 4 Categories -->
       <div id="erpAccountingTab" class="erp-section">
         <h3>Multi-Axis Complete Production Ledger Statements Dashboard</h3>
         
@@ -375,139 +355,139 @@
           </div>
         </div>
 
-        <!-- System Inventory Stock Display Counters Widget Module -->
-        <div style="background:#fafafa; border:1px solid var(--line); padding:16px; border-radius:10px; margin-bottom:20px;">
-          <h4 style="margin-top:0;">Live System Dynamic Inventory Stock Matrix</h4>
-          <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap:12px;">
-            <div style="background:#fff; padding:12px; border:1px solid var(--line); border-radius:6px; text-align:center;">
-              <strong>Dry Mushroom Stock</strong>
-              <div style="font-size:20px; font-weight:800; color:var(--accent);" id="stockValDry">150 kg[cite: 2]</div>
-            </div>
-            <div style="background:#fff; padding:12px; border:1px solid var(--line); border-radius:6px; text-align:center;">
-              <strong>Mushroom Khakhra Stock</strong>
-              <div style="font-size:20px; font-weight:800; color:var(--accent);" id="stockValKhakhra">85 Packs[cite: 2]</div>
-            </div>
-            <div style="background:#fff; padding:12px; border:1px solid var(--line); border-radius:6px; text-align:center;">
-              <strong>Mushroom Papad Stock</strong>
-              <div style="font-size:20px; font-weight:800; color:var(--accent);" id="stockValPapad">120 Packs[cite: 2]</div>
-            </div>
-          </div>
-        </div>
-
         <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap:12px; margin-bottom:20px;">
           <div class="partner-cash-card" style="background:#eef2ff; color:#3730a3;">👤 Soham Gajera Hand Cash: <span id="cashSoham">Rs 0.00</span></div>
           <div class="partner-cash-card" style="background:#fef3c7; color:#92400e;">👤 Jeet Gajera Hand Cash: <span id="cashJeet">Rs 0.00</span></div>
           <div class="partner-cash-card" style="background:#dcfce7; color:#166534;">🏢 Farm Vault Main Cash Balance: <span id="cashFarm">Rs 0.00</span></div>
         </div>
 
-        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap:16px; margin-bottom:24px;">
-          <!-- Miscellaneous Expense & Damages Collection Logger Block -->
-          <div class="db-card">
-            <h4>Log Operational Outflow / Damages Inward</h4>
-            <form onsubmit="saveAdminExpense(event)">
-              <label>Select Operation Date:
-                <input type="date" id="expLogDate" required>
-              </label>
-              <label>Log Classification Strategy Type:
-                <select id="expCategory" required>
-                  <option value="Farm">Farm Infrastructure Expansion Outflow[cite: 2]</option>
-                  <option value="Mushroom">Mushroom Substrate Media Outflow[cite: 2]</option>
-                  <option value="Damage Received">Paise Received From Damage Lots (Inflow)[cite: 2]</option>
-                </select>
-              </label>
-              <label>Assigned Resource Party (Payer/Receiver):
-                <select id="expPayer" required>
-                  <option value="Soham">Soham Gajera[cite: 2]</option>
-                  <option value="Jeet">Jeet Gajera[cite: 2]</option>
-                  <option value="Farm">Farm Account General Vault[cite: 2]</option>
-                </select>
-              </label>
-              <label>Transaction Channel System:
-                <select id="expMode" required>
-                  <option value="Online">Online Network Link/UPI[cite: 2]</option>
-                  <option value="Cash">Liquid Cash Vault Handover[cite: 2]</option>
-                </select>
-              </label>
-              <input type="text" id="expDesc" placeholder="Item Context Specification Summary" required>
-              <input type="number" id="expAmount" placeholder="Amount Value Factor (Rs)" required>
-              <button type="submit">Log Outflow Ledger Row</button>
-            </form>
-          </div>
+        <!-- 4 Separate Pages Tab System inside Farm Data Section -->
+        <div style="margin: 20px 0; display: flex; gap: 8px; flex-wrap: wrap;">
+          <button type="button" class="btn" id="btnSubTabExpense" onclick="switchSubAccountingTab('subTabExpense')">1. Expenses Page</button>
+          <button type="button" class="btn" id="btnSubTabSell" onclick="switchSubAccountingTab('subTabSell')">2. Sell Page</button>
+          <button type="button" class="btn" id="btnSubTabBuy" onclick="switchSubAccountingTab('subTabBuy')">3. Buy Page</button>
+          <button type="button" class="btn" id="btnSubTabDamage" onclick="switchSubAccountingTab('subTabDamage')">4. Damage Page</button>
+        </div>
 
-          <!-- Wholesale Manual Offline Direct Sale Logger Block -->
-          <div class="db-card">
-            <h4>Log Manual Wholesale Production Sale (Direct Offline Inflow)</h4>
-            <form onsubmit="saveAdminSale(event)">
-              <label>Select Sale Date:
-                <input type="date" id="saleLogDate" required>
-              </label>
-              <label>Mushroom Catalog Stock Variant Type:
-                <select id="saleProduct" required>
-                  <option value="Green">Fresh Green Oyster Mushroom Bulk Lot[cite: 2]</option>
-                  <option value="Dry">Dry Dehydrated Mushroom Pack Lot[cite: 2]</option>
-                  <option value="Powder">Fine Ground Spore Mushroom Powder Lot[cite: 2]</option>
-                </select>
-              </label>
-              <label>Financial Asset Collector Location:
-                <select id="saleCollector" required>
-                  <option value="Farm">Farm Account General Vault (Automated Default)[cite: 2]</option>
-                  <option value="Soham">Soham Gajera Pocket Cash[cite: 2]</option>
-                  <option value="Jeet">Jeet Gajera Pocket Cash[cite: 2]</option>
-                </select>
-              </label>
-              <input type="text" id="saleBuyer" placeholder="Client Purchaser Name / Business Firm" required>
-              <input type="number" step="0.01" id="saleQty" placeholder="Dispatched Weight Lots (kg/Packs)" required>
-              <input type="number" id="saleRate" placeholder="Agreed Unit Spot Valuation Cost (Rs)" required>
-              <button type="submit">Log Operational Sales Inflow</button>
-            </form>
-          </div>
-
-          <!-- Production Resource Procurement Raw Material Bulk Inward Logger Block -->
-          <div class="db-card">
-            <h4>Log Raw Inventory Material Bulk Buy Outflow</h4>
-            <form onsubmit="saveAdminPurchase(event)">
-              <label>Select Purchase Date:
-                <input type="date" id="purLogDate" required>
-              </label>
-              <label>Procurement Resource Inward Lot:
-                <select id="purProduct" required>
-                  <option value="Green">Green Mushroom Base Inward Spores[cite: 2]</option>
-                  <option value="Dry">Dry Bulk Base Inward Lots[cite: 2]</option>
-                  <option value="Khakhra Lots">Khakhra Production Raw Multi-Lots[cite: 2]</option>
-                  <option value="Papad Lots">Papad Production Raw Multi-Lots[cite: 2]</option>
-                </select>
-              </label>
-              <label>Funding Inward Resource Channel Provider:
-                <select id="purFunder" required>
-                  <option value="Farm">Farm Account General Vault[cite: 2]</option>
-                  <option value="Soham">Soham Gajera Personal Assets[cite: 2]</option>
-                  <option value="Jeet">Jeet Gajera Personal Assets[cite: 2]</option>
-                </select>
-              </label>
-              <input type="text" id="purVendor" placeholder="Vendor Farmer Source Entity Name" required>
-              <input type="number" step="0.01" id="purQty" placeholder="InwardLot Bulk Weight Volume Units" required>
-              <input type="number" id="purRate" placeholder="Purchase Valuation per Unit Cost Factor (Rs)" required>
-              <button type="submit">Execute Inventory Buy Inflow</button>
-            </form>
+        <!-- Sub Tab 1: Expense -->
+        <div id="subTabExpense" class="sub-accounting-section" style="display:none;">
+          <h4>1. Log Operational Outflow & Records</h4>
+          <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap:16px;">
+            <div class="db-card">
+              <form onsubmit="saveAdminExpense(event)">
+                <label>Select Operation Date: <input type="date" id="expLogDate" required></label>
+                <label>Log Classification Strategy Type:
+                  <select id="expCategory" required>
+                    <option value="Farm">Farm Infrastructure Expansion Outflow[cite: 2]</option>
+                    <option value="Mushroom">Mushroom Substrate Media Outflow[cite: 2]</option>
+                  </select>
+                </label>
+                <label>Assigned Resource Party:
+                  <select id="expPayer" required>
+                    <option value="Soham">Soham Gajera[cite: 2]</option>
+                    <option value="Jeet">Jeet Gajera[cite: 2]</option>
+                    <option value="Farm">Farm Account General Vault[cite: 2]</option>
+                  </select>
+                </label>
+                <label>Transaction Channel System:
+                  <select id="expMode" required>
+                    <option value="Online">Online Network Link/UPI[cite: 2]</option>
+                    <option value="Cash">Liquid Cash Vault Handover[cite: 2]</option>
+                  </select>
+                </label>
+                <input type="text" id="expDesc" placeholder="Item Context Specification Summary" required>
+                <input type="number" id="expAmount" placeholder="Amount Value Factor (Rs)" required>
+                <button type="submit">Log Outflow Ledger Row</button>
+              </form>
+            </div>
+            <div class="table-responsive"><table class="sub-table"><thead><tr><th>Date</th><th>Category</th><th>Payer</th><th>Context</th><th>Amount</th></tr></thead><tbody id="subExpenseTableBody"></tbody></table></div>
           </div>
         </div>
 
-        <h4>Analytical Comprehensive Financial Log History Matrix View</h4>
-        <div class="table-responsive">
-          <table>
-            <thead>
-              <tr>
-                <th>Date Logged</th>
-                <th>Classification Matrix</th>
-                <th>Target Item Context</th>
-                <th>Involved Partner Party</th>
-                <th>Resource Summary</th>
-                <th>Valuation Impact Ledger</th>
-                <th>Invoice Extraction</th>
-              </tr>
-            </thead>
-            <tbody id="adminAccountingTableBody"></tbody>
-          </table>
+        <!-- Sub Tab 2: Sell -->
+        <div id="subTabSell" class="sub-accounting-section" style="display:none;">
+          <h4>2. Log Manual Wholesale Production Sale (Direct Offline Inflow)</h4>
+          <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap:16px;">
+            <div class="db-card">
+              <form onsubmit="saveAdminSale(event)">
+                <label>Select Sale Date: <input type="date" id="saleLogDate" required></label>
+                <label>Mushroom Catalog Stock Variant Type:
+                  <select id="saleProduct" required>
+                    <option value="Green">Fresh Green Oyster Mushroom Bulk Lot[cite: 2]</option>
+                    <option value="Dry">Dry Dehydrated Mushroom Pack Lot[cite: 2]</option>
+                    <option value="Powder">Fine Ground Spore Mushroom Powder Lot[cite: 2]</option>
+                  </select>
+                </label>
+                <label>Financial Asset Collector Location:
+                  <select id="saleCollector" required>
+                    <option value="Farm">Farm Account General Vault (Automated Default)[cite: 2]</option>
+                    <option value="Soham">Soham Gajera Pocket Cash[cite: 2]</option>
+                    <option value="Jeet">Jeet Gajera Pocket Cash[cite: 2]</option>
+                  </select>
+                </label>
+                <input type="text" id="saleBuyer" placeholder="Client Purchaser Name" required>
+                <input type="number" step="0.01" id="saleQty" placeholder="Dispatched Weight Lots (kg/Packs)" required>
+                <input type="number" id="saleRate" placeholder="Agreed Unit Spot Cost (Rs)" required>
+                <button type="submit">Log Operational Sales Inflow</button>
+              </form>
+            </div>
+            <div class="table-responsive"><table class="sub-table"><thead><tr><th>Date</th><th>Product</th><th>Buyer</th><th>Qty</th><th>Total</th><th>Action</th></tr></thead><tbody id="subSellTableBody"></tbody></table></div>
+          </div>
+        </div>
+
+        <!-- Sub Tab 3: Buy -->
+        <div id="subTabBuy" class="sub-accounting-section" style="display:none;">
+          <h4>3. Log Raw Inventory Material Bulk Buy Outflow</h4>
+          <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap:16px;">
+            <div class="db-card">
+              <form onsubmit="saveAdminPurchase(event)">
+                <label>Select Purchase Date: <input type="date" id="purLogDate" required></label>
+                <label>Procurement Resource Inward Lot:
+                  <select id="purProduct" required>
+                    <option value="Green">Green Mushroom Base Inward Spores[cite: 2]</option>
+                    <option value="Dry">Dry Bulk Base Inward Lots[cite: 2]</option>
+                    <option value="Khakhra Lots">Khakhra Production Raw Multi-Lots[cite: 2]</option>
+                    <option value="Papad Lots">Papad Production Raw Multi-Lots[cite: 2]</option>
+                  </select>
+                </label>
+                <label>Funding Inward Resource Channel Provider:
+                  <select id="purFunder" required>
+                    <option value="Farm">Farm Account General Vault[cite: 2]</option>
+                    <option value="Soham">Soham Gajera Personal Assets[cite: 2]</option>
+                    <option value="Jeet">Jeet Gajera Personal Assets[cite: 2]</option>
+                  </select>
+                </label>
+                <input type="text" id="purVendor" placeholder="Vendor Farmer Source Entity Name" required>
+                <input type="number" step="0.01" id="purQty" placeholder="InwardLot Weight Volume Units" required>
+                <input type="number" id="purRate" placeholder="Purchase Valuation Factor (Rs)" required>
+                <button type="submit">Execute Inventory Buy Inflow</button>
+              </form>
+            </div>
+            <div class="table-responsive"><table class="sub-table"><thead><tr><th>Date</th><th>Resource</th><th>Vendor</th><th>Qty</th><th>Total</th></tr></thead><tbody id="subBuyTableBody"></tbody></table></div>
+          </div>
+        </div>
+
+        <!-- Sub Tab 4: Damage -->
+        <div id="subTabDamage" class="sub-accounting-section" style="display:none;">
+          <h4>4. Log Damages Inward & Loss Factor Records</h4>
+          <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap:16px;">
+            <div class="db-card">
+              <form onsubmit="saveAdminDamage(event)">
+                <label>Select Damage Log Date: <input type="date" id="dmgLogDate" required></label>
+                <label>Resource Target Party Location:
+                  <select id="dmgPayer" required>
+                    <option value="Farm">Farm General Account General Vault[cite: 2]</option>
+                    <option value="Soham">Soham Gajera Account[cite: 2]</option>
+                    <option value="Jeet">Jeet Gajera Account[cite: 2]</option>
+                  </select>
+                </label>
+                <input type="text" id="dmgDesc" placeholder="Damage Reason Context (e.g. Mold infection lot)" required>
+                <input type="number" id="dmgAmount" placeholder="Financial Compensation Value Inflow (Rs)" required>
+                <button type="submit" style="background:var(--danger);">Log Damage Record Inflow</button>
+              </form>
+            </div>
+            <div class="table-responsive"><table class="sub-table"><thead><tr><th>Date</th><th>Context Info</th><th>Partner Party</th><th>Amount Inflow</th></tr></thead><tbody id="subDamageTableBody"></tbody></table></div>
+          </div>
         </div>
       </div>
 
@@ -553,8 +533,5 @@
       <div>Pure Grow Farm - Oyster Mushrooms Enterprise © 2026</div>
     </footer>
   </div>
-
-
-
 </body>
 </html>

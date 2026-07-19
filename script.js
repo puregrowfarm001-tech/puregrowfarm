@@ -624,3 +624,19 @@ function getTotals() {
 
 renderProducts();
 checkUserSession();
+
+// Search filter implementation functionality logic
+if (document.getElementById("productSearch")) {
+  document.getElementById("productSearch").addEventListener("input", function(e) {
+    const searchTerm = e.target.value.toLowerCase().trim();
+    
+    // Products filter matrix logic based on name or description text match
+    const filteredProducts = products.filter(product => {
+      return product.name.toLowerCase().includes(searchTerm) || 
+             product.detail.toLowerCase().includes(searchTerm);
+    });
+    
+    // Render the filtered subset to screen layout canvas
+    renderProducts(filteredProducts);
+  });
+}

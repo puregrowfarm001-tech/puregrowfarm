@@ -438,6 +438,24 @@ th { background: #f8faf8; font-weight: 700; }
       <div style="margin-top:10px;">
         <button type="button" class="btn" onclick="openHistoryModal()">📦 View Order & Booking History</button>
       </div>
+
+      <!-- Inline Certificate View Section inside User Dashboard if approved -->
+      <div id="userInlineCertificateSandbox" style="display:none; margin-top:24px; padding-top:20px; border-top:2px dashed var(--line);">
+        <h3>Your Approved Certificate of Completion</h3>
+        <button class="btn" onclick="window.print()">Print / Save PDF File</button>
+        <div class="cert-preview-area">
+          <div class="certificate-frame" id="userPrintableCertificateBody">
+            <div class="cert-title">CERTIFICATE OF COMPLETION</div>
+            <div class="cert-name" id="userCertGeneratedName">USER NAME</div>
+            <div class="cert-text" id="userCertGeneratedBody"></div>
+            <div class="cert-footer-row">
+              <div><strong>Verification Approved Date:</strong><div id="userCertGeneratedApproveDate"></div></div>
+              <div><strong>Operational Log Duration:</strong><div id="userCertGeneratedDuration"></div></div>
+              <div><strong>Signatures:</strong><br>Soham & Jeet Gajera</div>
+            </div>
+          </div>
+        </div>
+      </div>
     </section>
 
     <!-- Isolated Screen Modal For Activity History Pop-up Page -->
@@ -741,6 +759,9 @@ th { background: #f8faf8; font-weight: 700; }
           <div class="db-card">
             <h4>Log Operational Outflow / Damages Inward</h4>
             <form onsubmit="saveAdminExpense(event)">
+              <label>Select Operation Date:
+                <input type="date" id="expLogDate" required>
+              </label>
               <label>Log Classification Strategy Type:
                 <select id="expCategory" required>
                   <option value="Farm">Farm Infrastructure Expansion Outflow</option>
@@ -771,6 +792,9 @@ th { background: #f8faf8; font-weight: 700; }
           <div class="db-card">
             <h4>Log Manual Wholesale Production Sale (Direct Offline Inflow)</h4>
             <form onsubmit="saveAdminSale(event)">
+              <label>Select Sale Date:
+                <input type="date" id="saleLogDate" required>
+              </label>
               <label>Mushroom Catalog Stock Variant Type:
                 <select id="saleProduct" required>
                   <option value="Green">Fresh Green Oyster Mushroom Bulk Lot</option>
@@ -796,6 +820,9 @@ th { background: #f8faf8; font-weight: 700; }
           <div class="db-card">
             <h4>Log Raw Inventory Material Bulk Buy Outflow</h4>
             <form onsubmit="saveAdminPurchase(event)">
+              <label>Select Purchase Date:
+                <input type="date" id="purLogDate" required>
+              </label>
               <label>Procurement Resource Inward Lot:
                 <select id="purProduct" required>
                   <option value="Green">Green Mushroom Base Inward Spores</option>
@@ -824,6 +851,7 @@ th { background: #f8faf8; font-weight: 700; }
           <table>
             <thead>
               <tr>
+                <th>Date Logged</th>
                 <th>Classification Matrix</th>
                 <th>Target Item Context</th>
                 <th>Involved Partner Party</th>
@@ -1058,7 +1086,6 @@ function handleForgotPassword(e) {
     return;
   }
 
-  // Check if user exists in local database
   const match = usersDatabase.find(u => u.email.toLowerCase() === emailInput.toLowerCase());
   
   let msg = `Hello Pure Grow Farm Team, main apna account password bhool gaya hu. Kripya meri sahayata karein.\n\nRegistered Email: ${emailInput}`;
@@ -1073,6 +1100,7 @@ function handleForgotPassword(e) {
 function handleLogout() {
   currentUser = null;
   localStorage.removeItem('pgf_session');
+  document.getElementById("userInlineCertificateSandbox").style.display = "none";
   checkUserSession();
 }
 
@@ -1098,9 +1126,16 @@ function loadUserPanelData() {
       <small>Booked On: ${b.dateLogged}</small><br>
       <small>Schedule Date: ${b.date || b.start}</small><br>
       <strong>Scheme: ${b.type} Visit [${b.status}]</strong>
-      ${b.status==='Approved'?`<br><button class='btn' style='padding:4px 6px; font-size:11px; min-height:auto;' onclick="closeHistoryModal(); renderCertificateInline('${b.bookingId}')">📜 View Certificate</button>`:''}
     </div>
   `).join("") : "No course training applications logged.";
+
+  // Check if there is an approved booking to show only the certificate natively
+  const approvedBooking = myBookings.find(b => b.status === "Approved");
+  if (approvedBooking) {
+    renderUserCertificateInline(approvedBooking.bookingId);
+  } else {
+    document.getElementById("userInlineCertificateSandbox").style.display = "none";
+  }
 }
 
 function switchErpTab(tabId, buttonId) {
@@ -1136,7 +1171,7 @@ function populateAdminDashboardTables() {
       <td><strong>${b.dateLogged}</strong></td>
       <td><span class="badge ${b.status==='Approved'?'badge-confirmed':'badge-pending'}">${b.status}</span></td>
       <td>
-        <button class="btn" style="padding:4px 8px; min-height:auto;" onclick="approveTrainingBooking(${idx})">Approve</button>
+        ${b.status !== 'Approved' ? `<button class="btn" style="padding:4px 8px; min-height:auto;" onclick="approveTrainingBooking(${idx})">Approve</button>` : `<span style="color:var(--accent); font-weight:bold;">Approved</span>`}
       </td>
     </tr>
   `).join("");
@@ -1157,7 +1192,16 @@ function approveTrainingBooking(idx) {
   localStorage.setItem('pgf_bookings', JSON.stringify(bookingsRegistry));
   const target = bookingsRegistry[idx];
   
-  const saleLog = { type: "sale", product: `Training Entry: ${target.type} Program`, collector: "Farm", buyer: target.name, qty: 1, rate: target.fee, total: target.fee, date: new Date().toLocaleDateString() };
+  const saleLog = { 
+    type: "sale", 
+    product: `Training Entry: ${target.type} Program`, 
+    collector: "Farm", 
+    buyer: target.name, 
+    qty: 1, 
+    rate: target.fee, 
+    total: target.fee, 
+    date: new Date().toLocaleDateString() 
+  };
   salesRegistry.push(saleLog);
   localStorage.setItem('pgf_sales', JSON.stringify(salesRegistry));
   
@@ -1183,11 +1227,28 @@ function renderCertificateInline(bId) {
   document.getElementById("certificateGeneratorSandbox").style.display = "block";
 }
 
+function renderUserCertificateInline(bId) {
+  const target = bookingsRegistry.find(b => b.bookingId === bId);
+  if(!target) return;
+  document.getElementById("userCertGeneratedName").textContent = target.name.toUpperCase();
+  document.getElementById("userCertGeneratedApproveDate").textContent = new Date().toLocaleDateString();
+  
+  if(target.type === "Student") {
+    document.getElementById("userCertGeneratedDuration").textContent = `${target.start} to ${target.end}`;
+    document.getElementById("userCertGeneratedBody").textContent = `for successfully finishing the core intensive practical student internship framework module hosted inside Pure Grow Farm.`;
+  } else {
+    document.getElementById("userCertGeneratedDuration").textContent = target.date;
+    document.getElementById("userCertGeneratedBody").textContent = `for actively undertaking and completing the technical commercial farmer cultivation development workshop program at Pure Grow Farm.`;
+  }
+  document.getElementById("userInlineCertificateSandbox").style.display = "block";
+}
+
 function saveAdminExpense(e) {
   e.preventDefault();
+  const rawDate = document.getElementById("expLogDate").value;
   const data = {
     expId: "EXP-" + Date.now().toString().slice(-4),
-    date: new Date().toLocaleDateString(),
+    date: rawDate ? new Date(rawDate).toLocaleDateString() : new Date().toLocaleDateString(),
     category: document.getElementById("expCategory").value,
     payer: document.getElementById("expPayer").value,
     mode: document.getElementById("expMode").value,
@@ -1202,13 +1263,14 @@ function saveAdminExpense(e) {
 
 function saveAdminSale(e) {
   e.preventDefault();
+  const rawDate = document.getElementById("saleLogDate").value;
   const qty = parseFloat(document.getElementById("saleQty").value);
   const rate = parseFloat(document.getElementById("saleRate").value);
   const pVariant = document.getElementById("saleProduct").value;
 
   const data = {
     saleId: "SALE-" + Date.now().toString().slice(-4),
-    date: new Date().toLocaleDateString(),
+    date: rawDate ? new Date(rawDate).toLocaleDateString() : new Date().toLocaleDateString(),
     product: pVariant,
     collector: document.getElementById("saleCollector").value,
     buyer: document.getElementById("saleBuyer").value.trim(),
@@ -1228,13 +1290,14 @@ function saveAdminSale(e) {
 
 function saveAdminPurchase(e) {
   e.preventDefault();
+  const rawDate = document.getElementById("purLogDate").value;
   const qty = parseFloat(document.getElementById("purQty").value);
   const rate = parseFloat(document.getElementById("purRate").value);
   const itemVariant = document.getElementById("purProduct").value;
 
   const data = {
     purId: "PUR-" + Date.now().toString().slice(-4),
-    date: new Date().toLocaleDateString(),
+    date: rawDate ? new Date(rawDate).toLocaleDateString() : new Date().toLocaleDateString(),
     product: itemVariant,
     funder: document.getElementById("purFunder").value,
     vendor: document.getElementById("purVendor").value.trim(),
@@ -1287,16 +1350,16 @@ function computeFinancialLedgerStatements() {
   let htmlRows = "";
 
   salesRegistry.forEach(s => {
-    htmlRows += `<tr><td><mark style='background:#dcfce7; color:#166534;'>INFLOW: SALE</mark></td><td>${s.product}</td><td>Firm: ${s.buyer}</td><td>Holder: ${s.collector}</td><td style='color:var(--accent); font-weight:bold;'>+ Rs ${s.total.toFixed(2)}</td></tr>`;
+    htmlRows += `<tr><td>${s.date}</td><td><mark style='background:#dcfce7; color:#166534;'>INFLOW: SALE</mark></td><td>${s.product}</td><td>Firm: ${s.buyer}</td><td>Holder: ${s.collector}</td><td style='color:var(--accent); font-weight:bold;'>+ Rs ${s.total.toFixed(2)}</td></tr>`;
   });
   purchasesRegistry.forEach(p => {
-    htmlRows += `<tr><td><mark style='background:#fee2e2; color:#991b1b;'>OUTFLOW: PURCHASE</mark></td><td>Material: ${p.product}</td><td>To: ${p.vendor}</td><td>Funder: ${p.funder}</td><td style='color:var(--danger); font-weight:bold;'>- Rs ${p.total.toFixed(2)}</td></tr>`;
+    htmlRows += `<tr><td>${p.date}</td><td><mark style='background:#fee2e2; color:#991b1b;'>OUTFLOW: PURCHASE</mark></td><td>Material: ${p.product}</td><td>To: ${p.vendor}</td><td>Funder: ${p.funder}</td><td style='color:var(--danger); font-weight:bold;'>- Rs ${p.total.toFixed(2)}</td></tr>`;
   });
   expensesRegistry.forEach(e => {
     if(e.category === "Damage Received") {
-      htmlRows += `<tr><td><mark style='background:#e0f2fe; color:#0369a1;'>INFLOW: DAMAGE FUNDS</mark></td><td>Lot: ${e.desc}</td><td>Damages Compensation</td><td>Receiver: ${e.payer}</td><td style='color:#0369a1; font-weight:bold;'>+ Rs ${e.amount.toFixed(2)}</td></tr>`;
+      htmlRows += `<tr><td>${e.date}</td><td><mark style='background:#e0f2fe; color:#0369a1;'>INFLOW: DAMAGE FUNDS</mark></td><td>Lot: ${e.desc}</td><td>Damages Compensation</td><td>Receiver: ${e.payer}</td><td style='color:#0369a1; font-weight:bold;'>+ Rs ${e.amount.toFixed(2)}</td></tr>`;
     } else {
-      htmlRows += `<tr><td><mark style='background:#fef3c7; color:#92400e;'>OUTFLOW: FARM EXPENSE</mark></td><td>${e.category} Operations (${e.desc})</td><td>Mode: ${e.mode}</td><td>Payer: ${e.payer}</td><td style='color:var(--warn); font-weight:bold;'>- Rs ${e.amount.toFixed(2)}</td></tr>`;
+      htmlRows += `<tr><td>${e.date}</td><td><mark style='background:#fef3c7; color:#92400e;'>OUTFLOW: FARM EXPENSE</mark></td><td>${e.category} Operations (${e.desc})</td><td>Mode: ${e.mode}</td><td>Payer: ${e.payer}</td><td style='color:var(--warn); font-weight:bold;'>- Rs ${e.amount.toFixed(2)}</td></tr>`;
     }
   });
   ledgersBody.innerHTML = htmlRows;
@@ -1304,10 +1367,20 @@ function computeFinancialLedgerStatements() {
 
 function renderProducts(list = products) {
   document.getElementById("productsList").innerHTML = list.map(product => {
-    let stockStatus = product.bulk ? "" : `<span class="badge badge-confirmed">Available In Stock</span>`;
-    if(product.type === "dry" && currentInventoryStock.dry <= 0) stockStatus = `<span class="badge" style="background:#fee2e2; color:var(--danger);">Out of Stock</span>`;
-    if(product.type === "khakhra" && currentInventoryStock.khakhra <= 0) stockStatus = `<span class="badge" style="background:#fee2e2; color:var(--danger);">Out of Stock</span>`;
-    if(product.type === "papad" && currentInventoryStock.papad <= 0) stockStatus = `<span class="badge" style="background:#fee2e2; color:var(--danger);">Out of Stock</span>`;
+    let stockStatus = "";
+    
+    // Live user level stock metrics check conditions dynamically applied
+    if(!product.bulk) {
+      if(product.type === "dry") {
+        stockStatus = currentInventoryStock.dry <= 0 ? `<span class="badge" style="background:#fee2e2; color:var(--danger);">Out of Stock</span>` : `<span class="badge badge-confirmed">${currentInventoryStock.dry} kg Available</span>`;
+      } else if(product.type === "khakhra") {
+        stockStatus = currentInventoryStock.khakhra <= 0 ? `<span class="badge" style="background:#fee2e2; color:var(--danger);">Out of Stock</span>` : `<span class="badge badge-confirmed">${currentInventoryStock.khakhra} Packs Available</span>`;
+      } else if(product.type === "papad") {
+        stockStatus = currentInventoryStock.papad <= 0 ? `<span class="badge" style="background:#fee2e2; color:var(--danger);">Out of Stock</span>` : `<span class="badge badge-confirmed">${currentInventoryStock.papad} Packs Available</span>`;
+      } else {
+        stockStatus = `<span class="badge badge-confirmed">Available In Stock</span>`;
+      }
+    }
 
     return `
       <article class="product">
@@ -1412,7 +1485,7 @@ function confirmOrder(e) {
   saveToSheet({ type: "order", ...data });
   updateStockDisplayCounters();
 
-  latestInvoice = `PURE GROW FARM BILL INVOICE\nOrder Ref: ${data.orderId}\nCustomer: ${data.name}\nPhone: ${data.phone}\nAddress Shipping: ${data.address}\nItems Dispatched: ${data.products}\nTotal Paid Factor: Rs ${data.total}\nOrder Date Mapped: ${data.dateLogged}`;
+  latestInvoice = `----------------------------------------\n${farmName.toUpperCase()} OFFICIAL INVOICE RECEIPT\n----------------------------------------\nFarm Contact Desk Helpline: +91 ${farmWhatsapp}\nInvoice Generated Date & Time: ${data.dateLogged}\nOrder Reference Hash ID: ${data.orderId}\n\n[USER CUSTOMER ACCOUNT DETAILS]\nClient Identity Legal Name: ${data.name}\nRegistered Mobile Line Link: ${data.phone}\nConfigured Account Email ID: ${data.email}\nComplete Shipping Delivery Address: ${data.address}\n\n[TRANSACTION DATA PARAMETERS]\nDispatched Stock Items: ${data.products}\nOnline Network Mode Reference: ${document.getElementById("paymentMode").value}\nPayment Gateway Txn Code Ref: ${data.txnId}\nFinal Paid Balance Factor: Rs ${data.total}\n----------------------------------------`;
   document.getElementById("invoiceText").textContent = latestInvoice;
   
   alert("Thank you! Your purchase checkout has been logged successfully.");
@@ -1473,7 +1546,7 @@ function submitStudentVisit(e) {
   localStorage.setItem('pgf_bookings', JSON.stringify(bookingsRegistry));
   saveToSheet({ type: "visit", ...data });
 
-  latestVisitInvoice = `ACADEMIC INTERNSHIP APPLICATION DETAILS:\nBooking Ref ID: ${data.bookingId}\nName: ${data.name}\nDuration Schedule: ${data.start} to ${data.end}\nUTR Tracking Number: ${data.txnId}\nBooking Logged Date: ${data.dateLogged}`;
+  latestVisitInvoice = `----------------------------------------\n${farmName.toUpperCase()} TRAINING BOOKING RECEIPT\n----------------------------------------\nFarm Contact Desk Helpline: +91 ${farmWhatsapp}\nBooking Generated Date & Time: ${data.dateLogged}\nBooking Reference ID: ${data.bookingId}\n\n[STUDENT APPLICANT INFORMATION]\nFull Student Legal Name: ${data.name}\nContact Mobile Line: ${data.phone}\nAccount Email ID: ${data.email}\nUniversity Enrollment Code: ${data.enrollment}\nCollege Entity Context: ${data.college}\nTarget Course Schema: ${data.course}\nTarget Operational Duration: ${data.start} to ${data.end}\n\n[TRANSACTION DETAILS]\nOnline Network Payment Mode: ${document.getElementById("spaymentMode").value}\nUTR Reference Tracking Number: ${data.txnId}\nTotal Paid Amount Outflow: Rs ${data.fee}\n----------------------------------------`;
   document.getElementById("visitInvoiceText").textContent = latestVisitInvoice;
   
   alert("Thank you! Your specialized student internship has been logged.");
@@ -1502,7 +1575,7 @@ function submitFarmerVisit(e) {
   localStorage.setItem('pgf_bookings', JSON.stringify(bookingsRegistry));
   saveToSheet({ type: "visit", ...data });
 
-  latestVisitInvoice = `TECHNICAL FARMER TRAINING WORKSHOP DETAILS:\nBooking Ref ID: ${data.bookingId}\nName: ${data.name}\nTarget Attending Date: ${data.date}\nUTR Tracking Number: ${data.txnId}\nBooking Logged Date: ${data.dateLogged}`;
+  latestVisitInvoice = `----------------------------------------\n${farmName.toUpperCase()} TRAINING BOOKING RECEIPT\n----------------------------------------\nFarm Contact Desk Helpline: +91 ${farmWhatsapp}\nBooking Generated Date & Time: ${data.dateLogged}\nBooking Reference ID: ${data.bookingId}\n\n[FARMER APPLICANT INFORMATION]\nFull Farmer Legal Name: ${data.name}\nContact Mobile Line: ${data.phone}\nAccount Email ID: ${data.email}\nScheduled Workshop Target Date: ${data.date}\n\n[TRANSACTION DETAILS]\nOnline Network Payment Mode: ${document.getElementById("fpaymentMode").value}\nUTR Reference Tracking Number: ${data.txnId}\nTotal Paid Amount Outflow: Rs ${data.fee}\n----------------------------------------`;
   document.getElementById("visitInvoiceText").textContent = latestVisitInvoice;
   
   alert("Thank you! Your farmer workshop registration has been logged.");

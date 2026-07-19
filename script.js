@@ -174,7 +174,7 @@ function handleLogout() {
   checkUserSession();
 }
 
-// BHOOL FIXED: Pura clean multi-certificate loop logic ready kiya hai stamp and custom signature image ke saath
+// CHANGES INTEGRATED: Multi-Certificate Loop with luxury dynamic elements, 5% background image, 85px centered logo, and stamp removed
 function loadUserPanelData() {
   const oList = document.getElementById("userOrdersList");
   const bList = document.getElementById("userBookingsList");
@@ -205,7 +205,6 @@ function loadUserPanelData() {
     `;
   }).join("") : "No course training applications logged.";
 
-  // Multiple Approved Certificates dynamic rendering block logic loops here loop matrix
   const approvedBookingsHtml = myBookings.filter(b => b.status === "Approved").map(b => {
     const titleText = b.type === "Student" ? "Certificate of Internship" : "Certificate of Farming";
     const descText = b.type === "Student" 
@@ -216,48 +215,59 @@ function loadUserPanelData() {
       ? `from <span style="font-weight:bold; border-bottom:1px solid #333;">${b.start}</span> to <span style="font-weight:bold; border-bottom:1px solid #333;">${b.end}</span>`
       : `on target session date <span style="font-weight:bold; border-bottom:1px solid #333;">${b.date}</span>`;
 
-    // BHOOL FIXED: Fetch exact actual approval date instead of showing invalid string tokens
     const actualApprovedDate = b.approvedDate ? b.approvedDate : new Date(b.dateLogged).toLocaleDateString();
 
     return `
-      <div class="certificate-frame" style="width: 100%; max-width: 650px; background: #fff; border: 12px double #2b8a3e; padding: 30px; position: relative; text-align: center; color: #222; margin: 0 auto 20px auto; box-shadow:0 4px 12px rgba(0,0,0,0.05);">
-        <div class="cert-header-top" style="display: flex; justify-content: center; align-items: center; gap: 15px;">
-          <img src="mushroom/pgf logo.png" alt="Logo" style="width: 60px; height: auto;">
-          <div style="text-align:left;">
-            <h2 style="color: #1e4620; margin: 0; font-size: 22px; letter-spacing: 0.5px; font-weight: 800;">PURE GROW MUSHROOM FARM</h2>
-            <p class="muted" style="margin: 3px 0 0 0; font-size: 12px;">Makhiyala, Gujarat, 362011 | puregrowfarm001@gmail.com</p>
-          </div>
+      <div class="certificate-frame" style="width: 100%; max-width: 680px; background: #fff; border: 8px solid #1e4620; padding: 30px; position: relative; text-align: center; color: #222; margin: 0 auto 20px auto; box-shadow: 0 4px 20px rgba(0,0,0,0.08); overflow: hidden;">
+        
+        <!-- Background mushroom watermark set strictly to 5% opacity matrix -->
+        <div style="position: absolute; top: 50%; left: 50%; width: 75%; height: auto; transform: translate(-50%, -50%); opacity: 0.05; pointer-events: none; z-index: 1;">
+          <img src="mushroom/g mushroom.png" alt="Watermark" style="width: 100%; height: auto; object-fit: contain;">
         </div>
-        
-        <hr style="border:1px solid #2b8a3e; margin:15px 0;">
-        <div style="font-size: 26px; font-weight: bold; color: #1e4620; text-align: center; text-transform: uppercase; letter-spacing:0.5px;">${titleText}</div>
-        <p style="text-align: center; font-style: italic; margin: 10px 0; color: #555;">This is to certify that</p>
-        <div style="font-size: 24px; font-weight: bold; color: #2b8a3e; border-bottom: 2px solid #ddd; display: inline-block; padding: 0 30px; margin: 8px auto; text-align: center;">${b.name.toUpperCase()}</div>
-        <p style="text-align: center; font-style: italic; margin: 15px 0; color: #555;">${descText}</p>
-        
-        <p style="font-size: 14px; line-height: 1.8; text-align: justify; margin: 20px auto; max-width: 580px; color: #222;">
-          The program execution guidelines were conducted ${durationContent}. 
-          During this framework index period, the candidate gained foundational knowledge in mushroom biology, substrate preparation, and crop management, demonstrating an excellent work ethic.
-        </p>
-        
-        <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: 35px; padding: 0 10px;">
-          <div style="text-align: left; font-size: 13px;">
-            <strong>Approved Date:</strong> <span>${actualApprovedDate}</span>
+
+        <!-- Inner Premium Design Accent Border Row -->
+        <div style="border: 2px solid #d97706; padding: 20px; position: relative; z-index: 2; background: rgba(255,255,255,0.93);">
+          
+          <div class="cert-header-top" style="display: flex; justify-content: center; align-items: center; gap: 15px;">
+            <img src="mushroom/pgf logo.png" alt="Logo" style="width: 65px; height: auto;">
+            <div style="text-align:left;">
+              <h2 style="color: #1e4620; margin: 0; font-size: 22px; letter-spacing: 0.5px; font-weight: 800;">PURE GROW MUSHROOM FARM</h2>
+              <p class="muted" style="margin: 3px 0 0 0; font-size: 12px;">Makhiyala, Gujarat, 362011 | puregrowfarm001@gmail.com</p>
+            </div>
           </div>
           
-          <!-- Original Circular Badge Frame Stamp with Center Farm Logo -->
-          <div style="text-align: center; border: 3px double #1e4620; padding: 6px; border-radius: 50%; width: 115px; height: 115px; display: flex; flex-direction: column; justify-content: center; align-items: center; background: rgba(43,138,62,0.02); transform: rotate(-4deg); box-shadow: 0 0 4px rgba(26,58,30,0.15);">
-            <span style="font-size: 8px; color: #1e4620; font-weight: 800; text-transform: uppercase; letter-spacing: 0.3px;">Pure Grow Farm</span>
-            <img src="mushroom/pgf logo.png" alt="Stamp Logo" style="width: 32px; height: auto; margin: 2px 0; opacity: 0.85;">
-            <span style="font-size: 8px; color: #1e4620; font-weight: 900; letter-spacing: 0.5px; text-transform: uppercase;">PARTNER</span>
+          <hr style="border:0; border-top: 2px solid #2b8a3e; margin: 15px 0;">
+          
+          <div style="font-size: 26px; font-weight: bold; color: #1e4620; text-align: center; text-transform: uppercase; letter-spacing: 1px; font-family: 'Times New Roman', Times, serif;">${titleText}</div>
+          <p style="text-align: center; font-style: italic; margin: 8px 0; color: #555; font-size: 14px;">This is to certify that</p>
+          <div style="font-size: 24px; font-weight: bold; color: #2b8a3e; border-bottom: 2px solid #d97706; display: inline-block; padding: 0 25px; margin: 5px auto; text-align: center; font-family: 'Times New Roman', Times, serif;">${b.name.toUpperCase()}</div>
+          <p style="text-align: center; font-style: italic; margin: 12px 0; color: #555; font-size: 14px;">${descText}</p>
+          
+          <p style="font-size: 14px; line-height: 1.8; text-align: justify; margin: 15px auto; max-width: 580px; color: #222;">
+            The program execution guidelines were conducted ${durationContent}. 
+            During this framework index period, the candidate gained foundational knowledge in mushroom biology, substrate preparation, and crop management, demonstrating an excellent work ethic.
+          </p>
+          
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 35px; padding: 0 10px;">
+            <div style="text-align: left; font-size: 13px; width: 30%;">
+              <strong>Approved Date:</strong><br>
+              <span style="display: inline-block; margin-top: 5px; color: #333; font-weight: 600;">${actualApprovedDate}</span>
+            </div>
+            
+            <!-- Upgraded Center Logo Block scaled to 85px with Stamp frame fully removed -->
+            <div style="text-align: center; width: 30%;">
+              <img src="mushroom/pgf logo.png" alt="Pure Grow Farm Logo" style="width: 85px; height: auto; object-fit: contain; filter: drop-shadow(0px 2px 4px rgba(0,0,0,0.1));">
+              <div style="font-size: 9px; font-weight: 800; color: #1e4620; margin-top: 5px; letter-spacing: 0.5px;">PURE GROW FARM</div>
+            </div>
+
+            <!-- Signature block mapped seamlessly using multiply overlay mix blend mode -->
+            <div style="text-align: right; width: 35%;">
+              <img src="mushroom/soham sign.png" alt="Soham Gajera Signature" style="width: 125px; height: auto; display: block; margin: 0 0 2px auto; mix-blend-mode: multiply;">
+              <div style="border-top: 1px solid #333; padding-top: 4px; font-size: 12px; font-weight: bold; text-align: center; color: #1e4620;">Soham Gajera</div>
+              <div style="font-size: 10px; color: var(--muted); text-align: center;">Authorized Signatory</div>
+            </div>
           </div>
 
-          <!-- BHOOL FIXED: Image signature element path linked nicely with multiply mix blend overlay -->
-          <div style="text-align: right; width: 150px;">
-            <img src="mushroom/soham sign.png" alt="Soham Gajera Signature" style="width: 125px; height: auto; display: block; margin: 0 auto 2px auto; mix-blend-mode: multiply;">
-            <div style="border-top: 1px solid #333; padding-top: 4px; font-size: 12px; font-weight: bold; text-align: center;">Soham Gajera</div>
-            <div style="font-size: 10px; color: var(--muted); text-align: center;">Authorized Signatory</div>
-          </div>
         </div>
       </div>
     `;

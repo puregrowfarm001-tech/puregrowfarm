@@ -224,7 +224,6 @@ function loadUserPanelData() {
 
       const actualApprovedDate = b.approvedDate ? b.approvedDate : new Date(b.dateLogged).toLocaleDateString();
 
-      // Certificate removed watermark background from inline view as well
       const standardCertTemplate = `
         <div class="certificate-frame" id="cert-render-idx-${index}" style="width: 100%; max-width: 680px; background: #fff; border: 8px solid #1e4620; padding: 30px; position: relative; text-align: center; color: #222; margin: 0 auto 20px auto; box-shadow: 0 4px 20px rgba(0,0,0,0.08); overflow: hidden; box-sizing: border-box;">
           <div style="border: 2px solid #d97706; padding: 20px; position: relative; z-index: 2; background: #ffffff;">
@@ -827,7 +826,7 @@ if (document.getElementById("productSearch")) {
   });
 }
 
-// 1-Page Fixed PDF Download Function
+// Full Isolated 1-Page PDF Printing Iframe Engine
 function downloadCertificatePDF(bookingId) {
   const targetBooking = bookingsRegistry.find(b => b.bookingId === bookingId);
   if (!targetBooking) return alert("Certificate not found.");
@@ -843,47 +842,143 @@ function downloadCertificatePDF(bookingId) {
 
   const actualApprovedDate = targetBooking.approvedDate ? targetBooking.approvedDate : new Date(targetBooking.dateLogged).toLocaleDateString();
 
-  const printFrame = document.getElementById("certificatePrintPrintoutFrame");
-  
-  printFrame.innerHTML = `
-    <div class="certificate-frame" style="width: 100%; max-width: 700px; background: #fff; border: 8px solid #1e4620; padding: 30px; position: relative; text-align: center; color: #222; margin: 0 auto; box-sizing: border-box; overflow: hidden;">
-      <div style="border: 2px solid #d97706; padding: 20px; position: relative; z-index: 2; background: #ffffff;">
-        <div style="display: flex; justify-content: center; align-items: center; gap: 15px;">
-          <img src="mushroom/pgf logo.png" alt="Logo" style="width: 65px; height: auto;">
-          <div style="text-align:left;">
-            <h2 style="color: #1e4620; margin: 0; font-size: 22px; letter-spacing: 0.5px; font-weight: 800;">PURE GROW MUSHROOM FARM</h2>
-            <p style="margin: 3px 0 0 0; font-size: 12px; color:#6b7280;">Makhiyala, Gujarat, 362011 | puregrowfarm001@gmail.com</p>
-          </div>
-        </div>
-        <hr style="border:0; border-top: 2px solid #2b8a3e; margin: 15px 0;">
-        <div style="font-size: 26px; font-weight: bold; color: #1e4620; text-align: center; text-transform: uppercase; letter-spacing: 1px; font-family: 'Times New Roman', Times, serif;">${titleText}</div>
-        <p style="text-align: center; font-style: italic; margin: 8px 0; color: #555; font-size: 14px;">This is to certify that</p>
-        <div style="font-size: 24px; font-weight: bold; color: #2b8a3e; border-bottom: 2px solid #d97706; display: inline-block; padding: 0 25px; margin: 5px auto; text-align: center; font-family: 'Times New Roman', Times, serif;">${targetBooking.name.toUpperCase()}</div>
-        <p style="text-align: center; font-style: italic; margin: 12px 0; color: #555; font-size: 14px;">${descText}</p>
-        <p style="font-size: 14px; line-height: 1.8; text-align: justify; margin: 15px auto; max-width: 580px; color: #222;">
-          The program execution guidelines were conducted ${durationContent}. 
-          During this framework index period, the candidate gained foundational knowledge in mushroom biology, substrate preparation, and crop management, demonstrating an excellent work ethic.
-        </p>
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 35px; padding: 0 10px;">
-          <div style="text-align: left; font-size: 13px; width: 30%;">
-            <strong>Approved Date:</strong><br>
-            <span style="display: inline-block; margin-top: 5px; color: #333; font-weight: 600;">${actualApprovedDate}</span>
-          </div>
-          <div style="text-align: center; width: 30%;">
-            <img src="mushroom/pgf logo.png" alt="Pure Grow Farm Logo" style="width: 85px; height: auto; object-fit: contain;">
-            <div style="font-size: 9px; font-weight: 800; color: #1e4620; margin-top: 5px; letter-spacing: 0.5px;">PURE GROW FARM</div>
-          </div>
-          <div style="text-align: right; width: 35%;">
-            <img src="mushroom/soham sign.png" alt="Soham Gajera Signature" style="width: 125px; height: auto; display: block; margin: 0 0 2px auto; mix-blend-mode: multiply;">
-            <div style="border-top: 1px solid #333; padding-top: 4px; font-size: 12px; font-weight: bold; text-align: center; color: #1e4620;">Soham Gajera</div>
-            <div style="font-size: 10px; color: #6b7280; text-align: center;">Authorized Signatory</div>
-          </div>
-        </div>
-      </div>
-    </div>
-  `;
+  // Create clean isolated sandbox printing channel
+  const iframe = document.createElement('iframe');
+  iframe.style.position = 'fixed';
+  iframe.style.right = '0';
+  iframe.style.bottom = '0';
+  iframe.style.width = '0';
+  iframe.style.height = '0';
+  iframe.style.border = '0';
+  document.body.appendChild(iframe);
 
-  window.print();
+  const priDoc = iframe.contentWindow.document;
+
+  priDoc.open();
+  priDoc.write(`
+    <html>
+      <head>
+        <title>${titleText}</title>
+        <style>
+          @page {
+            size: A4 landscape;
+            margin: 8mm;
+          }
+          body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            background: #fff;
+            -webkit-print-color-adjust: exact;
+          }
+          .certificate-frame {
+            width: 100%;
+            max-width: 960px;
+            background: #fff;
+            border: 8px solid #1e4620;
+            padding: 25px;
+            box-sizing: border-box;
+            text-align: center;
+            color: #222;
+            margin: 0 auto;
+          }
+          .inner-border {
+            border: 2px solid #d97706;
+            padding: 25px;
+            background: #ffffff;
+          }
+          .cert-header-top {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+          }
+          .cert-title {
+            font-size: 32px;
+            font-weight: bold;
+            color: #1e4620;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-family: 'Times New Roman', Times, serif;
+            margin: 20px 0 10px 0;
+          }
+          .cert-name {
+            font-size: 28px;
+            font-weight: bold;
+            color: #2b8a3e;
+            border-bottom: 2px solid #d97706;
+            display: inline-block;
+            padding: 0 25px;
+            margin: 10px auto;
+            font-family: 'Times New Roman', Times, serif;
+          }
+          .cert-desc {
+            font-size: 15px;
+            line-height: 1.8;
+            text-align: justify;
+            margin: 20px auto;
+            max-width: 800px;
+            color: #222;
+          }
+          .cert-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 40px;
+            padding: 0 10px;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="certificate-frame">
+          <div class="inner-border">
+            <div class="cert-header-top">
+              <img src="mushroom/pgf logo.png" alt="Logo" style="width: 70px; height: auto;">
+              <div style="text-align:left;">
+                <h2 style="color: #1e4620; margin: 0; font-size: 24px; font-weight: 800;">PURE GROW MUSHROOM FARM</h2>
+                <p style="margin: 3px 0 0 0; font-size: 13px; color:#6b7280;">Makhiyala, Gujarat, 362011 | puregrowfarm001@gmail.com</p>
+              </div>
+            </div>
+            
+            <hr style="border:0; border-top: 2px solid #2b8a3e; margin: 15px 0;">
+            
+            <div class="cert-title">${titleText}</div>
+            <p style="font-style: italic; margin: 5px 0; color: #555; font-size: 15px;">This is to certify that</p>
+            <div class="cert-name">${targetBooking.name.toUpperCase()}</div>
+            <p style="font-style: italic; margin: 5px 0; color: #555; font-size: 15px;">${descText}</p>
+            
+            <p class="cert-desc">
+              The program execution guidelines were conducted ${durationContent}. 
+              During this framework index period, the candidate gained foundational knowledge in mushroom biology, substrate preparation, and crop management, demonstrating an excellent work ethic.
+            </p>
+            
+            <div class="cert-footer">
+              <div style="text-align: left; font-size: 14px; width: 30%;">
+                <strong>Approved Date:</strong><br>
+                <span style="display: inline-block; margin-top: 5px; color: #333; font-weight: 600;">${actualApprovedDate}</span>
+              </div>
+              <div style="text-align: center; width: 30%;">
+                <img src="mushroom/pgf logo.png" alt="Pure Grow Farm Logo" style="width: 90px; height: auto; object-fit: contain;">
+                <div style="font-size: 10px; font-weight: 800; color: #1e4620; margin-top: 5px; letter-spacing: 0.5px;">PURE GROW FARM</div>
+              </div>
+              <div style="text-align: right; width: 35%;">
+                <img src="mushroom/soham sign.png" alt="Soham Gajera Signature" style="width: 130px; height: auto; display: block; margin: 0 0 2px auto; mix-blend-mode: multiply;">
+                <div style="border-top: 1px solid #333; padding-top: 4px; font-size: 13px; font-weight: bold; text-align: center; color: #1e4620;">Soham Gajera</div>
+                <div style="font-size: 11px; color: #6b7280; text-align: center;">Authorized Signatory</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </body>
+    </html>
+  `);
+  priDoc.close();
+
+  setTimeout(() => {
+    iframe.contentWindow.focus();
+    iframe.contentWindow.print();
+    setTimeout(() => { document.body.removeChild(iframe); }, 1000);
+  }, 500);
 }
 
 renderProducts();

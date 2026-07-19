@@ -9,7 +9,7 @@ const ADMIN_CREDENTIALS = { user: "admin", pass: "PureGrow@2026" };
 const products = [
   { id: 1, name: "Fresh Green Oyster Mushroom", price: 180, unit: "1kg", image: "mushroom/Screenshot 2025-10-24 154001.png", detail: "Picked fresh, chilled and delivered within 24-48 hours.", type: "green" },
   { id: 2, name: "Dried Oyster Mushroom", price: 800, unit: "1kg pack", image: "mushroom/oyst dry.webp", detail: "Slow-dried to preserve flavor and nutrients.", type: "dry" },
-  { id: 3, name: "Oyster Mushroom Powder", price: 130, unit: "100gm pack", image: "mushroom/oyster powder.png", detail: "Mushroom powder for soup, curry, health mix and snacks.", type: "powder" },
+  { id: 3, name: "Oyster Mushroom Powder", price: 130, unit: "100gm pack", image: "mushroom/oyster powder.png", detail: "Mushroom powder for soup, 1kg pack curry, health mix and snacks.", type: "powder" },
   { id: 4, name: "Methi Mushroom Khakhra", price: 70, unit: "200gm pack", image: "Methi khakhra 2.png", detail: "Crispy khakhra prepared with oyster mushroom powder.", type: "khakhra" },
   { id: 5, name: "Adad Mushroom Papad", price: 120, unit: "1 pack", image: "mushroom/bulk.png", detail: "Papad enriched with mushroom nutrition.", type: "papad" },
   { id: 6, name: "Bulk and Wholesale Supply", price: 0, unit: "Custom", bulk: true, image: "mushroom/bulk.png", detail: "Supply for restaurants, retailers and local markets." }
@@ -209,61 +209,11 @@ function loadUserPanelData() {
   const approvedBookings = myBookings.filter(b => b.status === "Approved");
 
   if (approvedBookings.length > 0) {
-    let dynamicCertHtml = "";
     let historyCertHtml = "";
 
     approvedBookings.forEach((b, index) => {
       const titleText = b.type === "Student" ? "Certificate of Internship" : "Certificate of Farming";
-      const descText = b.type === "Student" 
-        ? `has successfully completed an internship program in Oyster Mushroom Cultivation at Pure Grow Mushroom Farm, at Makhiyala, Gujarat.`
-        : `has successfully completed the practical farmer training framework module in Oyster Mushroom Cultivation at Pure Grow Mushroom Farm, at Makhiyala, Gujarat.`;
       
-      const durationContent = b.type === "Student" 
-        ? `from <span style="font-weight:bold; border-bottom:1px solid #333;">${b.start}</span> to <span style="font-weight:bold; border-bottom:1px solid #333;">${b.end}</span>`
-        : `on target session date <span style="font-weight:bold; border-bottom:1px solid #333;">${b.date}</span>`;
-
-      const actualApprovedDate = b.approvedDate ? b.approvedDate : new Date(b.dateLogged).toLocaleDateString();
-
-      const standardCertTemplate = `
-        <div class="certificate-frame" id="cert-render-idx-${index}" style="width: 100%; max-width: 680px; background: #fff; border: 8px solid #1e4620; padding: 30px; position: relative; text-align: center; color: #222; margin: 0 auto 20px auto; box-shadow: 0 4px 20px rgba(0,0,0,0.08); overflow: hidden; box-sizing: border-box;">
-          <div style="border: 2px solid #d97706; padding: 20px; position: relative; z-index: 2; background: #ffffff;">
-            <div class="cert-header-top" style="display: flex; justify-content: center; align-items: center; gap: 15px;">
-              <img src="mushroom/pgf logo.png" alt="Logo" style="width: 65px; height: auto;">
-              <div style="text-align:left;">
-                <h2 style="color: #1e4620; margin: 0; font-size: 22px; letter-spacing: 0.5px; font-weight: 800;">PURE GROW MUSHROOM FARM</h2>
-                <p class="muted" style="margin: 3px 0 0 0; font-size: 12px;">Makhiyala, Gujarat, 362011 | puregrowfarm001@gmail.com</p>
-              </div>
-            </div>
-            <hr style="border:0; border-top: 2px solid #2b8a3e; margin: 15px 0;">
-            <div style="font-size: 26px; font-weight: bold; color: #1e4620; text-align: center; text-transform: uppercase; letter-spacing: 1px; font-family: 'Times New Roman', Times, serif;">${titleText}</div>
-            <p style="text-align: center; font-style: italic; margin: 8px 0; color: #555; font-size: 14px;">This is to certify that</p>
-            <div style="font-size: 24px; font-weight: bold; color: #2b8a3e; border-bottom: 2px solid #d97706; display: inline-block; padding: 0 25px; margin: 5px auto; text-align: center; font-family: 'Times New Roman', Times, serif;">${b.name.toUpperCase()}</div>
-            <p style="text-align: center; font-style: italic; margin: 12px 0; color: #555; font-size: 14px;">${descText}</p>
-            <p style="font-size: 14px; line-height: 1.8; text-align: justify; margin: 15px auto; max-width: 580px; color: #222;">
-              The program execution guidelines were conducted ${durationContent}. 
-              During this framework index period, the candidate gained foundational knowledge in mushroom biology, substrate preparation, and crop management, demonstrating an excellent work ethic.
-            </p>
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 35px; padding: 0 10px;">
-              <div style="text-align: left; font-size: 13px; width: 30%;">
-                <strong>Approved Date:</strong><br>
-                <span style="display: inline-block; margin-top: 5px; color: #333; font-weight: 600;">${actualApprovedDate}</span>
-              </div>
-              <div style="text-align: center; width: 30%;">
-                <img src="mushroom/pgf logo.png" alt="Pure Grow Farm Logo" style="width: 85px; height: auto; object-fit: contain;">
-                <div style="font-size: 9px; font-weight: 800; color: #1e4620; margin-top: 5px; letter-spacing: 0.5px;">PURE GROW FARM</div>
-              </div>
-              <div style="text-align: right; width: 35%;">
-                <img src="mushroom/soham sign.png" alt="Soham Gajera Signature" style="width: 125px; height: auto; display: block; margin: 0 0 2px auto; mix-blend-mode: multiply;">
-                <div style="border-top: 1px solid #333; padding-top: 4px; font-size: 12px; font-weight: bold; text-align: center; color: #1e4620;">Soham Gajera</div>
-                <div style="font-size: 10px; color: var(--muted); text-align: center;">Authorized Signatory</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      `;
-
-      dynamicCertHtml += standardCertTemplate;
-
       historyCertHtml += `
         <div style="padding: 10px; background: #fff; border: 1px solid var(--line); border-radius: 8px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
           <div>
@@ -274,14 +224,11 @@ function loadUserPanelData() {
         </div>
       `;
     });
-
-    document.getElementById("certificatesListGridContainer").innerHTML = dynamicCertHtml;
-    document.getElementById("userInlineCertificateSandbox").style.display = "block";
     
+    // UPDATED: Bahar wala grid container bypass kar diya he, ab sirf history panel list render hogi
     historyCertContainer.innerHTML = historyCertHtml;
     historyCertWrapper.style.display = "block";
   } else {
-    document.getElementById("userInlineCertificateSandbox").style.display = "none";
     historyCertWrapper.style.display = "none";
   }
 }
@@ -826,7 +773,7 @@ if (document.getElementById("productSearch")) {
   });
 }
 
-// Full Isolated 1-Page PDF Printing Iframe Engine
+// Full Isolated 1-Page PDF Printing Iframe Engine (UPDATED: Bold Dates & No Watermark)
 function downloadCertificatePDF(bookingId) {
   const targetBooking = bookingsRegistry.find(b => b.bookingId === bookingId);
   if (!targetBooking) return alert("Certificate not found.");
@@ -836,13 +783,13 @@ function downloadCertificatePDF(bookingId) {
     ? `has successfully completed an internship program in Oyster Mushroom Cultivation at Pure Grow Mushroom Farm, at Makhiyala, Gujarat.`
     : `has successfully completed the practical farmer training framework module in Oyster Mushroom Cultivation at Pure Grow Mushroom Farm, at Makhiyala, Gujarat.`;
   
+  // UPDATED: Dates ko <strong> me wrap karke bold kar diya gaya he
   const durationContent = targetBooking.type === "Student" 
-    ? `from ${targetBooking.start} to ${targetBooking.end}`
-    : `on target session date ${targetBooking.date}`;
+    ? `from <strong>${targetBooking.start}</strong> to <strong>${targetBooking.end}</strong>`
+    : `on target session date <strong>${targetBooking.date}</strong>`;
 
   const actualApprovedDate = targetBooking.approvedDate ? targetBooking.approvedDate : new Date(targetBooking.dateLogged).toLocaleDateString();
 
-  // Create clean isolated sandbox printing channel
   const iframe = document.createElement('iframe');
   iframe.style.position = 'fixed';
   iframe.style.right = '0';

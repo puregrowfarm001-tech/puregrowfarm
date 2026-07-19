@@ -1,34 +1,34 @@
-const farmEmail = "puregrowfarm001@gmail.com";
-const farmWhatsapp = "919067891039";
-const farmUpiId = "sohamgajera01@okhdfcbank";
-const farmName = "Pure Grow Farm";
+const farmEmail = "puregrowfarm001@gmail.com";[cite: 2]
+const farmWhatsapp = "919067891039";[cite: 2]
+const farmUpiId = "sohamgajera01@okhdfcbank";[cite: 2]
+const farmName = "Pure Grow Farm";[cite: 2]
 
-const SHEET_URL = "https://script.google.com/macros/s/AKfycbyg8zhosR2maS7Sgz8j0Kr58JXCEWgqfXvTFgMEO_XP7cAjyw3vlHTsNZr5GJbDq1vs/exec";
-const ADMIN_CREDENTIALS = { user: "admin", pass: "PureGrow@2026" };
+const SHEET_URL = "https://script.google.com/macros/s/AKfycbyg8zhosR2maS7Sgz8j0Kr58JXCEWgqfXvTFgMEO_XP7cAjyw3vlHTsNZr5GJbDq1vs/exec";[cite: 2]
+const ADMIN_CREDENTIALS = { user: "admin", pass: "PureGrow@2026" };[cite: 2]
 
 const products = [
-  { id: 1, name: "Fresh Green Oyster Mushroom", price: 180, unit: "1kg", image: "mushroom/Screenshot 2025-10-24 154001.png", detail: "Picked fresh, chilled and delivered within 24-48 hours.", type: "green" },
-  { id: 2, name: "Dried Oyster Mushroom", price: 800, unit: "1kg pack", image: "mushroom/oyst dry.webp", detail: "Slow-dried to preserve flavor and nutrients.", type: "dry" },
-  { id: 3, name: "Oyster Mushroom Powder", price: 130, unit: "100gm pack", image: "mushroom/oyster powder.png", detail: "Mushroom powder for soup, curry, health mix and snacks.", type: "powder" },
-  { id: 4, name: "Methi Mushroom Khakhra", price: 70, unit: "200gm pack", image: "Methi khakhra 2.png", detail: "Crispy khakhra prepared with oyster mushroom powder.", type: "khakhra" },
-  { id: 5, name: "Adad Mushroom Papad", price: 120, unit: "1 pack", image: "mushroom/bulk.png", detail: "Papad enriched with mushroom nutrition.", type: "papad" },
-  { id: 6, name: "Bulk and Wholesale Supply", price: 0, unit: "Custom", bulk: true, image: "mushroom/bulk.png", detail: "Supply for restaurants, retailers and local markets." }
+  { id: 1, name: "Fresh Green Oyster Mushroom", price: 180, unit: "1kg", image: "mushroom/Screenshot 2025-10-24 154001.png", detail: "Picked fresh, chilled and delivered within 24-48 hours.", type: "green" },[cite: 2]
+  { id: 2, name: "Dried Oyster Mushroom", price: 800, unit: "1kg pack", image: "mushroom/oyst dry.webp", detail: "Slow-dried to preserve flavor and nutrients.", type: "dry" },[cite: 2]
+  { id: 3, name: "Oyster Mushroom Powder", price: 130, unit: "100gm pack", image: "mushroom/oyster powder.png", detail: "Mushroom powder for soup, curry, health mix and snacks.", type: "powder" },[cite: 2]
+  { id: 4, name: "Methi Mushroom Khakhra", price: 70, unit: "200gm pack", image: "Methi khakhra 2.png", detail: "Crispy khakhra prepared with oyster mushroom powder.", type: "khakhra" },[cite: 2]
+  { id: 5, name: "Adad Mushroom Papad", price: 120, unit: "1 pack", image: "mushroom/bulk.png", detail: "Papad enriched with mushroom nutrition.", type: "papad" },[cite: 2]
+  { id: 6, name: "Bulk and Wholesale Supply", price: 0, unit: "Custom", bulk: true, image: "mushroom/bulk.png", detail: "Supply for restaurants, retailers and local markets." }[cite: 2]
 ];
 
-const cart = new Map();
+const cart = new Map();[cite: 2]
 
-let currentInventoryStock = JSON.parse(localStorage.getItem('pgf_stock_counters')) || { dry: 150, khakhra: 85, papad: 120 };
-let usersDatabase = JSON.parse(localStorage.getItem('pgf_user_db')) || [];
-let orderRegistry = JSON.parse(localStorage.getItem('pgf_orders')) || [];
-let bookingsRegistry = JSON.parse(localStorage.getItem('pgf_bookings')) || [];
-let expensesRegistry = JSON.parse(localStorage.getItem('pgf_expenses')) || [];
-let salesRegistry = JSON.parse(localStorage.getItem('pgf_sales')) || [];
-let purchasesRegistry = JSON.parse(localStorage.getItem('pgf_purchases')) || [];
+let currentInventoryStock = JSON.parse(localStorage.getItem('pgf_stock_counters')) || { dry: 150, khakhra: 85, papad: 120 };[cite: 2]
+let usersDatabase = JSON.parse(localStorage.getItem('pgf_user_db')) || [];[cite: 2]
+let orderRegistry = JSON.parse(localStorage.getItem('pgf_orders')) || [];[cite: 2]
+let bookingsRegistry = JSON.parse(localStorage.getItem('pgf_bookings')) || [];[cite: 2]
+let expensesRegistry = JSON.parse(localStorage.getItem('pgf_expenses')) || [];[cite: 2]
+let salesRegistry = JSON.parse(localStorage.getItem('pgf_sales')) || [];[cite: 2]
+let purchasesRegistry = JSON.parse(localStorage.getItem('pgf_purchases')) || [];[cite: 2]
 
-let currentUser = JSON.parse(localStorage.getItem('pgf_session')) || null;
-let currentUpiState = { opened: false };
-let latestInvoice = "";
-let latestVisitInvoice = "";
+let currentUser = JSON.parse(localStorage.getItem('pgf_session')) || null;[cite: 2]
+let currentUpiState = { opened: false };[cite: 2]
+let latestInvoice = "";[cite: 2]
+let latestVisitInvoice = "";[cite: 2]
 
 function getTodayIsoString() {
   const d = new Date();
@@ -204,6 +204,13 @@ function loadUserPanelData() {
       </div>
     `;
   }).join("") : "No course training applications logged.";
+
+  const approvedBooking = myBookings.find(b => b.status === "Approved");
+  if (approvedBooking) {
+    renderUserCertificateInline(approvedBooking.bookingId);
+  } else {
+    document.getElementById("userInlineCertificateSandbox").style.display = "none";
+  }
 }
 
 function switchErpTab(tabId, buttonId) {
@@ -213,7 +220,6 @@ function switchErpTab(tabId, buttonId) {
   document.getElementById(buttonId).classList.add('active-tab');
 }
 
-/* Sub tabs function for Financial Accounting Page */
 function switchSubAccountingTab(subTabId) {
   document.querySelectorAll('.sub-accounting-section').forEach(section => section.style.display = 'none');
   document.getElementById(subTabId).style.display = 'block';
@@ -228,7 +234,6 @@ function switchSubAccountingTab(subTabId) {
 }
 
 function populateAdminDashboardTables() {
-  // Orders Ledger Setup with Approve and Reject Logic
   document.getElementById("adminOrdersTableBody").innerHTML = orderRegistry.map((o, idx) => `
     <tr>
       <td><strong>${o.orderId}</strong></td>
@@ -249,7 +254,6 @@ function populateAdminDashboardTables() {
     </tr>
   `).join("");
 
-  // Bookings Ledger Setup with Approve and Reject Logic
   document.getElementById("adminBookingsTableBody").innerHTML = bookingsRegistry.map((b, idx) => `
     <tr>
       <td><strong>${b.bookingId}</strong></td>
@@ -280,7 +284,6 @@ function populateAdminDashboardTables() {
   `).join("");
 }
 
-// Order Approval & Rejection Handlers
 function approveCustomerOrder(idx) {
   orderRegistry[idx].status = "Approved";
   localStorage.setItem('pgf_orders', JSON.stringify(orderRegistry));
@@ -301,7 +304,6 @@ function rejectCustomerOrder(idx) {
   computeFinancialLedgerStatements();
 }
 
-// Training Booking Approval & Rejection Handlers
 function approveTrainingBooking(idx) {
   bookingsRegistry[idx].status = "Approved";
   localStorage.setItem('pgf_bookings', JSON.stringify(bookingsRegistry));
@@ -337,7 +339,23 @@ function rejectTrainingBooking(idx) {
   computeFinancialLedgerStatements();
 }
 
-// Separate Sub Pages Data Render Architecture inside Financial Segment
+function renderUserCertificateInline(bId) {
+  const target = bookingsRegistry.find(b => b.bookingId === bId);
+  if(!target) return;
+  
+  document.getElementById("userCertGeneratedName").textContent = target.name.toUpperCase();
+  document.getElementById("userCertGeneratedApproveDate").textContent = new Date(target.dateLogged).toLocaleDateString();
+  
+  if(target.type === "Student") {
+    document.getElementById("userCertStart").textContent = target.start || "_";
+    document.getElementById("userCertEnd").textContent = target.end || "_";
+  } else {
+    document.getElementById("userCertStart").textContent = target.date || "_";
+    document.getElementById("userCertEnd").textContent = "One Day Session";
+  }
+  document.getElementById("userInlineCertificateSandbox").style.display = "block";
+}
+
 function computeFinancialLedgerStatements() {
   const totalSales = salesRegistry.reduce((sum, s) => sum + s.total, 0);
   const totalPurchases = purchasesRegistry.reduce((sum, p) => sum + p.total, 0);
@@ -453,7 +471,6 @@ function saveAdminPurchase(e) {
   computeFinancialLedgerStatements();
 }
 
-/* 4. Damage Entry Formulation Form Data Handler Function */
 function saveAdminDamage(e) {
   e.preventDefault();
   const rawDate = document.getElementById("dmgLogDate").value;
@@ -536,9 +553,10 @@ function confirmOrder(e) {
   e.preventDefault();
   const bill = getTotals();
   const currentTimestamp = new Date().toLocaleString();
+  const generatedOrderId = "PGF-INV-" + Date.now().toString().slice(-5);
 
   const data = {
-    orderId: "PGF-" + Date.now().toString().slice(-6),
+    orderId: generatedOrderId,
     name: currentUser.name,
     phone: currentUser.phone,
     email: currentUser.email,
@@ -552,14 +570,40 @@ function confirmOrder(e) {
 
   orderRegistry.unshift(data);
   localStorage.setItem('pgf_orders', JSON.stringify(orderRegistry));
+  
+  document.getElementById("invNum").textContent = data.orderId;
+  document.getElementById("invDate").textContent = new Date().toLocaleDateString();
+  document.getElementById("invClientName").textContent = data.name;
+  document.getElementById("invClientEmail").textContent = data.email + " | Ph: " + data.phone;
+  document.getElementById("invClientAddr").textContent = data.address;
+  
+  document.getElementById("invoiceTableItemsBody").innerHTML = [...cart.values()].map(item => `
+    <tr>
+      <td style="padding:10px; border:1px solid var(--line);">${item.name} (${item.unit})</td>
+      <td style="padding:10px; text-align:right; border:1px solid var(--line);">Rs ${item.price}</td>
+      <td style="padding:10px; text-align:center; border:1px solid var(--line);">${item.qty}</td>
+      <td style="padding:10px; text-align:right; border:1px solid var(--line);">Rs ${item.price * item.qty}</td>
+    </tr>
+  `).join("");
+  
+  document.getElementById("invSub").textContent = "Rs " + bill.subtotal;
+  document.getElementById("invTotal").textContent = "Rs " + bill.total;
+
   saveToSheet({ type: "order", ...data });
   
-  alert("Order submitted!");
+  const waMessage = `INVOICE REFERENCE: ${data.orderId}\nTotal Paid Amount: Rs ${data.total}\nStatus: Pending Admin Check.`;
+  document.getElementById("whatsappInvoice").href = `https://wa.me/${farmWhatsapp}?text=${encodeURIComponent(waMessage)}`;
+  
+  alert("Order registered successfully! Opening Invoice Sheet Context Panel Dashboard.");
+  document.getElementById("invoiceDialog").showModal();
+  
   cart.clear();
   renderCart();
   document.getElementById("orderForm").reset();
   checkUserSession();
 }
+
+function closeInvoice() { document.getElementById("invoiceDialog").close(); }
 
 function showVisitForm(id) {
   document.getElementById("studentForm").classList.remove("active");
@@ -622,21 +666,17 @@ function getTotals() {
   return { subtotal, delivery: subtotal > 0 ? 50 : 0, total: subtotal > 0 ? subtotal + 50 : 0 };
 }
 
-renderProducts();
-checkUserSession();
-
-// Search filter implementation functionality logic
+// Search filter engine registration block
 if (document.getElementById("productSearch")) {
   document.getElementById("productSearch").addEventListener("input", function(e) {
     const searchTerm = e.target.value.toLowerCase().trim();
-    
-    // Products filter matrix logic based on name or description text match
     const filteredProducts = products.filter(product => {
       return product.name.toLowerCase().includes(searchTerm) || 
              product.detail.toLowerCase().includes(searchTerm);
     });
-    
-    // Render the filtered subset to screen layout canvas
     renderProducts(filteredProducts);
   });
 }
+
+renderProducts();
+checkUserSession();

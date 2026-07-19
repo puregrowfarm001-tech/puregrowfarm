@@ -174,6 +174,7 @@ function handleLogout() {
   checkUserSession();
 }
 
+// BHOOL FIXED: Pura clean multi-certificate loop logic ready kiya hai stamp and custom signature image ke saath
 function loadUserPanelData() {
   const oList = document.getElementById("userOrdersList");
   const bList = document.getElementById("userBookingsList");
@@ -204,9 +205,67 @@ function loadUserPanelData() {
     `;
   }).join("") : "No course training applications logged.";
 
-  const approvedBooking = myBookings.find(b => b.status === "Approved");
-  if (approvedBooking) {
-    renderUserCertificateInline(approvedBooking.bookingId);
+  // Multiple Approved Certificates dynamic rendering block logic loops here loop matrix
+  const approvedBookingsHtml = myBookings.filter(b => b.status === "Approved").map(b => {
+    const titleText = b.type === "Student" ? "Certificate of Internship" : "Certificate of Farming";
+    const descText = b.type === "Student" 
+      ? `has successfully completed an internship program in Oyster Mushroom Cultivation at Pure Grow Mushroom Farm, at Makhiyala, Gujarat.`
+      : `has successfully completed the practical farmer training framework module in Oyster Mushroom Cultivation at Pure Grow Mushroom Farm, at Makhiyala, Gujarat.`;
+    
+    const durationContent = b.type === "Student" 
+      ? `from <span style="font-weight:bold; border-bottom:1px solid #333;">${b.start}</span> to <span style="font-weight:bold; border-bottom:1px solid #333;">${b.end}</span>`
+      : `on target session date <span style="font-weight:bold; border-bottom:1px solid #333;">${b.date}</span>`;
+
+    // BHOOL FIXED: Fetch exact actual approval date instead of showing invalid string tokens
+    const actualApprovedDate = b.approvedDate ? b.approvedDate : new Date(b.dateLogged).toLocaleDateString();
+
+    return `
+      <div class="certificate-frame" style="width: 100%; max-width: 650px; background: #fff; border: 12px double #2b8a3e; padding: 30px; position: relative; text-align: center; color: #222; margin: 0 auto 20px auto; box-shadow:0 4px 12px rgba(0,0,0,0.05);">
+        <div class="cert-header-top" style="display: flex; justify-content: center; align-items: center; gap: 15px;">
+          <img src="mushroom/pgf logo.png" alt="Logo" style="width: 60px; height: auto;">
+          <div style="text-align:left;">
+            <h2 style="color: #1e4620; margin: 0; font-size: 22px; letter-spacing: 0.5px; font-weight: 800;">PURE GROW MUSHROOM FARM</h2>
+            <p class="muted" style="margin: 3px 0 0 0; font-size: 12px;">Makhiyala, Gujarat, 362011 | puregrowfarm001@gmail.com</p>
+          </div>
+        </div>
+        
+        <hr style="border:1px solid #2b8a3e; margin:15px 0;">
+        <div style="font-size: 26px; font-weight: bold; color: #1e4620; text-align: center; text-transform: uppercase; letter-spacing:0.5px;">${titleText}</div>
+        <p style="text-align: center; font-style: italic; margin: 10px 0; color: #555;">This is to certify that</p>
+        <div style="font-size: 24px; font-weight: bold; color: #2b8a3e; border-bottom: 2px solid #ddd; display: inline-block; padding: 0 30px; margin: 8px auto; text-align: center;">${b.name.toUpperCase()}</div>
+        <p style="text-align: center; font-style: italic; margin: 15px 0; color: #555;">${descText}</p>
+        
+        <p style="font-size: 14px; line-height: 1.8; text-align: justify; margin: 20px auto; max-width: 580px; color: #222;">
+          The program execution guidelines were conducted ${durationContent}. 
+          During this framework index period, the candidate gained foundational knowledge in mushroom biology, substrate preparation, and crop management, demonstrating an excellent work ethic.
+        </p>
+        
+        <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: 35px; padding: 0 10px;">
+          <div style="text-align: left; font-size: 13px;">
+            <strong>Approved Date:</strong> <span>${actualApprovedDate}</span>
+          </div>
+          
+          <!-- Original Circular Badge Frame Stamp with Center Farm Logo -->
+          <div style="text-align: center; border: 3px double #1e4620; padding: 6px; border-radius: 50%; width: 115px; height: 115px; display: flex; flex-direction: column; justify-content: center; align-items: center; background: rgba(43,138,62,0.02); transform: rotate(-4deg); box-shadow: 0 0 4px rgba(26,58,30,0.15);">
+            <span style="font-size: 8px; color: #1e4620; font-weight: 800; text-transform: uppercase; letter-spacing: 0.3px;">Pure Grow Farm</span>
+            <img src="mushroom/pgf logo.png" alt="Stamp Logo" style="width: 32px; height: auto; margin: 2px 0; opacity: 0.85;">
+            <span style="font-size: 8px; color: #1e4620; font-weight: 900; letter-spacing: 0.5px; text-transform: uppercase;">PARTNER</span>
+          </div>
+
+          <!-- BHOOL FIXED: Image signature element path linked nicely with multiply mix blend overlay -->
+          <div style="text-align: right; width: 150px;">
+            <img src="mushroom/soham sign.png" alt="Soham Gajera Signature" style="width: 125px; height: auto; display: block; margin: 0 auto 2px auto; mix-blend-mode: multiply;">
+            <div style="border-top: 1px solid #333; padding-top: 4px; font-size: 12px; font-weight: bold; text-align: center;">Soham Gajera</div>
+            <div style="font-size: 10px; color: var(--muted); text-align: center;">Authorized Signatory</div>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join("");
+
+  if (approvedBookingsHtml.length > 0) {
+    document.getElementById("certificatesListGridContainer").innerHTML = approvedBookingsHtml;
+    document.getElementById("userInlineCertificateSandbox").style.display = "block";
   } else {
     document.getElementById("userInlineCertificateSandbox").style.display = "none";
   }
@@ -305,6 +364,7 @@ function rejectCustomerOrder(idx) {
 
 function approveTrainingBooking(idx) {
   bookingsRegistry[idx].status = "Approved";
+  bookingsRegistry[idx].approvedDate = new Date().toLocaleDateString();
   localStorage.setItem('pgf_bookings', JSON.stringify(bookingsRegistry));
   const target = bookingsRegistry[idx];
   
@@ -336,23 +396,6 @@ function rejectTrainingBooking(idx) {
   alert("Booking Marked Rejected!");
   populateAdminDashboardTables();
   computeFinancialLedgerStatements();
-}
-
-function renderUserCertificateInline(bId) {
-  const target = bookingsRegistry.find(b => b.bookingId === bId);
-  if(!target) return;
-  
-  document.getElementById("userCertGeneratedName").textContent = target.name.toUpperCase();
-  document.getElementById("userCertGeneratedApproveDate").textContent = new Date(target.dateLogged).toLocaleDateString();
-  
-  if(target.type === "Student") {
-    document.getElementById("userCertStart").textContent = target.start || "_";
-    document.getElementById("userCertEnd").textContent = target.end || "_";
-  } else {
-    document.getElementById("userCertStart").textContent = target.date || "_";
-    document.getElementById("userCertEnd").textContent = "One Day Session";
-  }
-  document.getElementById("userInlineCertificateSandbox").style.display = "block";
 }
 
 function computeFinancialLedgerStatements() {
@@ -557,7 +600,6 @@ function renderCart() {
   validateOrderForm();
 }
 
-// STAGE 1: Order Form Payment trigger flow handler
 function openProductPayment() {
   const mode = document.getElementById("paymentMode").value;
   const bill = getTotals();
@@ -569,12 +611,10 @@ function openProductPayment() {
   }
   
   document.getElementById("productPaymentHelp").style.display = "block";
-  document.getElementById("productPaymentHelp").textContent = `Launching UPI Payment app link for Rs ${bill.total}. Input transaction hash id below after completion.`;
+  document.getElementById("productPaymentHelp").textContent = `Launching UPI Payment app link for Rs ${bill.total}.`;
   
-  // Launch payment intent with dynamic basket grand total factor factor setup
   window.location.href = `upi://pay?pa=${encodeURIComponent(farmUpiId)}&pn=${encodeURIComponent(farmName)}&am=${bill.total}&cu=INR`;
   
-  // Enable step 2 entry box immediately after execution context routing
   document.getElementById("paymentId").disabled = false;
   validateOrderForm();
 }
@@ -587,6 +627,7 @@ function validateOrderForm() {
   const isValid = cart.size > 0 && address.length > 4 && mode !== "" && txnId.length >= 6;
   document.getElementById("confirmOrderBtn").disabled = !isValid;
 }
+
 if(document.getElementById("address")) {
   document.getElementById("address").addEventListener("input", validateOrderForm);
 }
@@ -654,13 +695,12 @@ function showVisitForm(id) {
   document.getElementById(id).classList.add("active");
 }
 
-// STAGE 2 & 3: Academic / Farmer Course Booking application routing blocks
 function openVisitUpi(amount, formId) {
   const helpId = formId === "studentForm" ? "studentPaymentHelp" : "farmerPaymentHelp";
   const txnInputId = formId === "studentForm" ? "spayment" : "fpayment";
   
   document.getElementById(helpId).style.display = "block";
-  document.getElementById(helpId).textContent = `UPI app launched for dynamic program fee value factor Rs ${amount}. Complete it to write receipt code.`;
+  document.getElementById(helpId).textContent = `UPI app launched for program fee value factor Rs ${amount}.`;
   
   window.location.href = `upi://pay?pa=${encodeURIComponent(farmUpiId)}&pn=${encodeURIComponent(farmName)}&am=${amount}&cu=INR`;
   
@@ -691,7 +731,6 @@ function validateFarmerForm() {
   document.getElementById("farmerSubmitBtn").disabled = !isValid;
 }
 
-// Attach logic hooks natively to catch form elements inputs states tracking shifts
 if(document.getElementById("studentForm")) {
   ['senroll', 'scollege', 'scourse', 'sstart', 'send'].forEach(id => {
     document.getElementById(id).addEventListener("input", validateStudentForm);
@@ -717,15 +756,14 @@ function submitStudentVisit(e) {
     fee: 100,
     txnId: document.getElementById("spayment").value.trim(),
     dateLogged: new Date().toLocaleString(),
-    status: "Pending Verification"
+    status: "Pending Verification",
+    approvedDate: ""
   };
   bookingsRegistry.unshift(data);
   localStorage.setItem('pgf_bookings', JSON.stringify(bookingsRegistry));
   saveToSheet({ type: "visit", ...data });
 
-  const waText = `NEW STUDENT INTERNSHIP REGISTRATION:\n----------------------------------------\nBooking Ref ID: ${data.bookingId}\nName: ${data.name}\nUniversity Enrollment Code: ${data.enrollment}\nCollege Entity Context: ${data.college}\nTarget Course Schema: ${data.course}\nDuration: ${data.start} to ${data.end}\nUTR Tracking Number: ${data.txnId}\nTotal Paid Amount: Rs ${data.fee}\n----------------------------------------`;
-  
-  alert("Student Registration data mapped! Sending WhatsApp transaction data stream.");
+  const waText = `NEW STUDENT INTERNSHIP REGISTRATION:\n----------------------------------------\nBooking Ref ID: ${data.bookingId}\nName: ${data.name}\nUTR Tracking Number: ${data.txnId}\n----------------------------------------`;
   window.open(`https://wa.me/${farmWhatsapp}?text=${encodeURIComponent(waText)}`, '_blank');
   
   document.getElementById("studentForm").reset();
@@ -745,25 +783,19 @@ function submitFarmerVisit(e) {
     fee: 699,
     txnId: document.getElementById("fpayment").value.trim(),
     dateLogged: new Date().toLocaleString(),
-    status: "Pending Verification"
+    status: "Pending Verification",
+    approvedDate: ""
   };
   bookingsRegistry.unshift(data);
   localStorage.setItem('pgf_bookings', JSON.stringify(bookingsRegistry));
   saveToSheet({ type: "visit", ...data });
 
-  const waText = `NEW FARMER TRAINING BOOKING:\n----------------------------------------\nBooking Ref ID: ${data.bookingId}\nName: ${data.name}\nContact Mobile: ${data.phone}\nScheduled Workshop Target Date: ${data.date}\nUTR Tracking Number: ${data.txnId}\nTotal Paid Amount: Rs ${data.fee}\n----------------------------------------`;
-  
-  alert("Farmer Seat registration mapped! Routing confirmation payload framework to admin helpline.");
+  const waText = `NEW FARMER TRAINING BOOKING:\n----------------------------------------\nBooking Ref ID: ${data.bookingId}\nName: ${data.name}\nUTR Tracking Number: ${data.txnId}\n----------------------------------------`;
   window.open(`https://wa.me/${farmWhatsapp}?text=${encodeURIComponent(waText)}`, '_blank');
   
   document.getElementById("farmerForm").reset();
   document.getElementById("fpayment").disabled = true;
   checkUserSession();
-}
-
-function getTotals() {
-  const subtotal = [...cart.values()].reduce((sum, item) => sum + item.price * item.qty, 0);
-  return { subtotal, delivery: subtotal > 0 ? 50 : 0, total: subtotal > 0 ? subtotal + 50 : 0 };
 }
 
 if (document.getElementById("productSearch")) {

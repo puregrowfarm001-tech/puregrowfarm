@@ -282,6 +282,7 @@ function populateAdminDashboardTables() {
     </tr>
   `).join("");
 
+  // **UPDATED: ADMIN BOOKINGS LEDGER WITH DOWNLOAD CERTIFICATE LINK**
   document.getElementById("adminBookingsTableBody").innerHTML = bookingsRegistry.map((b, idx) => `
     <tr>
       <td><strong>${b.bookingId}</strong></td>
@@ -297,6 +298,11 @@ function populateAdminDashboardTables() {
           <button class="btn" style="padding:4px 8px; min-height:auto; background:var(--accent); margin-right:4px;" onclick="approveTrainingBooking(${idx})">Approve</button>
           <button class="btn" style="padding:4px 8px; min-height:auto; background:var(--danger);" onclick="rejectTrainingBooking(${idx})">Reject</button>
         ` : `<span style="font-weight:bold;">Resolved</span>`}
+      </td>
+      <td>
+        ${b.status === 'Approved' ? `
+          <button type="button" class="btn" style="padding:4px 8px; min-height:auto; font-size:12px; background:var(--accent);" onclick="downloadCertificatePDF('${b.bookingId}')">📜 Certificate</button>
+        ` : `<span class="muted" style="font-size:12px;">Not Approved Yet</span>`}
       </td>
     </tr>
   `).join("");
@@ -514,7 +520,6 @@ function saveAdminDamage(e) {
   computeFinancialLedgerStatements();
 }
 
-// **DYNAMIC INVOICE DOCK POPUP LOGIC WITH PROPER DETAILS**
 function downloadOfflineSaleInvoice(saleId) {
   const targetSale = salesRegistry.find(s => s.saleId === saleId);
   if(!targetSale) return alert("Invoice not found.");
@@ -525,7 +530,6 @@ function downloadOfflineSaleInvoice(saleId) {
   document.getElementById("invClientEmail").textContent = "Phone Lines: " + (targetSale.phone || "N/A");
   document.getElementById("invClientAddr").textContent = "Shipping Address: " + (targetSale.address || "Direct Spot Distribution Counter");
   
-  // COLOR HIGHLIGHT CONTRAST FIX: Added solid high contrast white text over the accent layout background
   document.getElementById("invoiceTableItemsBody").innerHTML = `
     <tr>
       <td style="padding:12px 14px; border-bottom:1px solid #e6e9ec; font-weight: 600;">${targetSale.product} Lot Log Entry</td>
@@ -907,7 +911,6 @@ function downloadCertificatePDF(bookingId) {
   }, 500);
 }
 
-// **INVOICE CLEAN ENGINE SYSTEM LOG DIRECT OUTPUT AS PDF**
 function printDivInvoice() {
   const printContents = document.getElementById('invoiceCaptureFrame').innerHTML;
   

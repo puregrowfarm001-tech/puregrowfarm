@@ -7,12 +7,12 @@ const SHEET_URL = "https://script.google.com/macros/s/AKfycbyg8zhosR2maS7Sgz8j0K
 const ADMIN_CREDENTIALS = { user: "admin", pass: "PureGrow@2026" };
 
 const products = [
-  { id: 1, name: "Fresh Green Oyster Mushroom", price: 180, unit: "1kg", image: "mushroom/Screenshot 2025-10-24 154001.png", detail: "Picked fresh, chilled and delivered within 24-48 hours.", type: "green" },
-  { id: 2, name: "Dried Oyster Mushroom", price: 800, unit: "1kg pack", image: "mushroom/oyst dry.webp", detail: "Slow-dried to preserve flavor and nutrients.", type: "dry" },
-  { id: 3, name: "Oyster Mushroom Powder", price: 130, unit: "100gm pack", image: "mushroom/oyster powder.png", detail: "Mushroom powder for soup, 1kg pack curry, health mix and snacks.", type: "powder" },
-  { id: 4, name: "Methi Mushroom Khakhra", price: 70, unit: "200gm pack", image: "Methi khakhra 2.png", detail: "Crispy khakhra prepared with oyster mushroom powder.", type: "khakhra" },
-  { id: 5, name: "Adad Mushroom Papad", price: 120, unit: "1 pack", image: "mushroom/bulk.png", detail: "Papad enriched with mushroom nutrition.", type: "papad" },
-  { id: 6, name: "Bulk and Wholesale Supply", price: 0, unit: "Custom", bulk: true, image: "mushroom/bulk.png", detail: "Supply for restaurants, retailers and local markets." }
+  { id: 1, name: "Fresh Green Oyster Mushroom", price: 180, unit: "1kg", image: "mushroom/Screenshot 2025-10-24 154001.png", detail: "Picked fresh, chilled and delivered within 24-48 hours.", type: "green", available: true },
+  { id: 2, name: "Dried Oyster Mushroom", price: 800, unit: "1kg pack", image: "mushroom/oyst dry.webp", detail: "Slow-dried to preserve flavor and nutrients.", type: "dry", available: true },
+  { id: 3, name: "Oyster Mushroom Powder", price: 130, unit: "100gm pack", image: "mushroom/oyster powder.png", detail: "Mushroom powder for soup, 1kg pack curry, health mix and snacks.", type: "powder", available: true },
+  { id: 4, name: "Methi Mushroom Khakhra", price: 70, unit: "200gm pack", image: "Methi khakhra 2.png", detail: "Crispy khakhra prepared with oyster mushroom powder.", type: "khakhra", available: true },
+  { id: 5, name: "Adad Mushroom Papad", price: 120, unit: "1 pack", image: "mushroom/bulk.png", detail: "Papad enriched with mushroom nutrition.", type: "papad", available: true },
+  { id: 6, name: "Bulk and Wholesale Supply", price: 0, unit: "Custom", bulk: true, image: "mushroom/bulk.png", detail: "Supply for restaurants, retailers and local markets.", available: true }
 ];
 
 const cart = new Map();
@@ -225,7 +225,6 @@ function loadUserPanelData() {
       `;
     });
     
-    // UPDATED: Bahar wala grid container bypass kar diya he, ab sirf history panel list render hogi
     historyCertContainer.innerHTML = historyCertHtml;
     historyCertWrapper.style.display = "block";
   } else {
@@ -251,6 +250,16 @@ function switchSubAccountingTab(subTabId) {
   
   let targetActiveButton = 'btn' + subTabId.charAt(0).toUpperCase() + subTabId.slice(1);
   document.getElementById(targetActiveButton).style.background = 'var(--accent)';
+}
+
+// **ADMIN SE ACCOUNT DELETE KARNE KA LOGIC**
+function deleteUserAccount(idx) {
+  if (confirm(`Kya aap sach me ${usersDatabase[idx].name} ka account delete karna chahte hain?`)) {
+    usersDatabase.splice(idx, 1);
+    localStorage.setItem('pgf_user_db', JSON.stringify(usersDatabase));
+    alert("🗑️ Account permanently delete ho gaya!");
+    populateAdminDashboardTables();
+  }
 }
 
 function populateAdminDashboardTables() {
@@ -293,6 +302,7 @@ function populateAdminDashboardTables() {
     </tr>
   `).join("");
 
+  // **DELETE BUTTON INCLUDED FOR ADMIN LEDGER**
   document.getElementById("adminUsersTableBody").innerHTML = usersDatabase.map((u, idx) => `
     <tr>
       <td>${idx + 1}</td>
@@ -300,6 +310,9 @@ function populateAdminDashboardTables() {
       <td>${u.phone}</td>
       <td><code>${u.email}</code></td>
       <td><mark style="background:#f3f4f6; padding:2px 4px; border-radius:4px;">${u.password}</mark></td>
+      <td>
+        <button class="btn" style="padding:4px 8px; min-height:auto; background:var(--danger);" onclick="deleteUserAccount(${idx})">Delete Account</button>
+      </td>
     </tr>
   `).join("");
 }
@@ -331,6 +344,7 @@ function approveTrainingBooking(idx) {
   const target = bookingsRegistry[idx];
   
   const saleLog = { 
+    saleId: "SALE-" + Date.now().toString().slice(-4),
     type: "sale", 
     product: `Training Entry: ${target.type} Program`, 
     collector: "Farm", 
@@ -490,23 +504,28 @@ function saveAdminDamage(e) {
   computeFinancialLedgerStatements();
 }
 
+// **INVOICE RECEIPT DOWNLOAD FLOW FIXED**
 function downloadOfflineSaleInvoice(saleId) {
   const targetSale = salesRegistry.find(s => s.saleId === saleId);
-  if(!targetSale) return;
-  const slipText = `SALE INVOICE\nRef: ${targetSale.saleId}\nDate: ${targetSale.date}\nBuyer: ${targetSale.buyer}\nProduct: ${targetSale.product}\nTotal: Rs ${targetSale.total}`;
+  if(!targetSale) return alert("Invoice not found.");
+  const slipText = `========================================\n       PURE GROW MUSHROOM FARM          \n========================================\nSale Receipt ID: ${targetSale.saleId}\nDate Mapped: ${targetSale.date}\nClient Purchaser: ${targetSale.buyer}\nProduct Item: ${targetSale.product}\nQuantity Dispatched: ${targetSale.qty}\nGrand Total Value: Rs ${targetSale.total}\n========================================\nThank you for business flow log entry!`;
   const blob = new Blob([slipText], { type: "text/plain" });
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
-  a.download = `sale-${saleId}.txt`;
+  a.download = `Invoice-${saleId}.txt`;
   a.click();
 }
 
+// **PRODUCT AVAILABILITY DISPLAY ADDED**
 function renderProducts(list = products) {
   document.getElementById("productsList").innerHTML = list.map(product => `
     <article class="product">
       <img src="${product.image}" alt="${product.name}">
       <h3>${product.name}</h3>
       <p class="muted">${product.detail}</p>
+      <div style="margin-bottom: 8px;">
+        <span class="badge" style="background: #dcfce7; color: #166534; font-size:11px;">🟢 Status: Available</span>
+      </div>
       <div style="margin-top:auto;">
         <div class="product-actions">
           <div class="pill">Rs ${product.price} / ${product.unit}</div>
@@ -773,7 +792,7 @@ if (document.getElementById("productSearch")) {
   });
 }
 
-// Full Isolated 1-Page PDF Printing Iframe Engine (UPDATED: Bold Dates & No Watermark)
+// **CERTIFICATE PDF PRINT ENGINE DISPATCH FIX**
 function downloadCertificatePDF(bookingId) {
   const targetBooking = bookingsRegistry.find(b => b.bookingId === bookingId);
   if (!targetBooking) return alert("Certificate not found.");
@@ -783,7 +802,6 @@ function downloadCertificatePDF(bookingId) {
     ? `has successfully completed an internship program in Oyster Mushroom Cultivation at Pure Grow Mushroom Farm, at Makhiyala, Gujarat.`
     : `has successfully completed the practical farmer training framework module in Oyster Mushroom Cultivation at Pure Grow Mushroom Farm, at Makhiyala, Gujarat.`;
   
-  // UPDATED: Dates ko <strong> me wrap karke bold kar diya gaya he
   const durationContent = targetBooking.type === "Student" 
     ? `from <strong>${targetBooking.start}</strong> to <strong>${targetBooking.end}</strong>`
     : `on target session date <strong>${targetBooking.date}</strong>`;
@@ -807,73 +825,15 @@ function downloadCertificatePDF(bookingId) {
       <head>
         <title>${titleText}</title>
         <style>
-          @page {
-            size: A4 landscape;
-            margin: 8mm;
-          }
-          body {
-            margin: 0;
-            padding: 0;
-            font-family: Arial, sans-serif;
-            background: #fff;
-            -webkit-print-color-adjust: exact;
-          }
-          .certificate-frame {
-            width: 100%;
-            max-width: 960px;
-            background: #fff;
-            border: 8px solid #1e4620;
-            padding: 25px;
-            box-sizing: border-box;
-            text-align: center;
-            color: #222;
-            margin: 0 auto;
-          }
-          .inner-border {
-            border: 2px solid #d97706;
-            padding: 25px;
-            background: #ffffff;
-          }
-          .cert-header-top {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 20px;
-          }
-          .cert-title {
-            font-size: 32px;
-            font-weight: bold;
-            color: #1e4620;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            font-family: 'Times New Roman', Times, serif;
-            margin: 20px 0 10px 0;
-          }
-          .cert-name {
-            font-size: 28px;
-            font-weight: bold;
-            color: #2b8a3e;
-            border-bottom: 2px solid #d97706;
-            display: inline-block;
-            padding: 0 25px;
-            margin: 10px auto;
-            font-family: 'Times New Roman', Times, serif;
-          }
-          .cert-desc {
-            font-size: 15px;
-            line-height: 1.8;
-            text-align: justify;
-            margin: 20px auto;
-            max-width: 800px;
-            color: #222;
-          }
-          .cert-footer {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-top: 40px;
-            padding: 0 10px;
-          }
+          @page { size: A4 landscape; margin: 8mm; }
+          body { margin: 0; padding: 0; font-family: Arial, sans-serif; background: #fff; -webkit-print-color-adjust: exact; }
+          .certificate-frame { width: 100%; max-width: 960px; background: #fff; border: 8px solid #1e4620; padding: 25px; box-sizing: border-box; text-align: center; color: #222; margin: 0 auto; }
+          .inner-border { border: 2px solid #d97706; padding: 25px; background: #ffffff; }
+          .cert-header-top { display: flex; justify-content: center; align-items: center; gap: 20px; }
+          .cert-title { font-size: 32px; font-weight: bold; color: #1e4620; text-transform: uppercase; letter-spacing: 1px; font-family: 'Times New Roman', Times, serif; margin: 20px 0 10px 0; }
+          .cert-name { font-size: 28px; font-weight: bold; color: #2b8a3e; border-bottom: 2px solid #d97706; display: inline-block; padding: 0 25px; margin: 10px auto; font-family: 'Times New Roman', Times, serif; }
+          .cert-desc { font-size: 15px; line-height: 1.8; text-align: justify; margin: 20px auto; max-width: 800px; color: #222; }
+          .cert-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 40px; padding: 0 10px; }
         </style>
       </head>
       <body>
@@ -886,19 +846,15 @@ function downloadCertificatePDF(bookingId) {
                 <p style="margin: 3px 0 0 0; font-size: 13px; color:#6b7280;">Makhiyala, Gujarat, 362011 | puregrowfarm001@gmail.com</p>
               </div>
             </div>
-            
             <hr style="border:0; border-top: 2px solid #2b8a3e; margin: 15px 0;">
-            
             <div class="cert-title">${titleText}</div>
             <p style="font-style: italic; margin: 5px 0; color: #555; font-size: 15px;">This is to certify that</p>
             <div class="cert-name">${targetBooking.name.toUpperCase()}</div>
             <p style="font-style: italic; margin: 5px 0; color: #555; font-size: 15px;">${descText}</p>
-            
             <p class="cert-desc">
               The program execution guidelines were conducted ${durationContent}. 
               During this framework index period, the candidate gained foundational knowledge in mushroom biology, substrate preparation, and crop management, demonstrating an excellent work ethic.
             </p>
-            
             <div class="cert-footer">
               <div style="text-align: left; font-size: 14px; width: 30%;">
                 <strong>Approved Date:</strong><br>
@@ -909,7 +865,6 @@ function downloadCertificatePDF(bookingId) {
                 <div style="font-size: 10px; font-weight: 800; color: #1e4620; margin-top: 5px; letter-spacing: 0.5px;">PURE GROW FARM</div>
               </div>
               <div style="text-align: right; width: 35%;">
-                <img src="mushroom/soham sign.png" alt="Soham Gajera Signature" style="width: 130px; height: auto; display: block; margin: 0 0 2px auto; mix-blend-mode: multiply;">
                 <div style="border-top: 1px solid #333; padding-top: 4px; font-size: 13px; font-weight: bold; text-align: center; color: #1e4620;">Soham Gajera</div>
                 <div style="font-size: 11px; color: #6b7280; text-align: center;">Authorized Signatory</div>
               </div>

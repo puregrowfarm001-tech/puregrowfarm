@@ -395,35 +395,52 @@
         </div>
 
         <!-- Sub Tab 2: Sell -->
-        <div id="subTabSell" class="sub-accounting-section" style="display:none;">
-          <h4>2. Log Manual Wholesale Production Sale (Direct Offline Inflow)</h4>
-          <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap:16px;">
-            <div class="db-card">
-              <form onsubmit="saveAdminSale(event)">
-                <label>Select Sale Date: <input type="date" id="saleLogDate" required></label>
-                <label>Mushroom Catalog Stock Variant Type:
-                  <select id="saleProduct" required>
-                    <option value="Green">Fresh Green Oyster Mushroom Bulk Lot</option>
-                    <option value="Dry">Dry Dehydrated Mushroom Pack Lot</option>
-                    <option value="Powder">Fine Ground Spore Mushroom Powder Lot</option>
-                  </select>
-                </label>
-                <label>Financial Asset Collector Location:
-                  <select id="saleCollector" required>
-                    <option value="Farm">Farm Account General Vault (Automated Default)</option>
-                    <option value="Soham">Soham Gajera Pocket Cash</option>
-                    <option value="Jeet">Jeet Gajera Pocket Cash</option>
-                  </select>
-                </label>
-                <input type="text" id="saleBuyer" placeholder="Client Purchaser Name" required>
-                <input type="number" step="0.01" id="saleQty" placeholder="Dispatched Weight Lots (kg/Packs)" required>
-                <input type="number" id="saleRate" placeholder="Agreed Unit Spot Cost (Rs)" required>
-                <button type="submit">Log Operational Sales Inflow</button>
-              </form>
-            </div>
-            <div class="table-responsive"><table class="sub-table"><thead><tr><th>Date</th><th>Product</th><th>Buyer</th><th>Qty</th><th>Total</th><th>Action</th></tr></thead><tbody id="subSellTableBody"></tbody></table></div>
-          </div>
-        </div>
+<div id="subTabSell" class="sub-accounting-section" style="display:none;">
+  <h4>2. Log Manual Wholesale Production Sale (Direct Offline Inflow)</h4>
+  <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap:16px;">
+    <div class="db-card">
+      <form onsubmit="saveAdminSale(event)">
+        <label>Select Sale Date: <input type="date" id="saleLogDate" required></label>
+        <label>Mushroom Catalog Stock Variant Type:
+          <select id="saleProduct" required>
+            <option value="Green">Fresh Green Oyster Mushroom Bulk Lot</option>
+            <option value="Dry">Dry Dehydrated Mushroom Pack Lot</option>
+            <option value="Powder">Fine Ground Spore Mushroom Powder Lot</option>
+          </select>
+        </label>
+        <label>Financial Asset Collector Location:
+          <select id="saleCollector" required>
+            <option value="Farm">Farm Account General Vault (Automated Default)</option>
+            <option value="Soham">Soham Gajera Pocket Cash</option>
+            <option value="Jeet Gajera">Jeet Gajera Pocket Cash</option>
+          </select>
+        </label>
+        <input type="text" id="saleBuyer" placeholder="Client Purchaser Name" required>
+        <input type="tel" id="salePhone" placeholder="Client Contact Number" required>
+        <input type="text" id="saleAddress" placeholder="Client Shipping Address" required>
+        <input type="number" step="0.01" id="saleQty" placeholder="Dispatched Weight Lots (kg/Packs)" required>
+        <input type="number" id="saleRate" placeholder="Agreed Unit Spot Cost (Rs)" required>
+        <button type="submit">Log Operational Sales Inflow</button>
+      </form>
+    </div>
+    <div class="table-responsive">
+      <table class="sub-table">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Product</th>
+            <th>Buyer</th>
+            <th>Phone</th>
+            <th>Qty</th>
+            <th>Total</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody id="subSellTableBody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
 
         <!-- Sub Tab 3: Buy -->
         <div id="subTabBuy" class="sub-accounting-section" style="display:none;">

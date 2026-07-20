@@ -252,7 +252,6 @@ function switchSubAccountingTab(subTabId) {
   document.getElementById(targetActiveButton).style.background = 'var(--accent)';
 }
 
-// **ADMIN SE ACCOUNT DELETE KARNE KA LOGIC MAPPED**
 function deleteUserAccount(idx) {
   if (confirm(`Kya aap sach me ${usersDatabase[idx].name} ka account delete karna chahte hain?`)) {
     usersDatabase.splice(idx, 1);
@@ -302,7 +301,6 @@ function populateAdminDashboardTables() {
     </tr>
   `).join("");
 
-  // **DELETE BUTTON MAPPED FOR ADMIN LEDGER HUB**
   document.getElementById("adminUsersTableBody").innerHTML = usersDatabase.map((u, idx) => `
     <tr>
       <td>${idx + 1}</td>
@@ -349,6 +347,8 @@ function approveTrainingBooking(idx) {
     product: `Training Entry: ${target.type} Program`, 
     collector: "Farm", 
     buyer: target.name, 
+    phone: target.phone || "N/A",
+    address: "Pure Grow Farm Campus Training Workshop",
     qty: 1, 
     rate: target.fee, 
     total: target.fee, 
@@ -404,7 +404,15 @@ function computeFinancialLedgerStatements() {
   `).join("");
 
   document.getElementById("subSellTableBody").innerHTML = salesRegistry.map(s => `
-    <tr><td>${s.date}</td><td>${s.product}</td><td>${s.buyer}</td><td>${s.qty}</td><td style="color:var(--accent); font-weight:bold;">Rs ${s.total}</td><td><button type="button" class="btn" style="padding:2px 6px; min-height:auto; font-size:11px;" onclick="downloadOfflineSaleInvoice('${s.saleId}')">Receipt</button></td></tr>
+    <tr>
+      <td>${s.date}</td>
+      <td>${s.product}</td>
+      <td>${s.buyer}</td>
+      <td>${s.phone || 'N/A'}</td>
+      <td>${s.qty}</td>
+      <td style="color:var(--accent); font-weight:bold;">Rs ${s.total}</td>
+      <td><button type="button" class="btn" style="padding:2px 6px; min-height:auto; font-size:11px;" onclick="downloadOfflineSaleInvoice('${s.saleId}')">Receipt</button></td>
+    </tr>
   `).join("");
 
   document.getElementById("subBuyTableBody").innerHTML = purchasesRegistry.map(p => `
@@ -449,6 +457,8 @@ function saveAdminSale(e) {
     product: pVariant,
     collector: document.getElementById("saleCollector").value,
     buyer: document.getElementById("saleBuyer").value.trim(),
+    phone: document.getElementById("salePhone").value.trim(),
+    address: document.getElementById("saleAddress").value.trim(),
     qty: qty,
     rate: rate,
     total: qty * rate
@@ -504,7 +514,7 @@ function saveAdminDamage(e) {
   computeFinancialLedgerStatements();
 }
 
-// **INVOICE FROM ADMIN PREVIEW POPUP CHANNEL FLOW LINK**
+// **DYNAMIC INVOICE DOCK POPUP LOGIC WITH PROPER DETAILS**
 function downloadOfflineSaleInvoice(saleId) {
   const targetSale = salesRegistry.find(s => s.saleId === saleId);
   if(!targetSale) return alert("Invoice not found.");
@@ -512,12 +522,13 @@ function downloadOfflineSaleInvoice(saleId) {
   document.getElementById("invNum").textContent = targetSale.saleId;
   document.getElementById("invDate").textContent = targetSale.date;
   document.getElementById("invClientName").textContent = targetSale.buyer;
-  document.getElementById("invClientEmail").textContent = "Logged via Offline Core ERP Platform Channel";
-  document.getElementById("invClientAddr").textContent = "Direct On-Farm Spot Order Distribution Entry";
+  document.getElementById("invClientEmail").textContent = "Phone Lines: " + (targetSale.phone || "N/A");
+  document.getElementById("invClientAddr").textContent = "Shipping Address: " + (targetSale.address || "Direct Spot Distribution Counter");
   
+  // COLOR HIGHLIGHT CONTRAST FIX: Added solid high contrast white text over the accent layout background
   document.getElementById("invoiceTableItemsBody").innerHTML = `
     <tr>
-      <td style="padding:12px 14px; border-bottom:1px solid #e6e9ec; font-weight: 600;">${targetSale.product} Lot Variant</td>
+      <td style="padding:12px 14px; border-bottom:1px solid #e6e9ec; font-weight: 600;">${targetSale.product} Lot Log Entry</td>
       <td style="padding:12px 14px; border-bottom:1px solid #e6e9ec; text-align:right;">Rs ${targetSale.rate.toFixed(2)}</td>
       <td style="padding:12px 14px; border-bottom:1px solid #e6e9ec; text-align:center;">${targetSale.qty}</td>
       <td style="padding:12px 14px; border-bottom:1px solid #e6e9ec; text-align:right; font-weight:600; color:var(--accent);">Rs ${targetSale.total.toFixed(2)}</td>
@@ -530,7 +541,6 @@ function downloadOfflineSaleInvoice(saleId) {
   document.getElementById("invoiceDialog").showModal();
 }
 
-// **PRODUCT CATALOG VIEW INDICATOR**
 function renderProducts(list = products) {
   document.getElementById("productsList").innerHTML = list.map(product => `
     <article class="product">
@@ -654,8 +664,8 @@ function confirmOrder(e) {
   document.getElementById("invNum").textContent = data.orderId;
   document.getElementById("invDate").textContent = new Date().toLocaleDateString();
   document.getElementById("invClientName").textContent = data.name;
-  document.getElementById("invClientEmail").textContent = data.email + " | Ph: " + data.phone;
-  document.getElementById("invClientAddr").textContent = data.address;
+  document.getElementById("invClientEmail").textContent = "Email: " + data.email + " | Ph: " + data.phone;
+  document.getElementById("invClientAddr").textContent = "Address: " + data.address;
   
   document.getElementById("invoiceTableItemsBody").innerHTML = [...cart.values()].map(item => `
     <tr>
@@ -806,7 +816,6 @@ if (document.getElementById("productSearch")) {
   });
 }
 
-// **CERTIFICATE DOWNLOAD AND SIGNATURE DISPLAY ENGINE FIXED**
 function downloadCertificatePDF(bookingId) {
   const targetBooking = bookingsRegistry.find(b => b.bookingId === bookingId);
   if (!targetBooking) return alert("Certificate not found.");
@@ -860,19 +869,15 @@ function downloadCertificatePDF(bookingId) {
                 <p style="margin: 3px 0 0 0; font-size: 13px; color:#6b7280;">Makhiyala, Gujarat, 362011 | puregrowfarm001@gmail.com</p>
               </div>
             </div>
-            
             <hr style="border:0; border-top: 2px solid #2b8a3e; margin: 15px 0;">
-            
             <div class="cert-title">${titleText}</div>
             <p style="font-style: italic; margin: 5px 0; color: #555; font-size: 15px;">This is to certify that</p>
             <div class="cert-name">${targetBooking.name.toUpperCase()}</div>
             <p style="font-style: italic; margin: 5px 0; color: #555; font-size: 15px;">${descText}</p>
-            
             <p class="cert-desc">
               The program execution guidelines were conducted ${durationContent}. 
               During this framework index period, the candidate gained foundational knowledge in mushroom biology, substrate preparation, and crop management, demonstrating an excellent work ethic.
             </p>
-            
             <div class="cert-footer">
               <div style="text-align: left; font-size: 14px; width: 30%;">
                 <strong>Approved Date:</strong><br>
@@ -902,31 +907,44 @@ function downloadCertificatePDF(bookingId) {
   }, 500);
 }
 
-// **INVOICE DOCK PRINT SYSTEM ENGINE FOR DIRECT SAVE AS PDF**
+// **INVOICE CLEAN ENGINE SYSTEM LOG DIRECT OUTPUT AS PDF**
 function printDivInvoice() {
   const printContents = document.getElementById('invoiceCaptureFrame').innerHTML;
-  const originalContents = document.body.innerHTML;
   
-  document.body.innerHTML = `
+  const iframe = document.createElement('iframe');
+  iframe.style.position = 'fixed';
+  iframe.style.right = '0';
+  iframe.style.bottom = '0';
+  iframe.style.width = '0';
+  iframe.style.height = '0';
+  iframe.style.border = '0';
+  document.body.appendChild(iframe);
+
+  const priDoc = iframe.contentWindow.document;
+  priDoc.open();
+  priDoc.write(`
     <html>
       <head>
         <title>Pure Grow Farm - Invoice Printout</title>
         <style>
           body { font-family: sans-serif; padding: 20px; background: #fff; }
-          table { width: 100%; border-collapse: collapse; margin-bottom: 25px; }
-          th, td { border: 1px solid #e6e9ec; padding: 10px; text-align: left; }
-          th { background: #2b8a3e !important; color: white !important; -webkit-print-color-adjust: exact; }
+          table { width: 100%; border-collapse: collapse; margin-bottom: 25px; font-size: 14px; }
+          th, td { border: 1px solid #e6e9ec; padding: 12px 14px; text-align: left; }
+          th { background: #2b8a3e !important; color: white !important; -webkit-print-color-adjust: exact; font-weight: bold; }
         </style>
       </head>
       <body>
         ${printContents}
       </body>
     </html>
-  `;
+  `);
+  priDoc.close();
   
-  window.print();
-  document.body.innerHTML = originalContents;
-  window.location.reload();
+  setTimeout(() => {
+    iframe.contentWindow.focus();
+    iframe.contentWindow.print();
+    setTimeout(() => { document.body.removeChild(iframe); }, 1000);
+  }, 500);
 }
 
 renderProducts();

@@ -501,70 +501,80 @@
   </div>
 </div>
     <!-- Professional Dynamic Column Invoice Modal -->
-    <dialog id="invoiceDialog">
-      <div class="dialog-head">
-        <h2>Pure Grow Farm - INVOICE</h2>
-        <button type="button" onclick="closeInvoice()" style="background:var(--danger); border:0; color:#fff; border-radius:4px; padding:4px 10px; cursor:pointer;">Dismiss</button>
+<dialog id="invoiceDialog" style="border: none; border-radius: 16px; box-shadow: 0 10px 40px rgba(0,0,0,0.2); padding: 0; width: min(800px, calc(100% - 30px));">
+  <div class="dialog-head" style="background: var(--accent); color: white; padding: 15px 24px; display: flex; justify-content: space-between; align-items: center;">
+    <h3 style="margin: 0; font-size: 18px; font-weight: 700;">📄 Farm Generated System Invoice</h3>
+    <button type="button" onclick="closeInvoice()" style="background: rgba(255,255,255,0.2); border: 0; color: #fff; border-radius: 8px; padding: 6px 14px; font-weight: bold; cursor: pointer; transition: 0.2s;">Close (X)</button>
+  </div>
+  
+  <div id="invoiceCaptureFrame" class="invoice-box-layout" style="padding: 30px; background: #fff; font-family: sans-serif; color: #222;">
+    <!-- Invoice Header -->
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 30px; border-bottom: 3px solid #f0f3f1; padding-bottom: 20px;">
+      <div>
+        <h1 style="color: var(--accent); margin: 0; font-size: 36px; font-weight: 900; letter-spacing: -0.5px;">INVOICE</h1>
+        <p style="margin: 6px 0; color: var(--muted); font-size: 14px;">Invoice No: <span id="invNum" style="font-weight: bold; color: #111;"></span></p>
+        <p style="margin: 4px 0; color: var(--muted); font-size: 14px;">Date: <span id="invDate" style="color: #111; font-weight: 500;"></span></p>
       </div>
-      
-      <div class="invoice-box-layout" style="border:1px solid var(--line); padding:20px; border-radius:10px; background:#fff; font-family:sans-serif;">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-          <div>
-            <h1 style="color:var(--accent); margin:0;">INVOICE</h1>
-            <p class="muted" style="margin:4px 0;">Invoice No: <span id="invNum" style="font-weight:bold;"></span></p>
-            <p class="muted" style="margin:4px 0;">Date: <span id="invDate"></span></p>
-          </div>
-          <div style="text-align:right;">
-            <img src="mushroom/pgf logo.png" alt="Logo" style="width:60px; height:auto;"><br>
-            <strong>Pure Grow Farm</strong>
-          </div>
-        </div>
-        
-        <div style="margin-bottom:20px; border-bottom:1px solid var(--line); padding-bottom:10px;">
-          <strong>Invoice to:</strong>
-          <div id="invClientName" style="font-size:16px; font-weight:bold; margin-top:4px;"></div>
-          <div id="invClientEmail" class="muted"></div>
-          <div id="invClientAddr" class="muted" style="font-size:13px;"></div>
-        </div>
-        
-        <table style="width:100%; border-collapse:collapse; margin-bottom:20px;">
-          <thead>
-            <tr style="background:var(--soft); color:var(--dark);">
-              <th style="padding:10px; text-align:left; border:1px solid var(--line);">SERVICE / PRODUCT</th>
-              <th style="padding:10px; text-align:right; border:1px solid var(--line);">PRICE</th>
-              <th style="padding:10px; text-align:center; border:1px solid var(--line);">QTY</th>
-              <th style="padding:10px; text-align:right; border:1px solid var(--line);">TOTAL</th>
-            </tr>
-          </thead>
-          <tbody id="invoiceTableItemsBody"></tbody>
-        </table>
-        
-        <div style="display:flex; justify-content:space-between; flex-wrap:wrap; gap:15px;">
-          <div style="flex:1; min-width:240px; font-size:13px; line-height:1.6;">
-            <strong>Payment Method:</strong> UPI / Online Transfer<br>
-            <strong>Bank Name:</strong> HDFC Bank<br>
-            <strong>Account No:</strong> sohamgajera01@okhdfcbank (UPI)<br>
-            <p style="font-style:italic; color:var(--accent); font-weight:bold; margin-top:10px;">Thank you for your purchase!</p>
-          </div>
-          <div style="width:220px; text-align:right; font-size:14px;">
-            <div style="padding:4px 0;">Sub-total: <span id="invSub" style="font-weight:bold;">Rs 0</span></div>
-            <div style="padding:4px 0;">Tax (0%): <span style="font-weight:bold;">Rs 0.00</span></div>
-            <hr style="border:0; border-top:1px solid var(--line);">
-            <div style="padding:6px 0; font-size:18px; color:var(--accent); font-weight:bold;">Total: <span id="invTotal">Rs 0</span></div>
-          </div>
-        </div>
-        
-        <div style="margin-top:20px; padding-top:15px; border-top:1px solid var(--line); font-size:11px; text-align:center; color:var(--muted);">
-          <strong>Contact Us:</strong> 9067891039 & 8200145732 | puregrowfarm001@gmail.com<br>
-          Makhiyala, Junagadh, Gujarat, 362011.
-        </div>
+      <div style="text-align: right;">
+        <img src="mushroom/pgf logo.png" alt="Pure Grow Farm Logo" style="width: 75px; height: auto; margin-bottom: 6px; border-radius: 8px;"><br>
+        <strong style="font-size: 18px; color: var(--accent);">Pure Grow Farm</strong><br>
+        <span style="font-size: 12px; color: var(--muted);">Oyster Mushroom Cultivation Experts</span>
       </div>
-      
-      <div class="dialog-actions" style="margin-top:15px; display:flex; gap:10px;">
-        <button type="button" class="btn" onclick="window.print()">Print Invoice Slip</button>
-        <a class="btn" id="whatsappInvoice" target="_blank" rel="noreferrer" style="background:#25d366;">Send WhatsApp Verification</a>
+    </div>
+    
+    <!-- Invoice Destination Details -->
+    <div style="margin-bottom: 25px; background: #f8faf8; border-left: 4px solid var(--accent); padding: 14px 18px; border-radius: 0 8px 8px 0;">
+      <strong style="font-size: 13px; text-transform: uppercase; color: var(--accent); letter-spacing: 0.5px;">Invoice To:</strong>
+      <div id="invClientName" style="font-size: 18px; font-weight: bold; margin-top: 6px; color: #111;"></div>
+      <div id="invClientEmail" style="color: #4b5563; font-size: 14px; margin-top: 2px;"></div>
+      <div id="invClientAddr" style="font-size: 13px; color: #6b7280; margin-top: 4px; line-height: 1.4;"></div>
+    </div>
+    
+    <!-- Invoice Main Items Table -->
+    <table style="width: 100%; border-collapse: collapse; margin-bottom: 25px; font-size: 14px;">
+      <thead>
+        <tr style="background: var(--accent); color: white;">
+          <th style="padding: 12px 14px; text-align: left; font-weight: 600; border-radius: 6px 0 0 6px;">SERVICE / PRODUCT</th>
+          <th style="padding: 12px 14px; text-align: right; font-weight: 600;">PRICE</th>
+          <th style="padding: 12px 14px; text-align: center; font-weight: 600;">QTY</th>
+          <th style="padding: 12px 14px; text-align: right; font-weight: 600; border-radius: 0 6px 6px 0;">TOTAL</th>
+        </tr>
+      </thead>
+      <tbody id="invoiceTableItemsBody" style="background: #ffffff;">
+        <!-- Items dynamic insert row framework -->
+      </tbody>
+    </table>
+    
+    <!-- Payment & Grand Total Matrix Blocks -->
+    <div style="display: flex; justify-content: space-between; flex-wrap: wrap; gap: 20px; align-items: flex-start; border-top: 2px solid #f0f3f1; padding-top: 20px;">
+      <div style="flex: 1; min-width: 260px; font-size: 13px; line-height: 1.6; color: #4b5563;">
+        <strong style="color: #111; font-size: 14px; display: block; margin-bottom: 4px;">Payment Parameters:</strong>
+        <strong>Payment Method:</strong> UPI / Online Mobile Gateway App<br>
+        <strong>Bank Partner Name:</strong> HDFC Bank India Limited<br>
+        <strong>Account UPI Identifier:</strong> <code style="background: #f3f4f6; padding: 2px 6px; border-radius: 4px; color: var(--accent); font-weight: bold;">sohamgajera01@okhdfcbank</code>
+        <p style="font-style: italic; color: var(--accent); font-weight: 700; margin-top: 12px; font-size: 14px;">Thank you for your business purchase order!</p>
       </div>
-    </dialog>
+      <div style="width: 250px; background: #f8faf8; padding: 16px; border-radius: 12px; border: 1px solid var(--line);">
+        <div style="display: flex; justify-content: space-between; padding: 4px 0; font-size: 14px; color: #4b5563;"><span>Sub-total:</span><span id="invSub" style="font-weight: bold; color: #111;">Rs 0</span></div>
+        <div style="display: flex; justify-content: space-between; padding: 4px 0; font-size: 14px; color: #4b5563;"><span>Tax Rate (0%):</span><span style="font-weight: bold; color: #111;">Rs 0.00</span></div>
+        <hr style="border: 0; border-top: 1px solid var(--line); margin: 8px 0;">
+        <div style="display: flex; justify-content: space-between; padding: 4px 0; font-size: 18px; color: var(--accent); font-weight: bold;"><span>Total:</span><span id="invTotal">Rs 0</span></div>
+      </div>
+    </div>
+    
+    <!-- Professional Core Footer Section -->
+    <div style="margin-top: 35px; padding-top: 20px; border-top: 1px dashed var(--line); font-size: 12px; text-align: center; color: var(--muted); line-height: 1.6;">
+      <strong style="color: #334155;">Pure Grow Farm Production Hub Contact Info:</strong><br>
+      📞 9067891039 (Soham Gajera) & 8200145732 (Jeet Gajera) | ✉️ puregrowfarm001@gmail.com<br>
+      📍 Address Yard: Village Makhiyala, City Junagadh, State Gujarat, Pincode 362011.
+    </div>
+  </div>
+  
+  <div class="dialog-actions" style="background: #f8faf8; padding: 16px 24px; display: flex; gap: 12px; border-top: 1px solid #e5e7eb; justify-content: flex-end;">
+    <button type="button" class="btn" style="background: #4b5563;" onclick="printDivInvoice()">Print / Save PDF</button>
+    <a class="btn" id="whatsappInvoice" target="_blank" rel="noreferrer" style="background: #25d366;">Send WhatsApp Summary</a>
+  </div>
+</dialog>
 
     <footer>
       <div>Pure Grow Farm - Oyster Mushrooms Enterprise © 2026</div>

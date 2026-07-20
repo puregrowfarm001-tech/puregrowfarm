@@ -252,7 +252,7 @@ function switchSubAccountingTab(subTabId) {
   document.getElementById(targetActiveButton).style.background = 'var(--accent)';
 }
 
-// **ADMIN SE ACCOUNT DELETE KARNE KA LOGIC**
+// **ADMIN SE ACCOUNT DELETE KARNE KA LOGIC MAPPED**
 function deleteUserAccount(idx) {
   if (confirm(`Kya aap sach me ${usersDatabase[idx].name} ka account delete karna chahte hain?`)) {
     usersDatabase.splice(idx, 1);
@@ -302,7 +302,7 @@ function populateAdminDashboardTables() {
     </tr>
   `).join("");
 
-  // **DELETE BUTTON INCLUDED FOR ADMIN LEDGER**
+  // **DELETE BUTTON MAPPED FOR ADMIN LEDGER HUB**
   document.getElementById("adminUsersTableBody").innerHTML = usersDatabase.map((u, idx) => `
     <tr>
       <td>${idx + 1}</td>
@@ -504,19 +504,33 @@ function saveAdminDamage(e) {
   computeFinancialLedgerStatements();
 }
 
-// **INVOICE RECEIPT DOWNLOAD FLOW FIXED**
+// **INVOICE FROM ADMIN PREVIEW POPUP CHANNEL FLOW LINK**
 function downloadOfflineSaleInvoice(saleId) {
   const targetSale = salesRegistry.find(s => s.saleId === saleId);
   if(!targetSale) return alert("Invoice not found.");
-  const slipText = `========================================\n       PURE GROW MUSHROOM FARM          \n========================================\nSale Receipt ID: ${targetSale.saleId}\nDate Mapped: ${targetSale.date}\nClient Purchaser: ${targetSale.buyer}\nProduct Item: ${targetSale.product}\nQuantity Dispatched: ${targetSale.qty}\nGrand Total Value: Rs ${targetSale.total}\n========================================\nThank you for business flow log entry!`;
-  const blob = new Blob([slipText], { type: "text/plain" });
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = `Invoice-${saleId}.txt`;
-  a.click();
+  
+  document.getElementById("invNum").textContent = targetSale.saleId;
+  document.getElementById("invDate").textContent = targetSale.date;
+  document.getElementById("invClientName").textContent = targetSale.buyer;
+  document.getElementById("invClientEmail").textContent = "Logged via Offline Core ERP Platform Channel";
+  document.getElementById("invClientAddr").textContent = "Direct On-Farm Spot Order Distribution Entry";
+  
+  document.getElementById("invoiceTableItemsBody").innerHTML = `
+    <tr>
+      <td style="padding:12px 14px; border-bottom:1px solid #e6e9ec; font-weight: 600;">${targetSale.product} Lot Variant</td>
+      <td style="padding:12px 14px; border-bottom:1px solid #e6e9ec; text-align:right;">Rs ${targetSale.rate.toFixed(2)}</td>
+      <td style="padding:12px 14px; border-bottom:1px solid #e6e9ec; text-align:center;">${targetSale.qty}</td>
+      <td style="padding:12px 14px; border-bottom:1px solid #e6e9ec; text-align:right; font-weight:600; color:var(--accent);">Rs ${targetSale.total.toFixed(2)}</td>
+    </tr>
+  `;
+  
+  document.getElementById("invSub").textContent = "Rs " + targetSale.total.toFixed(2);
+  document.getElementById("invTotal").textContent = "Rs " + targetSale.total.toFixed(2);
+  
+  document.getElementById("invoiceDialog").showModal();
 }
 
-// **PRODUCT AVAILABILITY DISPLAY ADDED**
+// **PRODUCT CATALOG VIEW INDICATOR**
 function renderProducts(list = products) {
   document.getElementById("productsList").innerHTML = list.map(product => `
     <article class="product">
@@ -645,10 +659,10 @@ function confirmOrder(e) {
   
   document.getElementById("invoiceTableItemsBody").innerHTML = [...cart.values()].map(item => `
     <tr>
-      <td style="padding:10px; border:1px solid var(--line);">${item.name} (${item.unit})</td>
-      <td style="padding:10px; text-align:right; border:1px solid var(--line);">Rs ${item.price}</td>
-      <td style="padding:10px; text-align:center; border:1px solid var(--line);">${item.qty}</td>
-      <td style="padding:10px; text-align:right; border:1px solid var(--line);">Rs ${item.price * item.qty}</td>
+      <td style="padding:12px 14px; border-bottom:1px solid #e6e9ec; font-weight: 600;">${item.name} (${item.unit})</td>
+      <td style="padding:12px 14px; border-bottom:1px solid #e6e9ec; text-align:right;">Rs ${item.price}</td>
+      <td style="padding:12px 14px; border-bottom:1px solid #e6e9ec; text-align:center;">${item.qty}</td>
+      <td style="padding:12px 14px; border-bottom:1px solid #e6e9ec; text-align:right; font-weight:600; color:var(--accent);">Rs ${item.price * item.qty}</td>
     </tr>
   `).join("");
   
@@ -792,7 +806,7 @@ if (document.getElementById("productSearch")) {
   });
 }
 
-// **CERTIFICATE PDF PRINT ENGINE DISPATCH FIX**
+// **CERTIFICATE DOWNLOAD AND SIGNATURE DISPLAY ENGINE FIXED**
 function downloadCertificatePDF(bookingId) {
   const targetBooking = bookingsRegistry.find(b => b.bookingId === bookingId);
   if (!targetBooking) return alert("Certificate not found.");
@@ -846,15 +860,19 @@ function downloadCertificatePDF(bookingId) {
                 <p style="margin: 3px 0 0 0; font-size: 13px; color:#6b7280;">Makhiyala, Gujarat, 362011 | puregrowfarm001@gmail.com</p>
               </div>
             </div>
+            
             <hr style="border:0; border-top: 2px solid #2b8a3e; margin: 15px 0;">
+            
             <div class="cert-title">${titleText}</div>
             <p style="font-style: italic; margin: 5px 0; color: #555; font-size: 15px;">This is to certify that</p>
             <div class="cert-name">${targetBooking.name.toUpperCase()}</div>
             <p style="font-style: italic; margin: 5px 0; color: #555; font-size: 15px;">${descText}</p>
+            
             <p class="cert-desc">
               The program execution guidelines were conducted ${durationContent}. 
               During this framework index period, the candidate gained foundational knowledge in mushroom biology, substrate preparation, and crop management, demonstrating an excellent work ethic.
             </p>
+            
             <div class="cert-footer">
               <div style="text-align: left; font-size: 14px; width: 30%;">
                 <strong>Approved Date:</strong><br>
@@ -865,6 +883,7 @@ function downloadCertificatePDF(bookingId) {
                 <div style="font-size: 10px; font-weight: 800; color: #1e4620; margin-top: 5px; letter-spacing: 0.5px;">PURE GROW FARM</div>
               </div>
               <div style="text-align: right; width: 35%;">
+                <img src="mushroom/soham sign.png" alt="Soham Gajera Signature" style="width: 130px; height: auto; display: block; margin: 0 0 2px auto; mix-blend-mode: multiply;">
                 <div style="border-top: 1px solid #333; padding-top: 4px; font-size: 13px; font-weight: bold; text-align: center; color: #1e4620;">Soham Gajera</div>
                 <div style="font-size: 11px; color: #6b7280; text-align: center;">Authorized Signatory</div>
               </div>
@@ -881,6 +900,33 @@ function downloadCertificatePDF(bookingId) {
     iframe.contentWindow.print();
     setTimeout(() => { document.body.removeChild(iframe); }, 1000);
   }, 500);
+}
+
+// **INVOICE DOCK PRINT SYSTEM ENGINE FOR DIRECT SAVE AS PDF**
+function printDivInvoice() {
+  const printContents = document.getElementById('invoiceCaptureFrame').innerHTML;
+  const originalContents = document.body.innerHTML;
+  
+  document.body.innerHTML = `
+    <html>
+      <head>
+        <title>Pure Grow Farm - Invoice Printout</title>
+        <style>
+          body { font-family: sans-serif; padding: 20px; background: #fff; }
+          table { width: 100%; border-collapse: collapse; margin-bottom: 25px; }
+          th, td { border: 1px solid #e6e9ec; padding: 10px; text-align: left; }
+          th { background: #2b8a3e !important; color: white !important; -webkit-print-color-adjust: exact; }
+        </style>
+      </head>
+      <body>
+        ${printContents}
+      </body>
+    </html>
+  `;
+  
+  window.print();
+  document.body.innerHTML = originalContents;
+  window.location.reload();
 }
 
 renderProducts();

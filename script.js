@@ -891,17 +891,17 @@ function downloadCertificatePDF(bookingId) {
                 <img src="mushroom/pgf logo.png" alt="Pure Grow Farm Logo" style="width: 90px; height: auto; object-fit: contain;">
                 <div style="font-size: 10px; font-weight: 800; color: #1e4620; margin-top: 5px; letter-spacing: 0.5px;">PURE GROW FARM</div>
               </div>
-<div style="text-align: center; width: 35%; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; padding-right: 20px; box-sizing: border-box;">
-  <!-- Signature Stamp Image -->
-  <img src="mushroom/soham sign.png" alt="Soham Gajera Signature" style="width: 130px; height: auto; display: block; margin: 0 auto -15px auto; mix-blend-mode: multiply; z-index: 5;">
+              <div style="text-align: center; width: 35%; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; padding-right: 20px; box-sizing: border-box;">
+                <!-- Signature Stamp Image -->
+                <img src="mushroom/soham sign.png" alt="Soham Gajera Signature" style="width: 130px; height: auto; display: block; margin: 0 auto -15px auto; mix-blend-mode: multiply; z-index: 5;">
   
-  <!-- Solid Line Underneath Signature Stamp -->
-  <div style="border-top: 1px solid #333; width: 160px; margin: 0 auto 6px auto;"></div>
+                <!-- Solid Line Underneath Signature Stamp -->
+                <div style="border-top: 1px solid #333; width: 160px; margin: 0 auto 6px auto;"></div>
   
-  <!-- Text Fields Mapped Under the Line -->
-  <div style="font-size: 14px; font-weight: bold; color: #1e4620; line-height: 1.2;">Soham Gajera</div>
-  <div style="font-size: 11px; color: #6b7280; margin-top: 2px;">Authorized Signatory</div>
-</div>
+                <!-- Text Fields Mapped Under the Line -->
+                <div style="font-size: 14px; font-weight: bold; color: #1e4620; line-height: 1.2;">Soham Gajera</div>
+                <div style="font-size: 11px; color: #6b7280; margin-top: 2px;">Authorized Signatory</div>
+              </div>
               </div>
             </div>
           </div>

@@ -1,7 +1,7 @@
 // =========================================================
 // CONFIGURATION & GLOBAL CONSTANTS
 // =========================================================
-// ⚠️ Yahan apna Google Apps Script Web App Deployment URL dalein:
+// ⚠️ Apne Google Apps Script Deploy ka Web App URL yahan rakhein:
 const SHEET_URL = "https://script.google.com/macros/s/AKfycbys57lPqLYcl8eiQFaRlruVHTeowRhwmCHSIf-a4eu-xw27z6iu5F7L_9A4c9iuhRRa/exec";
 
 const farmEmail = "puregrowfarm001@gmail.com";
@@ -38,7 +38,7 @@ let latestVisitInvoice = "";
 // GOOGLE SHEET REAL-TIME SYNC & CALCULATION ENGINE
 // =========================================================
 
-// 1. Google Sheet se Live Data aur Totals Fetch karne ka function
+// 1. Google Sheet se Live Data aur Totals Fetch karne ka function (Multi-Device Sync)
 async function fetchAdminSummaryFromSheet() {
   try {
     const response = await fetch(SHEET_URL + "?action=getErpSummary");
@@ -50,14 +50,16 @@ async function fetchAdminSummaryFromSheet() {
     if (data.totals) {
       if(document.getElementById("finTotalRevenue")) document.getElementById("finTotalRevenue").textContent = "Rs " + Number(data.totals.totalSales || 0).toFixed(2);
       if(document.getElementById("finTotalExpenses")) document.getElementById("finTotalExpenses").textContent = "Rs " + Number(data.totals.totalExpenses || 0).toFixed(2);
+      if(document.getElementById("finTotalPurchases")) document.getElementById("finTotalPurchases").textContent = "Rs " + Number(data.totals.totalPurchases || 0).toFixed(2);
       if(document.getElementById("finNetProfit")) document.getElementById("finNetProfit").textContent = "Rs " + Number(data.totals.netProfit || 0).toFixed(2);
     }
 
-    // Google Sheet Data Sync to Local Memory
+    // Google Sheet Data Sync to Local Memory (Multi-Device view setup)
     if (data.orders && data.orders.length) { orderRegistry = data.orders; localStorage.setItem('pgf_orders', JSON.stringify(orderRegistry)); }
     if (data.users && data.users.length) { usersDatabase = data.users; localStorage.setItem('pgf_user_db', JSON.stringify(usersDatabase)); }
     if (data.sales && data.sales.length) { salesRegistry = data.sales; localStorage.setItem('pgf_sales', JSON.stringify(salesRegistry)); }
     if (data.expenses && data.expenses.length) { expensesRegistry = data.expenses; localStorage.setItem('pgf_expenses', JSON.stringify(expensesRegistry)); }
+    if (data.purchases && data.purchases.length) { purchasesRegistry = data.purchases; localStorage.setItem('pgf_purchases', JSON.stringify(purchasesRegistry)); }
     if (data.bookings && data.bookings.length) { bookingsRegistry = data.bookings; localStorage.setItem('pgf_bookings', JSON.stringify(bookingsRegistry)); }
 
     populateAdminDashboardTables();
@@ -613,6 +615,10 @@ function saveAdminPurchase(e) {
 
   purchasesRegistry.push(data);
   localStorage.setItem('pgf_purchases', JSON.stringify(purchasesRegistry));
+
+  // Google Sheet Sync (Purchase Handling)
+  sendDataToGoogleSheet({ type: "purchase", ...data });
+
   e.target.reset();
   initDefaultDatePickers();
   computeFinancialLedgerStatements();
@@ -901,7 +907,7 @@ function submitStudentVisit(e) {
   bookingsRegistry.unshift(data);
   localStorage.setItem('pgf_bookings', JSON.stringify(bookingsRegistry));
 
-  // Google Sheet Syncing
+  // Google Sheet Syncing (Visit Handling)
   sendDataToGoogleSheet({ type: "visit", ...data });
 
   const waText = `NEW STUDENT INTERNSHIP REGISTRATION:\n----------------------------------------\nBooking Ref ID: ${data.bookingId}\nName: ${data.name}\nUTR Tracking Number: ${data.txnId}\n----------------------------------------`;
@@ -930,7 +936,7 @@ function submitFarmerVisit(e) {
   bookingsRegistry.unshift(data);
   localStorage.setItem('pgf_bookings', JSON.stringify(bookingsRegistry));
 
-  // Google Sheet Syncing
+  // Google Sheet Syncing (Visit Handling)
   sendDataToGoogleSheet({ type: "visit", ...data });
 
   const waText = `NEW FARMER TRAINING BOOKING:\n----------------------------------------\nBooking Ref ID: ${data.bookingId}\nName: ${data.name}\nUTR Tracking Number: ${data.txnId}\n----------------------------------------`;

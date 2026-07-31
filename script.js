@@ -1,9 +1,14 @@
+// =========================================================
+// CONFIGURATION & GLOBAL CONSTANTS
+// =========================================================
+// ⚠️ Yahan apna Google Apps Script Web App Deployment URL dalein:
+const SHEET_URL = "https://script.google.com/macros/s/AKfycbys57lPqLYcl8eiQFaRlruVHTeowRhwmCHSIf-a4eu-xw27z6iu5F7L_9A4c9iuhRRa/exec";
+
 const farmEmail = "puregrowfarm001@gmail.com";
 const farmWhatsapp = "919067891039";
 const farmUpiId = "sohamgajera01@okhdfcbank";
 const farmName = "Pure Grow Farm";
 
-const SHEET_URL = "https://script.google.com/macros/s/AKfycbyg8zhosR2maS7Sgz8j0Kr58JXCEWgqfXvTFgMEO_XP7cAjyw3vlHTsNZr5GJbDq1vs/exec";
 const ADMIN_CREDENTIALS = { user: "admin", pass: "PureGrow@2026" };
 
 const products = [
@@ -29,6 +34,95 @@ let currentUser = JSON.parse(localStorage.getItem('pgf_session')) || null;
 let latestInvoice = "";
 let latestVisitInvoice = "";
 
+// =========================================================
+// GOOGLE SHEET REAL-TIME SYNC & CALCULATION ENGINE
+// =========================================================
+
+// 1. Google Sheet se Live Data aur Totals Fetch karne ka function
+async function fetchAdminSummaryFromSheet() {
+  try {
+    const response = await fetch(SHEET_URL + "?action=getErpSummary");
+    if (!response.ok) return;
+    
+    const data = await response.json();
+    
+    // Admin Panel Financial Cards Update
+    if (data.totals) {
+      if(document.getElementById("finTotalRevenue")) document.getElementById("finTotalRevenue").textContent = "Rs " + Number(data.totals.totalSales || 0).toFixed(2);
+      if(document.getElementById("finTotalExpenses")) document.getElementById("finTotalExpenses").textContent = "Rs " + Number(data.totals.totalExpenses || 0).toFixed(2);
+      if(document.getElementById("finNetProfit")) document.getElementById("finNetProfit").textContent = "Rs " + Number(data.totals.netProfit || 0).toFixed(2);
+    }
+
+    // Google Sheet Data Sync to Local Memory
+    if (data.orders && data.orders.length) { orderRegistry = data.orders; localStorage.setItem('pgf_orders', JSON.stringify(orderRegistry)); }
+    if (data.users && data.users.length) { usersDatabase = data.users; localStorage.setItem('pgf_user_db', JSON.stringify(usersDatabase)); }
+    if (data.sales && data.sales.length) { salesRegistry = data.sales; localStorage.setItem('pgf_sales', JSON.stringify(salesRegistry)); }
+    if (data.expenses && data.expenses.length) { expensesRegistry = data.expenses; localStorage.setItem('pgf_expenses', JSON.stringify(expensesRegistry)); }
+    if (data.bookings && data.bookings.length) { bookingsRegistry = data.bookings; localStorage.setItem('pgf_bookings', JSON.stringify(bookingsRegistry)); }
+
+    populateAdminDashboardTables();
+  } catch (error) {
+    console.warn("Google Sheet Sync Warning: Using local storage calculations.", error);
+    computeFinancialLedgerStatements();
+  }
+}
+
+// 2. Direct Google Sheet me Data Save karne ka function
+async function sendDataToGoogleSheet(payload) {
+  try {
+    await fetch(SHEET_URL, {
+      method: "POST",
+      mode: "no-cors",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+    setTimeout(fetchAdminSummaryFromSheet, 1500);
+  } catch (err) {
+    console.error("Data save failed to Google Sheet:", err);
+  }
+}
+
+// =========================================================
+// EXCEL FILE EXPORT FUNCTIONS (ADMIN PANEL)
+// =========================================================
+function downloadCSV(csvContent, fileName) {
+  const blob = new Blob(["\ufeff" + csvContent], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement("a");
+  const url = URL.createObjectURL(blob);
+  link.setAttribute("href", url);
+  link.setAttribute("download", fileName);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
+
+function exportOrdersToExcel() {
+  let csv = "Order ID,Client Name,Phone,Address,Products,Total Paid,Txn ID,Date,Status\n";
+  orderRegistry.forEach(o => {
+    csv += `"${o.orderId || ''}","${o.name || ''}","${o.phone || ''}","${o.address || ''}","${o.products || ''}",${o.total || 0},"${o.txnId || ''}","${o.dateLogged || ''}","${o.status || ''}"\n`;
+  });
+  downloadCSV(csv, `PGF_Orders_Report_${getTodayIsoString()}.csv`);
+}
+
+function exportUsersToExcel() {
+  let csv = "Index,Name,Phone,Email,Password\n";
+  usersDatabase.forEach((u, i) => {
+    csv += `${i+1},"${u.name || ''}","${u.phone || ''}","${u.email || ''}","${u.password || ''}"\n`;
+  });
+  downloadCSV(csv, `PGF_Users_Database_${getTodayIsoString()}.csv`);
+}
+
+function exportSalesToExcel() {
+  let csv = "Sale ID,Date,Product,Buyer,Phone,Qty,Total Revenue,Collector\n";
+  salesRegistry.forEach(s => {
+    csv += `"${s.saleId || ''}","${s.date || ''}","${s.product || ''}","${s.buyer || ''}","${s.phone || ''}",${s.qty || 0},${s.total || 0},"${s.collector || ''}"\n`;
+  });
+  downloadCSV(csv, `PGF_Sales_Inflow_${getTodayIsoString()}.csv`);
+}
+
+// =========================================================
+// CORE WEBSITE & ERP LOGIC
+// =========================================================
 function getTodayIsoString() {
   const d = new Date();
   const month = '' + (d.getMonth() + 1), day = '' + d.getDate(), year = d.getFullYear();
@@ -41,10 +135,6 @@ function initDefaultDatePickers() {
   if(document.getElementById("saleLogDate")) document.getElementById("saleLogDate").value = today;
   if(document.getElementById("purLogDate")) document.getElementById("purLogDate").value = today;
   if(document.getElementById("dmgLogDate")) document.getElementById("dmgLogDate").value = today;
-}
-
-async function saveToSheet(payload) {
-  try { await fetch(SHEET_URL, { method: "POST", mode: "no-cors", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) }); } catch(e) {}
 }
 
 function updateStockDisplayCounters() {
@@ -67,8 +157,10 @@ function triggerAdminView() {
   document.getElementById("adminErpView").classList.add("active");
   initDefaultDatePickers();
   populateAdminDashboardTables();
-  computeFinancialLedgerStatements();
   switchSubAccountingTab('subTabExpense');
+
+  // Google Sheet Sync on Admin Panel Open
+  fetchAdminSummaryFromSheet();
 }
 
 function exitAdminPanel() { handleLogout(); }
@@ -130,7 +222,8 @@ function handleLogin(e) {
     return;
   }
 
-  const match = usersDatabase.find(u => u.email.toLowerCase() === userInput.toLowerCase());
+  // Multi-Device Login Match (Email or Mobile)
+  const match = usersDatabase.find(u => (u.email && u.email.toLowerCase() === userInput.toLowerCase()) || u.phone === userInput);
   if (match && match.password === passInput) {
     currentUser = { name: match.name, email: match.email, phone: match.phone, isAdmin: false };
     localStorage.setItem('pgf_session', JSON.stringify(currentUser));
@@ -147,7 +240,7 @@ function handleRegister(e) {
   const email = document.getElementById("regEmail").value.trim();
   const password = document.getElementById("regPassword").value;
 
-  const existing = usersDatabase.find(u => u.email.toLowerCase() === email.toLowerCase());
+  const existing = usersDatabase.find(u => u.email && u.email.toLowerCase() === email.toLowerCase());
   if(existing) {
     alert("❌ Error: Is Email ID se account pehle se bana hua hai!");
     return;
@@ -156,6 +249,10 @@ function handleRegister(e) {
   const newUser = { name, phone, email, password };
   usersDatabase.push(newUser);
   localStorage.setItem('pgf_user_db', JSON.stringify(usersDatabase));
+
+  // Sync Registered User to Google Sheet
+  sendDataToGoogleSheet({ type: "user_reg", name, phone, email, password });
+
   currentUser = { name, email, phone, isAdmin: false };
   localStorage.setItem('pgf_session', JSON.stringify(currentUser));
   alert("🎉 Account Registered Successfully!");
@@ -211,11 +308,10 @@ function loadUserPanelData() {
   if (approvedBookings.length > 0) {
     let historyCertHtml = "";
 
-    approvedBookings.forEach((b, index) => {
+    approvedBookings.forEach((b) => {
       const titleText = b.type === "Student" ? "Certificate of Internship" : "Certificate of Farming";
-      
       historyCertHtml += `
-        <div style="padding: 10px; background: #fff; border: 1px solid var(--line); border-radius: 8px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+        <div style="padding: 10px; background: #fff; border: 1px solid var(--line); border-radius: 8px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
           <div>
             <span style="font-weight: bold; font-size:13px; color: var(--accent);">${titleText}</span><br>
             <small class="muted">Ref ID: ${b.bookingId}</small>
@@ -245,11 +341,11 @@ function switchSubAccountingTab(subTabId) {
   
   const buttons = ['btnSubTabExpense', 'btnSubTabSell', 'btnSubTabBuy', 'btnSubTabDamage'];
   buttons.forEach(bId => {
-    document.getElementById(bId).style.background = 'var(--muted)';
+    if(document.getElementById(bId)) document.getElementById(bId).style.background = 'var(--muted)';
   });
   
   let targetActiveButton = 'btn' + subTabId.charAt(0).toUpperCase() + subTabId.slice(1);
-  document.getElementById(targetActiveButton).style.background = 'var(--accent)';
+  if(document.getElementById(targetActiveButton)) document.getElementById(targetActiveButton).style.background = 'var(--accent)';
 }
 
 function deleteUserAccount(idx) {
@@ -262,63 +358,68 @@ function deleteUserAccount(idx) {
 }
 
 function populateAdminDashboardTables() {
-  document.getElementById("adminOrdersTableBody").innerHTML = orderRegistry.map((o, idx) => `
-    <tr>
-      <td><strong>${o.orderId}</strong></td>
-      <td>${o.name}</td>
-      <td>${o.phone}</td>
-      <td>${o.address}</td>
-      <td>${o.products}</td>
-      <td>Rs ${o.total}</td>
-      <td><code>${o.txnId}</code></td>
-      <td><strong>${o.dateLogged}</strong></td>
-      <td><span class="badge ${o.status==='Approved'?'badge-confirmed':(o.status.startsWith('Rejected')?'badge-pending':'badge-pending')}" style="${o.status.startsWith('Rejected')?'background:#fee2e2; color:var(--danger);':''}" >${o.status}</span></td>
-      <td>
-        ${o.status === 'Pending Verification' ? `
-          <button class="btn" style="padding:4px 8px; min-height:auto; background:var(--accent); margin-right:4px;" onclick="approveCustomerOrder(${idx})">Approve</button>
-          <button class="btn" style="padding:4px 8px; min-height:auto; background:var(--danger);" onclick="rejectCustomerOrder(${idx})">Reject</button>
-        ` : `<span style="font-weight:bold;">Resolved</span>`}
-      </td>
-    </tr>
-  `).join("");
+  if(document.getElementById("adminOrdersTableBody")) {
+    document.getElementById("adminOrdersTableBody").innerHTML = orderRegistry.map((o, idx) => `
+      <tr>
+        <td><strong>${o.orderId}</strong></td>
+        <td>${o.name}</td>
+        <td>${o.phone}</td>
+        <td>${o.address}</td>
+        <td>${o.products}</td>
+        <td>Rs ${o.total}</td>
+        <td><code>${o.txnId}</code></td>
+        <td><strong>${o.dateLogged}</strong></td>
+        <td><span class="badge ${o.status==='Approved'?'badge-confirmed':'badge-pending'}">${o.status}</span></td>
+        <td>
+          ${o.status === 'Pending Verification' ? `
+            <button class="btn" style="padding:4px 8px; min-height:auto; background:var(--accent); margin-right:4px;" onclick="approveCustomerOrder(${idx})">Approve</button>
+            <button class="btn" style="padding:4px 8px; min-height:auto; background:var(--danger);" onclick="rejectCustomerOrder(${idx})">Reject</button>
+          ` : `<span style="font-weight:bold;">Resolved</span>`}
+        </td>
+      </tr>
+    `).join("");
+  }
 
-  // **UPDATED: ADMIN BOOKINGS LEDGER WITH DOWNLOAD CERTIFICATE LINK**
-  document.getElementById("adminBookingsTableBody").innerHTML = bookingsRegistry.map((b, idx) => `
-    <tr>
-      <td><strong>${b.bookingId}</strong></td>
-      <td>${b.type}</td>
-      <td>${b.name}</td>
-      <td>${b.phone}</td>
-      <td><strong>${b.date || b.start}</strong></td>
-      <td><code>${b.txnId}</code></td>
-      <td><strong>${b.dateLogged}</strong></td>
-      <td><span class="badge ${b.status==='Approved'?'badge-confirmed':(b.status.startsWith('Rejected')?'badge-pending':'badge-pending')}" style="${b.status.startsWith('Rejected')?'background:#fee2e2; color:var(--danger);':''}" >${b.status}</span></td>
-      <td>
-        ${b.status === 'Pending Verification' ? `
-          <button class="btn" style="padding:4px 8px; min-height:auto; background:var(--accent); margin-right:4px;" onclick="approveTrainingBooking(${idx})">Approve</button>
-          <button class="btn" style="padding:4px 8px; min-height:auto; background:var(--danger);" onclick="rejectTrainingBooking(${idx})">Reject</button>
-        ` : `<span style="font-weight:bold;">Resolved</span>`}
-      </td>
-      <td>
-        ${b.status === 'Approved' ? `
-          <button type="button" class="btn" style="padding:4px 8px; min-height:auto; font-size:12px; background:var(--accent);" onclick="downloadCertificatePDF('${b.bookingId}')">📜 Certificate</button>
-        ` : `<span class="muted" style="font-size:12px;">Not Approved Yet</span>`}
-      </td>
-    </tr>
-  `).join("");
+  if(document.getElementById("adminBookingsTableBody")) {
+    document.getElementById("adminBookingsTableBody").innerHTML = bookingsRegistry.map((b, idx) => `
+      <tr>
+        <td><strong>${b.bookingId}</strong></td>
+        <td>${b.type}</td>
+        <td>${b.name}</td>
+        <td>${b.phone}</td>
+        <td><strong>${b.date || b.start}</strong></td>
+        <td><code>${b.txnId}</code></td>
+        <td><strong>${b.dateLogged}</strong></td>
+        <td><span class="badge ${b.status==='Approved'?'badge-confirmed':'badge-pending'}">${b.status}</span></td>
+        <td>
+          ${b.status === 'Pending Verification' ? `
+            <button class="btn" style="padding:4px 8px; min-height:auto; background:var(--accent); margin-right:4px;" onclick="approveTrainingBooking(${idx})">Approve</button>
+            <button class="btn" style="padding:4px 8px; min-height:auto; background:var(--danger);" onclick="rejectTrainingBooking(${idx})">Reject</button>
+          ` : `<span style="font-weight:bold;">Resolved</span>`}
+        </td>
+        <td>
+          ${b.status === 'Approved' ? `
+            <button type="button" class="btn" style="padding:4px 8px; min-height:auto; font-size:12px; background:var(--accent);" onclick="downloadCertificatePDF('${b.bookingId}')">📜 Certificate</button>
+          ` : `<span class="muted" style="font-size:12px;">Not Approved Yet</span>`}
+        </td>
+      </tr>
+    `).join("");
+  }
 
-  document.getElementById("adminUsersTableBody").innerHTML = usersDatabase.map((u, idx) => `
-    <tr>
-      <td>${idx + 1}</td>
-      <td><strong>${u.name}</strong></td>
-      <td>${u.phone}</td>
-      <td><code>${u.email}</code></td>
-      <td><mark style="background:#f3f4f6; padding:2px 4px; border-radius:4px;">${u.password}</mark></td>
-      <td>
-        <button class="btn" style="padding:4px 8px; min-height:auto; background:var(--danger);" onclick="deleteUserAccount(${idx})">Delete Account</button>
-      </td>
-    </tr>
-  `).join("");
+  if(document.getElementById("adminUsersTableBody")) {
+    document.getElementById("adminUsersTableBody").innerHTML = usersDatabase.map((u, idx) => `
+      <tr>
+        <td>${idx + 1}</td>
+        <td><strong>${u.name}</strong></td>
+        <td>${u.phone}</td>
+        <td><code>${u.email}</code></td>
+        <td><mark style="background:#f3f4f6; padding:2px 4px; border-radius:4px;">${u.password}</mark></td>
+        <td>
+          <button class="btn" style="padding:4px 8px; min-height:auto; background:var(--danger);" onclick="deleteUserAccount(${idx})">Delete Account</button>
+        </td>
+      </tr>
+    `).join("");
+  }
 }
 
 function approveCustomerOrder(idx) {
@@ -330,7 +431,7 @@ function approveCustomerOrder(idx) {
 }
 
 function rejectCustomerOrder(idx) {
-  let reason = prompt("Reject karne ka reason likhein (Taki User ko pata chal sake):");
+  let reason = prompt("Reject karne ka reason likhein:");
   if(reason === null) return;
   if(reason.trim() === "") reason = "Not specified by farm admin";
   
@@ -354,7 +455,7 @@ function approveTrainingBooking(idx) {
     collector: "Farm", 
     buyer: target.name, 
     phone: target.phone || "N/A",
-    address: "Pure Grow Farm Campus Training Workshop",
+    address: "Pure Grow Farm Campus",
     qty: 1, 
     rate: target.fee, 
     total: target.fee, 
@@ -363,13 +464,16 @@ function approveTrainingBooking(idx) {
   salesRegistry.push(saleLog);
   localStorage.setItem('pgf_sales', JSON.stringify(salesRegistry));
   
+  // Google Sheet Sync
+  sendDataToGoogleSheet({ type: "sale", ...saleLog });
+
   alert("Booking Approved successfully!");
   populateAdminDashboardTables();
   computeFinancialLedgerStatements();
 }
 
 function rejectTrainingBooking(idx) {
-  let reason = prompt("Reject karne ka reason likhein (Taki User ko pata chal sake):");
+  let reason = prompt("Reject karne ka reason likhein:");
   if(reason === null) return;
   if(reason.trim() === "") reason = "Not specified by farm admin";
   
@@ -381,54 +485,60 @@ function rejectTrainingBooking(idx) {
 }
 
 function computeFinancialLedgerStatements() {
-  const totalSales = salesRegistry.reduce((sum, s) => sum + s.total, 0);
-  const totalPurchases = purchasesRegistry.reduce((sum, p) => sum + p.total, 0);
-  const totalExpenses = expensesRegistry.filter(e => e.category !== "Damage Received").reduce((sum, e) => sum + e.amount, 0);
-  const totalDamages = expensesRegistry.filter(e => e.category === "Damage Received").reduce((sum, e) => sum + e.amount, 0);
+  const totalSales = salesRegistry.reduce((sum, s) => sum + Number(s.total || 0), 0);
+  const totalPurchases = purchasesRegistry.reduce((sum, p) => sum + Number(p.total || 0), 0);
+  const totalExpenses = expensesRegistry.filter(e => e.category !== "Damage Received").reduce((sum, e) => sum + Number(e.amount || 0), 0);
+  const totalDamages = expensesRegistry.filter(e => e.category === "Damage Received").reduce((sum, e) => sum + Number(e.amount || 0), 0);
 
   const netProfit = totalSales - (totalPurchases + totalExpenses + totalDamages);
 
-  document.getElementById("finTotalRevenue").textContent = "Rs " + totalSales.toFixed(2);
-  document.getElementById("finTotalPurchases").textContent = "Rs " + totalPurchases.toFixed(2);
-  document.getElementById("finTotalExpenses").textContent = "Rs " + totalExpenses.toFixed(2);
-  document.getElementById("finNetProfit").textContent = "Rs " + netProfit.toFixed(2);
+  if(document.getElementById("finTotalRevenue")) document.getElementById("finTotalRevenue").textContent = "Rs " + totalSales.toFixed(2);
+  if(document.getElementById("finTotalPurchases")) document.getElementById("finTotalPurchases").textContent = "Rs " + totalPurchases.toFixed(2);
+  if(document.getElementById("finTotalExpenses")) document.getElementById("finTotalExpenses").textContent = "Rs " + totalExpenses.toFixed(2);
+  if(document.getElementById("finNetProfit")) document.getElementById("finNetProfit").textContent = "Rs " + netProfit.toFixed(2);
 
   let cashBalances = { Soham: 0, Jeet: 0, Farm: 0 };
-  salesRegistry.forEach(s => { if(cashBalances[s.collector] !== undefined) cashBalances[s.collector] += s.total; });
-  expensesRegistry.forEach(e => {
-    if(cashBalances[e.payer] !== undefined) cashBalances[e.payer] -= e.amount;
-  });
-  purchasesRegistry.forEach(p => { if(cashBalances[p.funder] !== undefined) cashBalances[p.funder] -= p.total; });
+  salesRegistry.forEach(s => { if(cashBalances[s.collector] !== undefined) cashBalances[s.collector] += Number(s.total || 0); });
+  expensesRegistry.forEach(e => { if(cashBalances[e.payer] !== undefined) cashBalances[e.payer] -= Number(e.amount || 0); });
+  purchasesRegistry.forEach(p => { if(cashBalances[p.funder] !== undefined) cashBalances[p.funder] -= Number(p.total || 0); });
 
-  document.getElementById("cashSoham").textContent = "Rs " + cashBalances.Soham.toFixed(2);
-  document.getElementById("cashJeet").textContent = "Rs " + cashBalances.Jeet.toFixed(2);
-  document.getElementById("cashFarm").textContent = "Rs " + cashBalances.Farm.toFixed(2);
+  if(document.getElementById("cashSoham")) document.getElementById("cashSoham").textContent = "Rs " + cashBalances.Soham.toFixed(2);
+  if(document.getElementById("cashJeet")) document.getElementById("cashJeet").textContent = "Rs " + cashBalances.Jeet.toFixed(2);
+  if(document.getElementById("cashFarm")) document.getElementById("cashFarm").textContent = "Rs " + cashBalances.Farm.toFixed(2);
 
   const expRows = expensesRegistry.filter(e => e.category !== "Damage Received");
-  document.getElementById("subExpenseTableBody").innerHTML = expRows.map(e => `
-    <tr><td>${e.date}</td><td>${e.category}</td><td>${e.payer}</td><td>${e.desc}</td><td style="color:var(--warn); font-weight:bold;">Rs ${e.amount}</td></tr>
-  `).join("");
+  if(document.getElementById("subExpenseTableBody")) {
+    document.getElementById("subExpenseTableBody").innerHTML = expRows.map(e => `
+      <tr><td>${e.date}</td><td>${e.category}</td><td>${e.payer}</td><td>${e.desc}</td><td style="color:var(--warn); font-weight:bold;">Rs ${e.amount}</td></tr>
+    `).join("");
+  }
 
-  document.getElementById("subSellTableBody").innerHTML = salesRegistry.map(s => `
-    <tr>
-      <td>${s.date}</td>
-      <td>${s.product}</td>
-      <td>${s.buyer}</td>
-      <td>${s.phone || 'N/A'}</td>
-      <td>${s.qty}</td>
-      <td style="color:var(--accent); font-weight:bold;">Rs ${s.total}</td>
-      <td><button type="button" class="btn" style="padding:2px 6px; min-height:auto; font-size:11px;" onclick="downloadOfflineSaleInvoice('${s.saleId}')">Receipt</button></td>
-    </tr>
-  `).join("");
+  if(document.getElementById("subSellTableBody")) {
+    document.getElementById("subSellTableBody").innerHTML = salesRegistry.map(s => `
+      <tr>
+        <td>${s.date}</td>
+        <td>${s.product}</td>
+        <td>${s.buyer}</td>
+        <td>${s.phone || 'N/A'}</td>
+        <td>${s.qty}</td>
+        <td style="color:var(--accent); font-weight:bold;">Rs ${s.total}</td>
+        <td><button type="button" class="btn" style="padding:2px 6px; min-height:auto; font-size:11px;" onclick="downloadOfflineSaleInvoice('${s.saleId}')">Receipt</button></td>
+      </tr>
+    `).join("");
+  }
 
-  document.getElementById("subBuyTableBody").innerHTML = purchasesRegistry.map(p => `
-    <tr><td>${p.date}</td><td>${p.product}</td><td>${p.vendor}</td><td>${p.qty}</td><td style="color:var(--danger); font-weight:bold;">Rs ${p.total}</td></tr>
-  `).join("");
+  if(document.getElementById("subBuyTableBody")) {
+    document.getElementById("subBuyTableBody").innerHTML = purchasesRegistry.map(p => `
+      <tr><td>${p.date}</td><td>${p.product}</td><td>${p.vendor}</td><td>${p.qty}</td><td style="color:var(--danger); font-weight:bold;">Rs ${p.total}</td></tr>
+    `).join("");
+  }
 
   const dmgRows = expensesRegistry.filter(e => e.category === "Damage Received");
-  document.getElementById("subDamageTableBody").innerHTML = dmgRows.map(d => `
-    <tr><td>${d.date}</td><td>${d.desc}</td><td>${d.payer}</td><td style="color:var(--danger); font-weight:bold;">Rs ${d.amount}</td></tr>
-  `).join("");
+  if(document.getElementById("subDamageTableBody")) {
+    document.getElementById("subDamageTableBody").innerHTML = dmgRows.map(d => `
+      <tr><td>${d.date}</td><td>${d.desc}</td><td>${d.payer}</td><td style="color:var(--danger); font-weight:bold;">Rs ${d.amount}</td></tr>
+    `).join("");
+  }
 }
 
 function saveAdminExpense(e) {
@@ -445,6 +555,10 @@ function saveAdminExpense(e) {
   };
   expensesRegistry.push(data);
   localStorage.setItem('pgf_expenses', JSON.stringify(expensesRegistry));
+  
+  // Google Sheet Sync
+  sendDataToGoogleSheet({ type: "expense", ...data });
+
   e.target.reset();
   initDefaultDatePickers();
   computeFinancialLedgerStatements();
@@ -455,12 +569,11 @@ function saveAdminSale(e) {
   const rawDate = document.getElementById("saleLogDate").value;
   const qty = parseFloat(document.getElementById("saleQty").value);
   const rate = parseFloat(document.getElementById("saleRate").value);
-  const pVariant = document.getElementById("saleProduct").value;
 
   const data = {
     saleId: "SALE-" + Date.now().toString().slice(-4),
     date: rawDate ? new Date(rawDate).toLocaleDateString() : new Date().toLocaleDateString(),
-    product: pVariant,
+    product: document.getElementById("saleProduct").value,
     collector: document.getElementById("saleCollector").value,
     buyer: document.getElementById("saleBuyer").value.trim(),
     phone: document.getElementById("salePhone").value.trim(),
@@ -472,6 +585,10 @@ function saveAdminSale(e) {
 
   salesRegistry.push(data);
   localStorage.setItem('pgf_sales', JSON.stringify(salesRegistry));
+  
+  // Google Sheet Sync
+  sendDataToGoogleSheet({ type: "sale", ...data });
+
   e.target.reset();
   initDefaultDatePickers();
   computeFinancialLedgerStatements();
@@ -515,6 +632,10 @@ function saveAdminDamage(e) {
   };
   expensesRegistry.push(data);
   localStorage.setItem('pgf_expenses', JSON.stringify(expensesRegistry));
+  
+  // Google Sheet Sync
+  sendDataToGoogleSheet({ type: "expense", ...data });
+
   e.target.reset();
   initDefaultDatePickers();
   computeFinancialLedgerStatements();
@@ -533,19 +654,20 @@ function downloadOfflineSaleInvoice(saleId) {
   document.getElementById("invoiceTableItemsBody").innerHTML = `
     <tr>
       <td style="padding:12px 14px; border-bottom:1px solid #e6e9ec; font-weight: 600;">${targetSale.product} Lot Log Entry</td>
-      <td style="padding:12px 14px; border-bottom:1px solid #e6e9ec; text-align:right;">Rs ${targetSale.rate.toFixed(2)}</td>
+      <td style="padding:12px 14px; border-bottom:1px solid #e6e9ec; text-align:right;">Rs ${Number(targetSale.rate).toFixed(2)}</td>
       <td style="padding:12px 14px; border-bottom:1px solid #e6e9ec; text-align:center;">${targetSale.qty}</td>
-      <td style="padding:12px 14px; border-bottom:1px solid #e6e9ec; text-align:right; font-weight:600; color:var(--accent);">Rs ${targetSale.total.toFixed(2)}</td>
+      <td style="padding:12px 14px; border-bottom:1px solid #e6e9ec; text-align:right; font-weight:600; color:var(--accent);">Rs ${Number(targetSale.total).toFixed(2)}</td>
     </tr>
   `;
   
-  document.getElementById("invSub").textContent = "Rs " + targetSale.total.toFixed(2);
-  document.getElementById("invTotal").textContent = "Rs " + targetSale.total.toFixed(2);
+  document.getElementById("invSub").textContent = "Rs " + Number(targetSale.total).toFixed(2);
+  document.getElementById("invTotal").textContent = "Rs " + Number(targetSale.total).toFixed(2);
   
   document.getElementById("invoiceDialog").showModal();
 }
 
 function renderProducts(list = products) {
+  if(!document.getElementById("productsList")) return;
   document.getElementById("productsList").innerHTML = list.map(product => `
     <article class="product">
       <img src="${product.image}" alt="${product.name}">
@@ -570,6 +692,7 @@ function addToCart(id) {
   cart.set(id, { ...product, qty: current ? current.qty + 1 : 1 });
   renderCart();
 }
+
 function minusCart(id) {
   const item = cart.get(id);
   if (!item) return;
@@ -586,28 +709,32 @@ function getTotals() {
 
 function renderCart() {
   const bill = getTotals();
-  document.getElementById("subtotal").textContent = `Rs ${bill.subtotal}`;
-  document.getElementById("delivery").textContent = `Rs ${bill.delivery}`;
-  document.getElementById("total").textContent = `Rs ${bill.total}`;
+  if(document.getElementById("subtotal")) document.getElementById("subtotal").textContent = `Rs ${bill.subtotal}`;
+  if(document.getElementById("delivery")) document.getElementById("delivery").textContent = `Rs ${bill.delivery}`;
+  if(document.getElementById("total")) document.getElementById("total").textContent = `Rs ${bill.total}`;
 
   if (!cart.size) { 
-    document.getElementById("cartItems").innerHTML = `<p class="muted">Cart selection is empty.</p>`; 
-    document.getElementById("paymentMode").value = "";
-    document.getElementById("paymentId").value = "";
-    document.getElementById("paymentId").disabled = true;
-    document.getElementById("confirmOrderBtn").disabled = true;
+    if(document.getElementById("cartItems")) document.getElementById("cartItems").innerHTML = `<p class="muted">Cart selection is empty.</p>`; 
+    if(document.getElementById("paymentMode")) document.getElementById("paymentMode").value = "";
+    if(document.getElementById("paymentId")) {
+      document.getElementById("paymentId").value = "";
+      document.getElementById("paymentId").disabled = true;
+    }
+    if(document.getElementById("confirmOrderBtn")) document.getElementById("confirmOrderBtn").disabled = true;
     return; 
   }
   
-  document.getElementById("cartItems").innerHTML = [...cart.values()].map(item => `
-    <div class="cart-item">
-      <div><strong>${item.name}</strong><br><span class="muted">Rs ${item.price} x ${item.qty}</span></div>
-      <div class="qty-actions">
-        <button type="button" onclick="minusCart(${item.id})">-</button>
-        <button type="button" onclick="addToCart(${item.id})">+</button>
+  if(document.getElementById("cartItems")) {
+    document.getElementById("cartItems").innerHTML = [...cart.values()].map(item => `
+      <div class="cart-item">
+        <div><strong>${item.name}</strong><br><span class="muted">Rs ${item.price} x ${item.qty}</span></div>
+        <div class="qty-actions">
+          <button type="button" onclick="minusCart(${item.id})">-</button>
+          <button type="button" onclick="addToCart(${item.id})">+</button>
+        </div>
       </div>
-    </div>
-  `).join("");
+    `).join("");
+  }
   validateOrderForm();
 }
 
@@ -631,12 +758,12 @@ function openProductPayment() {
 }
 
 function validateOrderForm() {
-  const address = document.getElementById("address").value.trim();
-  const mode = document.getElementById("paymentMode").value;
-  const txnId = document.getElementById("paymentId").value.trim();
+  const address = document.getElementById("address") ? document.getElementById("address").value.trim() : "";
+  const mode = document.getElementById("paymentMode") ? document.getElementById("paymentMode").value : "";
+  const txnId = document.getElementById("paymentId") ? document.getElementById("paymentId").value.trim() : "";
   
   const isValid = cart.size > 0 && address.length > 4 && mode !== "" && txnId.length >= 6;
-  document.getElementById("confirmOrderBtn").disabled = !isValid;
+  if(document.getElementById("confirmOrderBtn")) document.getElementById("confirmOrderBtn").disabled = !isValid;
 }
 
 if(document.getElementById("address")) {
@@ -683,7 +810,8 @@ function confirmOrder(e) {
   document.getElementById("invSub").textContent = "Rs " + bill.subtotal;
   document.getElementById("invTotal").textContent = "Rs " + bill.total;
 
-  saveToSheet({ type: "order", ...data });
+  // Google Sheet Syncing
+  sendDataToGoogleSheet({ type: "order", ...data });
   
   const waMessage = `NEW GOODS ORDER VERIFICATION FLOW:\n----------------------------------------\nInvoice Ref Code: ${data.orderId}\nClient Legal Name: ${data.name}\nProducts Mapped: ${data.products}\nTotal Paid Amount: Rs ${data.total}\nPayment Method: ${document.getElementById("paymentMode").value}\nTransaction Hash ID Code: ${data.txnId}\n----------------------------------------`;
   
@@ -772,7 +900,9 @@ function submitStudentVisit(e) {
   };
   bookingsRegistry.unshift(data);
   localStorage.setItem('pgf_bookings', JSON.stringify(bookingsRegistry));
-  saveToSheet({ type: "visit", ...data });
+
+  // Google Sheet Syncing
+  sendDataToGoogleSheet({ type: "visit", ...data });
 
   const waText = `NEW STUDENT INTERNSHIP REGISTRATION:\n----------------------------------------\nBooking Ref ID: ${data.bookingId}\nName: ${data.name}\nUTR Tracking Number: ${data.txnId}\n----------------------------------------`;
   window.open(`https://wa.me/${farmWhatsapp}?text=${encodeURIComponent(waText)}`, '_blank');
@@ -799,7 +929,9 @@ function submitFarmerVisit(e) {
   };
   bookingsRegistry.unshift(data);
   localStorage.setItem('pgf_bookings', JSON.stringify(bookingsRegistry));
-  saveToSheet({ type: "visit", ...data });
+
+  // Google Sheet Syncing
+  sendDataToGoogleSheet({ type: "visit", ...data });
 
   const waText = `NEW FARMER TRAINING BOOKING:\n----------------------------------------\nBooking Ref ID: ${data.bookingId}\nName: ${data.name}\nUTR Tracking Number: ${data.txnId}\n----------------------------------------`;
   window.open(`https://wa.me/${farmWhatsapp}?text=${encodeURIComponent(waText)}`, '_blank');
@@ -892,16 +1024,10 @@ function downloadCertificatePDF(bookingId) {
                 <div style="font-size: 10px; font-weight: 800; color: #1e4620; margin-top: 5px; letter-spacing: 0.5px;">PURE GROW FARM</div>
               </div>
               <div style="text-align: center; width: 35%; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; padding-right: 20px; box-sizing: border-box;">
-                <!-- Signature Stamp Image -->
                 <img src="mushroom/soham sign.png" alt="Soham Gajera Signature" style="width: 130px; height: auto; display: block; margin: 0 auto -15px auto; mix-blend-mode: multiply; z-index: 5;">
-  
-                <!-- Solid Line Underneath Signature Stamp -->
                 <div style="border-top: 1px solid #333; width: 160px; margin: 0 auto 6px auto;"></div>
-  
-                <!-- Text Fields Mapped Under the Line -->
                 <div style="font-size: 14px; font-weight: bold; color: #1e4620; line-height: 1.2;">Soham Gajera</div>
                 <div style="font-size: 11px; color: #6b7280; margin-top: 2px;">Authorized Signatory</div>
-              </div>
               </div>
             </div>
           </div>
@@ -957,5 +1083,6 @@ function printDivInvoice() {
   }, 500);
 }
 
+// Initial Loading Handlers
 renderProducts();
 checkUserSession();

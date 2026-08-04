@@ -1,11 +1,3 @@
-// =========================================================
-// SUPABASE CLIENT CONNECTED
-// =========================================================
-const SUPABASE_URL = "https://ihxwurfxutwzpheptjkh.supabase.co";
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImloeHd1cmZ4dXR3enBoZXB0amtoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU4NTI1OTQsImV4cCI6MjEwMTQyODU5NH0.8LHaFC4LH2Z4CMgorGrDcXewNKcznww0PX0dOzqRvEE";
-
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
 const farmEmail = "puregrowfarm001@gmail.com";
 const farmWhatsapp = "919067891039";
 const farmUpiId = "sohamgajera01@okhdfcbank";
@@ -26,12 +18,12 @@ const products = [
 const cart = new Map();
 
 let currentInventoryStock = JSON.parse(localStorage.getItem('pgf_stock_counters')) || { dry: 150, khakhra: 85, papad: 120 };
-let usersDatabase = [];
-let orderRegistry = [];
-let bookingsRegistry = [];
-let expensesRegistry = [];
-let salesRegistry = [];
-let purchasesRegistry = [];
+let usersDatabase = JSON.parse(localStorage.getItem('pgf_user_db')) || [];
+let orderRegistry = JSON.parse(localStorage.getItem('pgf_orders')) || [];
+let bookingsRegistry = JSON.parse(localStorage.getItem('pgf_bookings')) || [];
+let expensesRegistry = JSON.parse(localStorage.getItem('pgf_expenses')) || [];
+let salesRegistry = JSON.parse(localStorage.getItem('pgf_sales')) || [];
+let purchasesRegistry = JSON.parse(localStorage.getItem('pgf_purchases')) || [];
 
 let currentUser = JSON.parse(localStorage.getItem('pgf_session')) || null;
 let latestInvoice = "";
@@ -74,28 +66,16 @@ function triggerAdminView() {
   document.getElementById("publicContent").style.display = "none";
   document.getElementById("adminErpView").classList.add("active");
   initDefaultDatePickers();
-  fetchAdminDataFromSupabase();
+  populateAdminDashboardTables();
+  computeFinancialLedgerStatements();
   switchSubAccountingTab('subTabExpense');
 }
 
 function exitAdminPanel() { handleLogout(); }
 
-async function checkUserSession() {
+function checkUserSession() {
   updateStockDisplayCounters();
-  
-  // Supabase live session check
-  const { data: { session } } = await supabase.auth.getSession();
-  
-  if (session || currentUser) {
-    if(session) {
-      currentUser = {
-        name: session.user.user_metadata.full_name || "Grower",
-        email: session.user.email,
-        phone: session.user.user_metadata.phone || "",
-        isAdmin: session.user.email === "admin@puregrowfarm.internal"
-      };
-    }
-
+  if (currentUser) {
     document.getElementById("authSection").style.display = "none";
     document.getElementById("logoutBtn").style.display = "inline-flex";
     document.getElementById("authNavBtn").style.display = "none";
@@ -138,11 +118,10 @@ async function checkUserSession() {
   }
 }
 
-async function handleLogin(e) {
+function handleLogin(e) {
   e.preventDefault();
   const userInput = document.getElementById("loginEmail").value.trim();
   const passInput = document.getElementById("loginPassword").value;
-  const loginBtn = document.getElementById("loginSubmitBtn");
 
   if (userInput === ADMIN_CREDENTIALS.user && passInput === ADMIN_CREDENTIALS.pass) {
     currentUser = { name: "System Admin", email: "admin@puregrowfarm.internal", isAdmin: true };
@@ -151,62 +130,36 @@ async function handleLogin(e) {
     return;
   }
 
-  loginBtn.disabled = true;
-  loginBtn.textContent = "Logging in...";
-
-  const { data, error } = await supabase.auth.signInWithPassword({
-    email: userInput,
-    password: passInput
-  });
-
-  loginBtn.disabled = false;
-  loginBtn.textContent = "Continue";
-
-  if (error) {
-    alert("❌ Error: " + error.message);
-  } else {
-    const user = data.user;
-    currentUser = {
-      name: user.user_metadata.full_name || "Grower",
-      email: user.email,
-      phone: user.user_metadata.phone || "",
-      isAdmin: false
-    };
+  const match = usersDatabase.find(u => u.email.toLowerCase() === userInput.toLowerCase());
+  if (match && match.password === passInput) {
+    currentUser = { name: match.name, email: match.email, phone: match.phone, isAdmin: false };
     localStorage.setItem('pgf_session', JSON.stringify(currentUser));
     checkUserSession();
+  } else {
+    alert("❌ Error: Invalid credentials or Account does not exist!");
   }
 }
 
-async function handleRegister(e) {
+function handleRegister(e) {
   e.preventDefault();
   const name = document.getElementById("regName").value.trim();
   const phone = document.getElementById("regPhone").value.trim();
   const email = document.getElementById("regEmail").value.trim();
   const password = document.getElementById("regPassword").value;
-  const regBtn = document.getElementById("regSubmitBtn");
 
-  regBtn.disabled = true;
-  regBtn.textContent = "Creating Account...";
-
-  const { data, error } = await supabase.auth.signUp({
-    email: email,
-    password: password,
-    options: {
-      data: { full_name: name, phone: phone }
-    }
-  });
-
-  regBtn.disabled = false;
-  regBtn.textContent = "Create Your Account";
-
-  if (error) {
-    alert("❌ Error: " + error.message);
-  } else {
-    currentUser = { name, email, phone, isAdmin: false };
-    localStorage.setItem('pgf_session', JSON.stringify(currentUser));
-    alert("🎉 Account Registered Successfully!");
-    checkUserSession();
+  const existing = usersDatabase.find(u => u.email.toLowerCase() === email.toLowerCase());
+  if(existing) {
+    alert("❌ Error: Is Email ID se account pehle se bana hua hai!");
+    return;
   }
+
+  const newUser = { name, phone, email, password };
+  usersDatabase.push(newUser);
+  localStorage.setItem('pgf_user_db', JSON.stringify(usersDatabase));
+  currentUser = { name, email, phone, isAdmin: false };
+  localStorage.setItem('pgf_session', JSON.stringify(currentUser));
+  alert("🎉 Account Registered Successfully!");
+  checkUserSession();
 }
 
 function handleForgotPassword(e) {
@@ -215,64 +168,59 @@ function handleForgotPassword(e) {
   window.open(`https://wa.me/${farmWhatsapp}?text=Password Assist Request for: ${emailInput}`, '_blank');
 }
 
-async function handleLogout() {
-  await supabase.auth.signOut();
+function handleLogout() {
   currentUser = null;
   localStorage.removeItem('pgf_session');
   checkUserSession();
 }
 
-async function loadUserPanelData() {
+function loadUserPanelData() {
   const oList = document.getElementById("userOrdersList");
   const bList = document.getElementById("userBookingsList");
   const historyCertWrapper = document.getElementById("historyCertificateWrapper");
   const historyCertContainer = document.getElementById("historyCertificatesContainer");
   
-  // Supabase se live fetch
-  const { data: myOrders } = await supabase.from("orders").select("*").eq("user_email", currentUser.email);
-  const { data: myBookings } = await supabase.from("bookings").select("*").eq("user_email", currentUser.email);
+  const myOrders = orderRegistry.filter(o => o.email === currentUser.email);
+  const myBookings = bookingsRegistry.filter(b => b.email === currentUser.email);
 
-  const ordersList = myOrders || [];
-  const bookingsList = myBookings || [];
-
-  oList.innerHTML = ordersList.length ? ordersList.map(o => {
-    let statusColor = o.status === 'Approved' ? 'var(--accent)' : (o.status && o.status.startsWith('Rejected') ? 'var(--danger)' : 'var(--warn)');
+  oList.innerHTML = myOrders.length ? myOrders.map(o => {
+    let statusColor = o.status === 'Approved' ? 'var(--accent)' : (o.status.startsWith('Rejected') ? 'var(--danger)' : 'var(--warn)');
     return `
       <div class="data-item-card">
-        <strong>Order ID: ${o.order_id}</strong><br>
-        <small>Date Received: ${o.date_logged}</small><br>
+        <strong>Order ID: ${o.orderId}</strong><br>
+        <small>Date Received: ${o.dateLogged}</small><br>
         <span>Items: ${o.products}</span><br>
         <strong>Total: Rs ${o.total} [<span style="color:${statusColor}; font-weight:bold;">${o.status}</span>]</strong>
       </div>
     `;
   }).join("") : "No active orders mapped for this profile index.";
 
-  bList.innerHTML = bookingsList.length ? bookingsList.map(b => {
-    let statusColor = b.status === 'Approved' ? 'var(--accent)' : (b.status && b.status.startsWith('Rejected') ? 'var(--danger)' : 'var(--warn)');
+  bList.innerHTML = myBookings.length ? myBookings.map(b => {
+    let statusColor = b.status === 'Approved' ? 'var(--accent)' : (b.status.startsWith('Rejected') ? 'var(--danger)' : 'var(--warn)');
     return `
       <div class="data-item-card">
-        <strong>Booking ID: ${b.booking_id}</strong><br>
-        <small>Booked On: ${b.date_logged}</small><br>
+        <strong>Booking ID: ${b.bookingId}</strong><br>
+        <small>Booked On: ${b.dateLogged}</small><br>
         <strong>Scheme: ${b.type} Visit [<span style="color:${statusColor}; font-weight:bold;">${b.status}</span>]</strong>
       </div>
     `;
   }).join("") : "No course training applications logged.";
 
-  const approvedBookings = bookingsList.filter(b => b.status === "Approved");
+  const approvedBookings = myBookings.filter(b => b.status === "Approved");
 
   if (approvedBookings.length > 0) {
     let historyCertHtml = "";
 
-    approvedBookings.forEach((b) => {
+    approvedBookings.forEach((b, index) => {
       const titleText = b.type === "Student" ? "Certificate of Internship" : "Certificate of Farming";
       
       historyCertHtml += `
         <div style="padding: 10px; background: #fff; border: 1px solid var(--line); border-radius: 8px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
           <div>
             <span style="font-weight: bold; font-size:13px; color: var(--accent);">${titleText}</span><br>
-            <small class="muted">Ref ID: ${b.booking_id}</small>
+            <small class="muted">Ref ID: ${b.bookingId}</small>
           </div>
-          <button type="button" class="btn" style="min-height:30px; padding: 4px 10px; font-size:12px;" onclick="downloadCertificatePDF('${b.booking_id}')">📥 Download PDF</button>
+          <button type="button" class="btn" style="min-height:30px; padding: 4px 10px; font-size:12px;" onclick="downloadCertificatePDF('${b.bookingId}')">📥 Download PDF</button>
         </div>
       `;
     });
@@ -282,23 +230,6 @@ async function loadUserPanelData() {
   } else {
     historyCertWrapper.style.display = "none";
   }
-}
-
-async function fetchAdminDataFromSupabase() {
-  const { data: orders } = await supabase.from("orders").select("*");
-  const { data: bookings } = await supabase.from("bookings").select("*");
-  const { data: sales } = await supabase.from("sales").select("*");
-  const { data: expenses } = await supabase.from("expenses").select("*");
-  const { data: purchases } = await supabase.from("purchases").select("*");
-
-  orderRegistry = orders || [];
-  bookingsRegistry = bookings || [];
-  salesRegistry = sales || [];
-  expensesRegistry = expenses || [];
-  purchasesRegistry = purchases || [];
-
-  populateAdminDashboardTables();
-  computeFinancialLedgerStatements();
 }
 
 function switchErpTab(tabId, buttonId) {
@@ -321,107 +252,139 @@ function switchSubAccountingTab(subTabId) {
   document.getElementById(targetActiveButton).style.background = 'var(--accent)';
 }
 
+function deleteUserAccount(idx) {
+  if (confirm(`Kya aap sach me ${usersDatabase[idx].name} ka account delete karna chahte hain?`)) {
+    usersDatabase.splice(idx, 1);
+    localStorage.setItem('pgf_user_db', JSON.stringify(usersDatabase));
+    alert("🗑️ Account permanently delete ho gaya!");
+    populateAdminDashboardTables();
+  }
+}
+
 function populateAdminDashboardTables() {
   document.getElementById("adminOrdersTableBody").innerHTML = orderRegistry.map((o, idx) => `
     <tr>
-      <td><strong>${o.order_id}</strong></td>
+      <td><strong>${o.orderId}</strong></td>
       <td>${o.name}</td>
       <td>${o.phone}</td>
       <td>${o.address}</td>
       <td>${o.products}</td>
       <td>Rs ${o.total}</td>
-      <td><code>${o.txn_id}</code></td>
-      <td><strong>${o.date_logged}</strong></td>
-      <td><span class="badge ${o.status==='Approved'?'badge-confirmed':(o.status && o.status.startsWith('Rejected')?'badge-pending':'badge-pending')}">${o.status}</span></td>
+      <td><code>${o.txnId}</code></td>
+      <td><strong>${o.dateLogged}</strong></td>
+      <td><span class="badge ${o.status==='Approved'?'badge-confirmed':(o.status.startsWith('Rejected')?'badge-pending':'badge-pending')}" style="${o.status.startsWith('Rejected')?'background:#fee2e2; color:var(--danger);':''}" >${o.status}</span></td>
       <td>
         ${o.status === 'Pending Verification' ? `
-          <button class="btn" style="padding:4px 8px; min-height:auto; background:var(--accent); margin-right:4px;" onclick="approveCustomerOrder('${o.id}')">Approve</button>
-          <button class="btn" style="padding:4px 8px; min-height:auto; background:var(--danger);" onclick="rejectCustomerOrder('${o.id}')">Reject</button>
+          <button class="btn" style="padding:4px 8px; min-height:auto; background:var(--accent); margin-right:4px;" onclick="approveCustomerOrder(${idx})">Approve</button>
+          <button class="btn" style="padding:4px 8px; min-height:auto; background:var(--danger);" onclick="rejectCustomerOrder(${idx})">Reject</button>
         ` : `<span style="font-weight:bold;">Resolved</span>`}
       </td>
     </tr>
   `).join("");
 
+  // **UPDATED: ADMIN BOOKINGS LEDGER WITH DOWNLOAD CERTIFICATE LINK**
   document.getElementById("adminBookingsTableBody").innerHTML = bookingsRegistry.map((b, idx) => `
     <tr>
-      <td><strong>${b.booking_id}</strong></td>
+      <td><strong>${b.bookingId}</strong></td>
       <td>${b.type}</td>
       <td>${b.name}</td>
       <td>${b.phone}</td>
       <td><strong>${b.date || b.start}</strong></td>
-      <td><code>${b.txn_id}</code></td>
-      <td><strong>${b.date_logged}</strong></td>
-      <td><span class="badge ${b.status==='Approved'?'badge-confirmed':(b.status && b.status.startsWith('Rejected')?'badge-pending':'badge-pending')}">${b.status}</span></td>
+      <td><code>${b.txnId}</code></td>
+      <td><strong>${b.dateLogged}</strong></td>
+      <td><span class="badge ${b.status==='Approved'?'badge-confirmed':(b.status.startsWith('Rejected')?'badge-pending':'badge-pending')}" style="${b.status.startsWith('Rejected')?'background:#fee2e2; color:var(--danger);':''}" >${b.status}</span></td>
       <td>
         ${b.status === 'Pending Verification' ? `
-          <button class="btn" style="padding:4px 8px; min-height:auto; background:var(--accent); margin-right:4px;" onclick="approveTrainingBooking('${b.id}')">Approve</button>
-          <button class="btn" style="padding:4px 8px; min-height:auto; background:var(--danger);" onclick="rejectTrainingBooking('${b.id}')">Reject</button>
+          <button class="btn" style="padding:4px 8px; min-height:auto; background:var(--accent); margin-right:4px;" onclick="approveTrainingBooking(${idx})">Approve</button>
+          <button class="btn" style="padding:4px 8px; min-height:auto; background:var(--danger);" onclick="rejectTrainingBooking(${idx})">Reject</button>
         ` : `<span style="font-weight:bold;">Resolved</span>`}
       </td>
       <td>
         ${b.status === 'Approved' ? `
-          <button type="button" class="btn" style="padding:4px 8px; min-height:auto; font-size:12px; background:var(--accent);" onclick="downloadCertificatePDF('${b.booking_id}')">📜 Certificate</button>
+          <button type="button" class="btn" style="padding:4px 8px; min-height:auto; font-size:12px; background:var(--accent);" onclick="downloadCertificatePDF('${b.bookingId}')">📜 Certificate</button>
         ` : `<span class="muted" style="font-size:12px;">Not Approved Yet</span>`}
+      </td>
+    </tr>
+  `).join("");
+
+  document.getElementById("adminUsersTableBody").innerHTML = usersDatabase.map((u, idx) => `
+    <tr>
+      <td>${idx + 1}</td>
+      <td><strong>${u.name}</strong></td>
+      <td>${u.phone}</td>
+      <td><code>${u.email}</code></td>
+      <td><mark style="background:#f3f4f6; padding:2px 4px; border-radius:4px;">${u.password}</mark></td>
+      <td>
+        <button class="btn" style="padding:4px 8px; min-height:auto; background:var(--danger);" onclick="deleteUserAccount(${idx})">Delete Account</button>
       </td>
     </tr>
   `).join("");
 }
 
-async function approveCustomerOrder(id) {
-  await supabase.from("orders").update({ status: "Approved" }).eq("id", id);
+function approveCustomerOrder(idx) {
+  orderRegistry[idx].status = "Approved";
+  localStorage.setItem('pgf_orders', JSON.stringify(orderRegistry));
   alert("Order Marked Approved!");
-  fetchAdminDataFromSupabase();
+  populateAdminDashboardTables();
+  computeFinancialLedgerStatements();
 }
 
-async function rejectCustomerOrder(id) {
-  let reason = prompt("Reject karne ka reason likhein:");
+function rejectCustomerOrder(idx) {
+  let reason = prompt("Reject karne ka reason likhein (Taki User ko pata chal sake):");
   if(reason === null) return;
   if(reason.trim() === "") reason = "Not specified by farm admin";
   
-  await supabase.from("orders").update({ status: `Rejected (Reason: ${reason})` }).eq("id", id);
+  orderRegistry[idx].status = `Rejected (Reason: ${reason})`;
+  localStorage.setItem('pgf_orders', JSON.stringify(orderRegistry));
   alert("Order Marked Rejected!");
-  fetchAdminDataFromSupabase();
+  populateAdminDashboardTables();
+  computeFinancialLedgerStatements();
 }
 
-async function approveTrainingBooking(id) {
-  const target = bookingsRegistry.find(b => b.id == id);
-  await supabase.from("bookings").update({ status: "Approved", approved_date: new Date().toLocaleDateString() }).eq("id", id);
+function approveTrainingBooking(idx) {
+  bookingsRegistry[idx].status = "Approved";
+  bookingsRegistry[idx].approvedDate = new Date().toLocaleDateString();
+  localStorage.setItem('pgf_bookings', JSON.stringify(bookingsRegistry));
+  const target = bookingsRegistry[idx];
   
-  if(target) {
-    const saleLog = { 
-      sale_id: "SALE-" + Date.now().toString().slice(-4),
-      product: `Training Entry: ${target.type} Program`, 
-      collector: "Farm", 
-      buyer: target.name, 
-      phone: target.phone || "N/A",
-      address: "Pure Grow Farm Campus Training Workshop",
-      qty: 1, 
-      rate: target.fee, 
-      total: target.fee, 
-      date: new Date().toLocaleDateString() 
-    };
-    await supabase.from("sales").insert([saleLog]);
-  }
-
+  const saleLog = { 
+    saleId: "SALE-" + Date.now().toString().slice(-4),
+    type: "sale", 
+    product: `Training Entry: ${target.type} Program`, 
+    collector: "Farm", 
+    buyer: target.name, 
+    phone: target.phone || "N/A",
+    address: "Pure Grow Farm Campus Training Workshop",
+    qty: 1, 
+    rate: target.fee, 
+    total: target.fee, 
+    date: new Date().toLocaleDateString() 
+  };
+  salesRegistry.push(saleLog);
+  localStorage.setItem('pgf_sales', JSON.stringify(salesRegistry));
+  
   alert("Booking Approved successfully!");
-  fetchAdminDataFromSupabase();
+  populateAdminDashboardTables();
+  computeFinancialLedgerStatements();
 }
 
-async function rejectTrainingBooking(id) {
-  let reason = prompt("Reject karne ka reason likhein:");
+function rejectTrainingBooking(idx) {
+  let reason = prompt("Reject karne ka reason likhein (Taki User ko pata chal sake):");
   if(reason === null) return;
   if(reason.trim() === "") reason = "Not specified by farm admin";
   
-  await supabase.from("bookings").update({ status: `Rejected (Reason: ${reason})` }).eq("id", id);
+  bookingsRegistry[idx].status = `Rejected (Reason: ${reason})`;
+  localStorage.setItem('pgf_bookings', JSON.stringify(bookingsRegistry));
   alert("Booking Marked Rejected!");
-  fetchAdminDataFromSupabase();
+  populateAdminDashboardTables();
+  computeFinancialLedgerStatements();
 }
 
 function computeFinancialLedgerStatements() {
-  const totalSales = salesRegistry.reduce((sum, s) => sum + Number(s.total || 0), 0);
-  const totalPurchases = purchasesRegistry.reduce((sum, p) => sum + Number(p.total || 0), 0);
-  const totalExpenses = expensesRegistry.filter(e => e.category !== "Damage Received").reduce((sum, e) => sum + Number(e.amount || 0), 0);
-  const totalDamages = expensesRegistry.filter(e => e.category === "Damage Received").reduce((sum, e) => sum + Number(e.amount || 0), 0);
+  const totalSales = salesRegistry.reduce((sum, s) => sum + s.total, 0);
+  const totalPurchases = purchasesRegistry.reduce((sum, p) => sum + p.total, 0);
+  const totalExpenses = expensesRegistry.filter(e => e.category !== "Damage Received").reduce((sum, e) => sum + e.amount, 0);
+  const totalDamages = expensesRegistry.filter(e => e.category === "Damage Received").reduce((sum, e) => sum + e.amount, 0);
 
   const netProfit = totalSales - (totalPurchases + totalExpenses + totalDamages);
 
@@ -431,11 +394,11 @@ function computeFinancialLedgerStatements() {
   document.getElementById("finNetProfit").textContent = "Rs " + netProfit.toFixed(2);
 
   let cashBalances = { Soham: 0, Jeet: 0, Farm: 0 };
-  salesRegistry.forEach(s => { if(cashBalances[s.collector] !== undefined) cashBalances[s.collector] += Number(s.total || 0); });
+  salesRegistry.forEach(s => { if(cashBalances[s.collector] !== undefined) cashBalances[s.collector] += s.total; });
   expensesRegistry.forEach(e => {
-    if(cashBalances[e.payer] !== undefined) cashBalances[e.payer] -= Number(e.amount || 0);
+    if(cashBalances[e.payer] !== undefined) cashBalances[e.payer] -= e.amount;
   });
-  purchasesRegistry.forEach(p => { if(cashBalances[p.funder] !== undefined) cashBalances[p.funder] -= Number(p.total || 0); });
+  purchasesRegistry.forEach(p => { if(cashBalances[p.funder] !== undefined) cashBalances[p.funder] -= p.total; });
 
   document.getElementById("cashSoham").textContent = "Rs " + cashBalances.Soham.toFixed(2);
   document.getElementById("cashJeet").textContent = "Rs " + cashBalances.Jeet.toFixed(2);
@@ -443,7 +406,7 @@ function computeFinancialLedgerStatements() {
 
   const expRows = expensesRegistry.filter(e => e.category !== "Damage Received");
   document.getElementById("subExpenseTableBody").innerHTML = expRows.map(e => `
-    <tr><td>${e.date}</td><td>${e.category}</td><td>${e.payer}</td><td>${e.description}</td><td style="color:var(--warn); font-weight:bold;">Rs ${e.amount}</td></tr>
+    <tr><td>${e.date}</td><td>${e.category}</td><td>${e.payer}</td><td>${e.desc}</td><td style="color:var(--warn); font-weight:bold;">Rs ${e.amount}</td></tr>
   `).join("");
 
   document.getElementById("subSellTableBody").innerHTML = salesRegistry.map(s => `
@@ -454,7 +417,7 @@ function computeFinancialLedgerStatements() {
       <td>${s.phone || 'N/A'}</td>
       <td>${s.qty}</td>
       <td style="color:var(--accent); font-weight:bold;">Rs ${s.total}</td>
-      <td><button type="button" class="btn" style="padding:2px 6px; min-height:auto; font-size:11px;" onclick="downloadOfflineSaleInvoice('${s.sale_id}')">Receipt</button></td>
+      <td><button type="button" class="btn" style="padding:2px 6px; min-height:auto; font-size:11px;" onclick="downloadOfflineSaleInvoice('${s.saleId}')">Receipt</button></td>
     </tr>
   `).join("");
 
@@ -464,39 +427,40 @@ function computeFinancialLedgerStatements() {
 
   const dmgRows = expensesRegistry.filter(e => e.category === "Damage Received");
   document.getElementById("subDamageTableBody").innerHTML = dmgRows.map(d => `
-    <tr><td>${d.date}</td><td>${d.description}</td><td>${d.payer}</td><td style="color:var(--danger); font-weight:bold;">Rs ${d.amount}</td></tr>
+    <tr><td>${d.date}</td><td>${d.desc}</td><td>${d.payer}</td><td style="color:var(--danger); font-weight:bold;">Rs ${d.amount}</td></tr>
   `).join("");
 }
 
-async function saveAdminExpense(e) {
+function saveAdminExpense(e) {
   e.preventDefault();
   const rawDate = document.getElementById("expLogDate").value;
   const data = {
-    exp_id: "EXP-" + Date.now().toString().slice(-4),
+    expId: "EXP-" + Date.now().toString().slice(-4),
     date: rawDate ? new Date(rawDate).toLocaleDateString() : new Date().toLocaleDateString(),
     category: document.getElementById("expCategory").value,
     payer: document.getElementById("expPayer").value,
     mode: document.getElementById("expMode").value,
-    description: document.getElementById("expDesc").value.trim(),
+    desc: document.getElementById("expDesc").value.trim(),
     amount: parseFloat(document.getElementById("expAmount").value)
   };
-  
-  await supabase.from("expenses").insert([data]);
+  expensesRegistry.push(data);
+  localStorage.setItem('pgf_expenses', JSON.stringify(expensesRegistry));
   e.target.reset();
   initDefaultDatePickers();
-  fetchAdminDataFromSupabase();
+  computeFinancialLedgerStatements();
 }
 
-async function saveAdminSale(e) {
+function saveAdminSale(e) {
   e.preventDefault();
   const rawDate = document.getElementById("saleLogDate").value;
   const qty = parseFloat(document.getElementById("saleQty").value);
   const rate = parseFloat(document.getElementById("saleRate").value);
+  const pVariant = document.getElementById("saleProduct").value;
 
   const data = {
-    sale_id: "SALE-" + Date.now().toString().slice(-4),
+    saleId: "SALE-" + Date.now().toString().slice(-4),
     date: rawDate ? new Date(rawDate).toLocaleDateString() : new Date().toLocaleDateString(),
-    product: document.getElementById("saleProduct").value,
+    product: pVariant,
     collector: document.getElementById("saleCollector").value,
     buyer: document.getElementById("saleBuyer").value.trim(),
     phone: document.getElementById("salePhone").value.trim(),
@@ -506,20 +470,21 @@ async function saveAdminSale(e) {
     total: qty * rate
   };
 
-  await supabase.from("sales").insert([data]);
+  salesRegistry.push(data);
+  localStorage.setItem('pgf_sales', JSON.stringify(salesRegistry));
   e.target.reset();
   initDefaultDatePickers();
-  fetchAdminDataFromSupabase();
+  computeFinancialLedgerStatements();
 }
 
-async function saveAdminPurchase(e) {
+function saveAdminPurchase(e) {
   e.preventDefault();
   const rawDate = document.getElementById("purLogDate").value;
   const qty = parseFloat(document.getElementById("purQty").value);
   const rate = parseFloat(document.getElementById("purRate").value);
   
   const data = {
-    pur_id: "PUR-" + Date.now().toString().slice(-4),
+    purId: "PUR-" + Date.now().toString().slice(-4),
     date: rawDate ? new Date(rawDate).toLocaleDateString() : new Date().toLocaleDateString(),
     product: document.getElementById("purProduct").value,
     funder: document.getElementById("purFunder").value,
@@ -529,36 +494,37 @@ async function saveAdminPurchase(e) {
     total: qty * rate
   };
 
-  await supabase.from("purchases").insert([data]);
+  purchasesRegistry.push(data);
+  localStorage.setItem('pgf_purchases', JSON.stringify(purchasesRegistry));
   e.target.reset();
   initDefaultDatePickers();
-  fetchAdminDataFromSupabase();
+  computeFinancialLedgerStatements();
 }
 
-async function saveAdminDamage(e) {
+function saveAdminDamage(e) {
   e.preventDefault();
   const rawDate = document.getElementById("dmgLogDate").value;
   const data = {
-    exp_id: "DMG-" + Date.now().toString().slice(-4),
+    expId: "DMG-" + Date.now().toString().slice(-4),
     date: rawDate ? new Date(rawDate).toLocaleDateString() : new Date().toLocaleDateString(),
     category: "Damage Received",
     payer: document.getElementById("dmgPayer").value,
     mode: "Internal Allocation",
-    description: document.getElementById("dmgDesc").value.trim(),
+    desc: document.getElementById("dmgDesc").value.trim(),
     amount: parseFloat(document.getElementById("dmgAmount").value)
   };
-
-  await supabase.from("expenses").insert([data]);
+  expensesRegistry.push(data);
+  localStorage.setItem('pgf_expenses', JSON.stringify(expensesRegistry));
   e.target.reset();
   initDefaultDatePickers();
-  fetchAdminDataFromSupabase();
+  computeFinancialLedgerStatements();
 }
 
 function downloadOfflineSaleInvoice(saleId) {
-  const targetSale = salesRegistry.find(s => s.sale_id === saleId);
+  const targetSale = salesRegistry.find(s => s.saleId === saleId);
   if(!targetSale) return alert("Invoice not found.");
   
-  document.getElementById("invNum").textContent = targetSale.sale_id;
+  document.getElementById("invNum").textContent = targetSale.saleId;
   document.getElementById("invDate").textContent = targetSale.date;
   document.getElementById("invClientName").textContent = targetSale.buyer;
   document.getElementById("invClientEmail").textContent = "Phone Lines: " + (targetSale.phone || "N/A");
@@ -567,14 +533,14 @@ function downloadOfflineSaleInvoice(saleId) {
   document.getElementById("invoiceTableItemsBody").innerHTML = `
     <tr>
       <td style="padding:12px 14px; border-bottom:1px solid #e6e9ec; font-weight: 600;">${targetSale.product} Lot Log Entry</td>
-      <td style="padding:12px 14px; border-bottom:1px solid #e6e9ec; text-align:right;">Rs ${Number(targetSale.rate).toFixed(2)}</td>
+      <td style="padding:12px 14px; border-bottom:1px solid #e6e9ec; text-align:right;">Rs ${targetSale.rate.toFixed(2)}</td>
       <td style="padding:12px 14px; border-bottom:1px solid #e6e9ec; text-align:center;">${targetSale.qty}</td>
-      <td style="padding:12px 14px; border-bottom:1px solid #e6e9ec; text-align:right; font-weight:600; color:var(--accent);">Rs ${Number(targetSale.total).toFixed(2)}</td>
+      <td style="padding:12px 14px; border-bottom:1px solid #e6e9ec; text-align:right; font-weight:600; color:var(--accent);">Rs ${targetSale.total.toFixed(2)}</td>
     </tr>
   `;
   
-  document.getElementById("invSub").textContent = "Rs " + Number(targetSale.total).toFixed(2);
-  document.getElementById("invTotal").textContent = "Rs " + Number(targetSale.total).toFixed(2);
+  document.getElementById("invSub").textContent = "Rs " + targetSale.total.toFixed(2);
+  document.getElementById("invTotal").textContent = "Rs " + targetSale.total.toFixed(2);
   
   document.getElementById("invoiceDialog").showModal();
 }
@@ -677,29 +643,29 @@ if(document.getElementById("address")) {
   document.getElementById("address").addEventListener("input", validateOrderForm);
 }
 
-async function confirmOrder(e) {
+function confirmOrder(e) {
   e.preventDefault();
   const bill = getTotals();
   const currentTimestamp = new Date().toLocaleString();
   const generatedOrderId = "PGF-INV-" + Date.now().toString().slice(-5);
 
   const data = {
-    order_id: generatedOrderId,
-    user_email: currentUser.email,
+    orderId: generatedOrderId,
     name: currentUser.name,
     phone: currentUser.phone,
     email: currentUser.email,
     address: document.getElementById("address").value.trim(),
     products: [...cart.values()].map(i => `${i.name} [x${i.qty}]`).join(", "),
     total: bill.total,
-    txn_id: document.getElementById("paymentId").value.trim(),
-    date_logged: currentTimestamp,
+    txnId: document.getElementById("paymentId").value.trim(),
+    dateLogged: currentTimestamp,
     status: "Pending Verification"
   };
 
-  await supabase.from("orders").insert([data]);
+  orderRegistry.unshift(data);
+  localStorage.setItem('pgf_orders', JSON.stringify(orderRegistry));
   
-  document.getElementById("invNum").textContent = data.order_id;
+  document.getElementById("invNum").textContent = data.orderId;
   document.getElementById("invDate").textContent = new Date().toLocaleDateString();
   document.getElementById("invClientName").textContent = data.name;
   document.getElementById("invClientEmail").textContent = "Email: " + data.email + " | Ph: " + data.phone;
@@ -719,7 +685,7 @@ async function confirmOrder(e) {
 
   saveToSheet({ type: "order", ...data });
   
-  const waMessage = `NEW GOODS ORDER VERIFICATION FLOW:\n----------------------------------------\nInvoice Ref Code: ${data.order_id}\nClient Legal Name: ${data.name}\nProducts Mapped: ${data.products}\nTotal Paid Amount: Rs ${data.total}\nPayment Method: ${document.getElementById("paymentMode").value}\nTransaction Hash ID Code: ${data.txn_id}\n----------------------------------------`;
+  const waMessage = `NEW GOODS ORDER VERIFICATION FLOW:\n----------------------------------------\nInvoice Ref Code: ${data.orderId}\nClient Legal Name: ${data.name}\nProducts Mapped: ${data.products}\nTotal Paid Amount: Rs ${data.total}\nPayment Method: ${document.getElementById("paymentMode").value}\nTransaction Hash ID Code: ${data.txnId}\n----------------------------------------`;
   
   alert("Order authorized! Opening WhatsApp automation link channel framework.");
   window.open(`https://wa.me/${farmWhatsapp}?text=${encodeURIComponent(waMessage)}`, '_blank');
@@ -785,11 +751,10 @@ if(document.getElementById("farmerForm")) {
   document.getElementById("fdate").addEventListener("input", validateFarmerForm);
 }
 
-async function submitStudentVisit(e) {
+function submitStudentVisit(e) {
   e.preventDefault();
   const data = {
-    booking_id: "PGF-STU-" + Date.now().toString().slice(-4),
-    user_email: currentUser.email,
+    bookingId: "PGF-STU-" + Date.now().toString().slice(-4),
     type: "Student",
     name: currentUser.name,
     phone: currentUser.phone,
@@ -800,16 +765,16 @@ async function submitStudentVisit(e) {
     start: document.getElementById("sstart").value,
     end: document.getElementById("send").value,
     fee: 100,
-    txn_id: document.getElementById("spayment").value.trim(),
-    date_logged: new Date().toLocaleString(),
+    txnId: document.getElementById("spayment").value.trim(),
+    dateLogged: new Date().toLocaleString(),
     status: "Pending Verification",
-    approved_date: ""
+    approvedDate: ""
   };
-  
-  await supabase.from("bookings").insert([data]);
+  bookingsRegistry.unshift(data);
+  localStorage.setItem('pgf_bookings', JSON.stringify(bookingsRegistry));
   saveToSheet({ type: "visit", ...data });
 
-  const waText = `NEW STUDENT INTERNSHIP REGISTRATION:\n----------------------------------------\nBooking Ref ID: ${data.booking_id}\nName: ${data.name}\nUTR Tracking Number: ${data.txn_id}\n----------------------------------------`;
+  const waText = `NEW STUDENT INTERNSHIP REGISTRATION:\n----------------------------------------\nBooking Ref ID: ${data.bookingId}\nName: ${data.name}\nUTR Tracking Number: ${data.txnId}\n----------------------------------------`;
   window.open(`https://wa.me/${farmWhatsapp}?text=${encodeURIComponent(waText)}`, '_blank');
   
   document.getElementById("studentForm").reset();
@@ -817,27 +782,26 @@ async function submitStudentVisit(e) {
   checkUserSession();
 }
 
-async function submitFarmerVisit(e) {
+function submitFarmerVisit(e) {
   e.preventDefault();
   const data = {
-    booking_id: "PGF-FAR-" + Date.now().toString().slice(-4),
-    user_email: currentUser.email,
+    bookingId: "PGF-FAR-" + Date.now().toString().slice(-4),
     type: "Farmer",
     name: currentUser.name,
     phone: currentUser.phone,
     email: currentUser.email,
     date: document.getElementById("fdate").value,
     fee: 699,
-    txn_id: document.getElementById("fpayment").value.trim(),
-    date_logged: new Date().toLocaleString(),
+    txnId: document.getElementById("fpayment").value.trim(),
+    dateLogged: new Date().toLocaleString(),
     status: "Pending Verification",
-    approved_date: ""
+    approvedDate: ""
   };
-  
-  await supabase.from("bookings").insert([data]);
+  bookingsRegistry.unshift(data);
+  localStorage.setItem('pgf_bookings', JSON.stringify(bookingsRegistry));
   saveToSheet({ type: "visit", ...data });
 
-  const waText = `NEW FARMER TRAINING BOOKING:\n----------------------------------------\nBooking Ref ID: ${data.booking_id}\nName: ${data.name}\nUTR Tracking Number: ${data.txn_id}\n----------------------------------------`;
+  const waText = `NEW FARMER TRAINING BOOKING:\n----------------------------------------\nBooking Ref ID: ${data.bookingId}\nName: ${data.name}\nUTR Tracking Number: ${data.txnId}\n----------------------------------------`;
   window.open(`https://wa.me/${farmWhatsapp}?text=${encodeURIComponent(waText)}`, '_blank');
   
   document.getElementById("farmerForm").reset();
@@ -857,7 +821,7 @@ if (document.getElementById("productSearch")) {
 }
 
 function downloadCertificatePDF(bookingId) {
-  const targetBooking = bookingsRegistry.find(b => b.booking_id === bookingId);
+  const targetBooking = bookingsRegistry.find(b => b.bookingId === bookingId);
   if (!targetBooking) return alert("Certificate not found.");
 
   const titleText = targetBooking.type === "Student" ? "Certificate of Internship" : "Certificate of Farming";
@@ -869,7 +833,7 @@ function downloadCertificatePDF(bookingId) {
     ? `from <strong>${targetBooking.start}</strong> to <strong>${targetBooking.end}</strong>`
     : `on target session date <strong>${targetBooking.date}</strong>`;
 
-  const actualApprovedDate = targetBooking.approved_date ? targetBooking.approved_date : new Date(targetBooking.date_logged).toLocaleDateString();
+  const actualApprovedDate = targetBooking.approvedDate ? targetBooking.approvedDate : new Date(targetBooking.dateLogged).toLocaleDateString();
 
   const iframe = document.createElement('iframe');
   iframe.style.position = 'fixed';
@@ -928,10 +892,16 @@ function downloadCertificatePDF(bookingId) {
                 <div style="font-size: 10px; font-weight: 800; color: #1e4620; margin-top: 5px; letter-spacing: 0.5px;">PURE GROW FARM</div>
               </div>
               <div style="text-align: center; width: 35%; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; padding-right: 20px; box-sizing: border-box;">
+                <!-- Signature Stamp Image -->
                 <img src="mushroom/soham sign.png" alt="Soham Gajera Signature" style="width: 130px; height: auto; display: block; margin: 0 auto -15px auto; mix-blend-mode: multiply; z-index: 5;">
+  
+                <!-- Solid Line Underneath Signature Stamp -->
                 <div style="border-top: 1px solid #333; width: 160px; margin: 0 auto 6px auto;"></div>
+  
+                <!-- Text Fields Mapped Under the Line -->
                 <div style="font-size: 14px; font-weight: bold; color: #1e4620; line-height: 1.2;">Soham Gajera</div>
                 <div style="font-size: 11px; color: #6b7280; margin-top: 2px;">Authorized Signatory</div>
+              </div>
               </div>
             </div>
           </div>

@@ -159,7 +159,10 @@ function handleRegister(e) {
     return;
   }
 
-  const newUser = { name, phone, email, password, registeredOn: new Date().toLocaleString() };
+  const now = new Date();
+  const currentFormattedDateTime = now.toLocaleDateString('en-IN') + " " + now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+
+  const newUser = { name, phone, email, password, registeredOn: currentFormattedDateTime };
   usersDatabase.push(newUser);
   localStorage.setItem('pgf_user_db', JSON.stringify(usersDatabase));
 
@@ -182,7 +185,7 @@ function handleLogout() {
 }
 
 // =========================================================
-// USER DASHBOARD (FLIPKART LIVE TRACK & REFUND PROGRESS)
+// USER DASHBOARD
 // =========================================================
 function loadUserPanelData() {
   const oList = document.getElementById("userOrdersList");
@@ -203,13 +206,11 @@ function loadUserPanelData() {
     const loc = o.currentLocation || (isCancelled ? 'Refund in Progress' : 'Packed at Farm Yard');
     const eta = o.deliveryDays ? ` (Estimated Delivery: ${o.deliveryDays})` : '';
 
-    // Shipment stages
     const stageLevels = { 'Placed': 1, 'Packed': 2, 'Shipped': 3, 'OutForDelivery': 4, 'Delivered': 5 };
     const currentLvl = stageLevels[stage] || 2;
     const progressWidths = { 1: '0%', 2: '25%', 3: '50%', 4: '75%', 5: '100%' };
     const activeWidth = progressWidths[currentLvl] || '25%';
 
-    // Refund stages for Cancelled orders
     const refundStage = o.refundStage || 'Refund Initiated';
     const refLevels = { 'Refund Initiated': 1, 'Refund Processing': 2, 'Refund Credited': 3 };
     const curRefLvl = refLevels[refundStage] || 1;
@@ -220,7 +221,7 @@ function loadUserPanelData() {
       <div class="data-item-card" style="border: 1px solid ${isCancelled ? '#fdba74' : (isRejected ? '#fca5a5' : (isApproved ? '#86efac' : '#cbd5e1'))}; border-radius: 12px; padding: 14px; margin-bottom: 15px; background:#fff;">
         <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; border-bottom:1px solid #f1f5f9; padding-bottom:8px;">
           <strong>Order ID: <span style="color:var(--accent);">${o.orderId}</span></strong>
-          <span style="font-size:12px; color:var(--muted);">${o.dateLogged}</span>
+          <span style="font-size:12px; color:var(--muted); font-weight:600;">📅 ${o.dateLogged}</span>
         </div>
         <div style="margin: 8px 0; font-size:13px;">
           <span>Items: <strong>${o.products}</strong></span><br>
@@ -235,7 +236,6 @@ function loadUserPanelData() {
         ` : ''}
 
         ${isApproved ? `
-          <!-- 1. APPROVED LIVE SHIPMENT TRACKER -->
           <div style="margin-top: 12px; background: #f8fafc; padding: 12px; border-radius: 8px; border: 1px solid #e2e8f0;">
             <div style="font-weight:bold; font-size:13px; color:#1e293b; margin-bottom:8px;">
               🚚 Live Shipment Tracker${eta}
@@ -281,7 +281,6 @@ function loadUserPanelData() {
         ` : ''}
 
         ${isCancelled ? `
-          <!-- 2. CANCELLED LIVE REFUND TRACKER -->
           <div style="margin-top: 12px; background: #fffaf5; padding: 12px; border-radius: 8px; border: 1px solid #fdba74;">
             <div style="font-weight:bold; font-size:13px; color:#c2410c; margin-bottom:4px;">
               🔄 Order Cancelled & Live Payment Refund Tracker
@@ -318,7 +317,6 @@ function loadUserPanelData() {
         ` : ''}
 
         ${isRejected ? `
-          <!-- 3. REJECTED (NO PAYMENT - NO TRACKING) -->
           <div style="background: #fef2f2; border: 1px solid #f87171; border-radius: 8px; padding: 12px; margin-top: 10px;">
             <strong style="color: #991b1b; font-size: 14px;">❌ Order Rejected (Payment Not Verified)</strong>
             <p style="margin: 4px 0 0 0; font-size: 12px; color: #7f1d1d;"><strong>Reason:</strong> ${o.status.replace('Rejected (Reason: ', '').replace(')', '')}</p>
@@ -398,10 +396,9 @@ function deleteUserAccount(idx) {
 }
 
 // =========================================================
-// ADMIN POPULATE TABLES (DATE & TIME + 3 ACTION BUTTONS)
+// ADMIN POPULATE TABLES (EXACT DATE & TIME SHOWN)
 // =========================================================
 function populateAdminDashboardTables() {
-  // 1. Orders Management (Date/Time Column + 3 Action Buttons)
   if (document.getElementById("adminOrdersTableBody")) {
     const validOrders = orderRegistry.filter(o => o && o.name && o.orderId);
     if (!validOrders.length) {
@@ -420,11 +417,16 @@ function populateAdminDashboardTables() {
         const stage = o.trackingStage || (isApproved ? 'Packed' : 'Placed');
         const loc = o.currentLocation || 'Order Received at Farm Yard';
         const eta = o.deliveryDays || '2-3 Days';
+        
+        // Exact Order Logged Date & Time Formatting
+        const displayDateTime = o.dateLogged ? o.dateLogged : (new Date().toLocaleDateString('en-IN') + " 10:00 AM");
 
         return `
           <tr>
             <td><strong>${o.orderId}</strong></td>
-            <td><strong style="color:#0284c7;">${o.dateLogged || 'N/A'}</strong></td>
+            <td style="white-space: nowrap;">
+              <span style="color:#0284c7; font-weight:bold; font-size:13px;">📅 ${displayDateTime}</span>
+            </td>
             <td><strong>${o.name}</strong></td>
             <td>
               ${o.phone || 'N/A'}<br>
@@ -448,7 +450,6 @@ function populateAdminDashboardTables() {
               ${isCancelled ? `<br><small style="color:#ea580c; font-weight:bold;">Refund: ${o.refundStage || 'Initiated'}</small>` : ''}
             </td>
             
-            <!-- Live Tracking & Refund Controls Column -->
             <td style="min-width: 230px;">
               ${isApproved ? `
                 <div style="background:#f8fafc; padding:8px; border-radius:8px; border:1px solid #e2e8f0; font-size:12px;">
@@ -463,7 +464,7 @@ function populateAdminDashboardTables() {
                     <button type="button" class="btn" style="padding:2px 5px; font-size:10px; min-height:22px; background:${stage==='Placed'?'#2b8a3e':'#94a3b8'};" onclick="setOrderStageDirect(${idx}, 'Placed')">Placed</button>
                     <button type="button" class="btn" style="padding:2px 5px; font-size:10px; min-height:22px; background:${stage==='Packed'?'#2b8a3e':'#94a3b8'};" onclick="setOrderStageDirect(${idx}, 'Packed')">Packed</button>
                     <button type="button" class="btn" style="padding:2px 5px; font-size:10px; min-height:22px; background:${stage==='Shipped'?'#2b8a3e':'#94a3b8'};" onclick="setOrderStageDirect(${idx}, 'Shipped')">Shipped</button>
-                    <button type="button" class="btn" style="padding:2px 5px; font-size:10px; min-height:22px; background:${stage==='OutForDelivery'?'#2b8a3e':'#94a3b8'};" onclick="setOrderStageDirect(${idx}, 'OutForDelivery')">Out Delivery</button>
+                    <button type="button" class="btn" style="padding:2px 5px; font-size:10px; min-height:22px; background:${stage==='OutForDelivery'?'#2b8a3e':'#94a3b8'};" onclick="setOrderStageDirect(${idx}, 'Out Delivery')">Out Delivery</button>
                     <button type="button" class="btn" style="padding:2px 5px; font-size:10px; min-height:22px; background:${stage==='Delivered'?'#2b8a3e':'#94a3b8'};" onclick="setOrderStageDirect(${idx}, 'Delivered')">Delivered</button>
                   </div>
                 </div>
@@ -479,12 +480,11 @@ function populateAdminDashboardTables() {
               ` : (isRejected ? `<span style="color:#dc2626; font-weight:bold; font-size:12px;">Rejected (No Payment / No Track)</span>` : `<span style="color:#d97706; font-weight:bold; font-size:12px;">Approve or Cancel to track</span>`))}
             </td>
 
-            <!-- 3 ACTIONS BUTTONS: APPROVE / REJECT / CANCEL -->
             <td>
               <div style="display:flex; flex-direction:column; gap:4px;">
                 ${!isApproved && !isCancelled && !isRejected ? `
                   <button class="btn" style="padding:4px 8px; min-height:auto; font-size:11px; background:var(--accent);" onclick="handleOrderApprove(${idx})">1. Approve (Live Track)</button>
-                  <button class="btn" style="padding:4px 8px; min-height:auto; font-size:11px; background:var(--danger);" onclick="handleOrderReject(${idx})">2. Reject (No Payment / No Track)</button>
+                  <button class="btn" style="padding:4px 8px; min-height:auto; font-size:11px; background:var(--danger);" onclick="handleOrderReject(${idx})">2. Reject (No Payment)</button>
                   <button class="btn" style="padding:4px 8px; min-height:auto; font-size:11px; background:#ea580c;" onclick="handleOrderCancelRefund(${idx})">3. Cancel (Refund Track)</button>
                 ` : `
                   ${isApproved ? `
@@ -500,7 +500,7 @@ function populateAdminDashboardTables() {
     }
   }
 
-  // 2. Bookings Table (Date/Time Column Included)
+  // 2. Bookings Table
   if (document.getElementById("adminBookingsTableBody")) {
     const validBookings = bookingsRegistry.filter(b => b && b.name && b.bookingId);
     if (!validBookings.length) {
@@ -592,8 +592,6 @@ function populateAdminDashboardTables() {
 // =========================================================
 // 3 CORE ORDER ACTIONS: APPROVE / REJECT / CANCEL & REFUND
 // =========================================================
-
-// 1. APPROVE (Live Tracking Enabled)
 function handleOrderApprove(idx) {
   orderRegistry[idx].status = "Approved";
   orderRegistry[idx].trackingStage = "Packed";
@@ -608,9 +606,8 @@ function handleOrderApprove(idx) {
   computeFinancialLedgerStatements();
 }
 
-// 2. REJECT (Payment Not Received / Fake UTR - No live track, No refund)
 function handleOrderReject(idx) {
-  let reason = prompt("Reject karne ka reason likhein (Payment nahi mila / Fake UTR):", "Payment Not Received / Invalid Txn ID");
+  let reason = prompt("Reject karne ka reason likhein (Payment nahi mila / Fake UTR):", "Payment Not Received / Invalid UTR");
   if (reason === null) return;
 
   orderRegistry[idx].status = `Rejected (Reason: ${reason})`;
@@ -625,7 +622,6 @@ function handleOrderReject(idx) {
   computeFinancialLedgerStatements();
 }
 
-// 3. CANCEL & REFUND (Payment Received but Farm Undeliverable - Live Refund Tracking Enabled)
 function handleOrderCancelRefund(idx) {
   let reason = prompt("Order Cancel karne ka reason likhein (e.g. Out of Stock / Location Undeliverable):", "Item Out of Stock / Undeliverable Location");
   if (reason === null) return;
@@ -641,7 +637,6 @@ function handleOrderCancelRefund(idx) {
   computeFinancialLedgerStatements();
 }
 
-// Stage change controls for Admin
 function setOrderStageDirect(idx, newStage) {
   orderRegistry[idx].trackingStage = newStage;
   if (newStage === 'Placed') orderRegistry[idx].currentLocation = "Order Placed & Verified at Farm Desk";
@@ -678,7 +673,7 @@ function updateOrderLocationDetails(idx) {
 // =========================================================
 function confirmBookingSlot(idx) {
   bookingsRegistry[idx].status = "Confirmed";
-  bookingsRegistry[idx].approvedDate = new Date().toLocaleDateString();
+  bookingsRegistry[idx].approvedDate = new Date().toLocaleDateString('en-IN');
   bookingsRegistry[idx].certIssued = false;
   localStorage.setItem('pgf_bookings', JSON.stringify(bookingsRegistry));
   
@@ -694,7 +689,7 @@ function confirmBookingSlot(idx) {
     qty: 1, 
     rate: target.fee, 
     total: target.fee, 
-    date: new Date().toLocaleDateString() 
+    date: new Date().toLocaleDateString('en-IN') 
   };
   salesRegistry.push(saleLog);
   localStorage.setItem('pgf_sales', JSON.stringify(salesRegistry));
@@ -707,7 +702,7 @@ function confirmBookingSlot(idx) {
 function issueUserCertificate(idx) {
   if (confirm(`Kya aap ${bookingsRegistry[idx].name} ke liye certificate approve karna chahte hain? Iske baad user download kar sakega.`)) {
     bookingsRegistry[idx].certIssued = true;
-    bookingsRegistry[idx].certIssueDate = new Date().toLocaleDateString();
+    bookingsRegistry[idx].certIssueDate = new Date().toLocaleDateString('en-IN');
     localStorage.setItem('pgf_bookings', JSON.stringify(bookingsRegistry));
     alert("✅ 2. Certificate Approved ho gaya aur user ke dashboard me download unlock ho gaya!");
     populateAdminDashboardTables();
@@ -788,7 +783,7 @@ function saveAdminExpense(e) {
   const rawDate = document.getElementById("expLogDate").value;
   const data = {
     expId: "EXP-" + Date.now().toString().slice(-4),
-    date: rawDate ? new Date(rawDate).toLocaleDateString() : new Date().toLocaleDateString(),
+    date: rawDate ? new Date(rawDate).toLocaleDateString('en-IN') : new Date().toLocaleDateString('en-IN'),
     category: document.getElementById("expCategory").value,
     payer: document.getElementById("expPayer").value,
     mode: document.getElementById("expMode").value,
@@ -810,7 +805,7 @@ function saveAdminSale(e) {
 
   const data = {
     saleId: "SALE-" + Date.now().toString().slice(-4),
-    date: rawDate ? new Date(rawDate).toLocaleDateString() : new Date().toLocaleDateString(),
+    date: rawDate ? new Date(rawDate).toLocaleDateString('en-IN') : new Date().toLocaleDateString('en-IN'),
     product: document.getElementById("saleProduct").value,
     collector: document.getElementById("saleCollector").value,
     buyer: document.getElementById("saleBuyer").value.trim(),
@@ -836,7 +831,7 @@ function saveAdminPurchase(e) {
   
   const data = {
     purId: "PUR-" + Date.now().toString().slice(-4),
-    date: rawDate ? new Date(rawDate).toLocaleDateString() : new Date().toLocaleDateString(),
+    date: rawDate ? new Date(rawDate).toLocaleDateString('en-IN') : new Date().toLocaleDateString('en-IN'),
     product: document.getElementById("purProduct").value,
     funder: document.getElementById("purFunder").value,
     vendor: document.getElementById("purVendor").value.trim(),
@@ -857,7 +852,7 @@ function saveAdminDamage(e) {
   const rawDate = document.getElementById("dmgLogDate").value;
   const data = {
     expId: "DMG-" + Date.now().toString().slice(-4),
-    date: rawDate ? new Date(rawDate).toLocaleDateString() : new Date().toLocaleDateString(),
+    date: rawDate ? new Date(rawDate).toLocaleDateString('en-IN') : new Date().toLocaleDateString('en-IN'),
     category: "Damage Received",
     payer: document.getElementById("dmgPayer").value,
     mode: "Internal Allocation",
@@ -1007,7 +1002,11 @@ if(document.getElementById("address")) {
 function confirmOrder(e) {
   e.preventDefault();
   const bill = getTotals();
-  const currentTimestamp = new Date().toLocaleString();
+  
+  // Exact Indian Local Date & Time
+  const now = new Date();
+  const currentFormattedDateTime = now.toLocaleDateString('en-IN') + " " + now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+  
   const generatedOrderId = "PGF-INV-" + Date.now().toString().slice(-5);
   const selectedMode = document.getElementById("paymentMode").value;
 
@@ -1023,7 +1022,7 @@ function confirmOrder(e) {
     total: bill.total,
     paymentMode: selectedMode ? selectedMode + " App" : "UPI App",
     txnId: document.getElementById("paymentId").value.trim(),
-    dateLogged: currentTimestamp,
+    dateLogged: currentFormattedDateTime,
     trackingStage: "Placed",
     currentLocation: "Order Placed - Waiting for Farm Packing",
     deliveryDays: "2-3 Days",
@@ -1036,7 +1035,7 @@ function confirmOrder(e) {
   localStorage.setItem('pgf_orders', JSON.stringify(orderRegistry));
   
   document.getElementById("invNum").textContent = data.orderId;
-  document.getElementById("invDate").textContent = new Date().toLocaleDateString();
+  document.getElementById("invDate").textContent = new Date().toLocaleDateString('en-IN');
   document.getElementById("invClientName").textContent = data.name;
   document.getElementById("invClientEmail").textContent = "Email: " + data.email + " | Ph: " + data.phone;
   document.getElementById("invClientAddr").textContent = "Address: " + data.address;
@@ -1054,7 +1053,7 @@ function confirmOrder(e) {
   document.getElementById("invDelivery").textContent = "Rs " + bill.delivery;
   document.getElementById("invTotal").textContent = "Rs " + bill.total;
   
-  const waMessage = `NEW GOODS ORDER VERIFICATION FLOW:\n----------------------------------------\nInvoice Ref Code: ${data.orderId}\nClient Legal Name: ${data.name}\nProducts: ${data.products}\nSubtotal: Rs ${data.subtotal}\nDelivery: Rs ${data.delivery}\nGrand Total: Rs ${data.total}\nPayment Method: ${data.paymentMode}\nTransaction ID: ${data.txnId}\n----------------------------------------`;
+  const waMessage = `NEW GOODS ORDER VERIFICATION FLOW:\n----------------------------------------\nInvoice Ref Code: ${data.orderId}\nClient Legal Name: ${data.name}\nOrder Date & Time: ${data.dateLogged}\nProducts: ${data.products}\nSubtotal: Rs ${data.subtotal}\nDelivery: Rs ${data.delivery}\nGrand Total: Rs ${data.total}\nPayment Method: ${data.paymentMode}\nTransaction ID: ${data.txnId}\n----------------------------------------`;
   
   window.open(`https://wa.me/${farmWhatsapp}?text=${encodeURIComponent(waMessage)}`, '_blank');
   document.getElementById("invoiceDialog").showModal();
@@ -1068,7 +1067,7 @@ function confirmOrder(e) {
 function closeInvoice() { document.getElementById("invoiceDialog").close(); }
 
 // =========================================================
-// TRAINING & INTERNSHIP PAYMENT (ORDER-LIKE WORKFLOW)
+// TRAINING & INTERNSHIP PAYMENT
 // =========================================================
 function showVisitForm(id) {
   document.getElementById("studentForm").classList.remove("active");
@@ -1141,6 +1140,9 @@ if(document.getElementById("farmerForm")) {
 function submitStudentVisit(e) {
   e.preventDefault();
   const selectedMode = document.getElementById("spaymentMode").value;
+  const now = new Date();
+  const currentFormattedDateTime = now.toLocaleDateString('en-IN') + " " + now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+
   const data = {
     bookingId: "PGF-STU-" + Date.now().toString().slice(-4),
     type: "Student",
@@ -1155,7 +1157,7 @@ function submitStudentVisit(e) {
     fee: 100,
     paymentMode: selectedMode ? selectedMode + " App" : "UPI App",
     txnId: document.getElementById("spayment").value.trim(),
-    dateLogged: new Date().toLocaleString(),
+    dateLogged: currentFormattedDateTime,
     status: "Pending Verification",
     certIssued: false,
     approvedDate: ""
@@ -1175,6 +1177,9 @@ function submitStudentVisit(e) {
 function submitFarmerVisit(e) {
   e.preventDefault();
   const selectedMode = document.getElementById("fpaymentMode").value;
+  const now = new Date();
+  const currentFormattedDateTime = now.toLocaleDateString('en-IN') + " " + now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+
   const data = {
     bookingId: "PGF-FAR-" + Date.now().toString().slice(-4),
     type: "Farmer",
@@ -1185,7 +1190,7 @@ function submitFarmerVisit(e) {
     fee: 699,
     paymentMode: selectedMode ? selectedMode + " App" : "UPI App",
     txnId: document.getElementById("fpayment").value.trim(),
-    dateLogged: new Date().toLocaleString(),
+    dateLogged: currentFormattedDateTime,
     status: "Pending Verification",
     certIssued: false,
     approvedDate: ""
@@ -1227,7 +1232,7 @@ function downloadCertificatePDF(bookingId) {
     ? `from <strong>${targetBooking.start}</strong> to <strong>${targetBooking.end}</strong>`
     : `on target session date <strong>${targetBooking.date}</strong>`;
 
-  const actualApprovedDate = targetBooking.certIssueDate ? targetBooking.certIssueDate : new Date(targetBooking.dateLogged).toLocaleDateString();
+  const actualApprovedDate = targetBooking.certIssueDate ? targetBooking.certIssueDate : new Date(targetBooking.dateLogged).toLocaleDateString('en-IN');
 
   const iframe = document.createElement('iframe');
   iframe.style.position = 'fixed';

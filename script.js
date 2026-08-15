@@ -19,7 +19,6 @@ const products = [
 
 const cart = new Map();
 
-// Helper: Filter out invalid / undefined entries
 function getCleanData(key) {
   try {
     const raw = JSON.parse(localStorage.getItem(key)) || [];
@@ -40,7 +39,6 @@ let purchasesRegistry = getCleanData('pgf_purchases');
 
 let currentUser = JSON.parse(localStorage.getItem('pgf_session')) || null;
 
-// Cache cleaner
 function clearCorruptedCache() {
   if (confirm("Kya aap saara kharab cache clear karna chahte hain?")) {
     localStorage.removeItem('pgf_orders');
@@ -203,6 +201,9 @@ function handleLogout() {
   checkUserSession();
 }
 
+// =========================================================
+// USER DASHBOARD (WITH FLIPKART STYLE LIVE TRACKING)
+// =========================================================
 function loadUserPanelData() {
   const oList = document.getElementById("userOrdersList");
   const bList = document.getElementById("userBookingsList");
@@ -212,16 +213,68 @@ function loadUserPanelData() {
   const myOrders = orderRegistry.filter(o => o && o.email === currentUser.email);
   const myBookings = bookingsRegistry.filter(b => b && b.email === currentUser.email);
 
+  // Flipkart style tracking stages renderer
   oList.innerHTML = myOrders.length ? myOrders.map(o => {
-    let statusColor = o.status === 'Approved' ? 'var(--accent)' : (o.status && o.status.startsWith('Rejected') ? 'var(--danger)' : 'var(--warn)');
-    const deliveryNote = o.deliveryDays ? `<br><span style="color:#0284c7; font-weight:600;">🚚 Shipping/Delivery ETA: ${o.deliveryDays}</span>` : '';
+    const stage = o.trackingStage || (o.status === 'Approved' ? 'Confirmed' : 'Placed');
+    const loc = o.currentLocation ? `📍 Current Location: <strong>${o.currentLocation}</strong>` : `📍 Status: Packing / In Hub`;
+    const eta = o.deliveryDays ? ` (Estimated Delivery: ${o.deliveryDays})` : '';
+
+    const is1 = true;
+    const is2 = ['Confirmed', 'Packed', 'Shipped', 'OutForDelivery', 'Delivered'].includes(stage);
+    const is3 = ['Shipped', 'OutForDelivery', 'Delivered'].includes(stage);
+    const is4 = ['OutForDelivery', 'Delivered'].includes(stage);
+    const is5 = stage === 'Delivered';
+
     return `
-      <div class="data-item-card">
-        <strong>Order ID: ${o.orderId || ''}</strong><br>
-        <small>Date Received: ${o.dateLogged || ''}</small><br>
-        <span>Items: ${o.products || ''}</span><br>
-        <strong>Total: Rs ${o.total || 0} [<span style="color:${statusColor}; font-weight:bold;">${o.status || 'Pending Verification'}</span>]</strong>
-        ${deliveryNote}
+      <div class="data-item-card" style="border: 1px solid #cbd5e1; border-radius: 12px; padding: 14px; margin-bottom: 15px; background:#fff;">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; border-bottom:1px solid #f1f5f9; padding-bottom:8px;">
+          <strong>Order ID: <span style="color:var(--accent);">${o.orderId}</span></strong>
+          <span style="font-size:12px; color:var(--muted);">${o.dateLogged}</span>
+        </div>
+        <div style="margin: 8px 0; font-size:13px;">
+          <span>Items: <strong>${o.products}</strong></span><br>
+          <span>Grand Total: <strong>Rs ${o.total}</strong></span>
+        </div>
+
+        <!-- Flipkart-style Tracking Bar -->
+        <div style="margin-top: 12px; background: #f8fafc; padding: 12px; border-radius: 8px; border: 1px solid #e2e8f0;">
+          <div style="font-weight:bold; font-size:13px; color:#1e293b; margin-bottom:8px;">
+            🚚 Live Shipment Tracker${eta}
+          </div>
+          
+          <div style="display: flex; justify-content: space-between; align-items: center; position: relative; margin: 15px 0 10px 0;">
+            <div style="position: absolute; top: 12px; left: 10%; width: 80%; height: 4px; background: #e2e8f0; z-index: 1;"></div>
+            
+            <div style="text-align: center; z-index: 2;">
+              <div style="width: 24px; height: 24px; border-radius: 50%; background: ${is1 ? '#2b8a3e' : '#cbd5e1'}; color: #fff; font-size: 11px; line-height: 24px; margin: 0 auto; font-weight:bold;">✓</div>
+              <span style="font-size: 11px; font-weight: ${is1 ? 'bold' : 'normal'}; display: block; margin-top: 4px;">Placed</span>
+            </div>
+
+            <div style="text-align: center; z-index: 2;">
+              <div style="width: 24px; height: 24px; border-radius: 50%; background: ${is2 ? '#2b8a3e' : '#cbd5e1'}; color: #fff; font-size: 11px; line-height: 24px; margin: 0 auto; font-weight:bold;">${is2 ? '✓' : '2'}</div>
+              <span style="font-size: 11px; font-weight: ${is2 ? 'bold' : 'normal'}; display: block; margin-top: 4px;">Packed</span>
+            </div>
+
+            <div style="text-align: center; z-index: 2;">
+              <div style="width: 24px; height: 24px; border-radius: 50%; background: ${is3 ? '#2b8a3e' : '#cbd5e1'}; color: #fff; font-size: 11px; line-height: 24px; margin: 0 auto; font-weight:bold;">${is3 ? '✓' : '3'}</div>
+              <span style="font-size: 11px; font-weight: ${is3 ? 'bold' : 'normal'}; display: block; margin-top: 4px;">Shipped</span>
+            </div>
+
+            <div style="text-align: center; z-index: 2;">
+              <div style="width: 24px; height: 24px; border-radius: 50%; background: ${is4 ? '#2b8a3e' : '#cbd5e1'}; color: #fff; font-size: 11px; line-height: 24px; margin: 0 auto; font-weight:bold;">${is4 ? '✓' : '4'}</div>
+              <span style="font-size: 11px; font-weight: ${is4 ? 'bold' : 'normal'}; display: block; margin-top: 4px;">Out For Delivery</span>
+            </div>
+
+            <div style="text-align: center; z-index: 2;">
+              <div style="width: 24px; height: 24px; border-radius: 50%; background: ${is5 ? '#2b8a3e' : '#cbd5e1'}; color: #fff; font-size: 11px; line-height: 24px; margin: 0 auto; font-weight:bold;">${is5 ? '✓' : '5'}</div>
+              <span style="font-size: 11px; font-weight: ${is5 ? 'bold' : 'normal'}; display: block; margin-top: 4px;">Delivered</span>
+            </div>
+          </div>
+
+          <div style="font-size: 12px; color: #334155; margin-top: 10px; background: #ffffff; padding: 6px 10px; border-radius: 6px; border-left: 3px solid var(--accent);">
+            ${loc}
+          </div>
+        </div>
       </div>
     `;
   }).join("") : "No active orders mapped for this profile.";
@@ -229,10 +282,10 @@ function loadUserPanelData() {
   bList.innerHTML = myBookings.length ? myBookings.map(b => {
     const isConfirmed = b.status === 'Confirmed' || b.status === 'Approved';
     let statusColor = isConfirmed ? 'var(--accent)' : (b.status && b.status.startsWith('Rejected') ? 'var(--danger)' : 'var(--warn)');
-    const certNote = b.certIssued ? `<br><span style="color:var(--accent); font-weight:bold;">📜 Certificate Issued & Ready to Download!</span>` : (isConfirmed ? `<br><span style="color:#d97706; font-size:12px;">⏳ Certificate will be issued upon completion.</span>` : '');
+    const certNote = b.certIssued ? `<br><span style="color:var(--accent); font-weight:bold;">📜 Certificate Approved & Ready to Download below!</span>` : (isConfirmed ? `<br><span style="color:#d97706; font-size:12px;">⏳ Step 1: Farm Booking Confirmed. Step 2: Certificate will be approved upon training completion.</span>` : '');
     
     return `
-      <div class="data-item-card">
+      <div class="data-item-card" style="border: 1px solid #cbd5e1; border-radius: 10px; padding: 12px; margin-bottom: 10px; background:#fff;">
         <strong>Booking ID: ${b.bookingId || ''}</strong><br>
         <small>Booked On: ${b.dateLogged || ''}</small><br>
         <strong>Scheme: ${b.type || ''} Visit [<span style="color:${statusColor}; font-weight:bold;">${isConfirmed ? 'Booking Confirmed' : (b.status || 'Pending Verification')}</span>]</strong>
@@ -241,7 +294,6 @@ function loadUserPanelData() {
     `;
   }).join("") : "No course training applications logged.";
 
-  // Only show certificates if issued by admin
   const issuedBookings = myBookings.filter(b => b.certIssued === true);
 
   if (issuedBookings.length > 0) {
@@ -297,11 +349,11 @@ function deleteUserAccount(idx) {
 // ADMIN POPULATE TABLES
 // =========================================================
 function populateAdminDashboardTables() {
-  // 1. Filtered Orders Table (With Delivery Days ETA)
+  // 1. Orders Management (Live Tracking Control)
   if (document.getElementById("adminOrdersTableBody")) {
     const validOrders = orderRegistry.filter(o => o && o.name && o.orderId);
     if (!validOrders.length) {
-      document.getElementById("adminOrdersTableBody").innerHTML = `<tr><td colspan="13" style="text-align:center; color:var(--muted); padding:24px; font-weight:bold;">No customer orders placed yet.</td></tr>`;
+      document.getElementById("adminOrdersTableBody").innerHTML = `<tr><td colspan="12" style="text-align:center; color:var(--muted); padding:24px; font-weight:bold;">No customer orders placed yet.</td></tr>`;
     } else {
       document.getElementById("adminOrdersTableBody").innerHTML = validOrders.map((o, idx) => {
         const sub = Number(o.subtotal || (o.total > 1000 ? o.total : o.total - 50) || 0);
@@ -309,7 +361,9 @@ function populateAdminDashboardTables() {
         const grandTotal = Number(o.total || (sub + del));
         const mode = o.paymentMode || "Online UPI";
         const status = o.status || "Pending Verification";
-        const etaText = o.deliveryDays ? `<span style="color:#0284c7; font-weight:bold;">🚚 ${o.deliveryDays}</span>` : `<span class="muted">Not assigned</span>`;
+        const stage = o.trackingStage || (status === 'Approved' ? 'Confirmed' : 'Placed');
+        const loc = o.currentLocation || 'Order Received at Farm Yard';
+        const eta = o.deliveryDays || '2-3 Days';
 
         return `
           <tr>
@@ -330,18 +384,23 @@ function populateAdminDashboardTables() {
               <span class="badge" style="background:#eef2ff; color:#3730a3; margin-bottom:4px; font-weight:bold;">${mode}</span><br>
               <code>${o.txnId || 'N/A'}</code>
             </td>
-            <td><small>${o.dateLogged || 'N/A'}</small></td>
-            <td>${etaText}</td>
             <td><span class="badge ${status === 'Approved' ? 'badge-confirmed' : 'badge-pending'}">${status}</span></td>
             <td>
-              ${status === 'Pending Verification' ? `
-                <div style="display:flex; flex-direction:column; gap:4px;">
-                  <button class="btn" style="padding:4px 8px; min-height:auto; font-size:12px; background:var(--accent);" onclick="approveCustomerOrder(${idx})">Approve & Set Days</button>
-                  <button class="btn" style="padding:4px 8px; min-height:auto; font-size:12px; background:var(--danger);" onclick="rejectCustomerOrder(${idx})">Reject</button>
-                </div>
-              ` : `
-                <button class="btn" style="padding:3px 6px; min-height:auto; font-size:11px; background:#4b5563;" onclick="updateDeliveryDaysPrompt(${idx})">Edit Delivery Days</button>
-              `}
+              <div style="font-size:12px; line-height:1.4;">
+                <span class="badge" style="background:#0284c7; color:#fff; margin-bottom:2px;">Stage: ${stage}</span><br>
+                📍 <strong>${loc}</strong><br>
+                🚚 ETA: <strong>${eta}</strong>
+              </div>
+            </td>
+            <td>
+              <div style="display:flex; flex-direction:column; gap:4px;">
+                ${status === 'Pending Verification' ? `
+                  <button class="btn" style="padding:4px 8px; min-height:auto; font-size:11px; background:var(--accent);" onclick="approveCustomerOrder(${idx})">Approve Order</button>
+                  <button class="btn" style="padding:4px 8px; min-height:auto; font-size:11px; background:var(--danger);" onclick="rejectCustomerOrder(${idx})">Reject</button>
+                ` : `
+                  <button class="btn" style="padding:4px 8px; min-height:auto; font-size:11px; background:#0284c7;" onclick="updateOrderTracking(${idx})">📦 Edit Tracking & Location</button>
+                `}
+              </div>
             </td>
           </tr>
         `;
@@ -349,7 +408,7 @@ function populateAdminDashboardTables() {
     }
   }
 
-  // 2. Filtered Bookings Table (Two-step verification & Certificate Issuing)
+  // 2. Bookings Table (1. Farm Book Approve, 2. Certificate Approve)
   if (document.getElementById("adminBookingsTableBody")) {
     const validBookings = bookingsRegistry.filter(b => b && b.name && b.bookingId);
     if (!validBookings.length) {
@@ -360,14 +419,13 @@ function populateAdminDashboardTables() {
         const submittedDetails = isStudent ? `
           <div style="line-height:1.4;">
             <strong>College:</strong> ${b.college || 'N/A'}<br>
-            <strong>Course:</strong> ${b.course || 'N/A'}<br>
-            <strong>Enrollment No:</strong> ${b.enrollment || 'N/A'}<br>
+            <strong>Course:</strong> ${b.course || 'N/A'} (Roll: ${b.enrollment || 'N/A'})<br>
             <strong>Dates:</strong> <span style="color:#0369a1; font-weight:600;">${b.start || 'N/A'}</span> to <span style="color:#0369a1; font-weight:600;">${b.end || 'N/A'}</span>
           </div>
         ` : `
           <div style="line-height:1.4;">
             <strong>Session Date:</strong> <span style="color:#92400e; font-weight:600;">${b.date || 'N/A'}</span><br>
-            <span class="muted">Farmer Hands-on Training</span>
+            <span class="muted">Farmer Practical Training</span>
           </div>
         `;
 
@@ -392,19 +450,19 @@ function populateAdminDashboardTables() {
             </td>
             <td><small>${b.dateLogged || 'N/A'}</small></td>
             <td>
-              <span class="badge ${isConfirmed ? 'badge-confirmed' : 'badge-pending'}">${isConfirmed ? 'Booking Confirmed' : (b.status || 'Pending Verification')}</span>
+              <span class="badge ${isConfirmed ? 'badge-confirmed' : 'badge-pending'}">${isConfirmed ? '1. Confirmed' : 'Pending Verification'}</span>
             </td>
             <td>
-              <span class="badge ${certIssued ? 'badge-confirmed' : 'badge-pending'}">${certIssued ? 'Issued & Unlocked' : 'Locked'}</span>
+              <span class="badge ${certIssued ? 'badge-confirmed' : 'badge-pending'}">${certIssued ? '2. Approved & Issued' : 'Locked'}</span>
             </td>
             <td>
               <div style="display:flex; flex-direction:column; gap:4px;">
                 ${!isConfirmed ? `
-                  <button class="btn" style="padding:4px 8px; min-height:auto; font-size:11px; background:var(--accent);" onclick="confirmBookingSlot(${idx})">1. Confirm Booking</button>
+                  <button class="btn" style="padding:4px 8px; min-height:auto; font-size:11px; background:var(--accent);" onclick="confirmBookingSlot(${idx})">1. Approve Farm Book</button>
                   <button class="btn" style="padding:4px 8px; min-height:auto; font-size:11px; background:var(--danger);" onclick="rejectTrainingBooking(${idx})">Reject</button>
                 ` : `
                   ${!certIssued ? `
-                    <button class="btn" style="padding:4px 8px; min-height:auto; font-size:11px; background:#0284c7;" onclick="issueUserCertificate(${idx})">2. Issue Certificate</button>
+                    <button class="btn" style="padding:4px 8px; min-height:auto; font-size:11px; background:#0284c7;" onclick="issueUserCertificate(${idx})">2. Approve Certificate</button>
                   ` : `
                     <button type="button" class="btn" style="padding:3px 6px; min-height:auto; font-size:11px; background:var(--accent);" onclick="downloadCertificatePDF('${b.bookingId}')">📜 Download PDF</button>
                   `}
@@ -417,7 +475,7 @@ function populateAdminDashboardTables() {
     }
   }
 
-  // 3. Filtered Users Directory Table
+  // 3. Registered Users Directory Table
   if (document.getElementById("adminUsersTableBody")) {
     const validUsers = usersDatabase.filter(u => u && u.name && u.email);
     if (!validUsers.length) {
@@ -440,31 +498,49 @@ function populateAdminDashboardTables() {
 }
 
 // =========================================================
-// ORDER WORKFLOW (WITH DELIVERY ETA DAYS)
+// FLIPKART STYLE LIVE TRACKING CONTROLS (ADMIN)
 // =========================================================
 function approveCustomerOrder(idx) {
-  let days = prompt("Yeh order kitne din me dispatch/deliver hoga? (Jaise: '2-3 Days' ya '18 Aug tak'):", "2-3 Days");
-  if (days === null) return;
-  if (days.trim() === "") days = "2-3 Days";
-
   orderRegistry[idx].status = "Approved";
-  orderRegistry[idx].deliveryDays = days.trim();
+  orderRegistry[idx].trackingStage = "Confirmed";
+  orderRegistry[idx].currentLocation = "Pure Grow Farm Makhiyala (Processing & Packing)";
+  orderRegistry[idx].deliveryDays = "2-3 Days";
   localStorage.setItem('pgf_orders', JSON.stringify(orderRegistry));
   
-  alert(`Order Approve ho gaya aur Delivery ETA '${days}' set kar diya gaya!`);
+  alert("Order Approved! Ab aap 'Edit Tracking & Location' se order ki live location update kar sakte hain.");
   populateAdminDashboardTables();
   computeFinancialLedgerStatements();
 }
 
-function updateDeliveryDaysPrompt(idx) {
-  let current = orderRegistry[idx].deliveryDays || "2-3 Days";
-  let days = prompt("Naya Delivery Time / ETA enter karein:", current);
-  if (days !== null && days.trim() !== "") {
-    orderRegistry[idx].deliveryDays = days.trim();
-    localStorage.setItem('pgf_orders', JSON.stringify(orderRegistry));
-    populateAdminDashboardTables();
-    alert("Delivery Days update ho gaye!");
+function updateOrderTracking(idx) {
+  const o = orderRegistry[idx];
+  
+  const stageChoice = prompt(
+    "Order Stage Select Karein:\n1 = Confirmed / Packed\n2 = Shipped (In Transit)\n3 = Out For Delivery\n4 = Delivered\n\nNumber enter karein (1 to 4):",
+    o.trackingStage === 'Delivered' ? '4' : (o.trackingStage === 'OutForDelivery' ? '3' : (o.trackingStage === 'Shipped' ? '2' : '1'))
+  );
+
+  if (stageChoice === null) return;
+
+  if (stageChoice === '1') o.trackingStage = "Packed";
+  else if (stageChoice === '2') o.trackingStage = "Shipped";
+  else if (stageChoice === '3') o.trackingStage = "OutForDelivery";
+  else if (stageChoice === '4') o.trackingStage = "Delivered";
+  else o.trackingStage = "Shipped";
+
+  const newLocation = prompt("Order abhi kahan pahucha hai? (Location Dalein - e.g., 'Junagadh Hub', 'Dispatched from Rajkot', 'Near Your Location'):", o.currentLocation || "In Transit");
+  if (newLocation !== null && newLocation.trim() !== "") {
+    o.currentLocation = newLocation.trim();
   }
+
+  const newEta = prompt("Delivery kitne din me hogi / Target Date: (e.g., 'Tomorrow by 4 PM' ya '2 Days'):", o.deliveryDays || "2-3 Days");
+  if (newEta !== null && newEta.trim() !== "") {
+    o.deliveryDays = newEta.trim();
+  }
+
+  localStorage.setItem('pgf_orders', JSON.stringify(orderRegistry));
+  populateAdminDashboardTables();
+  alert("✅ Order live location & stage successfully update ho gayi! User ko live dikhegi.");
 }
 
 function rejectCustomerOrder(idx) {
@@ -479,13 +555,13 @@ function rejectCustomerOrder(idx) {
 }
 
 // =========================================================
-// TWO-STEP TRAINING CONFIRMATION & CERTIFICATE DESK
+// 2-STEP FARM BOOKING & CERTIFICATE APPROVAL
 // =========================================================
-// Step 1: Confirm Booking
+// Step 1: Approve Farm Booking
 function confirmBookingSlot(idx) {
   bookingsRegistry[idx].status = "Confirmed";
   bookingsRegistry[idx].approvedDate = new Date().toLocaleDateString();
-  bookingsRegistry[idx].certIssued = false; // Certificate stays locked initially
+  bookingsRegistry[idx].certIssued = false;
   localStorage.setItem('pgf_bookings', JSON.stringify(bookingsRegistry));
   
   const target = bookingsRegistry[idx];
@@ -505,18 +581,18 @@ function confirmBookingSlot(idx) {
   salesRegistry.push(saleLog);
   localStorage.setItem('pgf_sales', JSON.stringify(salesRegistry));
 
-  alert(`Booking for ${target.name} Confirmed! Certificate unlocked option abhi ready hai.`);
+  alert(`✅ Step 1 Completed: ${target.name} ka Farm Booking Confirm ho gaya!\nCourse complete hone par '2. Approve Certificate' dabayein.`);
   populateAdminDashboardTables();
   computeFinancialLedgerStatements();
 }
 
-// Step 2: Issue Certificate
+// Step 2: Approve Certificate
 function issueUserCertificate(idx) {
-  if (confirm(`Kya aap ${bookingsRegistry[idx].name} ke liye certificate approve/issue karna chahte hain? Yeh user dashboard me download hone lagega.`)) {
+  if (confirm(`Kya aap ${bookingsRegistry[idx].name} ke liye certificate approve karna chahte hain? Iske baad hi user download kar payega.`)) {
     bookingsRegistry[idx].certIssued = true;
     bookingsRegistry[idx].certIssueDate = new Date().toLocaleDateString();
     localStorage.setItem('pgf_bookings', JSON.stringify(bookingsRegistry));
-    alert("Certificate successfully issue ho gaya aur user ko show hone laga!");
+    alert("✅ Step 2 Completed: Certificate approve ho gaya aur user panel me download unlock ho gaya!");
     populateAdminDashboardTables();
   }
 }
@@ -831,7 +907,9 @@ function confirmOrder(e) {
     paymentMode: selectedMode ? selectedMode + " App" : "UPI App",
     txnId: document.getElementById("paymentId").value.trim(),
     dateLogged: currentTimestamp,
-    deliveryDays: "", // Will be assigned by Admin upon approval
+    trackingStage: "Placed",
+    currentLocation: "Order Placed - Waiting for Farm Confirmation",
+    deliveryDays: "2-3 Days",
     status: "Pending Verification"
   };
 

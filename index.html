@@ -95,17 +95,17 @@
 
     <!-- Activity History Logs Popup Screen -->
     <div id="userHistoryModal" class="data-popup-modal" onclick="closeHistoryModalOutside(event)">
-      <div class="popup-content-box">
+      <div class="popup-content-box" style="max-width: 820px;">
         <button type="button" class="close-popup-btn" onclick="closeHistoryModal()">Close (X)</button>
-        <h2>Your Activity Logs History Page</h2>
+        <h2>Your Activity Logs & Live Order Tracking</h2>
         
         <div class="grid-data-layout">
-          <div class="data-item-card">
-            <h3>Your Dispatched Orders</h3>
+          <div class="data-item-card" style="background:#fff;">
+            <h3>📦 Your Orders & Real-Time Tracking</h3>
             <div id="userOrdersList" class="muted">No orders submitted yet.</div>
           </div>
-          <div class="data-item-card">
-            <h3>Your Farm Training Workshops</h3>
+          <div class="data-item-card" style="background:#fff;">
+            <h3>🎓 Your Farm Training Workshops</h3>
             <div id="userBookingsList" class="muted">No program bookings registered.</div>
             
             <div id="historyCertificateWrapper" style="margin-top: 20px; border-top: 1px dashed var(--line); padding-top: 15px; display: none;">
@@ -218,7 +218,7 @@
               <button type="button" class="btn" onclick="showVisitForm('farmerForm')">Farmer Training Workshop Block</button>
             </div>
 
-            <!-- Student Form With Payment Dropdown -->
+            <!-- Student Form -->
             <form id="studentForm" class="visit-form active" onsubmit="submitStudentVisit(event)">
               <input type="text" id="sname" placeholder="Student Name" readonly required style="background:#f3f4f6; cursor:not-allowed;">
               <input type="tel" id="sphone" placeholder="Phone Number" readonly required style="background:#f3f4f6; cursor:not-allowed;">
@@ -251,7 +251,7 @@
               <button type="submit" id="studentSubmitBtn" disabled>Confirm Student Registration</button>
             </form>
 
-            <!-- Farmer Form With Payment Dropdown -->
+            <!-- Farmer Form -->
             <form id="farmerForm" class="visit-form" onsubmit="submitFarmerVisit(event)">
               <input type="text" id="fname" placeholder="Farmer Name" readonly required style="background:#f3f4f6; cursor:not-allowed;">
               <input type="tel" id="fphone" placeholder="Phone Number" readonly required style="background:#f3f4f6; cursor:not-allowed;">
@@ -310,9 +310,9 @@
         <button class="btn" id="tabNavUsers" onclick="switchErpTab('erpUsersTab', 'tabNavUsers')">Registered Accounts Ledger</button>
       </div>
 
-      <!-- ERP Segment 1: Orders (With Shipping Status & Days ETA) -->
+      <!-- ERP Segment 1: Orders (With Live Flipkart-Style Tracking Stage & Location Control) -->
       <div id="erpOrdersTab" class="erp-section active">
-        <h3>E-Commerce Customer Orders Grid Ledger</h3>
+        <h3>E-Commerce Customer Orders Grid Ledger & Shipment Management</h3>
         <div class="table-responsive">
           <table>
             <thead>
@@ -326,10 +326,9 @@
                 <th>Delivery Charge</th>
                 <th>Grand Total</th>
                 <th>Payment Mode & Txn ID</th>
-                <th>Date Received</th>
-                <th>Shipping / Delivery ETA</th>
-                <th>Status State</th>
-                <th>Execution Management</th>
+                <th>Order Status</th>
+                <th>Live Tracking Location / Status</th>
+                <th>Execution Controls</th>
               </tr>
             </thead>
             <tbody id="adminOrdersTableBody"></tbody>
@@ -337,7 +336,7 @@
         </div>
       </div>
 
-      <!-- ERP Segment 2: Course Bookings (Two-Step Booking Confirmation & Certificate Issuing) -->
+      <!-- ERP Segment 2: Course Bookings (Two-Step: 1. Confirm Booking, 2. Issue Certificate) -->
       <div id="erpBookingsTab" class="erp-section">
         <h3>Farm Training Workshop & Student Internship Bookings Ledger</h3>
         <div class="table-responsive">
@@ -351,8 +350,8 @@
                 <th>Fee Paid</th>
                 <th>Payment Mode & Txn ID</th>
                 <th>Booking Date</th>
-                <th>Booking Status</th>
-                <th>Certificate Status</th>
+                <th>1. Farm Booking Status</th>
+                <th>2. Certificate Approval</th>
                 <th>Execution Actions</th>
               </tr>
             </thead>
@@ -390,7 +389,7 @@
           <div class="partner-cash-card" style="background:#dcfce7; color:#166534;">🏢 Farm Vault Main Cash Balance: <span id="cashFarm">Rs 0.00</span></div>
         </div>
 
-        <!-- 4 Separate Sub Tabs inside Accounting -->
+        <!-- 4 Sub Tabs inside Accounting -->
         <div style="margin: 20px 0; display: flex; gap: 8px; flex-wrap: wrap;">
           <button type="button" class="btn" id="btnSubTabExpense" onclick="switchSubAccountingTab('subTabExpense')">1. Expenses Page</button>
           <button type="button" class="btn" id="btnSubTabSell" onclick="switchSubAccountingTab('subTabSell')">2. Sell Page</button>

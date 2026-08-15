@@ -19,7 +19,7 @@ const products = [
 
 const cart = new Map();
 
-// Helper: Filter out invalid / undefined entries from corrupted memory
+// Helper: Filter out invalid / undefined entries
 function getCleanData(key) {
   try {
     const raw = JSON.parse(localStorage.getItem(key)) || [];
@@ -40,9 +40,9 @@ let purchasesRegistry = getCleanData('pgf_purchases');
 
 let currentUser = JSON.parse(localStorage.getItem('pgf_session')) || null;
 
-// One-click cache cleaner for Admin
+// Cache cleaner
 function clearCorruptedCache() {
-  if (confirm("Kya aap saara puraana kharab/undefined dummy data clear karna chahte hain?")) {
+  if (confirm("Kya aap saara kharab cache clear karna chahte hain?")) {
     localStorage.removeItem('pgf_orders');
     localStorage.removeItem('pgf_user_db');
     localStorage.removeItem('pgf_bookings');
@@ -57,7 +57,7 @@ function clearCorruptedCache() {
     purchasesRegistry = [];
     populateAdminDashboardTables();
     computeFinancialLedgerStatements();
-    alert("Saara undefined cache saaf ho gaya! Ab naye real orders hi aayenge.");
+    alert("Saara cache saaf ho gaya! Ab naye real orders aayenge.");
   }
 }
 
@@ -214,32 +214,39 @@ function loadUserPanelData() {
 
   oList.innerHTML = myOrders.length ? myOrders.map(o => {
     let statusColor = o.status === 'Approved' ? 'var(--accent)' : (o.status && o.status.startsWith('Rejected') ? 'var(--danger)' : 'var(--warn)');
+    const deliveryNote = o.deliveryDays ? `<br><span style="color:#0284c7; font-weight:600;">🚚 Shipping/Delivery ETA: ${o.deliveryDays}</span>` : '';
     return `
       <div class="data-item-card">
         <strong>Order ID: ${o.orderId || ''}</strong><br>
         <small>Date Received: ${o.dateLogged || ''}</small><br>
         <span>Items: ${o.products || ''}</span><br>
         <strong>Total: Rs ${o.total || 0} [<span style="color:${statusColor}; font-weight:bold;">${o.status || 'Pending Verification'}</span>]</strong>
+        ${deliveryNote}
       </div>
     `;
   }).join("") : "No active orders mapped for this profile.";
 
   bList.innerHTML = myBookings.length ? myBookings.map(b => {
-    let statusColor = b.status === 'Approved' ? 'var(--accent)' : (b.status && b.status.startsWith('Rejected') ? 'var(--danger)' : 'var(--warn)');
+    const isConfirmed = b.status === 'Confirmed' || b.status === 'Approved';
+    let statusColor = isConfirmed ? 'var(--accent)' : (b.status && b.status.startsWith('Rejected') ? 'var(--danger)' : 'var(--warn)');
+    const certNote = b.certIssued ? `<br><span style="color:var(--accent); font-weight:bold;">📜 Certificate Issued & Ready to Download!</span>` : (isConfirmed ? `<br><span style="color:#d97706; font-size:12px;">⏳ Certificate will be issued upon completion.</span>` : '');
+    
     return `
       <div class="data-item-card">
         <strong>Booking ID: ${b.bookingId || ''}</strong><br>
         <small>Booked On: ${b.dateLogged || ''}</small><br>
-        <strong>Scheme: ${b.type || ''} Visit [<span style="color:${statusColor}; font-weight:bold;">${b.status || 'Pending Verification'}</span>]</strong>
+        <strong>Scheme: ${b.type || ''} Visit [<span style="color:${statusColor}; font-weight:bold;">${isConfirmed ? 'Booking Confirmed' : (b.status || 'Pending Verification')}</span>]</strong>
+        ${certNote}
       </div>
     `;
   }).join("") : "No course training applications logged.";
 
-  const approvedBookings = myBookings.filter(b => b.status === "Approved");
+  // Only show certificates if issued by admin
+  const issuedBookings = myBookings.filter(b => b.certIssued === true);
 
-  if (approvedBookings.length > 0) {
+  if (issuedBookings.length > 0) {
     let historyCertHtml = "";
-    approvedBookings.forEach((b) => {
+    issuedBookings.forEach((b) => {
       const titleText = b.type === "Student" ? "Certificate of Internship" : "Certificate of Farming";
       historyCertHtml += `
         <div style="padding: 10px; background: #fff; border: 1px solid var(--line); border-radius: 8px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
@@ -247,7 +254,7 @@ function loadUserPanelData() {
             <span style="font-weight: bold; font-size:13px; color: var(--accent);">${titleText}</span><br>
             <small class="muted">Ref ID: ${b.bookingId}</small>
           </div>
-          <button type="button" class="btn" style="min-height:30px; padding: 4px 10px; font-size:12px;" onclick="downloadCertificatePDF('${b.bookingId}')">Download PDF</button>
+          <button type="button" class="btn" style="min-height:30px; padding: 4px 10px; font-size:12px;" onclick="downloadCertificatePDF('${b.bookingId}')">📥 Download PDF</button>
         </div>
       `;
     });
@@ -287,14 +294,14 @@ function deleteUserAccount(idx) {
 }
 
 // =========================================================
-// ADMIN POPULATE TABLES (ONLY VALID REGISTERED USER DATA)
+// ADMIN POPULATE TABLES
 // =========================================================
 function populateAdminDashboardTables() {
-  // 1. Filtered Orders Table
+  // 1. Filtered Orders Table (With Delivery Days ETA)
   if (document.getElementById("adminOrdersTableBody")) {
     const validOrders = orderRegistry.filter(o => o && o.name && o.orderId);
     if (!validOrders.length) {
-      document.getElementById("adminOrdersTableBody").innerHTML = `<tr><td colspan="12" style="text-align:center; color:var(--muted); padding:24px; font-weight:bold;">No customer orders placed yet.</td></tr>`;
+      document.getElementById("adminOrdersTableBody").innerHTML = `<tr><td colspan="13" style="text-align:center; color:var(--muted); padding:24px; font-weight:bold;">No customer orders placed yet.</td></tr>`;
     } else {
       document.getElementById("adminOrdersTableBody").innerHTML = validOrders.map((o, idx) => {
         const sub = Number(o.subtotal || (o.total > 1000 ? o.total : o.total - 50) || 0);
@@ -302,6 +309,7 @@ function populateAdminDashboardTables() {
         const grandTotal = Number(o.total || (sub + del));
         const mode = o.paymentMode || "Online UPI";
         const status = o.status || "Pending Verification";
+        const etaText = o.deliveryDays ? `<span style="color:#0284c7; font-weight:bold;">🚚 ${o.deliveryDays}</span>` : `<span class="muted">Not assigned</span>`;
 
         return `
           <tr>
@@ -323,14 +331,17 @@ function populateAdminDashboardTables() {
               <code>${o.txnId || 'N/A'}</code>
             </td>
             <td><small>${o.dateLogged || 'N/A'}</small></td>
+            <td>${etaText}</td>
             <td><span class="badge ${status === 'Approved' ? 'badge-confirmed' : 'badge-pending'}">${status}</span></td>
             <td>
               ${status === 'Pending Verification' ? `
                 <div style="display:flex; flex-direction:column; gap:4px;">
-                  <button class="btn" style="padding:4px 8px; min-height:auto; font-size:12px; background:var(--accent);" onclick="approveCustomerOrder(${idx})">Approve</button>
+                  <button class="btn" style="padding:4px 8px; min-height:auto; font-size:12px; background:var(--accent);" onclick="approveCustomerOrder(${idx})">Approve & Set Days</button>
                   <button class="btn" style="padding:4px 8px; min-height:auto; font-size:12px; background:var(--danger);" onclick="rejectCustomerOrder(${idx})">Reject</button>
                 </div>
-              ` : `<span style="font-weight:bold; color:var(--muted);">Resolved</span>`}
+              ` : `
+                <button class="btn" style="padding:3px 6px; min-height:auto; font-size:11px; background:#4b5563;" onclick="updateDeliveryDaysPrompt(${idx})">Edit Delivery Days</button>
+              `}
             </td>
           </tr>
         `;
@@ -338,7 +349,7 @@ function populateAdminDashboardTables() {
     }
   }
 
-  // 2. Filtered Bookings Table
+  // 2. Filtered Bookings Table (Two-step verification & Certificate Issuing)
   if (document.getElementById("adminBookingsTableBody")) {
     const validBookings = bookingsRegistry.filter(b => b && b.name && b.bookingId);
     if (!validBookings.length) {
@@ -361,7 +372,8 @@ function populateAdminDashboardTables() {
         `;
 
         const mode = b.paymentMode || "UPI Gateway";
-        const status = b.status || "Pending Verification";
+        const isConfirmed = b.status === "Confirmed" || b.status === "Approved";
+        const certIssued = b.certIssued === true;
 
         return `
           <tr>
@@ -379,19 +391,25 @@ function populateAdminDashboardTables() {
               <code>${b.txnId || 'N/A'}</code>
             </td>
             <td><small>${b.dateLogged || 'N/A'}</small></td>
-            <td><span class="badge ${status === 'Approved' ? 'badge-confirmed' : 'badge-pending'}">${status}</span></td>
             <td>
-              ${status === 'Pending Verification' ? `
-                <div style="display:flex; flex-direction:column; gap:4px;">
-                  <button class="btn" style="padding:4px 8px; min-height:auto; font-size:12px; background:var(--accent);" onclick="approveTrainingBooking(${idx})">Approve</button>
-                  <button class="btn" style="padding:4px 8px; min-height:auto; font-size:12px; background:var(--danger);" onclick="rejectTrainingBooking(${idx})">Reject</button>
-                </div>
-              ` : `<span style="font-weight:bold; color:var(--muted);">Resolved</span>`}
+              <span class="badge ${isConfirmed ? 'badge-confirmed' : 'badge-pending'}">${isConfirmed ? 'Booking Confirmed' : (b.status || 'Pending Verification')}</span>
             </td>
             <td>
-              ${status === 'Approved' ? `
-                <button type="button" class="btn" style="padding:4px 8px; min-height:auto; font-size:12px; background:var(--accent);" onclick="downloadCertificatePDF('${b.bookingId}')">Certificate</button>
-              ` : `<span class="muted" style="font-size:12px;">Pending</span>`}
+              <span class="badge ${certIssued ? 'badge-confirmed' : 'badge-pending'}">${certIssued ? 'Issued & Unlocked' : 'Locked'}</span>
+            </td>
+            <td>
+              <div style="display:flex; flex-direction:column; gap:4px;">
+                ${!isConfirmed ? `
+                  <button class="btn" style="padding:4px 8px; min-height:auto; font-size:11px; background:var(--accent);" onclick="confirmBookingSlot(${idx})">1. Confirm Booking</button>
+                  <button class="btn" style="padding:4px 8px; min-height:auto; font-size:11px; background:var(--danger);" onclick="rejectTrainingBooking(${idx})">Reject</button>
+                ` : `
+                  ${!certIssued ? `
+                    <button class="btn" style="padding:4px 8px; min-height:auto; font-size:11px; background:#0284c7;" onclick="issueUserCertificate(${idx})">2. Issue Certificate</button>
+                  ` : `
+                    <button type="button" class="btn" style="padding:3px 6px; min-height:auto; font-size:11px; background:var(--accent);" onclick="downloadCertificatePDF('${b.bookingId}')">📜 Download PDF</button>
+                  `}
+                `}
+              </div>
             </td>
           </tr>
         `;
@@ -421,11 +439,32 @@ function populateAdminDashboardTables() {
   }
 }
 
+// =========================================================
+// ORDER WORKFLOW (WITH DELIVERY ETA DAYS)
+// =========================================================
 function approveCustomerOrder(idx) {
+  let days = prompt("Yeh order kitne din me dispatch/deliver hoga? (Jaise: '2-3 Days' ya '18 Aug tak'):", "2-3 Days");
+  if (days === null) return;
+  if (days.trim() === "") days = "2-3 Days";
+
   orderRegistry[idx].status = "Approved";
+  orderRegistry[idx].deliveryDays = days.trim();
   localStorage.setItem('pgf_orders', JSON.stringify(orderRegistry));
+  
+  alert(`Order Approve ho gaya aur Delivery ETA '${days}' set kar diya gaya!`);
   populateAdminDashboardTables();
   computeFinancialLedgerStatements();
+}
+
+function updateDeliveryDaysPrompt(idx) {
+  let current = orderRegistry[idx].deliveryDays || "2-3 Days";
+  let days = prompt("Naya Delivery Time / ETA enter karein:", current);
+  if (days !== null && days.trim() !== "") {
+    orderRegistry[idx].deliveryDays = days.trim();
+    localStorage.setItem('pgf_orders', JSON.stringify(orderRegistry));
+    populateAdminDashboardTables();
+    alert("Delivery Days update ho gaye!");
+  }
 }
 
 function rejectCustomerOrder(idx) {
@@ -439,12 +478,17 @@ function rejectCustomerOrder(idx) {
   computeFinancialLedgerStatements();
 }
 
-function approveTrainingBooking(idx) {
-  bookingsRegistry[idx].status = "Approved";
+// =========================================================
+// TWO-STEP TRAINING CONFIRMATION & CERTIFICATE DESK
+// =========================================================
+// Step 1: Confirm Booking
+function confirmBookingSlot(idx) {
+  bookingsRegistry[idx].status = "Confirmed";
   bookingsRegistry[idx].approvedDate = new Date().toLocaleDateString();
+  bookingsRegistry[idx].certIssued = false; // Certificate stays locked initially
   localStorage.setItem('pgf_bookings', JSON.stringify(bookingsRegistry));
-  const target = bookingsRegistry[idx];
   
+  const target = bookingsRegistry[idx];
   const saleLog = { 
     saleId: "SALE-" + Date.now().toString().slice(-4),
     type: "sale", 
@@ -461,8 +505,20 @@ function approveTrainingBooking(idx) {
   salesRegistry.push(saleLog);
   localStorage.setItem('pgf_sales', JSON.stringify(salesRegistry));
 
+  alert(`Booking for ${target.name} Confirmed! Certificate unlocked option abhi ready hai.`);
   populateAdminDashboardTables();
   computeFinancialLedgerStatements();
+}
+
+// Step 2: Issue Certificate
+function issueUserCertificate(idx) {
+  if (confirm(`Kya aap ${bookingsRegistry[idx].name} ke liye certificate approve/issue karna chahte hain? Yeh user dashboard me download hone lagega.`)) {
+    bookingsRegistry[idx].certIssued = true;
+    bookingsRegistry[idx].certIssueDate = new Date().toLocaleDateString();
+    localStorage.setItem('pgf_bookings', JSON.stringify(bookingsRegistry));
+    alert("Certificate successfully issue ho gaya aur user ko show hone laga!");
+    populateAdminDashboardTables();
+  }
 }
 
 function rejectTrainingBooking(idx) {
@@ -471,6 +527,7 @@ function rejectTrainingBooking(idx) {
   if(reason.trim() === "") reason = "Not specified by farm admin";
   
   bookingsRegistry[idx].status = `Rejected (Reason: ${reason})`;
+  bookingsRegistry[idx].certIssued = false;
   localStorage.setItem('pgf_bookings', JSON.stringify(bookingsRegistry));
   populateAdminDashboardTables();
   computeFinancialLedgerStatements();
@@ -774,6 +831,7 @@ function confirmOrder(e) {
     paymentMode: selectedMode ? selectedMode + " App" : "UPI App",
     txnId: document.getElementById("paymentId").value.trim(),
     dateLogged: currentTimestamp,
+    deliveryDays: "", // Will be assigned by Admin upon approval
     status: "Pending Verification"
   };
 
@@ -916,6 +974,7 @@ function submitStudentVisit(e) {
     txnId: document.getElementById("spayment").value.trim(),
     dateLogged: new Date().toLocaleString(),
     status: "Pending Verification",
+    certIssued: false,
     approvedDate: ""
   };
   bookingsRegistry.unshift(data);
@@ -945,6 +1004,7 @@ function submitFarmerVisit(e) {
     txnId: document.getElementById("fpayment").value.trim(),
     dateLogged: new Date().toLocaleString(),
     status: "Pending Verification",
+    certIssued: false,
     approvedDate: ""
   };
   bookingsRegistry.unshift(data);
@@ -973,6 +1033,7 @@ if (document.getElementById("productSearch")) {
 function downloadCertificatePDF(bookingId) {
   const targetBooking = bookingsRegistry.find(b => b.bookingId === bookingId);
   if (!targetBooking) return alert("Certificate not found.");
+  if (!targetBooking.certIssued) return alert("Certificate has not been issued yet by Farm Admin.");
 
   const titleText = targetBooking.type === "Student" ? "Certificate of Internship" : "Certificate of Farming";
   const descText = targetBooking.type === "Student" 
@@ -983,7 +1044,7 @@ function downloadCertificatePDF(bookingId) {
     ? `from <strong>${targetBooking.start}</strong> to <strong>${targetBooking.end}</strong>`
     : `on target session date <strong>${targetBooking.date}</strong>`;
 
-  const actualApprovedDate = targetBooking.approvedDate ? targetBooking.approvedDate : new Date(targetBooking.dateLogged).toLocaleDateString();
+  const actualApprovedDate = targetBooking.certIssueDate ? targetBooking.certIssueDate : new Date(targetBooking.dateLogged).toLocaleDateString();
 
   const iframe = document.createElement('iframe');
   iframe.style.position = 'fixed';

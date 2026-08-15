@@ -297,7 +297,10 @@
     <section id="adminErpView" class="erp-wrapper">
       <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid var(--accent); padding-bottom:12px; margin-bottom:15px; flex-wrap:wrap; gap:10px;">
         <h2>Pure Grow Farm - Operational Core ERP Console Hub</h2>
-        <button class="btn" style="background:var(--danger);" onclick="exitAdminPanel()">Exit Admin Console</button>
+        <div style="display:flex; gap:8px;">
+          <button class="btn" style="background:#e11d48;" onclick="clearCorruptedCache()">🧹 Clear Corrupted Cache</button>
+          <button class="btn" style="background:var(--danger);" onclick="exitAdminPanel()">Exit Admin Console</button>
+        </div>
       </div>
 
       <div class="erp-nav" id="erpNavbarBlock">
@@ -307,7 +310,7 @@
         <button class="btn" id="tabNavUsers" onclick="switchErpTab('erpUsersTab', 'tabNavUsers')">Registered Accounts Ledger</button>
       </div>
 
-      <!-- ERP Segment 1: Orders -->
+      <!-- ERP Segment 1: Orders (With Shipping Status & Days ETA) -->
       <div id="erpOrdersTab" class="erp-section active">
         <h3>E-Commerce Customer Orders Grid Ledger</h3>
         <div class="table-responsive">
@@ -324,6 +327,7 @@
                 <th>Grand Total</th>
                 <th>Payment Mode & Txn ID</th>
                 <th>Date Received</th>
+                <th>Shipping / Delivery ETA</th>
                 <th>Status State</th>
                 <th>Execution Management</th>
               </tr>
@@ -333,7 +337,7 @@
         </div>
       </div>
 
-      <!-- ERP Segment 2: Course Bookings -->
+      <!-- ERP Segment 2: Course Bookings (Two-Step Booking Confirmation & Certificate Issuing) -->
       <div id="erpBookingsTab" class="erp-section">
         <h3>Farm Training Workshop & Student Internship Bookings Ledger</h3>
         <div class="table-responsive">
@@ -347,9 +351,9 @@
                 <th>Fee Paid</th>
                 <th>Payment Mode & Txn ID</th>
                 <th>Booking Date</th>
-                <th>Status State</th>
-                <th>Operations Execution</th>
-                <th>Certificate Desk</th>
+                <th>Booking Status</th>
+                <th>Certificate Status</th>
+                <th>Execution Actions</th>
               </tr>
             </thead>
             <tbody id="adminBookingsTableBody"></tbody>

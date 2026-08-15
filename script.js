@@ -1315,7 +1315,7 @@ if (document.getElementById("productSearch")) {
 
 // =========================================================
 // MOBILE & PC UNIVERSAL CERTIFICATE PRINT / PDF ENGINE
-// Equal-sized signatures + Mobile Blob window trigger
+// (Full Absolute Image Path Fix for Blob Windows)
 // =========================================================
 function downloadCertificatePDF(bookingId) {
   const targetBooking = bookingsRegistry.find(b => b && b.bookingId === bookingId);
@@ -1332,6 +1332,12 @@ function downloadCertificatePDF(bookingId) {
     : `on target session date <strong>${targetBooking.date || 'N/A'}</strong>`;
 
   const actualApprovedDate = targetBooking.certIssueDate ? targetBooking.certIssueDate : (targetBooking.dateLogged ? targetBooking.dateLogged.split(" ")[0] : new Date().toLocaleDateString('en-IN'));
+
+  // Absolute Path Helper taaki Blob Window me image break na ho
+  const basePath = window.location.href.substring(0, window.location.href.lastIndexOf('/') + 1);
+  const logoUrl = basePath + "mushroom/pgf logo.png";
+  const sohamSignUrl = basePath + "mushroom/soham sign.png";
+  const jeetSignUrl = basePath + "mushroom/jeet sign.png";
 
   const certificateHTML = `<!DOCTYPE html>
 <html>
@@ -1364,7 +1370,7 @@ function downloadCertificatePDF(bookingId) {
   <div class="certificate-frame">
     <div class="inner-border">
       <div class="cert-header-top">
-        <img src="mushroom/pgf logo.png" alt="Logo" style="width: 60px; height: auto;">
+        <img src="${logoUrl}" alt="Logo" style="width: 60px; height: auto;">
         <div style="text-align:left;">
           <h2 style="color: #1e4620; margin: 0; font-size: 20px; font-weight: 800;">PURE GROW MUSHROOM FARM</h2>
           <p style="margin: 2px 0 0 0; font-size: 11px; color:#6b7280;">Makhiyala, Gujarat, 362011 | puregrowfarm001@gmail.com</p>
@@ -1384,7 +1390,7 @@ function downloadCertificatePDF(bookingId) {
         <!-- Left: Soham Gajera Sign -->
         <div style="text-align: center; width: 34%;">
           <div style="height: 50px; display: flex; align-items: flex-end; justify-content: center;">
-            <img src="mushroom/soham sign.png" alt="Soham Gajera Signature" class="sign-img">
+            <img src="${sohamSignUrl}" alt="Soham Gajera Signature" class="sign-img">
           </div>
           <div style="border-top: 1.5px solid #333; width: 160px; margin: 0 auto 4px auto;"></div>
           <div style="font-size: 13px; font-weight: bold; color: #1e4620;">Soham N Gajera</div>
@@ -1393,7 +1399,7 @@ function downloadCertificatePDF(bookingId) {
 
         <!-- Center Stamp & Date -->
         <div style="text-align: center; width: 28%;">
-          <img src="mushroom/pgf logo.png" alt="Stamp" style="width: 55px; height: auto; opacity: 0.95;">
+          <img src="${logoUrl}" alt="Stamp" style="width: 55px; height: auto; opacity: 0.95;">
           <div style="font-size: 9px; font-weight: 800; color: #1e4620; margin-top: 2px; letter-spacing: 0.5px;">PURE GROW FARM</div>
           <div style="font-size: 11px; color: #334155; margin-top: 3px;">
             <strong>Approved Date:</strong> ${actualApprovedDate}
@@ -1403,7 +1409,7 @@ function downloadCertificatePDF(bookingId) {
         <!-- Right: Jeet Gajera Sign -->
         <div style="text-align: center; width: 34%;">
           <div style="height: 50px; display: flex; align-items: flex-end; justify-content: center;">
-            <img src="mushroom/jeet sign.png" alt="Jeet Gajera Signature" class="sign-img">
+            <img src="${jeetSignUrl}" alt="Jeet Gajera Signature" class="sign-img">
           </div>
           <div style="border-top: 1.5px solid #333; width: 160px; margin: 0 auto 4px auto;"></div>
           <div style="font-size: 13px; font-weight: bold; color: #1e4620;">Jeet A Gajera</div>

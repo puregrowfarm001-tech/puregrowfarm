@@ -281,7 +281,7 @@ function loadUserPanelData() {
         ` : ''}
 
         ${isCancelled ? `
-          <!-- 2. CANCELLED LIVE REFUND TRACKER (PAYMENT RECEIVED BUT UNDELIVERABLE) -->
+          <!-- 2. CANCELLED LIVE REFUND TRACKER -->
           <div style="margin-top: 12px; background: #fffaf5; padding: 12px; border-radius: 8px; border: 1px solid #fdba74;">
             <div style="font-weight:bold; font-size:13px; color:#c2410c; margin-bottom:4px;">
               🔄 Order Cancelled & Live Payment Refund Tracker
@@ -318,12 +318,12 @@ function loadUserPanelData() {
         ` : ''}
 
         ${isRejected ? `
-          <!-- 3. REJECTED: NO PAYMENT RECEIVED (NO TRACKING AT ALL) -->
+          <!-- 3. REJECTED (NO PAYMENT - NO TRACKING) -->
           <div style="background: #fef2f2; border: 1px solid #f87171; border-radius: 8px; padding: 12px; margin-top: 10px;">
             <strong style="color: #991b1b; font-size: 14px;">❌ Order Rejected (Payment Not Verified)</strong>
             <p style="margin: 4px 0 0 0; font-size: 12px; color: #7f1d1d;"><strong>Reason:</strong> ${o.status.replace('Rejected (Reason: ', '').replace(')', '')}</p>
             <div style="margin-top: 6px; font-size: 12px; color: #991b1b;">
-              ⚠️ Payment receive nahi hua tha / UTR invalid hone ke kaaran order cancel kar diya gaya hai. Is par koi refund ya live tracking lagu nahi hai.
+              ⚠️ Payment receive nahi hua tha / UTR invalid hone ke kaaran order reject kar diya gaya hai. Koi refund ya live tracking nahi hai.
             </div>
           </div>
         ` : ''}
@@ -398,14 +398,14 @@ function deleteUserAccount(idx) {
 }
 
 // =========================================================
-// ADMIN POPULATE TABLES (3 BUTTONS: APPROVE / REJECT / CANCEL)
+// ADMIN POPULATE TABLES (DATE & TIME + 3 ACTION BUTTONS)
 // =========================================================
 function populateAdminDashboardTables() {
-  // 1. Orders Management (Approve, Reject, Cancel 3 Action Buttons)
+  // 1. Orders Management (Date/Time Column + 3 Action Buttons)
   if (document.getElementById("adminOrdersTableBody")) {
     const validOrders = orderRegistry.filter(o => o && o.name && o.orderId);
     if (!validOrders.length) {
-      document.getElementById("adminOrdersTableBody").innerHTML = `<tr><td colspan="12" style="text-align:center; color:var(--muted); padding:24px; font-weight:bold;">No customer orders placed yet.</td></tr>`;
+      document.getElementById("adminOrdersTableBody").innerHTML = `<tr><td colspan="13" style="text-align:center; color:var(--muted); padding:24px; font-weight:bold;">No customer orders placed yet.</td></tr>`;
     } else {
       document.getElementById("adminOrdersTableBody").innerHTML = validOrders.map((o, idx) => {
         const sub = Number(o.subtotal || (o.total > 1000 ? o.total : o.total - 50) || 0);
@@ -424,6 +424,7 @@ function populateAdminDashboardTables() {
         return `
           <tr>
             <td><strong>${o.orderId}</strong></td>
+            <td><strong style="color:#0284c7;">${o.dateLogged || 'N/A'}</strong></td>
             <td><strong>${o.name}</strong></td>
             <td>
               ${o.phone || 'N/A'}<br>
@@ -475,7 +476,7 @@ function populateAdminDashboardTables() {
                     <button type="button" class="btn" style="padding:2px 5px; font-size:10px; min-height:22px; background:${o.refundStage==='Refund Credited'?'#16a34a':'#94a3b8'};" onclick="setRefundStageDirect(${idx}, 'Refund Credited')">3. Credited</button>
                   </div>
                 </div>
-              ` : (isRejected ? `<span style="color:#dc2626; font-weight:bold; font-size:12px;">Rejected (No Tracking)</span>` : `<span style="color:#d97706; font-weight:bold; font-size:12px;">Approve or Cancel to track</span>`))}
+              ` : (isRejected ? `<span style="color:#dc2626; font-weight:bold; font-size:12px;">Rejected (No Payment / No Track)</span>` : `<span style="color:#d97706; font-weight:bold; font-size:12px;">Approve or Cancel to track</span>`))}
             </td>
 
             <!-- 3 ACTIONS BUTTONS: APPROVE / REJECT / CANCEL -->
@@ -483,7 +484,7 @@ function populateAdminDashboardTables() {
               <div style="display:flex; flex-direction:column; gap:4px;">
                 ${!isApproved && !isCancelled && !isRejected ? `
                   <button class="btn" style="padding:4px 8px; min-height:auto; font-size:11px; background:var(--accent);" onclick="handleOrderApprove(${idx})">1. Approve (Live Track)</button>
-                  <button class="btn" style="padding:4px 8px; min-height:auto; font-size:11px; background:var(--danger);" onclick="handleOrderReject(${idx})">2. Reject (No Pay / No Track)</button>
+                  <button class="btn" style="padding:4px 8px; min-height:auto; font-size:11px; background:var(--danger);" onclick="handleOrderReject(${idx})">2. Reject (No Payment / No Track)</button>
                   <button class="btn" style="padding:4px 8px; min-height:auto; font-size:11px; background:#ea580c;" onclick="handleOrderCancelRefund(${idx})">3. Cancel (Refund Track)</button>
                 ` : `
                   ${isApproved ? `
@@ -499,7 +500,7 @@ function populateAdminDashboardTables() {
     }
   }
 
-  // 2. Bookings Table (1. Farm Book Approve, 2. Certificate Approve)
+  // 2. Bookings Table (Date/Time Column Included)
   if (document.getElementById("adminBookingsTableBody")) {
     const validBookings = bookingsRegistry.filter(b => b && b.name && b.bookingId);
     if (!validBookings.length) {
@@ -539,7 +540,7 @@ function populateAdminDashboardTables() {
               <span class="badge" style="background:#eef2ff; color:#3730a3; margin-bottom:4px; font-weight:bold;">${mode}</span><br>
               <code>${b.txnId || 'N/A'}</code>
             </td>
-            <td><small>${b.dateLogged || 'N/A'}</small></td>
+            <td><small style="color:#0284c7; font-weight:bold;">${b.dateLogged || 'N/A'}</small></td>
             <td>
               <span class="badge ${isConfirmed ? 'badge-confirmed' : 'badge-pending'}">${isConfirmed ? '1. Booking Confirmed' : 'Pending Verification'}</span>
             </td>
@@ -592,7 +593,7 @@ function populateAdminDashboardTables() {
 // 3 CORE ORDER ACTIONS: APPROVE / REJECT / CANCEL & REFUND
 // =========================================================
 
-// 1. APPROVE BUTTON (Live Tracking On)
+// 1. APPROVE (Live Tracking Enabled)
 function handleOrderApprove(idx) {
   orderRegistry[idx].status = "Approved";
   orderRegistry[idx].trackingStage = "Packed";
@@ -607,9 +608,9 @@ function handleOrderApprove(idx) {
   computeFinancialLedgerStatements();
 }
 
-// 2. REJECT BUTTON (Payment nahi mila / Fake UTR - No live track, No refund)
+// 2. REJECT (Payment Not Received / Fake UTR - No live track, No refund)
 function handleOrderReject(idx) {
-  let reason = prompt("Reject karne ka reason likhein (e.g. Payment not received / Invalid Txn ID):", "Payment Not Received / Invalid UTR");
+  let reason = prompt("Reject karne ka reason likhein (Payment nahi mila / Fake UTR):", "Payment Not Received / Invalid Txn ID");
   if (reason === null) return;
 
   orderRegistry[idx].status = `Rejected (Reason: ${reason})`;
@@ -624,9 +625,9 @@ function handleOrderReject(idx) {
   computeFinancialLedgerStatements();
 }
 
-// 3. CANCEL BUTTON (Payment mila tha lekin farm deliver nahi kar sakta - Live Refund Tracking On)
+// 3. CANCEL & REFUND (Payment Received but Farm Undeliverable - Live Refund Tracking Enabled)
 function handleOrderCancelRefund(idx) {
-  let reason = prompt("Order Cancel karne ka reason likhein (e.g. Item Out of Stock / Location Not Deliverable):", "Item Out of Stock / Undeliverable Location");
+  let reason = prompt("Order Cancel karne ka reason likhein (e.g. Out of Stock / Location Undeliverable):", "Item Out of Stock / Undeliverable Location");
   if (reason === null) return;
 
   orderRegistry[idx].status = `Cancelled (Reason: ${reason})`;

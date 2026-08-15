@@ -218,7 +218,7 @@
               <button type="button" class="btn" onclick="showVisitForm('farmerForm')">Farmer Training Workshop Block</button>
             </div>
 
-            <!-- Student Form With Order-Like Payment Checkout Layout -->
+            <!-- Student Form -->
             <form id="studentForm" class="visit-form active" onsubmit="submitStudentVisit(event)">
               <input type="text" id="sname" placeholder="Student Name" readonly required style="background:#f3f4f6; cursor:not-allowed;">
               <input type="tel" id="sphone" placeholder="Phone Number" readonly required style="background:#f3f4f6; cursor:not-allowed;">
@@ -229,7 +229,6 @@
               <label>Target Internship Start Date <input type="date" id="sstart" required></label>
               <label>Target Internship End Date <input type="date" id="send" required></label>
               
-              <!-- Order-Like Bill Matrix for Student -->
               <div style="background: #f8faf8; padding: 14px; border-radius: 10px; border: 1px solid var(--line); margin: 6px 0;">
                 <div class="bill-row"><span>Internship Program Fee</span><strong>Rs 100</strong></div>
                 <div class="bill-row"><span>Taxes & Cert Logistics</span><strong>Rs 0</strong></div>
@@ -249,14 +248,13 @@
               <button type="submit" id="studentSubmitBtn" disabled>Confirm Student Registration</button>
             </form>
 
-            <!-- Farmer Form With Order-Like Payment Checkout Layout -->
+            <!-- Farmer Form -->
             <form id="farmerForm" class="visit-form" onsubmit="submitFarmerVisit(event)">
               <input type="text" id="fname" placeholder="Farmer Name" readonly required style="background:#f3f4f6; cursor:not-allowed;">
               <input type="tel" id="fphone" placeholder="Phone Number" readonly required style="background:#f3f4f6; cursor:not-allowed;">
               <input type="email" id="femail" placeholder="Email" readonly required style="background:#f3f4f6; cursor:not-allowed;">
               <label>Target Training Session Date <input type="date" id="fdate" required></label>
               
-              <!-- Order-Like Bill Matrix for Farmer -->
               <div style="background: #f8faf8; padding: 14px; border-radius: 10px; border: 1px solid var(--line); margin: 6px 0;">
                 <div class="bill-row"><span>Farmer Training Workshop Fee</span><strong>Rs 699</strong></div>
                 <div class="bill-row"><span>Practical Kit & Cert Logistics</span><strong>Rs 0</strong></div>
@@ -303,7 +301,7 @@
         <button class="btn" id="tabNavUsers" onclick="switchErpTab('erpUsersTab', 'tabNavUsers')">Registered Accounts Ledger</button>
       </div>
 
-      <!-- ERP Segment 1: Orders (With Live Flipkart-Style Tracking Stage & Location Control) -->
+      <!-- ERP Segment 1: Orders (With Date/Time Column & 3 Buttons) -->
       <div id="erpOrdersTab" class="erp-section active">
         <h3>E-Commerce Customer Orders Grid Ledger & Shipment Management</h3>
         <div class="table-responsive">
@@ -311,6 +309,7 @@
             <thead>
               <tr>
                 <th>Order ID</th>
+                <th>Order Placed Date & Time</th>
                 <th>Client Name</th>
                 <th>Phone / Email</th>
                 <th>Shipping Address</th>
@@ -321,7 +320,7 @@
                 <th>Payment Mode & Txn ID</th>
                 <th>Order Status</th>
                 <th>Live Tracking Location / Status</th>
-                <th>Execution Controls</th>
+                <th>Actions (Approve / Reject / Cancel)</th>
               </tr>
             </thead>
             <tbody id="adminOrdersTableBody"></tbody>
@@ -329,7 +328,7 @@
         </div>
       </div>
 
-      <!-- ERP Segment 2: Course Bookings (Two-Step: 1. Confirm Booking, 2. Issue Certificate) -->
+      <!-- ERP Segment 2: Course Bookings -->
       <div id="erpBookingsTab" class="erp-section">
         <h3>Farm Training Workshop & Student Internship Bookings Ledger</h3>
         <div class="table-responsive">
@@ -342,7 +341,7 @@
                 <th>Submitted Academic / Session Details</th>
                 <th>Fee Paid</th>
                 <th>Payment Mode & Txn ID</th>
-                <th>Booking Date</th>
+                <th>Booking Date & Time</th>
                 <th>1. Farm Booking Status</th>
                 <th>2. Certificate Approval</th>
                 <th>Execution Actions</th>

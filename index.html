@@ -97,11 +97,11 @@
     <div id="userHistoryModal" class="data-popup-modal" onclick="closeHistoryModalOutside(event)">
       <div class="popup-content-box" style="max-width: 820px;">
         <button type="button" class="close-popup-btn" onclick="closeHistoryModal()">Close (X)</button>
-        <h2>Your Activity Logs & Live Order Tracking</h2>
+        <h2>Your Activity Logs & Live Tracking</h2>
         
         <div class="grid-data-layout">
           <div class="data-item-card" style="background:#fff;">
-            <h3>📦 Your Orders & Real-Time Tracking</h3>
+            <h3>📦 Your Orders & Live Tracking</h3>
             <div id="userOrdersList" class="muted">No orders submitted yet.</div>
           </div>
           <div class="data-item-card" style="background:#fff;">
@@ -218,7 +218,7 @@
               <button type="button" class="btn" onclick="showVisitForm('farmerForm')">Farmer Training Workshop Block</button>
             </div>
 
-            <!-- Student Form -->
+            <!-- Student Form With Order-Like Payment Checkout Layout -->
             <form id="studentForm" class="visit-form active" onsubmit="submitStudentVisit(event)">
               <input type="text" id="sname" placeholder="Student Name" readonly required style="background:#f3f4f6; cursor:not-allowed;">
               <input type="tel" id="sphone" placeholder="Phone Number" readonly required style="background:#f3f4f6; cursor:not-allowed;">
@@ -229,54 +229,50 @@
               <label>Target Internship Start Date <input type="date" id="sstart" required></label>
               <label>Target Internship End Date <input type="date" id="send" required></label>
               
-              <div class="payment-box">
-                <h3 style="margin-top:0;">Student Internship Fee: Rs 100</h3>
-                <p style="margin:5px 0;">UPI ID: <strong>sohamgajera01@okhdfcbank</strong></p>
+              <!-- Order-Like Bill Matrix for Student -->
+              <div style="background: #f8faf8; padding: 14px; border-radius: 10px; border: 1px solid var(--line); margin: 6px 0;">
+                <div class="bill-row"><span>Internship Program Fee</span><strong>Rs 100</strong></div>
+                <div class="bill-row"><span>Taxes & Cert Logistics</span><strong>Rs 0</strong></div>
+                <div class="bill-row total"><span>Grand Total Fee</span><strong style="color:var(--accent);">Rs 100</strong></div>
               </div>
               
-              <label>Choose Payment Mode:
-                <select id="spaymentMode" required onchange="handleStudentPaymentModeChange()">
-                  <option value="">-- Select Online Payment Option --</option>
-                  <option value="GPay">GPay App</option>
-                  <option value="PhonePe">PhonePe App</option>
-                  <option value="Paytm">Paytm App</option>
-                  <option value="UPI">Any UPI Gateway</option>
-                </select>
-              </label>
+              <select id="spaymentMode" required onchange="openVisitPayment('studentForm', 100)">
+                <option value="">Select online payment mode</option>
+                <option value="GPay">GPay App</option>
+                <option value="PhonePe">PhonePe App</option>
+                <option value="Paytm">Paytm App</option>
+                <option value="UPI">Any UPI App / Gateway</option>
+              </select>
 
-              <button type="button" class="btn" style="background:#0284c7;" onclick="openVisitUpi(100, 'studentForm')">📲 Pay Rs 100 via App Gateway</button>
               <div id="studentPaymentHelp" class="payment-help"></div>
-              
-              <input type="text" id="spayment" placeholder="Enter Payment Transaction ID (UTR)" disabled required oninput="validateStudentForm()">
+              <input type="text" id="spayment" placeholder="Online payment transaction ID (UTR)" disabled required oninput="validateStudentForm()">
               <button type="submit" id="studentSubmitBtn" disabled>Confirm Student Registration</button>
             </form>
 
-            <!-- Farmer Form -->
+            <!-- Farmer Form With Order-Like Payment Checkout Layout -->
             <form id="farmerForm" class="visit-form" onsubmit="submitFarmerVisit(event)">
               <input type="text" id="fname" placeholder="Farmer Name" readonly required style="background:#f3f4f6; cursor:not-allowed;">
               <input type="tel" id="fphone" placeholder="Phone Number" readonly required style="background:#f3f4f6; cursor:not-allowed;">
               <input type="email" id="femail" placeholder="Email" readonly required style="background:#f3f4f6; cursor:not-allowed;">
               <label>Target Training Session Date <input type="date" id="fdate" required></label>
               
-              <div class="payment-box">
-                <h3 style="margin-top:0;">Farmer Training Fee: Rs 699</h3>
-                <p style="margin:5px 0;">UPI ID: <strong>sohamgajera01@okhdfcbank</strong></p>
+              <!-- Order-Like Bill Matrix for Farmer -->
+              <div style="background: #f8faf8; padding: 14px; border-radius: 10px; border: 1px solid var(--line); margin: 6px 0;">
+                <div class="bill-row"><span>Farmer Training Workshop Fee</span><strong>Rs 699</strong></div>
+                <div class="bill-row"><span>Practical Kit & Cert Logistics</span><strong>Rs 0</strong></div>
+                <div class="bill-row total"><span>Grand Total Fee</span><strong style="color:var(--accent);">Rs 699</strong></div>
               </div>
 
-              <label>Choose Payment Mode:
-                <select id="fpaymentMode" required onchange="handleFarmerPaymentModeChange()">
-                  <option value="">-- Select Online Payment Option --</option>
-                  <option value="GPay">GPay App</option>
-                  <option value="PhonePe">PhonePe App</option>
-                  <option value="Paytm">Paytm App</option>
-                  <option value="UPI">Any UPI Gateway</option>
-                </select>
-              </label>
+              <select id="fpaymentMode" required onchange="openVisitPayment('farmerForm', 699)">
+                <option value="">Select online payment mode</option>
+                <option value="GPay">GPay App</option>
+                <option value="PhonePe">PhonePe App</option>
+                <option value="Paytm">Paytm App</option>
+                <option value="UPI">Any UPI App / Gateway</option>
+              </select>
 
-              <button type="button" class="btn" style="background:#0284c7;" onclick="openVisitUpi(699, 'farmerForm')">📲 Pay Rs 699 via App Gateway</button>
               <div id="farmerPaymentHelp" class="payment-help"></div>
-
-              <input type="text" id="fpayment" placeholder="Enter Payment Transaction ID (UTR)" disabled required oninput="validateFarmerForm()">
+              <input type="text" id="fpayment" placeholder="Online payment transaction ID (UTR)" disabled required oninput="validateFarmerForm()">
               <button type="submit" id="farmerSubmitBtn" disabled>Confirm Farmer Training Seat</button>
             </form>
           </div>
@@ -297,10 +293,7 @@
     <section id="adminErpView" class="erp-wrapper">
       <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid var(--accent); padding-bottom:12px; margin-bottom:15px; flex-wrap:wrap; gap:10px;">
         <h2>Pure Grow Farm - Operational Core ERP Console Hub</h2>
-        <div style="display:flex; gap:8px;">
-          <button class="btn" style="background:#e11d48;" onclick="clearCorruptedCache()">🧹 Clear Corrupted Cache</button>
-          <button class="btn" style="background:var(--danger);" onclick="exitAdminPanel()">Exit Admin Console</button>
-        </div>
+        <button class="btn" style="background:var(--danger);" onclick="exitAdminPanel()">Exit Admin Console</button>
       </div>
 
       <div class="erp-nav" id="erpNavbarBlock">

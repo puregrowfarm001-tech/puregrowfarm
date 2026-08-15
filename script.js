@@ -182,7 +182,7 @@ function handleLogout() {
 }
 
 // =========================================================
-// USER DASHBOARD (CONDITIONAL LIVE TRACKING & REFUND STATUS)
+// USER DASHBOARD (FLIPKART LIVE TRACK & REFUND PROGRESS)
 // =========================================================
 function loadUserPanelData() {
   const oList = document.getElementById("userOrdersList");
@@ -195,39 +195,47 @@ function loadUserPanelData() {
 
   oList.innerHTML = myOrders.length ? myOrders.map(o => {
     const isApproved = o.status === 'Approved';
+    const isCancelled = o.status && o.status.startsWith('Cancelled');
     const isRejected = o.status && o.status.startsWith('Rejected');
-    const isPending = !isApproved && !isRejected;
+    const isPending = o.status === 'Pending Verification';
 
     const stage = o.trackingStage || 'Packed';
-    const loc = o.currentLocation || 'Order Packed at Farm Yard';
+    const loc = o.currentLocation || (isCancelled ? 'Refund in Progress' : 'Packed at Farm Yard');
     const eta = o.deliveryDays ? ` (Estimated Delivery: ${o.deliveryDays})` : '';
 
+    // Shipment stages
     const stageLevels = { 'Placed': 1, 'Packed': 2, 'Shipped': 3, 'OutForDelivery': 4, 'Delivered': 5 };
     const currentLvl = stageLevels[stage] || 2;
     const progressWidths = { 1: '0%', 2: '25%', 3: '50%', 4: '75%', 5: '100%' };
     const activeWidth = progressWidths[currentLvl] || '25%';
 
+    // Refund stages for Cancelled orders
+    const refundStage = o.refundStage || 'Refund Initiated';
+    const refLevels = { 'Refund Initiated': 1, 'Refund Processing': 2, 'Refund Credited': 3 };
+    const curRefLvl = refLevels[refundStage] || 1;
+    const refWidths = { 1: '0%', 2: '50%', 3: '100%' };
+    const activeRefWidth = refWidths[curRefLvl] || '0%';
+
     return `
-      <div class="data-item-card" style="border: 1px solid ${isRejected ? '#fca5a5' : (isApproved ? '#86efac' : '#cbd5e1')}; border-radius: 12px; padding: 14px; margin-bottom: 15px; background:#fff;">
+      <div class="data-item-card" style="border: 1px solid ${isCancelled ? '#fdba74' : (isRejected ? '#fca5a5' : (isApproved ? '#86efac' : '#cbd5e1'))}; border-radius: 12px; padding: 14px; margin-bottom: 15px; background:#fff;">
         <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; border-bottom:1px solid #f1f5f9; padding-bottom:8px;">
           <strong>Order ID: <span style="color:var(--accent);">${o.orderId}</span></strong>
           <span style="font-size:12px; color:var(--muted);">${o.dateLogged}</span>
         </div>
         <div style="margin: 8px 0; font-size:13px;">
           <span>Items: <strong>${o.products}</strong></span><br>
-          <span>Grand Total: <strong>Rs ${o.total}</strong> [Payment Mode: <strong>${o.paymentMode || 'UPI'}</strong>]</span>
+          <span>Grand Total: <strong>Rs ${o.total}</strong> [Payment: <strong>${o.paymentMode || 'UPI'}</strong> | Txn: <code>${o.txnId || 'N/A'}</code>]</span>
         </div>
 
         ${isPending ? `
-          <!-- Order Pending State (Live Tracking will unlock ONLY after Approval) -->
           <div style="background: #fffbeb; border: 1px solid #fcd34d; border-radius: 8px; padding: 10px; margin-top: 8px; font-size: 13px; color: #92400e;">
-            ⏳ <strong>Order Status: Verification Pending</strong><br>
-            <span style="font-size:12px;">Admin jaise hi payment verify karke order approve karega, Live Tracking yahan unlock ho jayegi.</span>
+            ⏳ <strong>Status: Verification Pending</strong><br>
+            <span style="font-size:12px;">Admin jaise hi order approve karega, Live Shipment Tracker yahan start ho jayega.</span>
           </div>
         ` : ''}
 
         ${isApproved ? `
-          <!-- LIVE TRACKING BAR (ONLY SHOWN FOR APPROVED ORDERS) -->
+          <!-- 1. APPROVED LIVE SHIPMENT TRACKER -->
           <div style="margin-top: 12px; background: #f8fafc; padding: 12px; border-radius: 8px; border: 1px solid #e2e8f0;">
             <div style="font-weight:bold; font-size:13px; color:#1e293b; margin-bottom:8px;">
               🚚 Live Shipment Tracker${eta}
@@ -267,28 +275,56 @@ function loadUserPanelData() {
 
             <div style="font-size: 12px; color: #334155; margin-top: 14px; background: #ffffff; padding: 8px 12px; border-radius: 6px; border-left: 4px solid var(--accent); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px;">
               <span>📍 Location: <strong>${loc}</strong></span>
-              <span style="font-weight:bold; color:var(--accent);">Stage: ${stage}</span>
+              <span style="font-weight:bold; color:var(--accent);">Current Stage: ${stage}</span>
+            </div>
+          </div>
+        ` : ''}
+
+        ${isCancelled ? `
+          <!-- 2. CANCELLED LIVE REFUND TRACKER (PAYMENT RECEIVED BUT UNDELIVERABLE) -->
+          <div style="margin-top: 12px; background: #fffaf5; padding: 12px; border-radius: 8px; border: 1px solid #fdba74;">
+            <div style="font-weight:bold; font-size:13px; color:#c2410c; margin-bottom:4px;">
+              🔄 Order Cancelled & Live Payment Refund Tracker
+            </div>
+            <p style="margin: 2px 0 10px 0; font-size: 12px; color: #9a3412;"><strong>Reason:</strong> ${o.status.replace('Cancelled (Reason: ', '').replace(')', '')}</p>
+            
+            <div style="position: relative; margin: 20px 20px 10px 20px;">
+              <div style="position: absolute; top: 12px; left: 0; width: 100%; height: 4px; background: #fed7aa; z-index: 1;"></div>
+              <div style="position: absolute; top: 12px; left: 0; width: ${activeRefWidth}; height: 4px; background: #ea580c; z-index: 1; transition: width 0.3s ease;"></div>
+              
+              <div style="display: flex; justify-content: space-between; align-items: center; position: relative; z-index: 2;">
+                <div style="text-align: center;">
+                  <div style="width: 26px; height: 26px; border-radius: 50%; background: ${curRefLvl >= 1 ? '#ea580c' : '#fdba74'}; color: #fff; font-size: 11px; line-height: 26px; margin: 0 auto; font-weight:bold;">✓</div>
+                  <span style="font-size: 11px; font-weight: ${curRefLvl >= 1 ? 'bold' : 'normal'}; display: block; margin-top: 4px; color:${curRefLvl >= 1 ? '#9a3412' : '#94a3b8'};">Refund Initiated</span>
+                </div>
+
+                <div style="text-align: center;">
+                  <div style="width: 26px; height: 26px; border-radius: 50%; background: ${curRefLvl >= 2 ? '#ea580c' : '#fdba74'}; color: #fff; font-size: 11px; line-height: 26px; margin: 0 auto; font-weight:bold;">${curRefLvl >= 2 ? '✓' : '2'}</div>
+                  <span style="font-size: 11px; font-weight: ${curRefLvl >= 2 ? 'bold' : 'normal'}; display: block; margin-top: 4px; color:${curRefLvl >= 2 ? '#9a3412' : '#94a3b8'};">Processing (Bank)</span>
+                </div>
+
+                <div style="text-align: center;">
+                  <div style="width: 26px; height: 26px; border-radius: 50%; background: ${curRefLvl >= 3 ? '#16a34a' : '#fdba74'}; color: #fff; font-size: 11px; line-height: 26px; margin: 0 auto; font-weight:bold;">${curRefLvl >= 3 ? '✓' : '3'}</div>
+                  <span style="font-size: 11px; font-weight: ${curRefLvl >= 3 ? 'bold' : 'normal'}; display: block; margin-top: 4px; color:${curRefLvl >= 3 ? '#166534' : '#94a3b8'};">Refund Credited</span>
+                </div>
+              </div>
+            </div>
+
+            <div style="font-size: 12px; color: #7c2d12; margin-top: 14px; background: #ffffff; padding: 8px 12px; border-radius: 6px; border-left: 4px solid #ea580c; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap;">
+              <span>💰 Original Payment: <strong>Rs ${o.total} Received</strong></span>
+              <span style="font-weight:bold; color:#ea580c;">Status: ${refundStage}</span>
             </div>
           </div>
         ` : ''}
 
         ${isRejected ? `
-          <!-- Order Rejected: Live Tracking is completely hidden -->
+          <!-- 3. REJECTED: NO PAYMENT RECEIVED (NO TRACKING AT ALL) -->
           <div style="background: #fef2f2; border: 1px solid #f87171; border-radius: 8px; padding: 12px; margin-top: 10px;">
-            <strong style="color: #991b1b; font-size: 14px;">❌ Order Status: Cancelled / Rejected</strong>
+            <strong style="color: #991b1b; font-size: 14px;">❌ Order Rejected (Payment Not Verified)</strong>
             <p style="margin: 4px 0 0 0; font-size: 12px; color: #7f1d1d;"><strong>Reason:</strong> ${o.status.replace('Rejected (Reason: ', '').replace(')', '')}</p>
-            
-            ${o.paymentReceived === true ? `
-              <!-- Refund Line ONLY IF payment was received but farm cannot deliver -->
-              <div style="margin-top: 8px; padding: 8px 10px; border-radius: 6px; background: #ecfdf5; border: 1px solid #6ee7b7; font-size: 13px; color: #065f46; font-weight: bold;">
-                💰 Payment Received (${o.txnId || 'UPI'}) ➔ Refund Status: <span style="color:#047857;">${o.refundStatus || 'Refund Initiated to Original Account (1-2 Days)'}</span>
-              </div>
-            ` : `
-              <!-- No Refund line if rejected due to Payment Failure / Fake UTR -->
-              <div style="margin-top: 6px; font-size: 12px; color: #991b1b;">
-                ⚠️ Payment was not verified / received. No refund applicable.
-              </div>
-            `}
+            <div style="margin-top: 6px; font-size: 12px; color: #991b1b;">
+              ⚠️ Payment receive nahi hua tha / UTR invalid hone ke kaaran order cancel kar diya gaya hai. Is par koi refund ya live tracking lagu nahi hai.
+            </div>
           </div>
         ` : ''}
       </div>
@@ -362,10 +398,10 @@ function deleteUserAccount(idx) {
 }
 
 // =========================================================
-// ADMIN POPULATE TABLES
+// ADMIN POPULATE TABLES (3 BUTTONS: APPROVE / REJECT / CANCEL)
 // =========================================================
 function populateAdminDashboardTables() {
-  // 1. Orders Table
+  // 1. Orders Management (Approve, Reject, Cancel 3 Action Buttons)
   if (document.getElementById("adminOrdersTableBody")) {
     const validOrders = orderRegistry.filter(o => o && o.name && o.orderId);
     if (!validOrders.length) {
@@ -377,8 +413,10 @@ function populateAdminDashboardTables() {
         const grandTotal = Number(o.total || (sub + del));
         const mode = o.paymentMode || "Online UPI";
         const status = o.status || "Pending Verification";
-        const isRejected = status.startsWith('Rejected');
         const isApproved = status === 'Approved';
+        const isCancelled = status.startsWith('Cancelled');
+        const isRejected = status.startsWith('Rejected');
+        
         const stage = o.trackingStage || (isApproved ? 'Packed' : 'Placed');
         const loc = o.currentLocation || 'Order Received at Farm Yard';
         const eta = o.deliveryDays || '2-3 Days';
@@ -403,13 +441,14 @@ function populateAdminDashboardTables() {
               <code>${o.txnId || 'N/A'}</code>
             </td>
             <td>
-              <span class="badge ${isRejected ? 'badge-pending' : (isApproved ? 'badge-confirmed' : 'badge-pending')}" style="${isRejected ? 'background:#fee2e2; color:#991b1b;' : ''}">
+              <span class="badge ${isCancelled ? 'badge-pending' : (isRejected ? 'badge-pending' : (isApproved ? 'badge-confirmed' : 'badge-pending'))}" style="${isRejected ? 'background:#fee2e2; color:#991b1b;' : (isCancelled ? 'background:#ffedd5; color:#c2410c;' : '')}">
                 ${status}
               </span>
-              ${isRejected && o.paymentReceived ? `<br><small style="color:#047857; font-weight:bold;">Refund: ${o.refundStatus || 'Initiated'}</small>` : ''}
+              ${isCancelled ? `<br><small style="color:#ea580c; font-weight:bold;">Refund: ${o.refundStage || 'Initiated'}</small>` : ''}
             </td>
             
-            <td style="min-width: 220px;">
+            <!-- Live Tracking & Refund Controls Column -->
+            <td style="min-width: 230px;">
               ${isApproved ? `
                 <div style="background:#f8fafc; padding:8px; border-radius:8px; border:1px solid #e2e8f0; font-size:12px;">
                   <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
@@ -418,28 +457,39 @@ function populateAdminDashboardTables() {
                   </div>
                   <div style="color:#334155; margin-bottom:6px;">📍 ${loc}</div>
 
-                  <!-- 1-Click Interactive Live Tracking Buttons -->
+                  <!-- 1-Click Shipment Stage Buttons -->
                   <div style="display:flex; gap:3px; flex-wrap:wrap;">
                     <button type="button" class="btn" style="padding:2px 5px; font-size:10px; min-height:22px; background:${stage==='Placed'?'#2b8a3e':'#94a3b8'};" onclick="setOrderStageDirect(${idx}, 'Placed')">Placed</button>
                     <button type="button" class="btn" style="padding:2px 5px; font-size:10px; min-height:22px; background:${stage==='Packed'?'#2b8a3e':'#94a3b8'};" onclick="setOrderStageDirect(${idx}, 'Packed')">Packed</button>
                     <button type="button" class="btn" style="padding:2px 5px; font-size:10px; min-height:22px; background:${stage==='Shipped'?'#2b8a3e':'#94a3b8'};" onclick="setOrderStageDirect(${idx}, 'Shipped')">Shipped</button>
-                    <button type="button" class="btn" style="padding:2px 5px; font-size:10px; min-height:22px; background:${stage==='OutForDelivery'?'#2b8a3e':'#94a3b8'};" onclick="setOrderStageDirect(${idx}, 'OutForDelivery')">Out For Delivery</button>
+                    <button type="button" class="btn" style="padding:2px 5px; font-size:10px; min-height:22px; background:${stage==='OutForDelivery'?'#2b8a3e':'#94a3b8'};" onclick="setOrderStageDirect(${idx}, 'OutForDelivery')">Out Delivery</button>
                     <button type="button" class="btn" style="padding:2px 5px; font-size:10px; min-height:22px; background:${stage==='Delivered'?'#2b8a3e':'#94a3b8'};" onclick="setOrderStageDirect(${idx}, 'Delivered')">Delivered</button>
                   </div>
                 </div>
-              ` : (isRejected ? `<span style="color:#dc2626; font-weight:bold; font-size:12px;">Cancelled (No Live Tracking)</span>` : `<span style="color:#d97706; font-weight:bold; font-size:12px;">Approve to unlock Live Tracking</span>`)}
+              ` : (isCancelled ? `
+                <div style="background:#fffaf5; padding:8px; border-radius:8px; border:1px solid #fdba74; font-size:12px;">
+                  <span style="font-weight:bold; color:#ea580c;">Refund Tracker Control</span>
+                  <div style="display:flex; gap:3px; flex-wrap:wrap; margin-top:4px;">
+                    <button type="button" class="btn" style="padding:2px 5px; font-size:10px; min-height:22px; background:${o.refundStage==='Refund Initiated'?'#ea580c':'#94a3b8'};" onclick="setRefundStageDirect(${idx}, 'Refund Initiated')">1. Initiated</button>
+                    <button type="button" class="btn" style="padding:2px 5px; font-size:10px; min-height:22px; background:${o.refundStage==='Refund Processing'?'#ea580c':'#94a3b8'};" onclick="setRefundStageDirect(${idx}, 'Refund Processing')">2. Processing</button>
+                    <button type="button" class="btn" style="padding:2px 5px; font-size:10px; min-height:22px; background:${o.refundStage==='Refund Credited'?'#16a34a':'#94a3b8'};" onclick="setRefundStageDirect(${idx}, 'Refund Credited')">3. Credited</button>
+                  </div>
+                </div>
+              ` : (isRejected ? `<span style="color:#dc2626; font-weight:bold; font-size:12px;">Rejected (No Tracking)</span>` : `<span style="color:#d97706; font-weight:bold; font-size:12px;">Approve or Cancel to track</span>`))}
             </td>
 
+            <!-- 3 ACTIONS BUTTONS: APPROVE / REJECT / CANCEL -->
             <td>
               <div style="display:flex; flex-direction:column; gap:4px;">
-                ${status === 'Pending Verification' ? `
-                  <button class="btn" style="padding:4px 8px; min-height:auto; font-size:11px; background:var(--accent);" onclick="approveCustomerOrder(${idx})">Approve Order</button>
-                  <button class="btn" style="padding:4px 8px; min-height:auto; font-size:11px; background:var(--danger);" onclick="rejectCustomerOrderFlow(${idx})">Reject Order</button>
+                ${!isApproved && !isCancelled && !isRejected ? `
+                  <button class="btn" style="padding:4px 8px; min-height:auto; font-size:11px; background:var(--accent);" onclick="handleOrderApprove(${idx})">1. Approve (Live Track)</button>
+                  <button class="btn" style="padding:4px 8px; min-height:auto; font-size:11px; background:var(--danger);" onclick="handleOrderReject(${idx})">2. Reject (No Pay / No Track)</button>
+                  <button class="btn" style="padding:4px 8px; min-height:auto; font-size:11px; background:#ea580c;" onclick="handleOrderCancelRefund(${idx})">3. Cancel (Refund Track)</button>
                 ` : `
                   ${isApproved ? `
-                    <button class="btn" style="padding:4px 8px; min-height:auto; font-size:11px; background:#0284c7;" onclick="updateOrderLocationDetails(${idx})">📍 Edit Location & Days</button>
-                    <button class="btn" style="padding:3px 6px; min-height:auto; font-size:10px; background:var(--danger);" onclick="rejectCustomerOrderFlow(${idx})">Cancel & Refund</button>
-                  ` : `<span style="font-weight:bold; color:var(--muted); font-size:12px;">Order Closed</span>`}
+                    <button class="btn" style="padding:3px 6px; min-height:auto; font-size:10px; background:#0284c7;" onclick="updateOrderLocationDetails(${idx})">📍 Edit Location</button>
+                    <button class="btn" style="padding:3px 6px; min-height:auto; font-size:10px; background:#ea580c;" onclick="handleOrderCancelRefund(${idx})">Cancel & Refund</button>
+                  ` : `<span style="font-weight:bold; color:var(--muted); font-size:12px;">Order Resolved</span>`}
                 `}
               </div>
             </td>
@@ -539,12 +589,60 @@ function populateAdminDashboardTables() {
 }
 
 // =========================================================
-// LIVE FLIPKART STYLE LINE CONTROLLER FUNCTIONS
+// 3 CORE ORDER ACTIONS: APPROVE / REJECT / CANCEL & REFUND
 // =========================================================
+
+// 1. APPROVE BUTTON (Live Tracking On)
+function handleOrderApprove(idx) {
+  orderRegistry[idx].status = "Approved";
+  orderRegistry[idx].trackingStage = "Packed";
+  orderRegistry[idx].currentLocation = "Processing & Packing at Pure Grow Farm Hub";
+  orderRegistry[idx].deliveryDays = "2-3 Days";
+  orderRegistry[idx].paymentReceived = true;
+  orderRegistry[idx].refundStage = "";
+  
+  localStorage.setItem('pgf_orders', JSON.stringify(orderRegistry));
+  alert("✅ Order Approved! User ko live shipment tracking show hone lagi.");
+  populateAdminDashboardTables();
+  computeFinancialLedgerStatements();
+}
+
+// 2. REJECT BUTTON (Payment nahi mila / Fake UTR - No live track, No refund)
+function handleOrderReject(idx) {
+  let reason = prompt("Reject karne ka reason likhein (e.g. Payment not received / Invalid Txn ID):", "Payment Not Received / Invalid UTR");
+  if (reason === null) return;
+
+  orderRegistry[idx].status = `Rejected (Reason: ${reason})`;
+  orderRegistry[idx].paymentReceived = false;
+  orderRegistry[idx].trackingStage = "";
+  orderRegistry[idx].refundStage = "";
+  orderRegistry[idx].currentLocation = "Order Rejected due to payment failure";
+
+  localStorage.setItem('pgf_orders', JSON.stringify(orderRegistry));
+  alert("❌ Order Reject ho gaya! User ko koi live tracking ya refund line nahi dikhegi.");
+  populateAdminDashboardTables();
+  computeFinancialLedgerStatements();
+}
+
+// 3. CANCEL BUTTON (Payment mila tha lekin farm deliver nahi kar sakta - Live Refund Tracking On)
+function handleOrderCancelRefund(idx) {
+  let reason = prompt("Order Cancel karne ka reason likhein (e.g. Item Out of Stock / Location Not Deliverable):", "Item Out of Stock / Undeliverable Location");
+  if (reason === null) return;
+
+  orderRegistry[idx].status = `Cancelled (Reason: ${reason})`;
+  orderRegistry[idx].paymentReceived = true;
+  orderRegistry[idx].refundStage = "Refund Initiated";
+  orderRegistry[idx].currentLocation = "Order Cancelled & Payment Refund Flow Initiated";
+
+  localStorage.setItem('pgf_orders', JSON.stringify(orderRegistry));
+  alert("🔄 Order Cancelled! User dashboard me Live Payment Refund tracker chalu ho gaya.");
+  populateAdminDashboardTables();
+  computeFinancialLedgerStatements();
+}
+
+// Stage change controls for Admin
 function setOrderStageDirect(idx, newStage) {
   orderRegistry[idx].trackingStage = newStage;
-  orderRegistry[idx].status = "Approved";
-
   if (newStage === 'Placed') orderRegistry[idx].currentLocation = "Order Placed & Verified at Farm Desk";
   else if (newStage === 'Packed') orderRegistry[idx].currentLocation = "Packed & Ready at Pure Grow Farm Hub";
   else if (newStage === 'Shipped') orderRegistry[idx].currentLocation = "In Transit / Dispatched from Central Facility";
@@ -555,9 +653,16 @@ function setOrderStageDirect(idx, newStage) {
   populateAdminDashboardTables();
 }
 
+function setRefundStageDirect(idx, newRefStage) {
+  orderRegistry[idx].refundStage = newRefStage;
+  localStorage.setItem('pgf_orders', JSON.stringify(orderRegistry));
+  populateAdminDashboardTables();
+  alert(`Refund stage updated to: ${newRefStage}`);
+}
+
 function updateOrderLocationDetails(idx) {
   const o = orderRegistry[idx];
-  const loc = prompt("Current Location enter karein (e.g., 'Reached Junagadh Hub', 'Dispatched from Rajkot Hub'):", o.currentLocation || "In Transit");
+  const loc = prompt("Current Location enter karein:", o.currentLocation || "In Transit");
   if (loc !== null && loc.trim() !== "") o.currentLocation = loc.trim();
 
   const eta = prompt("Estimated Delivery Days / Time:", o.deliveryDays || "2-3 Days");
@@ -565,56 +670,6 @@ function updateOrderLocationDetails(idx) {
 
   localStorage.setItem('pgf_orders', JSON.stringify(orderRegistry));
   populateAdminDashboardTables();
-  alert("Location and Days updated!");
-}
-
-function approveCustomerOrder(idx) {
-  orderRegistry[idx].status = "Approved";
-  orderRegistry[idx].trackingStage = "Packed";
-  orderRegistry[idx].currentLocation = "Processing & Packing at Pure Grow Farm Hub";
-  orderRegistry[idx].deliveryDays = "2-3 Days";
-  orderRegistry[idx].paymentReceived = true;
-  localStorage.setItem('pgf_orders', JSON.stringify(orderRegistry));
-  
-  alert("Order Approved! Live Tracking user ke liye unlock ho gayi hai.");
-  populateAdminDashboardTables();
-  computeFinancialLedgerStatements();
-}
-
-// Reject flow with Payment & Refund Conditions
-function rejectCustomerOrderFlow(idx) {
-  const isPaymentReceived = confirm(
-    "Kya customer ki payment receive hui thi?\n\n" +
-    "[OK] = Haan, Payment mil gayi thi lekin hum order deliver nahi kar sakte (Refund Issue hoga)\n" +
-    "[Cancel] = Nahi, Payment nahi aayi / Fake UTR tha (No Refund)"
-  );
-
-  let reason = "";
-  if (isPaymentReceived) {
-    reason = prompt("Reject karne ka reason likhein (e.g., Out of Stock / Location Not Deliverable):", "Item Out of Stock / Undeliverable Location");
-    if(reason === null) return;
-
-    let refundText = prompt("Refund message enter karein:", "Refund Initiated to Original Account (1-2 Days)");
-    if(refundText === null || refundText.trim() === "") refundText = "Refund Initiated to UPI Account";
-
-    orderRegistry[idx].status = `Rejected (Reason: ${reason})`;
-    orderRegistry[idx].paymentReceived = true;
-    orderRegistry[idx].refundStatus = refundText;
-    orderRegistry[idx].currentLocation = "Order Cancelled & Payment Refund in Progress";
-  } else {
-    reason = prompt("Reject karne ka reason likhein (Payment Failure):", "Payment Not Received / Invalid Txn UTR");
-    if(reason === null) return;
-
-    orderRegistry[idx].status = `Rejected (Reason: ${reason})`;
-    orderRegistry[idx].paymentReceived = false;
-    orderRegistry[idx].refundStatus = "";
-    orderRegistry[idx].currentLocation = "Order Cancelled due to Payment Failure";
-  }
-
-  localStorage.setItem('pgf_orders', JSON.stringify(orderRegistry));
-  populateAdminDashboardTables();
-  computeFinancialLedgerStatements();
-  alert("Order Reject status successfully update ho gaya!");
 }
 
 // =========================================================
@@ -643,17 +698,17 @@ function confirmBookingSlot(idx) {
   salesRegistry.push(saleLog);
   localStorage.setItem('pgf_sales', JSON.stringify(salesRegistry));
 
-  alert(`✅ 1. Farm Book Approved for ${target.name}!\nCourse complete hone par '2. Approve Certificate' dabayein.`);
+  alert(`✅ 1. Farm Book Approved for ${target.name}!\nTraining complete hone par '2. Approve Certificate' dabayein.`);
   populateAdminDashboardTables();
   computeFinancialLedgerStatements();
 }
 
 function issueUserCertificate(idx) {
-  if (confirm(`Kya aap ${bookingsRegistry[idx].name} ke liye certificate approve karna chahte hain? Iske baad hi user download kar payega.`)) {
+  if (confirm(`Kya aap ${bookingsRegistry[idx].name} ke liye certificate approve karna chahte hain? Iske baad user download kar sakega.`)) {
     bookingsRegistry[idx].certIssued = true;
     bookingsRegistry[idx].certIssueDate = new Date().toLocaleDateString();
     localStorage.setItem('pgf_bookings', JSON.stringify(bookingsRegistry));
-    alert("✅ 2. Certificate Approved ho gaya aur user ke dashboard me download link unlock ho gaya!");
+    alert("✅ 2. Certificate Approved ho gaya aur user ke dashboard me download unlock ho gaya!");
     populateAdminDashboardTables();
   }
 }
@@ -973,7 +1028,7 @@ function confirmOrder(e) {
     deliveryDays: "2-3 Days",
     status: "Pending Verification",
     paymentReceived: false,
-    refundStatus: ""
+    refundStage: ""
   };
 
   orderRegistry.unshift(data);
@@ -1012,7 +1067,7 @@ function confirmOrder(e) {
 function closeInvoice() { document.getElementById("invoiceDialog").close(); }
 
 // =========================================================
-// TRAINING & INTERNSHIP PAYMENT (EXACTLY SAME AS ORDER FORM)
+// TRAINING & INTERNSHIP PAYMENT (ORDER-LIKE WORKFLOW)
 // =========================================================
 function showVisitForm(id) {
   document.getElementById("studentForm").classList.remove("active");

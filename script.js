@@ -1,7 +1,6 @@
 // =========================================================
 // CONFIGURATION & GLOBAL CONSTANTS
 // =========================================================
-// ⚠️ Apne Google Apps Script Deploy ka Web App URL yahan rakhein:
 const SHEET_URL = "https://script.google.com/macros/s/AKfycbys57lPqLYcl8eiQFaRlruVHTeowRhwmCHSIf-a4eu-xw27z6iu5F7L_9A4c9iuhRRa/exec";
 
 const farmEmail = "puregrowfarm001@gmail.com";
@@ -37,8 +36,6 @@ let latestVisitInvoice = "";
 // =========================================================
 // GOOGLE SHEET REAL-TIME SYNC & CALCULATION ENGINE
 // =========================================================
-
-// 1. Google Sheet se Live Data aur Totals Fetch karne ka function (Multi-Device Sync)
 async function fetchAdminSummaryFromSheet() {
   try {
     const response = await fetch(SHEET_URL + "?action=getErpSummary");
@@ -46,7 +43,6 @@ async function fetchAdminSummaryFromSheet() {
     
     const data = await response.json();
     
-    // Admin Panel Financial Cards Update
     if (data.totals) {
       if(document.getElementById("finTotalRevenue")) document.getElementById("finTotalRevenue").textContent = "Rs " + Number(data.totals.totalSales || 0).toFixed(2);
       if(document.getElementById("finTotalExpenses")) document.getElementById("finTotalExpenses").textContent = "Rs " + Number(data.totals.totalExpenses || 0).toFixed(2);
@@ -54,7 +50,6 @@ async function fetchAdminSummaryFromSheet() {
       if(document.getElementById("finNetProfit")) document.getElementById("finNetProfit").textContent = "Rs " + Number(data.totals.netProfit || 0).toFixed(2);
     }
 
-    // Google Sheet Data Sync to Local Memory (Multi-Device view setup)
     if (data.orders && data.orders.length) { orderRegistry = data.orders; localStorage.setItem('pgf_orders', JSON.stringify(orderRegistry)); }
     if (data.users && data.users.length) { usersDatabase = data.users; localStorage.setItem('pgf_user_db', JSON.stringify(usersDatabase)); }
     if (data.sales && data.sales.length) { salesRegistry = data.sales; localStorage.setItem('pgf_sales', JSON.stringify(salesRegistry)); }
@@ -69,7 +64,6 @@ async function fetchAdminSummaryFromSheet() {
   }
 }
 
-// 2. Direct Google Sheet me Data Save karne ka function
 async function sendDataToGoogleSheet(payload) {
   try {
     await fetch(SHEET_URL, {
@@ -82,44 +76,6 @@ async function sendDataToGoogleSheet(payload) {
   } catch (err) {
     console.error("Data save failed to Google Sheet:", err);
   }
-}
-
-// =========================================================
-// EXCEL FILE EXPORT FUNCTIONS (ADMIN PANEL)
-// =========================================================
-function downloadCSV(csvContent, fileName) {
-  const blob = new Blob(["\ufeff" + csvContent], { type: 'text/csv;charset=utf-8;' });
-  const link = document.createElement("a");
-  const url = URL.createObjectURL(blob);
-  link.setAttribute("href", url);
-  link.setAttribute("download", fileName);
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-}
-
-function exportOrdersToExcel() {
-  let csv = "Order ID,Client Name,Phone,Address,Products,Total Paid,Txn ID,Date,Status\n";
-  orderRegistry.forEach(o => {
-    csv += `"${o.orderId || ''}","${o.name || ''}","${o.phone || ''}","${o.address || ''}","${o.products || ''}",${o.total || 0},"${o.txnId || ''}","${o.dateLogged || ''}","${o.status || ''}"\n`;
-  });
-  downloadCSV(csv, `PGF_Orders_Report_${getTodayIsoString()}.csv`);
-}
-
-function exportUsersToExcel() {
-  let csv = "Index,Name,Phone,Email,Password\n";
-  usersDatabase.forEach((u, i) => {
-    csv += `${i+1},"${u.name || ''}","${u.phone || ''}","${u.email || ''}","${u.password || ''}"\n`;
-  });
-  downloadCSV(csv, `PGF_Users_Database_${getTodayIsoString()}.csv`);
-}
-
-function exportSalesToExcel() {
-  let csv = "Sale ID,Date,Product,Buyer,Phone,Qty,Total Revenue,Collector\n";
-  salesRegistry.forEach(s => {
-    csv += `"${s.saleId || ''}","${s.date || ''}","${s.product || ''}","${s.buyer || ''}","${s.phone || ''}",${s.qty || 0},${s.total || 0},"${s.collector || ''}"\n`;
-  });
-  downloadCSV(csv, `PGF_Sales_Inflow_${getTodayIsoString()}.csv`);
 }
 
 // =========================================================
@@ -161,7 +117,6 @@ function triggerAdminView() {
   populateAdminDashboardTables();
   switchSubAccountingTab('subTabExpense');
 
-  // Google Sheet Sync on Admin Panel Open
   fetchAdminSummaryFromSheet();
 }
 
@@ -224,7 +179,6 @@ function handleLogin(e) {
     return;
   }
 
-  // Multi-Device Login Match (Email or Mobile)
   const match = usersDatabase.find(u => (u.email && u.email.toLowerCase() === userInput.toLowerCase()) || u.phone === userInput);
   if (match && match.password === passInput) {
     currentUser = { name: match.name, email: match.email, phone: match.phone, isAdmin: false };
@@ -252,7 +206,6 @@ function handleRegister(e) {
   usersDatabase.push(newUser);
   localStorage.setItem('pgf_user_db', JSON.stringify(usersDatabase));
 
-  // Sync Registered User to Google Sheet
   sendDataToGoogleSheet({ type: "user_reg", name, phone, email, password });
 
   currentUser = { name, email, phone, isAdmin: false };
@@ -309,7 +262,6 @@ function loadUserPanelData() {
 
   if (approvedBookings.length > 0) {
     let historyCertHtml = "";
-
     approvedBookings.forEach((b) => {
       const titleText = b.type === "Student" ? "Certificate of Internship" : "Certificate of Farming";
       historyCertHtml += `
@@ -322,7 +274,6 @@ function loadUserPanelData() {
         </div>
       `;
     });
-    
     historyCertContainer.innerHTML = historyCertHtml;
     historyCertWrapper.style.display = "block";
   } else {
@@ -359,55 +310,81 @@ function deleteUserAccount(idx) {
   }
 }
 
+// =========================================================
+// COMPLETE ADMIN DASHBOARD POPULATE (ORDERS, STUDENTS, FARMERS, USERS)
+// =========================================================
 function populateAdminDashboardTables() {
+  // 1. ORDERS TABLE
   if(document.getElementById("adminOrdersTableBody")) {
     document.getElementById("adminOrdersTableBody").innerHTML = orderRegistry.map((o, idx) => `
       <tr>
-        <td><strong>${o.orderId}</strong></td>
-        <td>${o.name}</td>
-        <td>${o.phone}</td>
-        <td>${o.address}</td>
-        <td>${o.products}</td>
-        <td>Rs ${o.total}</td>
-        <td><code>${o.txnId}</code></td>
-        <td><strong>${o.dateLogged}</strong></td>
+        <td><strong>${o.orderId || 'N/A'}</strong></td>
+        <td><strong>${o.name || 'N/A'}</strong><br><small class="muted">${o.email || ''}</small></td>
+        <td>${o.phone || 'N/A'}</td>
+        <td style="max-width: 200px; word-break: break-word;">${o.address || 'N/A'}</td>
+        <td>${o.products || 'N/A'}</td>
+        <td><strong>Rs ${o.total || 0}</strong></td>
+        <td><code>${o.txnId || 'N/A'}</code></td>
+        <td><small>${o.dateLogged || 'N/A'}</small></td>
         <td><span class="badge ${o.status==='Approved'?'badge-confirmed':'badge-pending'}">${o.status}</span></td>
         <td>
           ${o.status === 'Pending Verification' ? `
             <button class="btn" style="padding:4px 8px; min-height:auto; background:var(--accent); margin-right:4px;" onclick="approveCustomerOrder(${idx})">Approve</button>
             <button class="btn" style="padding:4px 8px; min-height:auto; background:var(--danger);" onclick="rejectCustomerOrder(${idx})">Reject</button>
-          ` : `<span style="font-weight:bold;">Resolved</span>`}
+          ` : `<span style="font-weight:bold; color:var(--muted);">Resolved</span>`}
         </td>
       </tr>
     `).join("");
   }
 
+  // 2. STUDENT & FARMER BOOKINGS TABLE
   if(document.getElementById("adminBookingsTableBody")) {
-    document.getElementById("adminBookingsTableBody").innerHTML = bookingsRegistry.map((b, idx) => `
-      <tr>
-        <td><strong>${b.bookingId}</strong></td>
-        <td>${b.type}</td>
-        <td>${b.name}</td>
-        <td>${b.phone}</td>
-        <td><strong>${b.date || b.start}</strong></td>
-        <td><code>${b.txnId}</code></td>
-        <td><strong>${b.dateLogged}</strong></td>
-        <td><span class="badge ${b.status==='Approved'?'badge-confirmed':'badge-pending'}">${b.status}</span></td>
-        <td>
-          ${b.status === 'Pending Verification' ? `
-            <button class="btn" style="padding:4px 8px; min-height:auto; background:var(--accent); margin-right:4px;" onclick="approveTrainingBooking(${idx})">Approve</button>
-            <button class="btn" style="padding:4px 8px; min-height:auto; background:var(--danger);" onclick="rejectTrainingBooking(${idx})">Reject</button>
-          ` : `<span style="font-weight:bold;">Resolved</span>`}
-        </td>
-        <td>
-          ${b.status === 'Approved' ? `
-            <button type="button" class="btn" style="padding:4px 8px; min-height:auto; font-size:12px; background:var(--accent);" onclick="downloadCertificatePDF('${b.bookingId}')">📜 Certificate</button>
-          ` : `<span class="muted" style="font-size:12px;">Not Approved Yet</span>`}
-        </td>
-      </tr>
-    `).join("");
+    document.getElementById("adminBookingsTableBody").innerHTML = bookingsRegistry.map((b, idx) => {
+      // Academic / Workshop extra details
+      const detailInfo = b.type === "Student" 
+        ? `<div style="font-size:12px; line-height:1.4;">
+             <div><strong>Enroll:</strong> ${b.enrollment || 'N/A'}</div>
+             <div><strong>College:</strong> ${b.college || 'N/A'}</div>
+             <div><strong>Course:</strong> ${b.course || 'N/A'}</div>
+           </div>`
+        : `<div style="font-size:12px; color:var(--accent);"><strong>Farmer Practical Seat</strong> (Fee: Rs ${b.fee || 699})</div>`;
+
+      // Date details
+      const dateInfo = b.type === "Student"
+        ? `<div style="font-size:12px; line-height:1.4;">
+             <div><strong>Start:</strong> ${b.start || 'N/A'}</div>
+             <div><strong>End:</strong> ${b.end || 'N/A'}</div>
+           </div>`
+        : `<div style="font-size:12px;"><strong>Session:</strong> ${b.date || 'N/A'}</div>`;
+
+      return `
+        <tr>
+          <td><strong>${b.bookingId || 'N/A'}</strong></td>
+          <td><span class="pill" style="font-size:11px;">${b.type}</span></td>
+          <td><strong>${b.name || 'N/A'}</strong></td>
+          <td>${b.phone || 'N/A'}<br><small class="muted">${b.email || ''}</small></td>
+          <td>${detailInfo}</td>
+          <td>${dateInfo}</td>
+          <td><code>${b.txnId || 'N/A'}</code></td>
+          <td><small>${b.dateLogged || 'N/A'}</small></td>
+          <td><span class="badge ${b.status==='Approved'?'badge-confirmed':'badge-pending'}">${b.status}</span></td>
+          <td>
+            ${b.status === 'Pending Verification' ? `
+              <button class="btn" style="padding:4px 8px; min-height:auto; background:var(--accent); margin-right:4px;" onclick="approveTrainingBooking(${idx})">Approve</button>
+              <button class="btn" style="padding:4px 8px; min-height:auto; background:var(--danger);" onclick="rejectTrainingBooking(${idx})">Reject</button>
+            ` : `<span style="font-weight:bold; color:var(--muted);">Resolved</span>`}
+          </td>
+          <td>
+            ${b.status === 'Approved' ? `
+              <button type="button" class="btn" style="padding:4px 8px; min-height:auto; font-size:12px; background:var(--accent);" onclick="downloadCertificatePDF('${b.bookingId}')">📜 Certificate</button>
+            ` : `<span class="muted" style="font-size:12px;">Not Approved</span>`}
+          </td>
+        </tr>
+      `;
+    }).join("");
   }
 
+  // 3. REGISTERED USERS TABLE
   if(document.getElementById("adminUsersTableBody")) {
     document.getElementById("adminUsersTableBody").innerHTML = usersDatabase.map((u, idx) => `
       <tr>
@@ -466,7 +443,6 @@ function approveTrainingBooking(idx) {
   salesRegistry.push(saleLog);
   localStorage.setItem('pgf_sales', JSON.stringify(salesRegistry));
   
-  // Google Sheet Sync
   sendDataToGoogleSheet({ type: "sale", ...saleLog });
 
   alert("Booking Approved successfully!");
@@ -558,7 +534,6 @@ function saveAdminExpense(e) {
   expensesRegistry.push(data);
   localStorage.setItem('pgf_expenses', JSON.stringify(expensesRegistry));
   
-  // Google Sheet Sync
   sendDataToGoogleSheet({ type: "expense", ...data });
 
   e.target.reset();
@@ -588,7 +563,6 @@ function saveAdminSale(e) {
   salesRegistry.push(data);
   localStorage.setItem('pgf_sales', JSON.stringify(salesRegistry));
   
-  // Google Sheet Sync
   sendDataToGoogleSheet({ type: "sale", ...data });
 
   e.target.reset();
@@ -616,7 +590,6 @@ function saveAdminPurchase(e) {
   purchasesRegistry.push(data);
   localStorage.setItem('pgf_purchases', JSON.stringify(purchasesRegistry));
 
-  // Google Sheet Sync (Purchase Handling)
   sendDataToGoogleSheet({ type: "purchase", ...data });
 
   e.target.reset();
@@ -639,7 +612,6 @@ function saveAdminDamage(e) {
   expensesRegistry.push(data);
   localStorage.setItem('pgf_expenses', JSON.stringify(expensesRegistry));
   
-  // Google Sheet Sync
   sendDataToGoogleSheet({ type: "expense", ...data });
 
   e.target.reset();
@@ -816,7 +788,6 @@ function confirmOrder(e) {
   document.getElementById("invSub").textContent = "Rs " + bill.subtotal;
   document.getElementById("invTotal").textContent = "Rs " + bill.total;
 
-  // Google Sheet Syncing
   sendDataToGoogleSheet({ type: "order", ...data });
   
   const waMessage = `NEW GOODS ORDER VERIFICATION FLOW:\n----------------------------------------\nInvoice Ref Code: ${data.orderId}\nClient Legal Name: ${data.name}\nProducts Mapped: ${data.products}\nTotal Paid Amount: Rs ${data.total}\nPayment Method: ${document.getElementById("paymentMode").value}\nTransaction Hash ID Code: ${data.txnId}\n----------------------------------------`;
@@ -893,9 +864,9 @@ function submitStudentVisit(e) {
     name: currentUser.name,
     phone: currentUser.phone,
     email: currentUser.email,
-    enrollment: document.getElementById("senroll").value,
-    college: document.getElementById("scollege").value,
-    course: document.getElementById("scourse").value,
+    enrollment: document.getElementById("senroll").value.trim(),
+    college: document.getElementById("scollege").value.trim(),
+    course: document.getElementById("scourse").value.trim(),
     start: document.getElementById("sstart").value,
     end: document.getElementById("send").value,
     fee: 100,
@@ -907,10 +878,9 @@ function submitStudentVisit(e) {
   bookingsRegistry.unshift(data);
   localStorage.setItem('pgf_bookings', JSON.stringify(bookingsRegistry));
 
-  // Google Sheet Syncing (Visit Handling)
   sendDataToGoogleSheet({ type: "visit", ...data });
 
-  const waText = `NEW STUDENT INTERNSHIP REGISTRATION:\n----------------------------------------\nBooking Ref ID: ${data.bookingId}\nName: ${data.name}\nUTR Tracking Number: ${data.txnId}\n----------------------------------------`;
+  const waText = `NEW STUDENT INTERNSHIP REGISTRATION:\n----------------------------------------\nBooking Ref ID: ${data.bookingId}\nName: ${data.name}\nCollege: ${data.college}\nCourse: ${data.course}\nUTR Tracking Number: ${data.txnId}\n----------------------------------------`;
   window.open(`https://wa.me/${farmWhatsapp}?text=${encodeURIComponent(waText)}`, '_blank');
   
   document.getElementById("studentForm").reset();
@@ -936,10 +906,9 @@ function submitFarmerVisit(e) {
   bookingsRegistry.unshift(data);
   localStorage.setItem('pgf_bookings', JSON.stringify(bookingsRegistry));
 
-  // Google Sheet Syncing (Visit Handling)
   sendDataToGoogleSheet({ type: "visit", ...data });
 
-  const waText = `NEW FARMER TRAINING BOOKING:\n----------------------------------------\nBooking Ref ID: ${data.bookingId}\nName: ${data.name}\nUTR Tracking Number: ${data.txnId}\n----------------------------------------`;
+  const waText = `NEW FARMER TRAINING BOOKING:\n----------------------------------------\nBooking Ref ID: ${data.bookingId}\nName: ${data.name}\nTraining Date: ${data.date}\nUTR Tracking Number: ${data.txnId}\n----------------------------------------`;
   window.open(`https://wa.me/${farmWhatsapp}?text=${encodeURIComponent(waText)}`, '_blank');
   
   document.getElementById("farmerForm").reset();

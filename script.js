@@ -21,6 +21,7 @@ const products = [
 
 const cart = new Map();
 
+// Pure Clean Data Arrays (No dummy data - Only dynamic user additions)
 let currentInventoryStock = JSON.parse(localStorage.getItem('pgf_stock_counters')) || { dry: 150, khakhra: 85, papad: 120 };
 let usersDatabase = JSON.parse(localStorage.getItem('pgf_user_db')) || [];
 let orderRegistry = JSON.parse(localStorage.getItem('pgf_orders')) || [];
@@ -34,7 +35,7 @@ let latestInvoice = "";
 let latestVisitInvoice = "";
 
 // =========================================================
-// GOOGLE SHEET REAL-TIME SYNC & CALCULATION ENGINE
+// GOOGLE SHEET SYNC ENGINE
 // =========================================================
 async function fetchAdminSummaryFromSheet() {
   try {
@@ -50,16 +51,15 @@ async function fetchAdminSummaryFromSheet() {
       if(document.getElementById("finNetProfit")) document.getElementById("finNetProfit").textContent = "Rs " + Number(data.totals.netProfit || 0).toFixed(2);
     }
 
-    if (data.orders && data.orders.length) { orderRegistry = data.orders; localStorage.setItem('pgf_orders', JSON.stringify(orderRegistry)); }
-    if (data.users && data.users.length) { usersDatabase = data.users; localStorage.setItem('pgf_user_db', JSON.stringify(usersDatabase)); }
-    if (data.sales && data.sales.length) { salesRegistry = data.sales; localStorage.setItem('pgf_sales', JSON.stringify(salesRegistry)); }
-    if (data.expenses && data.expenses.length) { expensesRegistry = data.expenses; localStorage.setItem('pgf_expenses', JSON.stringify(expensesRegistry)); }
-    if (data.purchases && data.purchases.length) { purchasesRegistry = data.purchases; localStorage.setItem('pgf_purchases', JSON.stringify(purchasesRegistry)); }
-    if (data.bookings && data.bookings.length) { bookingsRegistry = data.bookings; localStorage.setItem('pgf_bookings', JSON.stringify(bookingsRegistry)); }
+    if (data.orders) { orderRegistry = data.orders; localStorage.setItem('pgf_orders', JSON.stringify(orderRegistry)); }
+    if (data.users) { usersDatabase = data.users; localStorage.setItem('pgf_user_db', JSON.stringify(usersDatabase)); }
+    if (data.sales) { salesRegistry = data.sales; localStorage.setItem('pgf_sales', JSON.stringify(salesRegistry)); }
+    if (data.expenses) { expensesRegistry = data.expenses; localStorage.setItem('pgf_expenses', JSON.stringify(expensesRegistry)); }
+    if (data.purchases) { purchasesRegistry = data.purchases; localStorage.setItem('pgf_purchases', JSON.stringify(purchasesRegistry)); }
+    if (data.bookings) { bookingsRegistry = data.bookings; localStorage.setItem('pgf_bookings', JSON.stringify(bookingsRegistry)); }
 
     populateAdminDashboardTables();
   } catch (error) {
-    console.warn("Google Sheet Sync Warning: Using local storage calculations.", error);
     computeFinancialLedgerStatements();
   }
 }
@@ -79,47 +79,7 @@ async function sendDataToGoogleSheet(payload) {
 }
 
 // =========================================================
-// EXCEL / CSV EXPORT FUNCTIONS (ADMIN PANEL)
-// =========================================================
-function downloadCSV(csvContent, fileName) {
-  const blob = new Blob(["\ufeff" + csvContent], { type: 'text/csv;charset=utf-8;' });
-  const link = document.createElement("a");
-  const url = URL.createObjectURL(blob);
-  link.setAttribute("href", url);
-  link.setAttribute("download", fileName);
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-}
-
-function exportOrdersToExcel() {
-  let csv = "Order ID,Client Name,Phone,Email,Address,Products,Subtotal,Delivery,Grand Total,Payment Mode,Txn ID,Date,Status\n";
-  orderRegistry.forEach(o => {
-    const sub = o.subtotal !== undefined ? o.subtotal : (o.total > 1000 ? o.total : o.total - 50);
-    const del = o.delivery !== undefined ? o.delivery : (o.total > 1000 ? 0 : 50);
-    csv += `"${o.orderId || ''}","${o.name || ''}","${o.phone || ''}","${o.email || ''}","${o.address || ''}","${o.products || ''}",${sub},${del},${o.total || 0},"${o.paymentMode || 'UPI'}","${o.txnId || ''}","${o.dateLogged || ''}","${o.status || ''}"\n`;
-  });
-  downloadCSV(csv, `PGF_Orders_Report_${getTodayIsoString()}.csv`);
-}
-
-function exportUsersToExcel() {
-  let csv = "Index,Name,Phone,Email,Password\n";
-  usersDatabase.forEach((u, i) => {
-    csv += `${i+1},"${u.name || ''}","${u.phone || ''}","${u.email || ''}","${u.password || ''}"\n`;
-  });
-  downloadCSV(csv, `PGF_Users_Database_${getTodayIsoString()}.csv`);
-}
-
-function exportSalesToExcel() {
-  let csv = "Sale ID,Date,Product,Buyer,Phone,Qty,Total Revenue,Collector\n";
-  salesRegistry.forEach(s => {
-    csv += `"${s.saleId || ''}","${s.date || ''}","${s.product || ''}","${s.buyer || ''}","${s.phone || ''}",${s.qty || 0},${s.total || 0},"${s.collector || ''}"\n`;
-  });
-  downloadCSV(csv, `PGF_Sales_Inflow_${getTodayIsoString()}.csv`);
-}
-
-// =========================================================
-// CORE WEBSITE & ERP LOGIC
+// DATE & SESSION MANAGEMENT
 // =========================================================
 function getTodayIsoString() {
   const d = new Date();
@@ -241,11 +201,11 @@ function handleRegister(e) {
     return;
   }
 
-  const newUser = { name, phone, email, password };
+  const newUser = { name, phone, email, password, registeredOn: new Date().toLocaleString() };
   usersDatabase.push(newUser);
   localStorage.setItem('pgf_user_db', JSON.stringify(usersDatabase));
 
-  sendDataToGoogleSheet({ type: "user_reg", name, phone, email, password });
+  sendDataToGoogleSheet({ type: "user_reg", ...newUser });
 
   currentUser = { name, email, phone, isAdmin: false };
   localStorage.setItem('pgf_session', JSON.stringify(currentUser));
@@ -284,7 +244,7 @@ function loadUserPanelData() {
         <strong>Total: Rs ${o.total} [<span style="color:${statusColor}; font-weight:bold;">${o.status}</span>]</strong>
       </div>
     `;
-  }).join("") : "No active orders mapped for this profile index.";
+  }).join("") : "No active orders mapped for this profile.";
 
   bList.innerHTML = myBookings.length ? myBookings.map(b => {
     let statusColor = b.status === 'Approved' ? 'var(--accent)' : (b.status.startsWith('Rejected') ? 'var(--danger)' : 'var(--warn)');
@@ -301,7 +261,6 @@ function loadUserPanelData() {
 
   if (approvedBookings.length > 0) {
     let historyCertHtml = "";
-
     approvedBookings.forEach((b) => {
       const titleText = b.type === "Student" ? "Certificate of Internship" : "Certificate of Farming";
       historyCertHtml += `
@@ -314,7 +273,6 @@ function loadUserPanelData() {
         </div>
       `;
     });
-    
     historyCertContainer.innerHTML = historyCertHtml;
     historyCertWrapper.style.display = "block";
   } else {
@@ -352,113 +310,131 @@ function deleteUserAccount(idx) {
 }
 
 // =========================================================
-// ADMIN POPULATE TABLES (ALL USER / ORDER / BOOKING DATA)
+// ADMIN POPULATE TABLES (ONLY REAL REGISTERED DATA)
 // =========================================================
 function populateAdminDashboardTables() {
-  // 1. ORDERS TABLE (Full details: Subtotal, Delivery, Total, Mode, Txn ID, etc.)
+  // 1. ORDERS TABLE
   if (document.getElementById("adminOrdersTableBody")) {
-    document.getElementById("adminOrdersTableBody").innerHTML = orderRegistry.map((o, idx) => {
-      const sub = o.subtotal !== undefined ? o.subtotal : (o.total > 1000 ? o.total : o.total - 50);
-      const del = o.delivery !== undefined ? o.delivery : (o.total > 1000 ? 0 : 50);
-      
-      return `
-        <tr>
-          <td><strong>${o.orderId}</strong></td>
-          <td><strong>${o.name}</strong></td>
-          <td>
-            📞 ${o.phone || 'N/A'}<br>
-            <small class="muted">✉️ ${o.email || ''}</small>
-          </td>
-          <td><small>${o.address || 'N/A'}</small></td>
-          <td>${o.products}</td>
-          <td>Rs ${sub}</td>
-          <td style="color:${del === 0 ? 'var(--accent)' : 'inherit'}; font-weight:bold;">
-            ${del === 0 ? 'FREE' : 'Rs ' + del}
-          </td>
-          <td style="color:var(--accent); font-weight:bold; font-size:15px;">Rs ${o.total}</td>
-          <td>
-            <span class="badge" style="background:#eef2ff; color:#3730a3; margin-bottom:3px;">${o.paymentMode || 'UPI'}</span><br>
-            <code>${o.txnId || 'N/A'}</code>
-          </td>
-          <td><small>${o.dateLogged}</small></td>
-          <td><span class="badge ${o.status === 'Approved' ? 'badge-confirmed' : 'badge-pending'}">${o.status}</span></td>
-          <td>
-            ${o.status === 'Pending Verification' ? `
-              <div style="display:flex; flex-direction:column; gap:4px;">
-                <button class="btn" style="padding:4px 8px; min-height:auto; font-size:12px; background:var(--accent);" onclick="approveCustomerOrder(${idx})">Approve</button>
-                <button class="btn" style="padding:4px 8px; min-height:auto; font-size:12px; background:var(--danger);" onclick="rejectCustomerOrder(${idx})">Reject</button>
-              </div>
-            ` : `<span style="font-weight:bold; color:var(--muted);">Resolved</span>`}
-          </td>
-        </tr>
-      `;
-    }).join("");
+    if (!orderRegistry.length) {
+      document.getElementById("adminOrdersTableBody").innerHTML = `<tr><td colspan="12" style="text-align:center; color:var(--muted); padding:20px;">No user orders registered yet.</td></tr>`;
+    } else {
+      document.getElementById("adminOrdersTableBody").innerHTML = orderRegistry.map((o, idx) => {
+        const sub = o.subtotal !== undefined ? o.subtotal : (o.total > 1000 ? o.total : o.total - 50);
+        const del = o.delivery !== undefined ? o.delivery : (o.total > 1000 ? 0 : 50);
+        const mode = o.paymentMode || "Online UPI";
+
+        return `
+          <tr>
+            <td><strong>${o.orderId}</strong></td>
+            <td><strong>${o.name}</strong></td>
+            <td>
+              📞 ${o.phone || 'N/A'}<br>
+              <small class="muted">✉️ ${o.email || ''}</small>
+            </td>
+            <td><small>${o.address || 'N/A'}</small></td>
+            <td>${o.products}</td>
+            <td>Rs ${sub}</td>
+            <td style="color:${del === 0 ? 'var(--accent)' : 'inherit'}; font-weight:bold;">
+              ${del === 0 ? 'FREE' : 'Rs ' + del}
+            </td>
+            <td style="color:var(--accent); font-weight:bold; font-size:15px;">Rs ${o.total}</td>
+            <td>
+              <span class="badge" style="background:#eef2ff; color:#3730a3; margin-bottom:4px; font-weight:bold;">💳 ${mode}</span><br>
+              <code>Txn: ${o.txnId || 'N/A'}</code>
+            </td>
+            <td><small>${o.dateLogged}</small></td>
+            <td><span class="badge ${o.status === 'Approved' ? 'badge-confirmed' : 'badge-pending'}">${o.status}</span></td>
+            <td>
+              ${o.status === 'Pending Verification' ? `
+                <div style="display:flex; flex-direction:column; gap:4px;">
+                  <button class="btn" style="padding:4px 8px; min-height:auto; font-size:12px; background:var(--accent);" onclick="approveCustomerOrder(${idx})">Approve</button>
+                  <button class="btn" style="padding:4px 8px; min-height:auto; font-size:12px; background:var(--danger);" onclick="rejectCustomerOrder(${idx})">Reject</button>
+                </div>
+              ` : `<span style="font-weight:bold; color:var(--muted);">Resolved</span>`}
+            </td>
+          </tr>
+        `;
+      }).join("");
+    }
   }
 
-  // 2. BOOKINGS TABLE (Full student: College, Course, Roll, Dates & Farmer Training Details)
+  // 2. BOOKINGS TABLE
   if (document.getElementById("adminBookingsTableBody")) {
-    document.getElementById("adminBookingsTableBody").innerHTML = bookingsRegistry.map((b, idx) => {
-      const isStudent = b.type === "Student";
-      const submittedDetails = isStudent ? `
-        <div style="line-height:1.4;">
-          <strong>College:</strong> ${b.college || 'N/A'}<br>
-          <strong>Course:</strong> ${b.course || 'N/A'}<br>
-          <strong>Enrollment No:</strong> ${b.enrollment || 'N/A'}<br>
-          <strong>Internship Dates:</strong> <span style="color:#0369a1; font-weight:600;">${b.start || 'N/A'}</span> to <span style="color:#0369a1; font-weight:600;">${b.end || 'N/A'}</span>
-        </div>
-      ` : `
-        <div style="line-height:1.4;">
-          <strong>Target Training Date:</strong> <span style="color:#92400e; font-weight:600;">${b.date || 'N/A'}</span><br>
-          <span class="muted">Farmer Hands-on Practical Program</span>
-        </div>
-      `;
+    if (!bookingsRegistry.length) {
+      document.getElementById("adminBookingsTableBody").innerHTML = `<tr><td colspan="10" style="text-align:center; color:var(--muted); padding:20px;">No training or internship applications booked yet.</td></tr>`;
+    } else {
+      document.getElementById("adminBookingsTableBody").innerHTML = bookingsRegistry.map((b, idx) => {
+        const isStudent = b.type === "Student";
+        const submittedDetails = isStudent ? `
+          <div style="line-height:1.4;">
+            <strong>College:</strong> ${b.college || 'N/A'}<br>
+            <strong>Course:</strong> ${b.course || 'N/A'}<br>
+            <strong>Enrollment No:</strong> ${b.enrollment || 'N/A'}<br>
+            <strong>Dates:</strong> <span style="color:#0369a1; font-weight:600;">${b.start || 'N/A'}</span> to <span style="color:#0369a1; font-weight:600;">${b.end || 'N/A'}</span>
+          </div>
+        ` : `
+          <div style="line-height:1.4;">
+            <strong>Session Date:</strong> <span style="color:#92400e; font-weight:600;">${b.date || 'N/A'}</span><br>
+            <span class="muted">Farmer Hands-on Training</span>
+          </div>
+        `;
 
-      return `
-        <tr>
-          <td><strong>${b.bookingId}</strong></td>
-          <td><span class="badge" style="background:${isStudent ? '#e0f2fe; color:#0369a1;' : '#fef3c7; color:#92400e;'}">${b.type}</span></td>
-          <td>
-            <strong>${b.name}</strong><br>
-            <small>📞 ${b.phone || 'N/A'}</small><br>
-            <small class="muted">✉️ ${b.email || 'N/A'}</small>
-          </td>
-          <td><small>${submittedDetails}</small></td>
-          <td style="font-weight:bold; color:var(--accent); font-size:15px;">Rs ${b.fee}</td>
-          <td><code>${b.txnId || 'N/A'}</code></td>
-          <td><small>${b.dateLogged}</small></td>
-          <td><span class="badge ${b.status === 'Approved' ? 'badge-confirmed' : 'badge-pending'}">${b.status}</span></td>
-          <td>
-            ${b.status === 'Pending Verification' ? `
-              <div style="display:flex; flex-direction:column; gap:4px;">
-                <button class="btn" style="padding:4px 8px; min-height:auto; font-size:12px; background:var(--accent);" onclick="approveTrainingBooking(${idx})">Approve</button>
-                <button class="btn" style="padding:4px 8px; min-height:auto; font-size:12px; background:var(--danger);" onclick="rejectTrainingBooking(${idx})">Reject</button>
-              </div>
-            ` : `<span style="font-weight:bold; color:var(--muted);">Resolved</span>`}
-          </td>
-          <td>
-            ${b.status === 'Approved' ? `
-              <button type="button" class="btn" style="padding:4px 8px; min-height:auto; font-size:12px; background:var(--accent);" onclick="downloadCertificatePDF('${b.bookingId}')">📜 Certificate</button>
-            ` : `<span class="muted" style="font-size:12px;">Pending</span>`}
-          </td>
-        </tr>
-      `;
-    }).join("");
+        const mode = b.paymentMode || "UPI Gateway";
+
+        return `
+          <tr>
+            <td><strong>${b.bookingId}</strong></td>
+            <td><span class="badge" style="background:${isStudent ? '#e0f2fe; color:#0369a1;' : '#fef3c7; color:#92400e;'}">${b.type}</span></td>
+            <td>
+              <strong>${b.name}</strong><br>
+              <small>📞 ${b.phone || 'N/A'}</small><br>
+              <small class="muted">✉️ ${b.email || 'N/A'}</small>
+            </td>
+            <td><small>${submittedDetails}</small></td>
+            <td style="font-weight:bold; color:var(--accent); font-size:15px;">Rs ${b.fee}</td>
+            <td>
+              <span class="badge" style="background:#eef2ff; color:#3730a3; margin-bottom:4px; font-weight:bold;">💳 ${mode}</span><br>
+              <code>Txn: ${b.txnId || 'N/A'}</code>
+            </td>
+            <td><small>${b.dateLogged}</small></td>
+            <td><span class="badge ${b.status === 'Approved' ? 'badge-confirmed' : 'badge-pending'}">${b.status}</span></td>
+            <td>
+              ${b.status === 'Pending Verification' ? `
+                <div style="display:flex; flex-direction:column; gap:4px;">
+                  <button class="btn" style="padding:4px 8px; min-height:auto; font-size:12px; background:var(--accent);" onclick="approveTrainingBooking(${idx})">Approve</button>
+                  <button class="btn" style="padding:4px 8px; min-height:auto; font-size:12px; background:var(--danger);" onclick="rejectTrainingBooking(${idx})">Reject</button>
+                </div>
+              ` : `<span style="font-weight:bold; color:var(--muted);">Resolved</span>`}
+            </td>
+            <td>
+              ${b.status === 'Approved' ? `
+                <button type="button" class="btn" style="padding:4px 8px; min-height:auto; font-size:12px; background:var(--accent);" onclick="downloadCertificatePDF('${b.bookingId}')">📜 Certificate</button>
+              ` : `<span class="muted" style="font-size:12px;">Pending</span>`}
+            </td>
+          </tr>
+        `;
+      }).join("");
+    }
   }
 
   // 3. REGISTERED USERS DIRECTORY TABLE
   if (document.getElementById("adminUsersTableBody")) {
-    document.getElementById("adminUsersTableBody").innerHTML = usersDatabase.map((u, idx) => `
-      <tr>
-        <td>${idx + 1}</td>
-        <td><strong>${u.name}</strong></td>
-        <td>${u.phone}</td>
-        <td><code>${u.email}</code></td>
-        <td><mark style="background:#f3f4f6; padding:2px 4px; border-radius:4px;">${u.password}</mark></td>
-        <td>
-          <button class="btn" style="padding:4px 8px; min-height:auto; background:var(--danger);" onclick="deleteUserAccount(${idx})">Delete Account</button>
-        </td>
-      </tr>
-    `).join("");
+    if (!usersDatabase.length) {
+      document.getElementById("adminUsersTableBody").innerHTML = `<tr><td colspan="6" style="text-align:center; color:var(--muted); padding:20px;">No registered accounts in system database yet.</td></tr>`;
+    } else {
+      document.getElementById("adminUsersTableBody").innerHTML = usersDatabase.map((u, idx) => `
+        <tr>
+          <td>${idx + 1}</td>
+          <td><strong>${u.name}</strong></td>
+          <td>${u.phone}</td>
+          <td><code>${u.email}</code></td>
+          <td><mark style="background:#f3f4f6; padding:2px 4px; border-radius:4px;">${u.password}</mark></td>
+          <td>
+            <button class="btn" style="padding:4px 8px; min-height:auto; background:var(--danger);" onclick="deleteUserAccount(${idx})">Delete Account</button>
+          </td>
+        </tr>
+      `).join("");
+    }
   }
 }
 
@@ -706,6 +682,9 @@ function downloadOfflineSaleInvoice(saleId) {
   document.getElementById("invoiceDialog").showModal();
 }
 
+// =========================================================
+// PRODUCT CATALOG & SHOPPING CART
+// =========================================================
 function renderProducts(list = products) {
   if(!document.getElementById("productsList")) return;
   document.getElementById("productsList").innerHTML = list.map(product => `
@@ -789,7 +768,7 @@ function openProductPayment() {
   }
   
   document.getElementById("productPaymentHelp").style.display = "block";
-  document.getElementById("productPaymentHelp").textContent = `Launching UPI Payment app link for Rs ${bill.total}.`;
+  document.getElementById("productPaymentHelp").textContent = `Launching UPI Payment app link for Rs ${bill.total} via ${mode}.`;
   
   window.location.href = `upi://pay?pa=${encodeURIComponent(farmUpiId)}&pn=${encodeURIComponent(farmName)}&am=${bill.total}&cu=INR`;
   
@@ -815,7 +794,7 @@ function confirmOrder(e) {
   const bill = getTotals();
   const currentTimestamp = new Date().toLocaleString();
   const generatedOrderId = "PGF-INV-" + Date.now().toString().slice(-5);
-  const paymentMode = document.getElementById("paymentMode").value;
+  const selectedMode = document.getElementById("paymentMode").value;
 
   const data = {
     orderId: generatedOrderId,
@@ -827,7 +806,7 @@ function confirmOrder(e) {
     subtotal: bill.subtotal,
     delivery: bill.delivery,
     total: bill.total,
-    paymentMode: paymentMode,
+    paymentMode: selectedMode ? selectedMode + " App" : "UPI App",
     txnId: document.getElementById("paymentId").value.trim(),
     dateLogged: currentTimestamp,
     status: "Pending Verification"
@@ -857,9 +836,9 @@ function confirmOrder(e) {
 
   sendDataToGoogleSheet({ type: "order", ...data });
   
-  const waMessage = `NEW GOODS ORDER VERIFICATION FLOW:\n----------------------------------------\nInvoice Ref Code: ${data.orderId}\nClient Legal Name: ${data.name}\nProducts: ${data.products}\nSubtotal: Rs ${data.subtotal}\nDelivery: Rs ${data.delivery}\nGrand Total: Rs ${data.total}\nPayment Method: ${data.paymentMode}\nTransaction Hash ID Code: ${data.txnId}\n----------------------------------------`;
+  const waMessage = `NEW GOODS ORDER VERIFICATION FLOW:\n----------------------------------------\nInvoice Ref Code: ${data.orderId}\nClient Legal Name: ${data.name}\nProducts: ${data.products}\nSubtotal: Rs ${data.subtotal}\nDelivery: Rs ${data.delivery}\nGrand Total: Rs ${data.total}\nPayment Method / Type: ${data.paymentMode}\nTransaction Hash ID Code: ${data.txnId}\n----------------------------------------`;
   
-  alert("Order authorized! Opening WhatsApp automation link channel framework.");
+  alert("Order authorized! Opening WhatsApp automation link.");
   window.open(`https://wa.me/${farmWhatsapp}?text=${encodeURIComponent(waMessage)}`, '_blank');
   
   document.getElementById("invoiceDialog").showModal();
@@ -872,23 +851,51 @@ function confirmOrder(e) {
 
 function closeInvoice() { document.getElementById("invoiceDialog").close(); }
 
+// =========================================================
+// TRAINING & INTERNSHIP WORKFLOWS (STUDENT & FARMER)
+// =========================================================
 function showVisitForm(id) {
   document.getElementById("studentForm").classList.remove("active");
   document.getElementById("farmerForm").classList.remove("active");
   document.getElementById(id).classList.add("active");
 }
 
+function handleStudentPaymentModeChange() {
+  const mode = document.getElementById("spaymentMode").value;
+  if(mode) {
+    document.getElementById("spayment").disabled = false;
+  } else {
+    document.getElementById("spayment").disabled = true;
+    document.getElementById("spayment").value = "";
+  }
+  validateStudentForm();
+}
+
+function handleFarmerPaymentModeChange() {
+  const mode = document.getElementById("fpaymentMode").value;
+  if(mode) {
+    document.getElementById("fpayment").disabled = false;
+  } else {
+    document.getElementById("fpayment").disabled = true;
+    document.getElementById("fpayment").value = "";
+  }
+  validateFarmerForm();
+}
+
 function openVisitUpi(amount, formId) {
-  const helpId = formId === "studentForm" ? "studentPaymentHelp" : "farmerPaymentHelp";
-  const txnInputId = formId === "studentForm" ? "spayment" : "fpayment";
+  const isStudent = formId === "studentForm";
+  const selectModeId = isStudent ? "spaymentMode" : "fpaymentMode";
+  const selectedMode = document.getElementById(selectModeId).value || "UPI Gateway";
+  const helpId = isStudent ? "studentPaymentHelp" : "farmerPaymentHelp";
+  const txnInputId = isStudent ? "spayment" : "fpayment";
   
   document.getElementById(helpId).style.display = "block";
-  document.getElementById(helpId).textContent = `UPI app launched for program fee value factor Rs ${amount}.`;
+  document.getElementById(helpId).textContent = `UPI app launched for program fee Rs ${amount} via ${selectedMode}.`;
   
   window.location.href = `upi://pay?pa=${encodeURIComponent(farmUpiId)}&pn=${encodeURIComponent(farmName)}&am=${amount}&cu=INR`;
   
   document.getElementById(txnInputId).disabled = false;
-  if(formId === "studentForm") validateStudentForm();
+  if(isStudent) validateStudentForm();
   else validateFarmerForm();
 }
 
@@ -898,33 +905,40 @@ function validateStudentForm() {
   const course = document.getElementById("scourse").value.trim();
   const start = document.getElementById("sstart").value;
   const end = document.getElementById("send").value;
+  const mode = document.getElementById("spaymentMode").value;
   const txn = document.getElementById("spayment").value.trim();
   const isDisabled = document.getElementById("spayment").disabled;
   
-  const isValid = !isDisabled && enroll !== "" && college !== "" && course !== "" && start !== "" && end !== "" && txn.length >= 6;
+  const isValid = !isDisabled && enroll !== "" && college !== "" && course !== "" && start !== "" && end !== "" && mode !== "" && txn.length >= 6;
   document.getElementById("studentSubmitBtn").disabled = !isValid;
 }
 
 function validateFarmerForm() {
   const date = document.getElementById("fdate").value;
+  const mode = document.getElementById("fpaymentMode").value;
   const txn = document.getElementById("fpayment").value.trim();
   const isDisabled = document.getElementById("fpayment").disabled;
   
-  const isValid = !isDisabled && date !== "" && txn.length >= 6;
+  const isValid = !isDisabled && date !== "" && mode !== "" && txn.length >= 6;
   document.getElementById("farmerSubmitBtn").disabled = !isValid;
 }
 
 if(document.getElementById("studentForm")) {
-  ['senroll', 'scollege', 'scourse', 'sstart', 'send'].forEach(id => {
-    document.getElementById(id).addEventListener("input", validateStudentForm);
+  ['senroll', 'scollege', 'scourse', 'sstart', 'send', 'spayment'].forEach(id => {
+    const el = document.getElementById(id);
+    if(el) el.addEventListener("input", validateStudentForm);
   });
 }
 if(document.getElementById("farmerForm")) {
-  document.getElementById("fdate").addEventListener("input", validateFarmerForm);
+  ['fdate', 'fpayment'].forEach(id => {
+    const el = document.getElementById(id);
+    if(el) el.addEventListener("input", validateFarmerForm);
+  });
 }
 
 function submitStudentVisit(e) {
   e.preventDefault();
+  const selectedMode = document.getElementById("spaymentMode").value;
   const data = {
     bookingId: "PGF-STU-" + Date.now().toString().slice(-4),
     type: "Student",
@@ -937,6 +951,7 @@ function submitStudentVisit(e) {
     start: document.getElementById("sstart").value,
     end: document.getElementById("send").value,
     fee: 100,
+    paymentMode: selectedMode ? selectedMode + " App" : "UPI App",
     txnId: document.getElementById("spayment").value.trim(),
     dateLogged: new Date().toLocaleString(),
     status: "Pending Verification",
@@ -947,16 +962,18 @@ function submitStudentVisit(e) {
 
   sendDataToGoogleSheet({ type: "visit", ...data });
 
-  const waText = `NEW STUDENT INTERNSHIP REGISTRATION:\n----------------------------------------\nBooking Ref ID: ${data.bookingId}\nName: ${data.name}\nCollege: ${data.college}\nCourse: ${data.course}\nDates: ${data.start} to ${data.end}\nUTR / Txn ID: ${data.txnId}\n----------------------------------------`;
+  const waText = `NEW STUDENT INTERNSHIP REGISTRATION:\n----------------------------------------\nBooking Ref ID: ${data.bookingId}\nName: ${data.name}\nCollege: ${data.college}\nCourse: ${data.course}\nDates: ${data.start} to ${data.end}\nPayment Mode: ${data.paymentMode}\nUTR / Txn ID: ${data.txnId}\n----------------------------------------`;
   window.open(`https://wa.me/${farmWhatsapp}?text=${encodeURIComponent(waText)}`, '_blank');
   
   document.getElementById("studentForm").reset();
   document.getElementById("spayment").disabled = true;
+  alert("🎉 Student Registration submitted successfully!");
   checkUserSession();
 }
 
 function submitFarmerVisit(e) {
   e.preventDefault();
+  const selectedMode = document.getElementById("fpaymentMode").value;
   const data = {
     bookingId: "PGF-FAR-" + Date.now().toString().slice(-4),
     type: "Farmer",
@@ -965,6 +982,7 @@ function submitFarmerVisit(e) {
     email: currentUser.email,
     date: document.getElementById("fdate").value,
     fee: 699,
+    paymentMode: selectedMode ? selectedMode + " App" : "UPI App",
     txnId: document.getElementById("fpayment").value.trim(),
     dateLogged: new Date().toLocaleString(),
     status: "Pending Verification",
@@ -975,11 +993,12 @@ function submitFarmerVisit(e) {
 
   sendDataToGoogleSheet({ type: "visit", ...data });
 
-  const waText = `NEW FARMER TRAINING BOOKING:\n----------------------------------------\nBooking Ref ID: ${data.bookingId}\nName: ${data.name}\nTarget Date: ${data.date}\nUTR / Txn ID: ${data.txnId}\n----------------------------------------`;
+  const waText = `NEW FARMER TRAINING BOOKING:\n----------------------------------------\nBooking Ref ID: ${data.bookingId}\nName: ${data.name}\nTarget Date: ${data.date}\nPayment Mode: ${data.paymentMode}\nUTR / Txn ID: ${data.txnId}\n----------------------------------------`;
   window.open(`https://wa.me/${farmWhatsapp}?text=${encodeURIComponent(waText)}`, '_blank');
   
   document.getElementById("farmerForm").reset();
   document.getElementById("fpayment").disabled = true;
+  alert("🎉 Farmer Training Booking submitted successfully!");
   checkUserSession();
 }
 
@@ -1125,6 +1144,6 @@ function printDivInvoice() {
   }, 500);
 }
 
-// Initial Loading Handlers
+// Initial Booting
 renderProducts();
 checkUserSession();

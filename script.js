@@ -202,7 +202,7 @@ function handleLogout() {
 }
 
 // =========================================================
-// USER DASHBOARD (WITH FLIPKART STYLE LIVE TRACKING)
+// USER DASHBOARD (FLIPKART STYLE LIVE TRACKING & REFUND STATUS)
 // =========================================================
 function loadUserPanelData() {
   const oList = document.getElementById("userOrdersList");
@@ -213,68 +213,86 @@ function loadUserPanelData() {
   const myOrders = orderRegistry.filter(o => o && o.email === currentUser.email);
   const myBookings = bookingsRegistry.filter(b => b && b.email === currentUser.email);
 
-  // Flipkart style tracking stages renderer
   oList.innerHTML = myOrders.length ? myOrders.map(o => {
-    const stage = o.trackingStage || (o.status === 'Approved' ? 'Confirmed' : 'Placed');
-    const loc = o.currentLocation ? `📍 Current Location: <strong>${o.currentLocation}</strong>` : `📍 Status: Packing / In Hub`;
+    const isRejected = o.status && o.status.startsWith('Rejected');
+    const stage = o.trackingStage || (o.status === 'Approved' ? 'Packed' : 'Placed');
+    const loc = o.currentLocation || (isRejected ? 'Order Cancelled' : 'Processing at Farm Base');
     const eta = o.deliveryDays ? ` (Estimated Delivery: ${o.deliveryDays})` : '';
 
-    const is1 = true;
-    const is2 = ['Confirmed', 'Packed', 'Shipped', 'OutForDelivery', 'Delivered'].includes(stage);
-    const is3 = ['Shipped', 'OutForDelivery', 'Delivered'].includes(stage);
-    const is4 = ['OutForDelivery', 'Delivered'].includes(stage);
-    const is5 = stage === 'Delivered';
+    const stageLevels = { 'Placed': 1, 'Packed': 2, 'Shipped': 3, 'OutForDelivery': 4, 'Delivered': 5 };
+    const currentLvl = stageLevels[stage] || (o.status === 'Approved' ? 2 : 1);
+
+    // Progress bar width percentage
+    const progressWidths = { 1: '0%', 2: '25%', 3: '50%', 4: '75%', 5: '100%' };
+    const activeWidth = isRejected ? '0%' : (progressWidths[currentLvl] || '25%');
 
     return `
-      <div class="data-item-card" style="border: 1px solid #cbd5e1; border-radius: 12px; padding: 14px; margin-bottom: 15px; background:#fff;">
+      <div class="data-item-card" style="border: 1px solid ${isRejected ? '#fca5a5' : '#cbd5e1'}; border-radius: 12px; padding: 14px; margin-bottom: 15px; background:#fff;">
         <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; border-bottom:1px solid #f1f5f9; padding-bottom:8px;">
           <strong>Order ID: <span style="color:var(--accent);">${o.orderId}</span></strong>
           <span style="font-size:12px; color:var(--muted);">${o.dateLogged}</span>
         </div>
         <div style="margin: 8px 0; font-size:13px;">
           <span>Items: <strong>${o.products}</strong></span><br>
-          <span>Grand Total: <strong>Rs ${o.total}</strong></span>
+          <span>Grand Total: <strong>Rs ${o.total}</strong> [Payment Mode: <strong>${o.paymentMode || 'UPI'}</strong>]</span>
         </div>
 
-        <!-- Flipkart-style Tracking Bar -->
-        <div style="margin-top: 12px; background: #f8fafc; padding: 12px; border-radius: 8px; border: 1px solid #e2e8f0;">
-          <div style="font-weight:bold; font-size:13px; color:#1e293b; margin-bottom:8px;">
-            🚚 Live Shipment Tracker${eta}
+        ${isRejected ? `
+          <!-- Order Rejected & Payment Refund Alert Box -->
+          <div style="background: #fef2f2; border: 1px solid #f87171; border-radius: 8px; padding: 12px; margin-top: 10px;">
+            <strong style="color: #991b1b; font-size: 14px;">❌ Order Status: Cancelled / Rejected</strong>
+            <p style="margin: 4px 0 0 0; font-size: 12px; color: #7f1d1d;"><strong>Reason:</strong> ${o.status.replace('Rejected (Reason: ', '').replace(')', '')}</p>
+            <div style="margin-top: 8px; padding-top: 8px; border-top: 1px dashed #fca5a5; font-size: 13px; color: #166534; font-weight: bold; background: #ecfdf5; padding: 6px 10px; border-radius: 6px;">
+              💰 Payment Status: Payment Received (${o.txnId || 'UPI'}) ➔ Refund Status: <span style="color:#047857;">${o.refundStatus || 'Refund Initiated to Original Account (1-2 Days)'}</span>
+            </div>
           </div>
-          
-          <div style="display: flex; justify-content: space-between; align-items: center; position: relative; margin: 15px 0 10px 0;">
-            <div style="position: absolute; top: 12px; left: 10%; width: 80%; height: 4px; background: #e2e8f0; z-index: 1;"></div>
+        ` : `
+          <!-- Flipkart-Style Dynamic Tracking Bar -->
+          <div style="margin-top: 12px; background: #f8fafc; padding: 12px; border-radius: 8px; border: 1px solid #e2e8f0;">
+            <div style="font-weight:bold; font-size:13px; color:#1e293b; margin-bottom:8px;">
+              🚚 Live Shipment Tracker${eta}
+            </div>
             
-            <div style="text-align: center; z-index: 2;">
-              <div style="width: 24px; height: 24px; border-radius: 50%; background: ${is1 ? '#2b8a3e' : '#cbd5e1'}; color: #fff; font-size: 11px; line-height: 24px; margin: 0 auto; font-weight:bold;">✓</div>
-              <span style="font-size: 11px; font-weight: ${is1 ? 'bold' : 'normal'}; display: block; margin-top: 4px;">Placed</span>
+            <div style="position: relative; margin: 20px 10px 10px 10px;">
+              <!-- Background Line -->
+              <div style="position: absolute; top: 12px; left: 0; width: 100%; height: 4px; background: #e2e8f0; z-index: 1;"></div>
+              <!-- Active Progress Line -->
+              <div style="position: absolute; top: 12px; left: 0; width: ${activeWidth}; height: 4px; background: #2b8a3e; z-index: 1; transition: width 0.3s ease;"></div>
+              
+              <div style="display: flex; justify-content: space-between; align-items: center; position: relative; z-index: 2;">
+                <div style="text-align: center;">
+                  <div style="width: 26px; height: 26px; border-radius: 50%; background: ${currentLvl >= 1 ? '#2b8a3e' : '#cbd5e1'}; color: #fff; font-size: 11px; line-height: 26px; margin: 0 auto; font-weight:bold;">✓</div>
+                  <span style="font-size: 11px; font-weight: ${currentLvl >= 1 ? 'bold' : 'normal'}; display: block; margin-top: 4px; color:${currentLvl >= 1 ? '#1e293b' : '#94a3b8'};">Placed</span>
+                </div>
+
+                <div style="text-align: center;">
+                  <div style="width: 26px; height: 26px; border-radius: 50%; background: ${currentLvl >= 2 ? '#2b8a3e' : '#cbd5e1'}; color: #fff; font-size: 11px; line-height: 26px; margin: 0 auto; font-weight:bold;">${currentLvl >= 2 ? '✓' : '2'}</div>
+                  <span style="font-size: 11px; font-weight: ${currentLvl >= 2 ? 'bold' : 'normal'}; display: block; margin-top: 4px; color:${currentLvl >= 2 ? '#1e293b' : '#94a3b8'};">Packed</span>
+                </div>
+
+                <div style="text-align: center;">
+                  <div style="width: 26px; height: 26px; border-radius: 50%; background: ${currentLvl >= 3 ? '#2b8a3e' : '#cbd5e1'}; color: #fff; font-size: 11px; line-height: 26px; margin: 0 auto; font-weight:bold;">${currentLvl >= 3 ? '✓' : '3'}</div>
+                  <span style="font-size: 11px; font-weight: ${currentLvl >= 3 ? 'bold' : 'normal'}; display: block; margin-top: 4px; color:${currentLvl >= 3 ? '#1e293b' : '#94a3b8'};">Shipped</span>
+                </div>
+
+                <div style="text-align: center;">
+                  <div style="width: 26px; height: 26px; border-radius: 50%; background: ${currentLvl >= 4 ? '#2b8a3e' : '#cbd5e1'}; color: #fff; font-size: 11px; line-height: 26px; margin: 0 auto; font-weight:bold;">${currentLvl >= 4 ? '✓' : '4'}</div>
+                  <span style="font-size: 11px; font-weight: ${currentLvl >= 4 ? 'bold' : 'normal'}; display: block; margin-top: 4px; color:${currentLvl >= 4 ? '#1e293b' : '#94a3b8'};">Out For Delivery</span>
+                </div>
+
+                <div style="text-align: center;">
+                  <div style="width: 26px; height: 26px; border-radius: 50%; background: ${currentLvl >= 5 ? '#2b8a3e' : '#cbd5e1'}; color: #fff; font-size: 11px; line-height: 26px; margin: 0 auto; font-weight:bold;">${currentLvl >= 5 ? '✓' : '5'}</div>
+                  <span style="font-size: 11px; font-weight: ${currentLvl >= 5 ? 'bold' : 'normal'}; display: block; margin-top: 4px; color:${currentLvl >= 5 ? '#1e293b' : '#94a3b8'};">Delivered</span>
+                </div>
+              </div>
             </div>
 
-            <div style="text-align: center; z-index: 2;">
-              <div style="width: 24px; height: 24px; border-radius: 50%; background: ${is2 ? '#2b8a3e' : '#cbd5e1'}; color: #fff; font-size: 11px; line-height: 24px; margin: 0 auto; font-weight:bold;">${is2 ? '✓' : '2'}</div>
-              <span style="font-size: 11px; font-weight: ${is2 ? 'bold' : 'normal'}; display: block; margin-top: 4px;">Packed</span>
-            </div>
-
-            <div style="text-align: center; z-index: 2;">
-              <div style="width: 24px; height: 24px; border-radius: 50%; background: ${is3 ? '#2b8a3e' : '#cbd5e1'}; color: #fff; font-size: 11px; line-height: 24px; margin: 0 auto; font-weight:bold;">${is3 ? '✓' : '3'}</div>
-              <span style="font-size: 11px; font-weight: ${is3 ? 'bold' : 'normal'}; display: block; margin-top: 4px;">Shipped</span>
-            </div>
-
-            <div style="text-align: center; z-index: 2;">
-              <div style="width: 24px; height: 24px; border-radius: 50%; background: ${is4 ? '#2b8a3e' : '#cbd5e1'}; color: #fff; font-size: 11px; line-height: 24px; margin: 0 auto; font-weight:bold;">${is4 ? '✓' : '4'}</div>
-              <span style="font-size: 11px; font-weight: ${is4 ? 'bold' : 'normal'}; display: block; margin-top: 4px;">Out For Delivery</span>
-            </div>
-
-            <div style="text-align: center; z-index: 2;">
-              <div style="width: 24px; height: 24px; border-radius: 50%; background: ${is5 ? '#2b8a3e' : '#cbd5e1'}; color: #fff; font-size: 11px; line-height: 24px; margin: 0 auto; font-weight:bold;">${is5 ? '✓' : '5'}</div>
-              <span style="font-size: 11px; font-weight: ${is5 ? 'bold' : 'normal'}; display: block; margin-top: 4px;">Delivered</span>
+            <div style="font-size: 12px; color: #334155; margin-top: 14px; background: #ffffff; padding: 8px 12px; border-radius: 6px; border-left: 4px solid var(--accent); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px;">
+              <span>📍 Location: <strong>${loc}</strong></span>
+              <span style="font-weight:bold; color:var(--accent);">Current Stage: ${stage}</span>
             </div>
           </div>
-
-          <div style="font-size: 12px; color: #334155; margin-top: 10px; background: #ffffff; padding: 6px 10px; border-radius: 6px; border-left: 3px solid var(--accent);">
-            ${loc}
-          </div>
-        </div>
+        `}
       </div>
     `;
   }).join("") : "No active orders mapped for this profile.";
@@ -346,10 +364,10 @@ function deleteUserAccount(idx) {
 }
 
 // =========================================================
-// ADMIN POPULATE TABLES
+// ADMIN POPULATE TABLES (INTERACTIVE TRACKING & 2-STEP CERTIFICATE)
 // =========================================================
 function populateAdminDashboardTables() {
-  // 1. Orders Management (Live Tracking Control)
+  // 1. Interactive Orders Management (Flipkart-Style Stage Controls & Location Updates)
   if (document.getElementById("adminOrdersTableBody")) {
     const validOrders = orderRegistry.filter(o => o && o.name && o.orderId);
     if (!validOrders.length) {
@@ -361,7 +379,8 @@ function populateAdminDashboardTables() {
         const grandTotal = Number(o.total || (sub + del));
         const mode = o.paymentMode || "Online UPI";
         const status = o.status || "Pending Verification";
-        const stage = o.trackingStage || (status === 'Approved' ? 'Confirmed' : 'Placed');
+        const isRejected = status.startsWith('Rejected');
+        const stage = o.trackingStage || (status === 'Approved' ? 'Packed' : 'Placed');
         const loc = o.currentLocation || 'Order Received at Farm Yard';
         const eta = o.deliveryDays || '2-3 Days';
 
@@ -384,21 +403,45 @@ function populateAdminDashboardTables() {
               <span class="badge" style="background:#eef2ff; color:#3730a3; margin-bottom:4px; font-weight:bold;">${mode}</span><br>
               <code>${o.txnId || 'N/A'}</code>
             </td>
-            <td><span class="badge ${status === 'Approved' ? 'badge-confirmed' : 'badge-pending'}">${status}</span></td>
             <td>
-              <div style="font-size:12px; line-height:1.4;">
-                <span class="badge" style="background:#0284c7; color:#fff; margin-bottom:2px;">Stage: ${stage}</span><br>
-                📍 <strong>${loc}</strong><br>
-                🚚 ETA: <strong>${eta}</strong>
-              </div>
+              <span class="badge ${isRejected ? 'badge-pending' : (status === 'Approved' ? 'badge-confirmed' : 'badge-pending')}" style="${isRejected ? 'background:#fee2e2; color:#991b1b;' : ''}">
+                ${status}
+              </span>
+              ${isRejected ? `<br><small style="color:#047857; font-weight:bold;">Refund: ${o.refundStatus || 'Initiated'}</small>` : ''}
             </td>
+            
+            <!-- Live Tracking Line Controller Column -->
+            <td style="min-width: 220px;">
+              ${!isRejected ? `
+                <div style="background:#f8fafc; padding:8px; border-radius:8px; border:1px solid #e2e8f0; font-size:12px;">
+                  <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+                    <span style="font-weight:bold; color:#0284c7;">Stage: ${stage}</span>
+                    <span style="color:var(--muted);">${eta}</span>
+                  </div>
+                  <div style="color:#334155; margin-bottom:6px;">📍 ${loc}</div>
+
+                  <!-- Quick Stage Slider Buttons for Admin -->
+                  <div style="display:flex; gap:3px; flex-wrap:wrap;">
+                    <button type="button" class="btn" style="padding:2px 5px; font-size:10px; min-height:22px; background:${stage==='Placed'?'#2b8a3e':'#94a3b8'};" onclick="setOrderStageDirect(${idx}, 'Placed')">Placed</button>
+                    <button type="button" class="btn" style="padding:2px 5px; font-size:10px; min-height:22px; background:${stage==='Packed'?'#2b8a3e':'#94a3b8'};" onclick="setOrderStageDirect(${idx}, 'Packed')">Packed</button>
+                    <button type="button" class="btn" style="padding:2px 5px; font-size:10px; min-height:22px; background:${stage==='Shipped'?'#2b8a3e':'#94a3b8'};" onclick="setOrderStageDirect(${idx}, 'Shipped')">Shipped</button>
+                    <button type="button" class="btn" style="padding:2px 5px; font-size:10px; min-height:22px; background:${stage==='OutForDelivery'?'#2b8a3e':'#94a3b8'};" onclick="setOrderStageDirect(${idx}, 'OutForDelivery')">Out For Delivery</button>
+                    <button type="button" class="btn" style="padding:2px 5px; font-size:10px; min-height:22px; background:${stage==='Delivered'?'#2b8a3e':'#94a3b8'};" onclick="setOrderStageDirect(${idx}, 'Delivered')">Delivered</button>
+                  </div>
+                </div>
+              ` : `<span style="color:#dc2626; font-weight:bold;">Cancelled & Refund Flow</span>`}
+            </td>
+
             <td>
               <div style="display:flex; flex-direction:column; gap:4px;">
                 ${status === 'Pending Verification' ? `
                   <button class="btn" style="padding:4px 8px; min-height:auto; font-size:11px; background:var(--accent);" onclick="approveCustomerOrder(${idx})">Approve Order</button>
-                  <button class="btn" style="padding:4px 8px; min-height:auto; font-size:11px; background:var(--danger);" onclick="rejectCustomerOrder(${idx})">Reject</button>
+                  <button class="btn" style="padding:4px 8px; min-height:auto; font-size:11px; background:var(--danger);" onclick="rejectCustomerOrder(${idx})">Reject & Refund</button>
                 ` : `
-                  <button class="btn" style="padding:4px 8px; min-height:auto; font-size:11px; background:#0284c7;" onclick="updateOrderTracking(${idx})">📦 Edit Tracking & Location</button>
+                  ${!isRejected ? `
+                    <button class="btn" style="padding:4px 8px; min-height:auto; font-size:11px; background:#0284c7;" onclick="updateOrderLocationDetails(${idx})">📍 Edit Location & Days</button>
+                    <button class="btn" style="padding:3px 6px; min-height:auto; font-size:10px; background:var(--danger);" onclick="rejectCustomerOrder(${idx})">Cancel & Refund</button>
+                  ` : `<span style="font-weight:bold; color:var(--muted); font-size:12px;">Refund Processed</span>`}
                 `}
               </div>
             </td>
@@ -450,10 +493,10 @@ function populateAdminDashboardTables() {
             </td>
             <td><small>${b.dateLogged || 'N/A'}</small></td>
             <td>
-              <span class="badge ${isConfirmed ? 'badge-confirmed' : 'badge-pending'}">${isConfirmed ? '1. Confirmed' : 'Pending Verification'}</span>
+              <span class="badge ${isConfirmed ? 'badge-confirmed' : 'badge-pending'}">${isConfirmed ? '1. Booking Confirmed' : 'Pending Verification'}</span>
             </td>
             <td>
-              <span class="badge ${certIssued ? 'badge-confirmed' : 'badge-pending'}">${certIssued ? '2. Approved & Issued' : 'Locked'}</span>
+              <span class="badge ${certIssued ? 'badge-confirmed' : 'badge-pending'}">${certIssued ? '2. Certificate Approved' : 'Locked'}</span>
             </td>
             <td>
               <div style="display:flex; flex-direction:column; gap:4px;">
@@ -498,66 +541,67 @@ function populateAdminDashboardTables() {
 }
 
 // =========================================================
-// FLIPKART STYLE LIVE TRACKING CONTROLS (ADMIN)
+// LIVE FLIPKART STYLE LINE CONTROLLER FUNCTIONS
 // =========================================================
+function setOrderStageDirect(idx, newStage) {
+  orderRegistry[idx].trackingStage = newStage;
+  orderRegistry[idx].status = "Approved";
+
+  if (newStage === 'Packed') orderRegistry[idx].currentLocation = "Packed & Ready at Pure Grow Farm Hub";
+  else if (newStage === 'Shipped') orderRegistry[idx].currentLocation = "In Transit / Dispatched from Central Facility";
+  else if (newStage === 'OutForDelivery') orderRegistry[idx].currentLocation = "Out For Delivery with Courier Partner";
+  else if (newStage === 'Delivered') orderRegistry[idx].currentLocation = "Order Delivered to Customer Address";
+
+  localStorage.setItem('pgf_orders', JSON.stringify(orderRegistry));
+  populateAdminDashboardTables();
+}
+
+function updateOrderLocationDetails(idx) {
+  const o = orderRegistry[idx];
+  const loc = prompt("Current Location enter karein (e.g., 'Reached Junagadh Hub', 'Dispatched from Rajkot Hub'):", o.currentLocation || "In Transit");
+  if (loc !== null && loc.trim() !== "") o.currentLocation = loc.trim();
+
+  const eta = prompt("Estimated Delivery Days / Time:", o.deliveryDays || "2-3 Days");
+  if (eta !== null && eta.trim() !== "") o.deliveryDays = eta.trim();
+
+  localStorage.setItem('pgf_orders', JSON.stringify(orderRegistry));
+  populateAdminDashboardTables();
+  alert("Location and Days updated!");
+}
+
 function approveCustomerOrder(idx) {
   orderRegistry[idx].status = "Approved";
-  orderRegistry[idx].trackingStage = "Confirmed";
-  orderRegistry[idx].currentLocation = "Pure Grow Farm Makhiyala (Processing & Packing)";
+  orderRegistry[idx].trackingStage = "Packed";
+  orderRegistry[idx].currentLocation = "Processing & Packing at Pure Grow Farm Hub";
   orderRegistry[idx].deliveryDays = "2-3 Days";
   localStorage.setItem('pgf_orders', JSON.stringify(orderRegistry));
   
-  alert("Order Approved! Ab aap 'Edit Tracking & Location' se order ki live location update kar sakte hain.");
+  alert("Order Approved! Ab aap direct 1-click stage buttons se line ko aage-piche move kar sakte hain.");
   populateAdminDashboardTables();
   computeFinancialLedgerStatements();
-}
-
-function updateOrderTracking(idx) {
-  const o = orderRegistry[idx];
-  
-  const stageChoice = prompt(
-    "Order Stage Select Karein:\n1 = Confirmed / Packed\n2 = Shipped (In Transit)\n3 = Out For Delivery\n4 = Delivered\n\nNumber enter karein (1 to 4):",
-    o.trackingStage === 'Delivered' ? '4' : (o.trackingStage === 'OutForDelivery' ? '3' : (o.trackingStage === 'Shipped' ? '2' : '1'))
-  );
-
-  if (stageChoice === null) return;
-
-  if (stageChoice === '1') o.trackingStage = "Packed";
-  else if (stageChoice === '2') o.trackingStage = "Shipped";
-  else if (stageChoice === '3') o.trackingStage = "OutForDelivery";
-  else if (stageChoice === '4') o.trackingStage = "Delivered";
-  else o.trackingStage = "Shipped";
-
-  const newLocation = prompt("Order abhi kahan pahucha hai? (Location Dalein - e.g., 'Junagadh Hub', 'Dispatched from Rajkot', 'Near Your Location'):", o.currentLocation || "In Transit");
-  if (newLocation !== null && newLocation.trim() !== "") {
-    o.currentLocation = newLocation.trim();
-  }
-
-  const newEta = prompt("Delivery kitne din me hogi / Target Date: (e.g., 'Tomorrow by 4 PM' ya '2 Days'):", o.deliveryDays || "2-3 Days");
-  if (newEta !== null && newEta.trim() !== "") {
-    o.deliveryDays = newEta.trim();
-  }
-
-  localStorage.setItem('pgf_orders', JSON.stringify(orderRegistry));
-  populateAdminDashboardTables();
-  alert("✅ Order live location & stage successfully update ho gayi! User ko live dikhegi.");
 }
 
 function rejectCustomerOrder(idx) {
-  let reason = prompt("Reject karne ka reason likhein:");
+  let reason = prompt("Reject karne ka reason likhein:", "Payment verification issue / Out of stock");
   if(reason === null) return;
-  if(reason.trim() === "") reason = "Not specified by farm admin";
+  if(reason.trim() === "") reason = "Admin Cancelled";
+
+  let refundStatus = prompt("Payment Received! Refund status kya likhna hai?", "Refund Initiated to Original Account (1-2 Days)");
+  if(refundStatus === null || refundStatus.trim() === "") refundStatus = "Refund Initiated to UPI Account";
   
   orderRegistry[idx].status = `Rejected (Reason: ${reason})`;
+  orderRegistry[idx].refundStatus = refundStatus;
+  orderRegistry[idx].currentLocation = "Order Cancelled & Payment Refund in Progress";
+  
   localStorage.setItem('pgf_orders', JSON.stringify(orderRegistry));
   populateAdminDashboardTables();
   computeFinancialLedgerStatements();
+  alert("Order Reject ho gaya aur user ke dashboard me Payment Received + Refund Status add ho gaya!");
 }
 
 // =========================================================
 // 2-STEP FARM BOOKING & CERTIFICATE APPROVAL
 // =========================================================
-// Step 1: Approve Farm Booking
 function confirmBookingSlot(idx) {
   bookingsRegistry[idx].status = "Confirmed";
   bookingsRegistry[idx].approvedDate = new Date().toLocaleDateString();
@@ -581,18 +625,17 @@ function confirmBookingSlot(idx) {
   salesRegistry.push(saleLog);
   localStorage.setItem('pgf_sales', JSON.stringify(salesRegistry));
 
-  alert(`✅ Step 1 Completed: ${target.name} ka Farm Booking Confirm ho gaya!\nCourse complete hone par '2. Approve Certificate' dabayein.`);
+  alert(`✅ 1. Farm Book Approved for ${target.name}!\nCourse complete hone par '2. Approve Certificate' dabayein.`);
   populateAdminDashboardTables();
   computeFinancialLedgerStatements();
 }
 
-// Step 2: Approve Certificate
 function issueUserCertificate(idx) {
   if (confirm(`Kya aap ${bookingsRegistry[idx].name} ke liye certificate approve karna chahte hain? Iske baad hi user download kar payega.`)) {
     bookingsRegistry[idx].certIssued = true;
     bookingsRegistry[idx].certIssueDate = new Date().toLocaleDateString();
     localStorage.setItem('pgf_bookings', JSON.stringify(bookingsRegistry));
-    alert("✅ Step 2 Completed: Certificate approve ho gaya aur user panel me download unlock ho gaya!");
+    alert("✅ 2. Certificate Approved ho gaya aur user ke dashboard me download link unlock ho gaya!");
     populateAdminDashboardTables();
   }
 }
@@ -781,7 +824,7 @@ function downloadOfflineSaleInvoice(saleId) {
 }
 
 // =========================================================
-// PRODUCT CATALOG & SHOPPING CART
+// PRODUCT CATALOG & SHOPPING BASKET
 // =========================================================
 function renderProducts(list = products) {
   if(!document.getElementById("productsList")) return;
@@ -908,9 +951,10 @@ function confirmOrder(e) {
     txnId: document.getElementById("paymentId").value.trim(),
     dateLogged: currentTimestamp,
     trackingStage: "Placed",
-    currentLocation: "Order Placed - Waiting for Farm Confirmation",
+    currentLocation: "Order Placed - Waiting for Farm Packing",
     deliveryDays: "2-3 Days",
-    status: "Pending Verification"
+    status: "Pending Verification",
+    refundStatus: ""
   };
 
   orderRegistry.unshift(data);

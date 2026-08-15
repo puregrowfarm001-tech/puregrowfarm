@@ -46,7 +46,7 @@ let currentUser = JSON.parse(localStorage.getItem('pgf_session')) || null;
 function pushNotification(targetRecipient, title, message, type = 'info') {
   const newNotif = {
     id: "NOTIF-" + Date.now(),
-    recipient: targetRecipient, // 'ADMIN' or user's email
+    recipient: targetRecipient,
     title: title,
     message: message,
     time: new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true }),
@@ -102,7 +102,6 @@ function toggleNotificationDropdown() {
   if (!panel) return;
   if (panel.style.display === "none" || panel.style.display === "") {
     panel.style.display = "block";
-    // Mark my notifications as read
     const currentRecipient = currentUser ? (currentUser.isAdmin ? 'ADMIN' : currentUser.email) : null;
     if (currentRecipient) {
       notificationsRegistry.forEach(n => {
@@ -125,7 +124,6 @@ function clearAllNotifications() {
   renderNotificationBadge();
 }
 
-// Close dropdown on outside click
 document.addEventListener('click', function(e) {
   const wrapper = document.getElementById("notificationBellWrapper");
   const panel = document.getElementById("notificationDropdownPanel");
@@ -264,8 +262,7 @@ function handleRegister(e) {
   usersDatabase.push(newUser);
   localStorage.setItem('pgf_user_db', JSON.stringify(usersDatabase));
 
-  // Push notification to ADMIN about new registered user
-  pushNotification('ADMIN', '👤 New Account Created', `${name} (${email}) has just registered on Pure Grow Farm portal.`);
+  pushNotification('ADMIN', '👤 New Account Created', `${name} (${email}) has registered.`);
 
   currentUser = { name, email, phone, isAdmin: false };
   localStorage.setItem('pgf_session', JSON.stringify(currentUser));
@@ -286,7 +283,7 @@ function handleLogout() {
 }
 
 // =========================================================
-// USER DASHBOARD (FLIPKART LIVE TRACK & REFUND PROGRESS)
+// USER DASHBOARD
 // =========================================================
 function loadUserPanelData() {
   const oList = document.getElementById("userOrdersList");
@@ -337,7 +334,6 @@ function loadUserPanelData() {
         ` : ''}
 
         ${isApproved ? `
-          <!-- 1. APPROVED LIVE SHIPMENT TRACKER -->
           <div style="margin-top: 12px; background: #f8fafc; padding: 12px; border-radius: 8px; border: 1px solid #e2e8f0;">
             <div style="font-weight:bold; font-size:13px; color:#1e293b; margin-bottom:8px;">
               🚚 Live Shipment Tracker${eta}
@@ -383,7 +379,6 @@ function loadUserPanelData() {
         ` : ''}
 
         ${isCancelled ? `
-          <!-- 2. CANCELLED LIVE REFUND TRACKER -->
           <div style="margin-top: 12px; background: #fffaf5; padding: 12px; border-radius: 8px; border: 1px solid #fdba74;">
             <div style="font-weight:bold; font-size:13px; color:#c2410c; margin-bottom:4px;">
               🔄 Order Cancelled & Live Payment Refund Tracker
@@ -420,7 +415,6 @@ function loadUserPanelData() {
         ` : ''}
 
         ${isRejected ? `
-          <!-- 3. REJECTED (NO PAYMENT - NO TRACKING) -->
           <div style="background: #fef2f2; border: 1px solid #f87171; border-radius: 8px; padding: 12px; margin-top: 10px;">
             <strong style="color: #991b1b; font-size: 14px;">❌ Order Rejected (Payment Not Verified)</strong>
             <p style="margin: 4px 0 0 0; font-size: 12px; color: #7f1d1d;"><strong>Reason:</strong> ${o.status.replace('Rejected (Reason: ', '').replace(')', '')}</p>
@@ -561,6 +555,7 @@ function populateAdminDashboardTables() {
                   </div>
                   <div style="color:#334155; margin-bottom:6px;">📍 ${loc}</div>
 
+                  <!-- 1-Click Shipment Stage Buttons -->
                   <div style="display:flex; gap:3px; flex-wrap:wrap;">
                     <button type="button" class="btn" style="padding:2px 5px; font-size:10px; min-height:22px; background:${stage==='Placed'?'#2b8a3e':'#94a3b8'};" onclick="setOrderStageDirect(${idx}, 'Placed')">Placed</button>
                     <button type="button" class="btn" style="padding:2px 5px; font-size:10px; min-height:22px; background:${stage==='Packed'?'#2b8a3e':'#94a3b8'};" onclick="setOrderStageDirect(${idx}, 'Packed')">Packed</button>
@@ -703,8 +698,6 @@ function handleOrderApprove(idx) {
   o.refundStage = "";
   
   localStorage.setItem('pgf_orders', JSON.stringify(orderRegistry));
-
-  // Push live notification to USER
   pushNotification(o.email, '📦 Order Approved & Packed!', `Your Order #${o.orderId} is confirmed and packed. Expected delivery: 2-3 Days.`);
 
   alert("✅ Order Approved! User ko notification aur live tracking mil gayi.");
@@ -724,8 +717,6 @@ function handleOrderReject(idx) {
   o.currentLocation = "Order Rejected due to payment failure";
 
   localStorage.setItem('pgf_orders', JSON.stringify(orderRegistry));
-
-  // Push live notification to USER
   pushNotification(o.email, '❌ Order Rejected', `Your Order #${o.orderId} was rejected. Reason: ${reason}.`);
 
   alert("❌ Order Reject ho gaya! User ko rejection notification chali gayi.");
@@ -744,8 +735,6 @@ function handleOrderCancelRefund(idx) {
   o.currentLocation = "Order Cancelled & Payment Refund Flow Initiated";
 
   localStorage.setItem('pgf_orders', JSON.stringify(orderRegistry));
-
-  // Push live notification to USER
   pushNotification(o.email, '🔄 Order Cancelled & Refund Initiated', `Your Order #${o.orderId} was cancelled. Rs ${o.total} refund has been initiated to your account.`);
 
   alert("🔄 Order Cancelled! User dashboard me Live Payment Refund tracker chalu ho gaya.");
@@ -763,10 +752,7 @@ function setOrderStageDirect(idx, newStage) {
   else if (newStage === 'Delivered') o.currentLocation = "Order Delivered to Customer Address";
 
   localStorage.setItem('pgf_orders', JSON.stringify(orderRegistry));
-
-  // Push stage update notification to USER
   pushNotification(o.email, '🚚 Order Shipment Update', `Order #${o.orderId} stage updated to: ${newStage}. (${o.currentLocation})`);
-
   populateAdminDashboardTables();
 }
 
@@ -774,10 +760,7 @@ function setRefundStageDirect(idx, newRefStage) {
   const o = orderRegistry[idx];
   o.refundStage = newRefStage;
   localStorage.setItem('pgf_orders', JSON.stringify(orderRegistry));
-
-  // Push refund stage notification to USER
   pushNotification(o.email, '💰 Refund Status Update', `Refund for Order #${o.orderId} status: ${newRefStage}.`);
-
   populateAdminDashboardTables();
   alert(`Refund stage updated to: ${newRefStage}`);
 }
@@ -791,10 +774,7 @@ function updateOrderLocationDetails(idx) {
   if (eta !== null && eta.trim() !== "") o.deliveryDays = eta.trim();
 
   localStorage.setItem('pgf_orders', JSON.stringify(orderRegistry));
-
-  // Push location notification to USER
   pushNotification(o.email, '📍 Location Update', `Order #${o.orderId} current location: ${o.currentLocation}. ETA: ${o.deliveryDays}`);
-
   populateAdminDashboardTables();
 }
 
@@ -824,7 +804,6 @@ function confirmBookingSlot(idx) {
   salesRegistry.push(saleLog);
   localStorage.setItem('pgf_sales', JSON.stringify(salesRegistry));
 
-  // Push confirmation notification to USER
   pushNotification(target.email, '🎓 Farm Booking Confirmed!', `Your ${target.type} program booking #${target.bookingId} has been confirmed.`);
 
   alert(`✅ 1. Farm Book Approved for ${target.name}!\nTraining complete hone par '2. Approve Certificate' dabayein.`);
@@ -839,7 +818,6 @@ function issueUserCertificate(idx) {
     target.certIssueDate = new Date().toLocaleDateString('en-IN');
     localStorage.setItem('pgf_bookings', JSON.stringify(bookingsRegistry));
 
-    // Push certificate issue notification to USER
     pushNotification(target.email, '📜 Certificate Issued & Ready!', `Congratulations! Your certificate for ${target.type} program (#${target.bookingId}) is ready to download.`);
 
     alert("✅ 2. Certificate Approved ho gaya aur user ke dashboard me download unlock ho gaya!");
@@ -857,7 +835,6 @@ function rejectTrainingBooking(idx) {
   target.certIssued = false;
   localStorage.setItem('pgf_bookings', JSON.stringify(bookingsRegistry));
 
-  // Push reject notification to USER
   pushNotification(target.email, '❌ Farm Booking Rejected', `Your booking #${target.bookingId} was rejected. Reason: ${reason}.`);
 
   populateAdminDashboardTables();
@@ -1036,339 +1013,9 @@ function downloadOfflineSaleInvoice(saleId) {
 }
 
 // =========================================================
-// PRODUCT CATALOG & CART
+// 2 OFFICIAL SIGNATURES DYNAMIC CERTIFICATE PRINT ENGINE
+// (Left: Soham N Gajera | Right: Jeet A Gajera)
 // =========================================================
-function renderProducts(list = products) {
-  if(!document.getElementById("productsList")) return;
-  document.getElementById("productsList").innerHTML = list.map(product => `
-    <article class="product">
-      <img src="${product.image}" alt="${product.name}">
-      <h3>${product.name}</h3>
-      <p class="muted">${product.detail}</p>
-      <div style="margin-bottom: 8px;">
-        <span class="badge" style="background: #dcfce7; color: #166534; font-size:11px;">Status: Available</span>
-      </div>
-      <div style="margin-top:auto;">
-        <div class="product-actions">
-          <div class="pill">Rs ${product.price} / ${product.unit}</div>
-          ${product.bulk ? `<button type="button" onclick="window.open('https://wa.me/${farmWhatsapp}')">Contact Bulk</button>` : `<button type="button" onclick="addToCart(${product.id})">Add Cart</button>`}
-        </div>
-      </div>
-    </article>
-  `).join("");
-}
-
-function addToCart(id) {
-  const product = products.find(item => item.id === id);
-  const current = cart.get(id);
-  cart.set(id, { ...product, qty: current ? current.qty + 1 : 1 });
-  renderCart();
-}
-
-function minusCart(id) {
-  const item = cart.get(id);
-  if (!item) return;
-  if (item.qty === 1) cart.delete(id);
-  else cart.set(id, { ...item, qty: item.qty - 1 });
-  renderCart();
-}
-
-function getTotals() {
-  const subtotal = [...cart.values()].reduce((sum, item) => sum + (item.price * item.qty), 0);
-  const delivery = subtotal > 0 ? (subtotal > 1000 ? 0 : 50) : 0;
-  return { subtotal, delivery, total: subtotal + delivery };
-}
-
-function renderCart() {
-  const bill = getTotals();
-  if(document.getElementById("subtotal")) document.getElementById("subtotal").textContent = `Rs ${bill.subtotal}`;
-  if(document.getElementById("delivery")) document.getElementById("delivery").textContent = `Rs ${bill.delivery}`;
-  if(document.getElementById("total")) document.getElementById("total").textContent = `Rs ${bill.total}`;
-
-  if (!cart.size) { 
-    if(document.getElementById("cartItems")) document.getElementById("cartItems").innerHTML = `<p class="muted">Cart selection is empty.</p>`; 
-    if(document.getElementById("paymentMode")) document.getElementById("paymentMode").value = "";
-    if(document.getElementById("paymentId")) {
-      document.getElementById("paymentId").value = "";
-      document.getElementById("paymentId").disabled = true;
-    }
-    if(document.getElementById("confirmOrderBtn")) document.getElementById("confirmOrderBtn").disabled = true;
-    return; 
-  }
-  
-  if(document.getElementById("cartItems")) {
-    document.getElementById("cartItems").innerHTML = [...cart.values()].map(item => `
-      <div class="cart-item">
-        <div><strong>${item.name}</strong><br><span class="muted">Rs ${item.price} x ${item.qty}</span></div>
-        <div class="qty-actions">
-          <button type="button" onclick="minusCart(${item.id})">-</button>
-          <button type="button" onclick="addToCart(${item.id})">+</button>
-        </div>
-      </div>
-    `).join("");
-  }
-  validateOrderForm();
-}
-
-function openProductPayment() {
-  const mode = document.getElementById("paymentMode").value;
-  const bill = getTotals();
-  if(!mode || !cart.size) {
-    document.getElementById("paymentId").value = "";
-    document.getElementById("paymentId").disabled = true;
-    validateOrderForm();
-    return;
-  }
-  
-  document.getElementById("productPaymentHelp").style.display = "block";
-  document.getElementById("productPaymentHelp").textContent = `Launching payment link for Rs ${bill.total} via ${mode}.`;
-  
-  window.location.href = `upi://pay?pa=${encodeURIComponent(farmUpiId)}&pn=${encodeURIComponent(farmName)}&am=${bill.total}&cu=INR`;
-  
-  document.getElementById("paymentId").disabled = false;
-  validateOrderForm();
-}
-
-function validateOrderForm() {
-  const address = document.getElementById("address") ? document.getElementById("address").value.trim() : "";
-  const mode = document.getElementById("paymentMode") ? document.getElementById("paymentMode").value : "";
-  const txnId = document.getElementById("paymentId") ? document.getElementById("paymentId").value.trim() : "";
-  
-  const isValid = cart.size > 0 && address.length > 4 && mode !== "" && txnId.length >= 4;
-  if(document.getElementById("confirmOrderBtn")) document.getElementById("confirmOrderBtn").disabled = !isValid;
-}
-
-if(document.getElementById("address")) {
-  document.getElementById("address").addEventListener("input", validateOrderForm);
-}
-
-function confirmOrder(e) {
-  e.preventDefault();
-  const bill = getTotals();
-  
-  const now = new Date();
-  const currentFormattedDateTime = now.toLocaleDateString('en-IN') + " " + now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
-  
-  const generatedOrderId = "PGF-INV-" + Date.now().toString().slice(-5);
-  const selectedMode = document.getElementById("paymentMode").value;
-
-  const data = {
-    orderId: generatedOrderId,
-    name: currentUser.name,
-    phone: currentUser.phone,
-    email: currentUser.email,
-    address: document.getElementById("address").value.trim(),
-    products: [...cart.values()].map(i => `${i.name} [x${i.qty}]`).join(", "),
-    subtotal: bill.subtotal,
-    delivery: bill.delivery,
-    total: bill.total,
-    paymentMode: selectedMode ? selectedMode + " App" : "UPI App",
-    txnId: document.getElementById("paymentId").value.trim(),
-    dateLogged: currentFormattedDateTime,
-    trackingStage: "Placed",
-    currentLocation: "Order Placed - Waiting for Farm Packing",
-    deliveryDays: "2-3 Days",
-    status: "Pending Verification",
-    paymentReceived: false,
-    refundStage: ""
-  };
-
-  orderRegistry.unshift(data);
-  localStorage.setItem('pgf_orders', JSON.stringify(orderRegistry));
-  
-  // Push live notification to ADMIN about new order
-  pushNotification('ADMIN', '🛍️ New Order Received!', `${data.name} placed order #${data.orderId} for Rs ${data.total} (${data.products}).`);
-
-  document.getElementById("invNum").textContent = data.orderId;
-  document.getElementById("invDate").textContent = new Date().toLocaleDateString('en-IN');
-  document.getElementById("invClientName").textContent = data.name;
-  document.getElementById("invClientEmail").textContent = "Email: " + data.email + " | Ph: " + data.phone;
-  document.getElementById("invClientAddr").textContent = "Address: " + data.address;
-  
-  document.getElementById("invoiceTableItemsBody").innerHTML = [...cart.values()].map(item => `
-    <tr>
-      <td style="padding:12px 14px; border-bottom:1px solid #e6e9ec; font-weight: 600;">${item.name} (${item.unit})</td>
-      <td style="padding:12px 14px; border-bottom:1px solid #e6e9ec; text-align:right;">Rs ${item.price}</td>
-      <td style="padding:12px 14px; border-bottom:1px solid #e6e9ec; text-align:center;">${item.qty}</td>
-      <td style="padding:12px 14px; border-bottom:1px solid #e6e9ec; text-align:right; font-weight:600; color:var(--accent);">Rs ${item.price * item.qty}</td>
-    </tr>
-  `).join("");
-  
-  document.getElementById("invSub").textContent = "Rs " + bill.subtotal;
-  document.getElementById("invDelivery").textContent = "Rs " + bill.delivery;
-  document.getElementById("invTotal").textContent = "Rs " + bill.total;
-  
-  const waMessage = `NEW GOODS ORDER VERIFICATION FLOW:\n----------------------------------------\nInvoice Ref Code: ${data.orderId}\nClient Legal Name: ${data.name}\nOrder Date & Time: ${data.dateLogged}\nProducts: ${data.products}\nSubtotal: Rs ${data.subtotal}\nDelivery: Rs ${data.delivery}\nGrand Total: Rs ${data.total}\nPayment Method: ${data.paymentMode}\nTransaction ID: ${data.txnId}\n----------------------------------------`;
-  
-  window.open(`https://wa.me/${farmWhatsapp}?text=${encodeURIComponent(waMessage)}`, '_blank');
-  document.getElementById("invoiceDialog").showModal();
-  
-  cart.clear();
-  renderCart();
-  document.getElementById("orderForm").reset();
-  checkUserSession();
-}
-
-function closeInvoice() { document.getElementById("invoiceDialog").close(); }
-
-// =========================================================
-// TRAINING & INTERNSHIP PAYMENT
-// =========================================================
-function showVisitForm(id) {
-  document.getElementById("studentForm").classList.remove("active");
-  document.getElementById("farmerForm").classList.remove("active");
-  document.getElementById(id).classList.add("active");
-}
-
-function openVisitPayment(formId, amount) {
-  const isStudent = formId === "studentForm";
-  const selectModeId = isStudent ? "spaymentMode" : "fpaymentMode";
-  const helpId = isStudent ? "studentPaymentHelp" : "farmerPaymentHelp";
-  const txnInputId = isStudent ? "spayment" : "fpayment";
-  const mode = document.getElementById(selectModeId).value;
-
-  if(!mode) {
-    document.getElementById(txnInputId).value = "";
-    document.getElementById(txnInputId).disabled = true;
-    if(isStudent) validateStudentForm();
-    else validateFarmerForm();
-    return;
-  }
-  
-  document.getElementById(helpId).style.display = "block";
-  document.getElementById(helpId).textContent = `Launching payment link for Rs ${amount} via ${mode}.`;
-  
-  window.location.href = `upi://pay?pa=${encodeURIComponent(farmUpiId)}&pn=${encodeURIComponent(farmName)}&am=${amount}&cu=INR`;
-  
-  document.getElementById(txnInputId).disabled = false;
-  if(isStudent) validateStudentForm();
-  else validateFarmerForm();
-}
-
-function validateStudentForm() {
-  const enroll = document.getElementById("senroll").value.trim();
-  const college = document.getElementById("scollege").value.trim();
-  const course = document.getElementById("scourse").value.trim();
-  const start = document.getElementById("sstart").value;
-  const end = document.getElementById("send").value;
-  const mode = document.getElementById("spaymentMode").value;
-  const txn = document.getElementById("spayment").value.trim();
-  const isDisabled = document.getElementById("spayment").disabled;
-  
-  const isValid = !isDisabled && enroll !== "" && college !== "" && course !== "" && start !== "" && end !== "" && mode !== "" && txn.length >= 4;
-  document.getElementById("studentSubmitBtn").disabled = !isValid;
-}
-
-function validateFarmerForm() {
-  const date = document.getElementById("fdate").value;
-  const mode = document.getElementById("fpaymentMode").value;
-  const txn = document.getElementById("fpayment").value.trim();
-  const isDisabled = document.getElementById("fpayment").disabled;
-  
-  const isValid = !isDisabled && date !== "" && mode !== "" && txn.length >= 4;
-  document.getElementById("farmerSubmitBtn").disabled = !isValid;
-}
-
-if(document.getElementById("studentForm")) {
-  ['senroll', 'scollege', 'scourse', 'sstart', 'send', 'spayment'].forEach(id => {
-    const el = document.getElementById(id);
-    if(el) el.addEventListener("input", validateStudentForm);
-  });
-}
-if(document.getElementById("farmerForm")) {
-  ['fdate', 'fpayment'].forEach(id => {
-    const el = document.getElementById(id);
-    if(el) el.addEventListener("input", validateFarmerForm);
-  });
-}
-
-function submitStudentVisit(e) {
-  e.preventDefault();
-  const selectedMode = document.getElementById("spaymentMode").value;
-  const now = new Date();
-  const currentFormattedDateTime = now.toLocaleDateString('en-IN') + " " + now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
-
-  const data = {
-    bookingId: "PGF-STU-" + Date.now().toString().slice(-4),
-    type: "Student",
-    name: currentUser.name,
-    phone: currentUser.phone,
-    email: currentUser.email,
-    enrollment: document.getElementById("senroll").value.trim(),
-    college: document.getElementById("scollege").value.trim(),
-    course: document.getElementById("scourse").value.trim(),
-    start: document.getElementById("sstart").value,
-    end: document.getElementById("send").value,
-    fee: 100,
-    paymentMode: selectedMode ? selectedMode + " App" : "UPI App",
-    txnId: document.getElementById("spayment").value.trim(),
-    dateLogged: currentFormattedDateTime,
-    status: "Pending Verification",
-    certIssued: false,
-    approvedDate: ""
-  };
-  bookingsRegistry.unshift(data);
-  localStorage.setItem('pgf_bookings', JSON.stringify(bookingsRegistry));
-
-  // Push live notification to ADMIN about student registration
-  pushNotification('ADMIN', '🎓 New Student Registration', `${data.name} registered for Student Internship (${data.course} - ${data.college}). Fee Rs 100.`);
-
-  const waText = `NEW STUDENT INTERNSHIP REGISTRATION:\n----------------------------------------\nBooking Ref ID: ${data.bookingId}\nName: ${data.name}\nCollege: ${data.college}\nCourse: ${data.course}\nDates: ${data.start} to ${data.end}\nPayment Mode: ${data.paymentMode}\nUTR / Txn ID: ${data.txnId}\n----------------------------------------`;
-  window.open(`https://wa.me/${farmWhatsapp}?text=${encodeURIComponent(waText)}`, '_blank');
-  
-  document.getElementById("studentForm").reset();
-  document.getElementById("spayment").disabled = true;
-  alert("Student Registration submitted successfully!");
-  checkUserSession();
-}
-
-function submitFarmerVisit(e) {
-  e.preventDefault();
-  const selectedMode = document.getElementById("fpaymentMode").value;
-  const now = new Date();
-  const currentFormattedDateTime = now.toLocaleDateString('en-IN') + " " + now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
-
-  const data = {
-    bookingId: "PGF-FAR-" + Date.now().toString().slice(-4),
-    type: "Farmer",
-    name: currentUser.name,
-    phone: currentUser.phone,
-    email: currentUser.email,
-    date: document.getElementById("fdate").value,
-    fee: 699,
-    paymentMode: selectedMode ? selectedMode + " App" : "UPI App",
-    txnId: document.getElementById("fpayment").value.trim(),
-    dateLogged: currentFormattedDateTime,
-    status: "Pending Verification",
-    certIssued: false,
-    approvedDate: ""
-  };
-  bookingsRegistry.unshift(data);
-  localStorage.setItem('pgf_bookings', JSON.stringify(bookingsRegistry));
-
-  // Push live notification to ADMIN about farmer registration
-  pushNotification('ADMIN', '🌾 New Farmer Training Booking', `${data.name} booked Farmer Training Seat for date: ${data.date}. Fee Rs 699.`);
-
-  const waText = `NEW FARMER TRAINING BOOKING:\n----------------------------------------\nBooking Ref ID: ${data.bookingId}\nName: ${data.name}\nTarget Date: ${data.date}\nPayment Mode: ${data.paymentMode}\nUTR / Txn ID: ${data.txnId}\n----------------------------------------`;
-  window.open(`https://wa.me/${farmWhatsapp}?text=${encodeURIComponent(waText)}`, '_blank');
-  
-  document.getElementById("farmerForm").reset();
-  document.getElementById("fpayment").disabled = true;
-  alert("Farmer Training Booking submitted successfully!");
-  checkUserSession();
-}
-
-if (document.getElementById("productSearch")) {
-  document.getElementById("productSearch").addEventListener("input", function(e) {
-    const searchTerm = e.target.value.toLowerCase().trim();
-    const filteredProducts = products.filter(product => {
-      return product.name.toLowerCase().includes(searchTerm) || 
-             product.detail.toLowerCase().includes(searchTerm);
-    });
-    renderProducts(filteredProducts);
-  });
-}
-
 function downloadCertificatePDF(bookingId) {
   const targetBooking = bookingsRegistry.find(b => b.bookingId === bookingId);
   if (!targetBooking) return alert("Certificate not found.");
@@ -1404,48 +1051,63 @@ function downloadCertificatePDF(bookingId) {
         <style>
           @page { size: A4 landscape; margin: 8mm; }
           body { margin: 0; padding: 0; font-family: Arial, sans-serif; background: #fff; -webkit-print-color-adjust: exact; }
-          .certificate-frame { width: 100%; max-width: 960px; background: #fff; border: 8px solid #1e4620; padding: 25px; box-sizing: border-box; text-align: center; color: #222; margin: 0 auto; }
-          .inner-border { border: 2px solid #d97706; padding: 25px; background: #ffffff; }
+          .certificate-frame { width: 100%; max-width: 980px; background: #fff; border: 8px solid #1e4620; padding: 22px; box-sizing: border-box; text-align: center; color: #222; margin: 0 auto; }
+          .inner-border { border: 2px solid #d97706; padding: 22px; background: #ffffff; }
           .cert-header-top { display: flex; justify-content: center; align-items: center; gap: 20px; }
-          .cert-title { font-size: 32px; font-weight: bold; color: #1e4620; text-transform: uppercase; letter-spacing: 1px; font-family: 'Times New Roman', Times, serif; margin: 20px 0 10px 0; }
-          .cert-name { font-size: 28px; font-weight: bold; color: #2b8a3e; border-bottom: 2px solid #d97706; display: inline-block; padding: 0 25px; margin: 10px auto; font-family: 'Times New Roman', Times, serif; }
-          .cert-desc { font-size: 15px; line-height: 1.8; text-align: justify; margin: 20px auto; max-width: 800px; color: #222; }
-          .cert-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 40px; padding: 0 10px; }
+          .cert-title { font-size: 30px; font-weight: bold; color: #1e4620; text-transform: uppercase; letter-spacing: 1px; font-family: 'Times New Roman', Times, serif; margin: 15px 0 8px 0; }
+          .cert-name { font-size: 26px; font-weight: bold; color: #2b8a3e; border-bottom: 2px solid #d97706; display: inline-block; padding: 0 25px; margin: 8px auto; font-family: 'Times New Roman', Times, serif; }
+          .cert-desc { font-size: 14.5px; line-height: 1.7; text-align: justify; margin: 15px auto; max-width: 820px; color: #222; }
+          .cert-footer-grid { display: flex; justify-content: space-between; align-items: flex-end; margin-top: 35px; padding: 0 10px; }
         </style>
       </head>
       <body>
         <div class="certificate-frame">
           <div class="inner-border">
             <div class="cert-header-top">
-              <img src="mushroom/pgf logo.png" alt="Logo" style="width: 70px; height: auto;">
+              <img src="mushroom/pgf logo.png" alt="Logo" style="width: 65px; height: auto;">
               <div style="text-align:left;">
-                <h2 style="color: #1e4620; margin: 0; font-size: 24px; font-weight: 800;">PURE GROW MUSHROOM FARM</h2>
-                <p style="margin: 3px 0 0 0; font-size: 13px; color:#6b7280;">Makhiyala, Gujarat, 362011 | puregrowfarm001@gmail.com</p>
+                <h2 style="color: #1e4620; margin: 0; font-size: 22px; font-weight: 800;">PURE GROW MUSHROOM FARM</h2>
+                <p style="margin: 2px 0 0 0; font-size: 12px; color:#6b7280;">Makhiyala, Gujarat, 362011 | puregrowfarm001@gmail.com</p>
               </div>
             </div>
-            <hr style="border:0; border-top: 2px solid #2b8a3e; margin: 15px 0;">
+            <hr style="border:0; border-top: 2px solid #2b8a3e; margin: 12px 0;">
             <div class="cert-title">${titleText}</div>
-            <p style="font-style: italic; margin: 5px 0; color: #555; font-size: 15px;">This is to certify that</p>
+            <p style="font-style: italic; margin: 4px 0; color: #555; font-size: 14px;">This is to certify that</p>
             <div class="cert-name">${targetBooking.name.toUpperCase()}</div>
-            <p style="font-style: italic; margin: 5px 0; color: #555; font-size: 15px;">${descText}</p>
+            <p style="font-style: italic; margin: 5px 0; color: #555; font-size: 14px;">${descText}</p>
             <p class="cert-desc">
               The program execution guidelines were conducted ${durationContent}. 
-              During this period, the candidate gained foundational knowledge in mushroom biology, substrate preparation, and crop management.
+              During this framework index period, the candidate gained foundational knowledge in mushroom biology, substrate preparation, spawn inoculation, and scientific crop management, demonstrating an exceptional work ethic.
             </p>
-            <div class="cert-footer">
-              <div style="text-align: left; font-size: 14px; width: 30%;">
-                <strong>Approved Date:</strong><br>
-                <span style="display: inline-block; margin-top: 5px; color: #333; font-weight: 600;">${actualApprovedDate}</span>
+            
+            <!-- Dual Signature Official Footer -->
+            <div class="cert-footer-grid">
+              <!-- Left Signatory: Soham N Gajera -->
+              <div style="text-align: center; width: 34%;">
+                <div style="height: 45px; display: flex; align-items: flex-end; justify-content: center;">
+                  <img src="mushroom/soham sign.png" alt="Signature" style="width: 110px; height: auto; margin-bottom: -10px; mix-blend-mode: multiply;">
+                </div>
+                <div style="border-top: 1.5px solid #333; width: 170px; margin: 0 auto 5px auto;"></div>
+                <div style="font-size: 14px; font-weight: bold; color: #1e4620;">Soham N Gajera</div>
+                <div style="font-size: 11px; color: #475569; margin-top: 2px;">Co-Founder & Managing Director</div>
               </div>
-              <div style="text-align: center; width: 30%;">
-                <img src="mushroom/pgf logo.png" alt="Pure Grow Farm Logo" style="width: 90px; height: auto; object-fit: contain;">
-                <div style="font-size: 10px; font-weight: 800; color: #1e4620; margin-top: 5px; letter-spacing: 0.5px;">PURE GROW FARM</div>
+
+              <!-- Center Official Emblem & Approved Date -->
+              <div style="text-align: center; width: 28%;">
+                <img src="mushroom/pgf logo.png" alt="Stamp" style="width: 65px; height: auto; opacity: 0.95;">
+                <div style="font-size: 9px; font-weight: 800; color: #1e4620; margin-top: 3px; letter-spacing: 0.5px;">PURE GROW FARM</div>
+                <div style="font-size: 11px; color: #334155; margin-top: 4px;">
+                  <strong>Approved Date:</strong> ${actualApprovedDate}
+                </div>
               </div>
-              <div style="text-align: center; width: 35%; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; padding-right: 20px; box-sizing: border-box;">
-                <img src="mushroom/soham sign.png" alt="Soham Gajera Signature" style="width: 130px; height: auto; display: block; margin: 0 auto -15px auto; mix-blend-mode: multiply; z-index: 5;">
-                <div style="border-top: 1px solid #333; width: 160px; margin: 0 auto 6px auto;"></div>
-                <div style="font-size: 14px; font-weight: bold; color: #1e4620; line-height: 1.2;">Soham Gajera</div>
-                <div style="font-size: 11px; color: #6b7280; margin-top: 2px;">Authorized Signatory</div>
+
+              <!-- Right Signatory: Jeet A Gajera -->
+              <div style="text-align: center; width: 34%;">
+                <div style="height: 45px; display: flex; align-items: flex-end; justify-content: center;">
+                  <div style="border-top: 1.5px solid #333; width: 170px; margin: 0 auto 5px auto;"></div>
+                </div>
+                <div style="font-size: 14px; font-weight: bold; color: #1e4620;">Jeet A Gajera</div>
+                <div style="font-size: 11px; color: #475569; margin-top: 2px;">Co-Founder & Director<br>(Agriculture & Production)</div>
               </div>
             </div>
           </div>

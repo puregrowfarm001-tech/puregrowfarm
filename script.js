@@ -1315,7 +1315,7 @@ if (document.getElementById("productSearch")) {
 
 // =========================================================
 // MOBILE & PC UNIVERSAL CERTIFICATE PRINT / PDF ENGINE
-// (Full Absolute Image Path Fix for Blob Windows)
+// (Updated: Pure Grow Farm Name Applied Throughout)
 // =========================================================
 function downloadCertificatePDF(bookingId) {
   const targetBooking = bookingsRegistry.find(b => b && b.bookingId === bookingId);
@@ -1324,8 +1324,8 @@ function downloadCertificatePDF(bookingId) {
 
   const titleText = targetBooking.type === "Student" ? "Certificate of Internship" : "Certificate of Farming";
   const descText = targetBooking.type === "Student" 
-    ? `has successfully completed an internship program in Oyster Mushroom Cultivation at Pure Grow Mushroom Farm, at Makhiyala, Gujarat.`
-    : `has successfully completed the practical farmer training framework module in Oyster Mushroom Cultivation at Pure Grow Mushroom Farm, at Makhiyala, Gujarat.`;
+    ? `has successfully completed an internship program in Oyster Mushroom Cultivation at Pure Grow Farm, at Makhiyala, Gujarat.`
+    : `has successfully completed the practical farmer training framework module in Oyster Mushroom Cultivation at Pure Grow Farm, at Makhiyala, Gujarat.`;
   
   const durationContent = targetBooking.type === "Student" 
     ? `from <strong>${targetBooking.start || 'N/A'}</strong> to <strong>${targetBooking.end || 'N/A'}</strong>`
@@ -1372,7 +1372,7 @@ function downloadCertificatePDF(bookingId) {
       <div class="cert-header-top">
         <img src="${logoUrl}" alt="Logo" style="width: 60px; height: auto;">
         <div style="text-align:left;">
-          <h2 style="color: #1e4620; margin: 0; font-size: 20px; font-weight: 800;">PURE GROW MUSHROOM FARM</h2>
+          <h2 style="color: #1e4620; margin: 0; font-size: 20px; font-weight: 800;">PURE GROW FARM</h2>
           <p style="margin: 2px 0 0 0; font-size: 11px; color:#6b7280;">Makhiyala, Gujarat, 362011 | puregrowfarm001@gmail.com</p>
         </div>
       </div>

@@ -12,7 +12,7 @@ const products = [
   { id: 1, name: "Fresh Green Oyster Mushroom", price: 180, unit: "1kg", image: "mushroom/Screenshot 2025-10-24 154001.png", detail: "Picked fresh, chilled and delivered within 24-48 hours.", type: "green", available: true },
   { id: 2, name: "Dried Oyster Mushroom", price: 800, unit: "1kg pack", image: "mushroom/oyst dry.webp", detail: "Slow-dried to preserve flavor and nutrients.", type: "dry", available: true },
   { id: 3, name: "Oyster Mushroom Powder", price: 130, unit: "100gm pack", image: "mushroom/oyster powder.png", detail: "Mushroom powder for soup, 1kg pack curry, health mix and snacks.", type: "powder", available: true },
-  { id: 4, name: "Methi Mushroom Khakhra", price: 70, unit: "200gm pack", image: "Methi khakhra 2.png", detail: "Crispy khakhra prepared with oyster mushroom powder.", type: "khakhra", available: true },
+  { id: 4, name: "Methi Mushroom Khakhra", price: 70, unit: "200gm pack", image: "mushroom/Methi khakhra 2.png", detail: "Crispy khakhra prepared with oyster mushroom powder.", type: "khakhra", available: true },
   { id: 5, name: "Adad Mushroom Papad", price: 120, unit: "1 pack", image: "mushroom/bulk.png", detail: "Papad enriched with mushroom nutrition.", type: "papad", available: true },
   { id: 6, name: "Bulk and Wholesale Supply", price: 0, unit: "Custom", bulk: true, image: "mushroom/bulk.png", detail: "Supply for restaurants, retailers and local markets.", available: true }
 ];
@@ -1104,8 +1104,9 @@ function downloadCertificatePDF(bookingId) {
               <!-- Right Signatory: Jeet A Gajera -->
               <div style="text-align: center; width: 34%;">
                 <div style="height: 45px; display: flex; align-items: flex-end; justify-content: center;">
-                  <div style="border-top: 1.5px solid #333; width: 170px; margin: 0 auto 5px auto;"></div>
+                  <img src="mushroom/jeet sign.png" alt="Signature" style="width: 110px; height: auto; margin-bottom: -10px; mix-blend-mode: multiply;">
                 </div>
+                <div style="border-top: 1.5px solid #333; width: 170px; margin: 0 auto 5px auto;"></div>
                 <div style="font-size: 14px; font-weight: bold; color: #1e4620;">Jeet A Gajera</div>
                 <div style="font-size: 11px; color: #475569; margin-top: 2px;">Co-Founder & Director<br>(Agriculture & Production)</div>
               </div>

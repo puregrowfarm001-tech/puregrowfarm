@@ -1104,7 +1104,7 @@ function downloadCertificatePDF(bookingId) {
               <!-- Right Signatory: Jeet A Gajera -->
               <div style="text-align: center; width: 34%;">
                 <div style="height: 45px; display: flex; align-items: flex-end; justify-content: center;">
-                  <img src="mushroom/jeet sign.png" alt="Signature" style="width: 210px; height: 210px; margin-bottom: -10px; mix-blend-mode: multiply;">
+                  <img src="mushroom/jeet sign.png" alt="Signature" style="width: 110px; height: auto; margin-bottom: -10px; mix-blend-mode: multiply;">
                 </div>
                 <div style="border-top: 1.5px solid #333; width: 170px; margin: 0 auto 5px auto;"></div>
                 <div style="font-size: 14px; font-weight: bold; color: #1e4620;">Jeet A Gajera</div>

@@ -23,7 +23,7 @@ function getCleanData(key) {
   try {
     const raw = JSON.parse(localStorage.getItem(key)) || [];
     if (!Array.isArray(raw)) return [];
-    return raw.filter(item => item && (item.name || item.orderId || item.bookingId || item.saleId || item.expId));
+    return raw.filter(item => item && (item.name || item.orderId || item.bookingId || item.saleId || item.expId || item.id));
   } catch (e) {
     return [];
   }
@@ -36,8 +36,103 @@ let bookingsRegistry = getCleanData('pgf_bookings');
 let expensesRegistry = getCleanData('pgf_expenses');
 let salesRegistry = getCleanData('pgf_sales');
 let purchasesRegistry = getCleanData('pgf_purchases');
+let notificationsRegistry = getCleanData('pgf_notifications');
 
 let currentUser = JSON.parse(localStorage.getItem('pgf_session')) || null;
+
+// =========================================================
+// TWO-WAY NOTIFICATION ENGINE (USER <---> ADMIN)
+// =========================================================
+function pushNotification(targetRecipient, title, message, type = 'info') {
+  const newNotif = {
+    id: "NOTIF-" + Date.now(),
+    recipient: targetRecipient, // 'ADMIN' or user's email
+    title: title,
+    message: message,
+    time: new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true }),
+    date: new Date().toLocaleDateString('en-IN'),
+    type: type,
+    isRead: false
+  };
+
+  notificationsRegistry.unshift(newNotif);
+  localStorage.setItem('pgf_notifications', JSON.stringify(notificationsRegistry));
+  renderNotificationBadge();
+}
+
+function renderNotificationBadge() {
+  const badge = document.getElementById("notificationCountBadge");
+  const listBody = document.getElementById("notificationListBody");
+  if (!badge || !listBody) return;
+
+  const currentRecipient = currentUser ? (currentUser.isAdmin ? 'ADMIN' : currentUser.email) : null;
+  if (!currentRecipient) {
+    badge.style.display = "none";
+    listBody.innerHTML = `<span class="muted" style="font-size:12px; text-align:center; padding:10px;">Please login to view notifications.</span>`;
+    return;
+  }
+
+  const myNotifs = notificationsRegistry.filter(n => n.recipient === currentRecipient);
+  const unreadCount = myNotifs.filter(n => !n.isRead).length;
+
+  if (unreadCount > 0) {
+    badge.textContent = unreadCount;
+    badge.style.display = "inline-block";
+  } else {
+    badge.style.display = "none";
+  }
+
+  if (myNotifs.length === 0) {
+    listBody.innerHTML = `<span class="muted" style="font-size:12px; text-align:center; padding:10px;">No alerts yet.</span>`;
+  } else {
+    listBody.innerHTML = myNotifs.map(n => `
+      <div style="background:${n.isRead ? '#f8fafc' : '#eff6ff'}; border:1px solid ${n.isRead ? '#e2e8f0' : '#bfdbfe'}; border-radius:8px; padding:8px 10px; font-size:12px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:3px;">
+          <strong style="color:${n.isRead ? '#334155' : '#1d4ed8'};">${n.title}</strong>
+          <span style="font-size:10px; color:#64748b;">${n.time}</span>
+        </div>
+        <div style="color:#475569; line-height:1.3;">${n.message}</div>
+      </div>
+    `).join("");
+  }
+}
+
+function toggleNotificationDropdown() {
+  const panel = document.getElementById("notificationDropdownPanel");
+  if (!panel) return;
+  if (panel.style.display === "none" || panel.style.display === "") {
+    panel.style.display = "block";
+    // Mark my notifications as read
+    const currentRecipient = currentUser ? (currentUser.isAdmin ? 'ADMIN' : currentUser.email) : null;
+    if (currentRecipient) {
+      notificationsRegistry.forEach(n => {
+        if (n.recipient === currentRecipient) n.isRead = true;
+      });
+      localStorage.setItem('pgf_notifications', JSON.stringify(notificationsRegistry));
+      renderNotificationBadge();
+    }
+  } else {
+    panel.style.display = "none";
+  }
+}
+
+function clearAllNotifications() {
+  const currentRecipient = currentUser ? (currentUser.isAdmin ? 'ADMIN' : currentUser.email) : null;
+  if (!currentRecipient) return;
+
+  notificationsRegistry = notificationsRegistry.filter(n => n.recipient !== currentRecipient);
+  localStorage.setItem('pgf_notifications', JSON.stringify(notificationsRegistry));
+  renderNotificationBadge();
+}
+
+// Close dropdown on outside click
+document.addEventListener('click', function(e) {
+  const wrapper = document.getElementById("notificationBellWrapper");
+  const panel = document.getElementById("notificationDropdownPanel");
+  if (wrapper && panel && !wrapper.contains(e.target)) {
+    panel.style.display = "none";
+  }
+});
 
 function getTodayIsoString() {
   const d = new Date();
@@ -74,6 +169,7 @@ function triggerAdminView() {
   initDefaultDatePickers();
   populateAdminDashboardTables();
   computeFinancialLedgerStatements();
+  renderNotificationBadge();
   switchSubAccountingTab('subTabExpense');
 }
 
@@ -81,6 +177,8 @@ function exitAdminPanel() { handleLogout(); }
 
 function checkUserSession() {
   updateStockDisplayCounters();
+  renderNotificationBadge();
+
   if (currentUser) {
     document.getElementById("authSection").style.display = "none";
     document.getElementById("logoutBtn").style.display = "inline-flex";
@@ -166,6 +264,9 @@ function handleRegister(e) {
   usersDatabase.push(newUser);
   localStorage.setItem('pgf_user_db', JSON.stringify(usersDatabase));
 
+  // Push notification to ADMIN about new registered user
+  pushNotification('ADMIN', '👤 New Account Created', `${name} (${email}) has just registered on Pure Grow Farm portal.`);
+
   currentUser = { name, email, phone, isAdmin: false };
   localStorage.setItem('pgf_session', JSON.stringify(currentUser));
   alert("Account Registered Successfully!");
@@ -185,7 +286,7 @@ function handleLogout() {
 }
 
 // =========================================================
-// USER DASHBOARD
+// USER DASHBOARD (FLIPKART LIVE TRACK & REFUND PROGRESS)
 // =========================================================
 function loadUserPanelData() {
   const oList = document.getElementById("userOrdersList");
@@ -236,6 +337,7 @@ function loadUserPanelData() {
         ` : ''}
 
         ${isApproved ? `
+          <!-- 1. APPROVED LIVE SHIPMENT TRACKER -->
           <div style="margin-top: 12px; background: #f8fafc; padding: 12px; border-radius: 8px; border: 1px solid #e2e8f0;">
             <div style="font-weight:bold; font-size:13px; color:#1e293b; margin-bottom:8px;">
               🚚 Live Shipment Tracker${eta}
@@ -281,6 +383,7 @@ function loadUserPanelData() {
         ` : ''}
 
         ${isCancelled ? `
+          <!-- 2. CANCELLED LIVE REFUND TRACKER -->
           <div style="margin-top: 12px; background: #fffaf5; padding: 12px; border-radius: 8px; border: 1px solid #fdba74;">
             <div style="font-weight:bold; font-size:13px; color:#c2410c; margin-bottom:4px;">
               🔄 Order Cancelled & Live Payment Refund Tracker
@@ -317,6 +420,7 @@ function loadUserPanelData() {
         ` : ''}
 
         ${isRejected ? `
+          <!-- 3. REJECTED (NO PAYMENT - NO TRACKING) -->
           <div style="background: #fef2f2; border: 1px solid #f87171; border-radius: 8px; padding: 12px; margin-top: 10px;">
             <strong style="color: #991b1b; font-size: 14px;">❌ Order Rejected (Payment Not Verified)</strong>
             <p style="margin: 4px 0 0 0; font-size: 12px; color: #7f1d1d;"><strong>Reason:</strong> ${o.status.replace('Rejected (Reason: ', '').replace(')', '')}</p>
@@ -417,8 +521,6 @@ function populateAdminDashboardTables() {
         const stage = o.trackingStage || (isApproved ? 'Packed' : 'Placed');
         const loc = o.currentLocation || 'Order Received at Farm Yard';
         const eta = o.deliveryDays || '2-3 Days';
-        
-        // Exact Order Logged Date & Time Formatting
         const displayDateTime = o.dateLogged ? o.dateLogged : (new Date().toLocaleDateString('en-IN') + " 10:00 AM");
 
         return `
@@ -459,7 +561,6 @@ function populateAdminDashboardTables() {
                   </div>
                   <div style="color:#334155; margin-bottom:6px;">📍 ${loc}</div>
 
-                  <!-- 1-Click Shipment Stage Buttons -->
                   <div style="display:flex; gap:3px; flex-wrap:wrap;">
                     <button type="button" class="btn" style="padding:2px 5px; font-size:10px; min-height:22px; background:${stage==='Placed'?'#2b8a3e':'#94a3b8'};" onclick="setOrderStageDirect(${idx}, 'Placed')">Placed</button>
                     <button type="button" class="btn" style="padding:2px 5px; font-size:10px; min-height:22px; background:${stage==='Packed'?'#2b8a3e':'#94a3b8'};" onclick="setOrderStageDirect(${idx}, 'Packed')">Packed</button>
@@ -593,65 +694,90 @@ function populateAdminDashboardTables() {
 // 3 CORE ORDER ACTIONS: APPROVE / REJECT / CANCEL & REFUND
 // =========================================================
 function handleOrderApprove(idx) {
-  orderRegistry[idx].status = "Approved";
-  orderRegistry[idx].trackingStage = "Packed";
-  orderRegistry[idx].currentLocation = "Processing & Packing at Pure Grow Farm Hub";
-  orderRegistry[idx].deliveryDays = "2-3 Days";
-  orderRegistry[idx].paymentReceived = true;
-  orderRegistry[idx].refundStage = "";
+  const o = orderRegistry[idx];
+  o.status = "Approved";
+  o.trackingStage = "Packed";
+  o.currentLocation = "Processing & Packing at Pure Grow Farm Hub";
+  o.deliveryDays = "2-3 Days";
+  o.paymentReceived = true;
+  o.refundStage = "";
   
   localStorage.setItem('pgf_orders', JSON.stringify(orderRegistry));
-  alert("✅ Order Approved! User ko live shipment tracking show hone lagi.");
+
+  // Push live notification to USER
+  pushNotification(o.email, '📦 Order Approved & Packed!', `Your Order #${o.orderId} is confirmed and packed. Expected delivery: 2-3 Days.`);
+
+  alert("✅ Order Approved! User ko notification aur live tracking mil gayi.");
   populateAdminDashboardTables();
   computeFinancialLedgerStatements();
 }
 
 function handleOrderReject(idx) {
-  let reason = prompt("Reject karne ka reason likhein (Payment nahi mila / Fake UTR):", "Payment Not Received / Invalid UTR");
+  const o = orderRegistry[idx];
+  let reason = prompt("Reject karne ka reason likhein (Payment nahi mila / Fake UTR):", "Payment Not Received / Invalid Txn ID");
   if (reason === null) return;
 
-  orderRegistry[idx].status = `Rejected (Reason: ${reason})`;
-  orderRegistry[idx].paymentReceived = false;
-  orderRegistry[idx].trackingStage = "";
-  orderRegistry[idx].refundStage = "";
-  orderRegistry[idx].currentLocation = "Order Rejected due to payment failure";
+  o.status = `Rejected (Reason: ${reason})`;
+  o.paymentReceived = false;
+  o.trackingStage = "";
+  o.refundStage = "";
+  o.currentLocation = "Order Rejected due to payment failure";
 
   localStorage.setItem('pgf_orders', JSON.stringify(orderRegistry));
-  alert("❌ Order Reject ho gaya! User ko koi live tracking ya refund line nahi dikhegi.");
+
+  // Push live notification to USER
+  pushNotification(o.email, '❌ Order Rejected', `Your Order #${o.orderId} was rejected. Reason: ${reason}.`);
+
+  alert("❌ Order Reject ho gaya! User ko rejection notification chali gayi.");
   populateAdminDashboardTables();
   computeFinancialLedgerStatements();
 }
 
 function handleOrderCancelRefund(idx) {
+  const o = orderRegistry[idx];
   let reason = prompt("Order Cancel karne ka reason likhein (e.g. Out of Stock / Location Undeliverable):", "Item Out of Stock / Undeliverable Location");
   if (reason === null) return;
 
-  orderRegistry[idx].status = `Cancelled (Reason: ${reason})`;
-  orderRegistry[idx].paymentReceived = true;
-  orderRegistry[idx].refundStage = "Refund Initiated";
-  orderRegistry[idx].currentLocation = "Order Cancelled & Payment Refund Flow Initiated";
+  o.status = `Cancelled (Reason: ${reason})`;
+  o.paymentReceived = true;
+  o.refundStage = "Refund Initiated";
+  o.currentLocation = "Order Cancelled & Payment Refund Flow Initiated";
 
   localStorage.setItem('pgf_orders', JSON.stringify(orderRegistry));
+
+  // Push live notification to USER
+  pushNotification(o.email, '🔄 Order Cancelled & Refund Initiated', `Your Order #${o.orderId} was cancelled. Rs ${o.total} refund has been initiated to your account.`);
+
   alert("🔄 Order Cancelled! User dashboard me Live Payment Refund tracker chalu ho gaya.");
   populateAdminDashboardTables();
   computeFinancialLedgerStatements();
 }
 
 function setOrderStageDirect(idx, newStage) {
-  orderRegistry[idx].trackingStage = newStage;
-  if (newStage === 'Placed') orderRegistry[idx].currentLocation = "Order Placed & Verified at Farm Desk";
-  else if (newStage === 'Packed') orderRegistry[idx].currentLocation = "Packed & Ready at Pure Grow Farm Hub";
-  else if (newStage === 'Shipped') orderRegistry[idx].currentLocation = "In Transit / Dispatched from Central Facility";
-  else if (newStage === 'OutForDelivery') orderRegistry[idx].currentLocation = "Out For Delivery with Courier Partner";
-  else if (newStage === 'Delivered') orderRegistry[idx].currentLocation = "Order Delivered to Customer Address";
+  const o = orderRegistry[idx];
+  o.trackingStage = newStage;
+  if (newStage === 'Placed') o.currentLocation = "Order Placed & Verified at Farm Desk";
+  else if (newStage === 'Packed') o.currentLocation = "Packed & Ready at Pure Grow Farm Hub";
+  else if (newStage === 'Shipped') o.currentLocation = "In Transit / Dispatched from Central Facility";
+  else if (newStage === 'OutForDelivery') o.currentLocation = "Out For Delivery with Courier Partner";
+  else if (newStage === 'Delivered') o.currentLocation = "Order Delivered to Customer Address";
 
   localStorage.setItem('pgf_orders', JSON.stringify(orderRegistry));
+
+  // Push stage update notification to USER
+  pushNotification(o.email, '🚚 Order Shipment Update', `Order #${o.orderId} stage updated to: ${newStage}. (${o.currentLocation})`);
+
   populateAdminDashboardTables();
 }
 
 function setRefundStageDirect(idx, newRefStage) {
-  orderRegistry[idx].refundStage = newRefStage;
+  const o = orderRegistry[idx];
+  o.refundStage = newRefStage;
   localStorage.setItem('pgf_orders', JSON.stringify(orderRegistry));
+
+  // Push refund stage notification to USER
+  pushNotification(o.email, '💰 Refund Status Update', `Refund for Order #${o.orderId} status: ${newRefStage}.`);
+
   populateAdminDashboardTables();
   alert(`Refund stage updated to: ${newRefStage}`);
 }
@@ -665,6 +791,10 @@ function updateOrderLocationDetails(idx) {
   if (eta !== null && eta.trim() !== "") o.deliveryDays = eta.trim();
 
   localStorage.setItem('pgf_orders', JSON.stringify(orderRegistry));
+
+  // Push location notification to USER
+  pushNotification(o.email, '📍 Location Update', `Order #${o.orderId} current location: ${o.currentLocation}. ETA: ${o.deliveryDays}`);
+
   populateAdminDashboardTables();
 }
 
@@ -694,29 +824,42 @@ function confirmBookingSlot(idx) {
   salesRegistry.push(saleLog);
   localStorage.setItem('pgf_sales', JSON.stringify(salesRegistry));
 
+  // Push confirmation notification to USER
+  pushNotification(target.email, '🎓 Farm Booking Confirmed!', `Your ${target.type} program booking #${target.bookingId} has been confirmed.`);
+
   alert(`✅ 1. Farm Book Approved for ${target.name}!\nTraining complete hone par '2. Approve Certificate' dabayein.`);
   populateAdminDashboardTables();
   computeFinancialLedgerStatements();
 }
 
 function issueUserCertificate(idx) {
-  if (confirm(`Kya aap ${bookingsRegistry[idx].name} ke liye certificate approve karna chahte hain? Iske baad user download kar sakega.`)) {
-    bookingsRegistry[idx].certIssued = true;
-    bookingsRegistry[idx].certIssueDate = new Date().toLocaleDateString('en-IN');
+  const target = bookingsRegistry[idx];
+  if (confirm(`Kya aap ${target.name} ke liye certificate approve karna chahte hain? Iske baad user download kar sakega.`)) {
+    target.certIssued = true;
+    target.certIssueDate = new Date().toLocaleDateString('en-IN');
     localStorage.setItem('pgf_bookings', JSON.stringify(bookingsRegistry));
+
+    // Push certificate issue notification to USER
+    pushNotification(target.email, '📜 Certificate Issued & Ready!', `Congratulations! Your certificate for ${target.type} program (#${target.bookingId}) is ready to download.`);
+
     alert("✅ 2. Certificate Approved ho gaya aur user ke dashboard me download unlock ho gaya!");
     populateAdminDashboardTables();
   }
 }
 
 function rejectTrainingBooking(idx) {
+  const target = bookingsRegistry[idx];
   let reason = prompt("Reject karne ka reason likhein:");
   if(reason === null) return;
   if(reason.trim() === "") reason = "Not specified by farm admin";
   
-  bookingsRegistry[idx].status = `Rejected (Reason: ${reason})`;
-  bookingsRegistry[idx].certIssued = false;
+  target.status = `Rejected (Reason: ${reason})`;
+  target.certIssued = false;
   localStorage.setItem('pgf_bookings', JSON.stringify(bookingsRegistry));
+
+  // Push reject notification to USER
+  pushNotification(target.email, '❌ Farm Booking Rejected', `Your booking #${target.bookingId} was rejected. Reason: ${reason}.`);
+
   populateAdminDashboardTables();
   computeFinancialLedgerStatements();
 }
@@ -1003,7 +1146,6 @@ function confirmOrder(e) {
   e.preventDefault();
   const bill = getTotals();
   
-  // Exact Indian Local Date & Time
   const now = new Date();
   const currentFormattedDateTime = now.toLocaleDateString('en-IN') + " " + now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
   
@@ -1034,6 +1176,9 @@ function confirmOrder(e) {
   orderRegistry.unshift(data);
   localStorage.setItem('pgf_orders', JSON.stringify(orderRegistry));
   
+  // Push live notification to ADMIN about new order
+  pushNotification('ADMIN', '🛍️ New Order Received!', `${data.name} placed order #${data.orderId} for Rs ${data.total} (${data.products}).`);
+
   document.getElementById("invNum").textContent = data.orderId;
   document.getElementById("invDate").textContent = new Date().toLocaleDateString('en-IN');
   document.getElementById("invClientName").textContent = data.name;
@@ -1165,6 +1310,9 @@ function submitStudentVisit(e) {
   bookingsRegistry.unshift(data);
   localStorage.setItem('pgf_bookings', JSON.stringify(bookingsRegistry));
 
+  // Push live notification to ADMIN about student registration
+  pushNotification('ADMIN', '🎓 New Student Registration', `${data.name} registered for Student Internship (${data.course} - ${data.college}). Fee Rs 100.`);
+
   const waText = `NEW STUDENT INTERNSHIP REGISTRATION:\n----------------------------------------\nBooking Ref ID: ${data.bookingId}\nName: ${data.name}\nCollege: ${data.college}\nCourse: ${data.course}\nDates: ${data.start} to ${data.end}\nPayment Mode: ${data.paymentMode}\nUTR / Txn ID: ${data.txnId}\n----------------------------------------`;
   window.open(`https://wa.me/${farmWhatsapp}?text=${encodeURIComponent(waText)}`, '_blank');
   
@@ -1197,6 +1345,9 @@ function submitFarmerVisit(e) {
   };
   bookingsRegistry.unshift(data);
   localStorage.setItem('pgf_bookings', JSON.stringify(bookingsRegistry));
+
+  // Push live notification to ADMIN about farmer registration
+  pushNotification('ADMIN', '🌾 New Farmer Training Booking', `${data.name} booked Farmer Training Seat for date: ${data.date}. Fee Rs 699.`);
 
   const waText = `NEW FARMER TRAINING BOOKING:\n----------------------------------------\nBooking Ref ID: ${data.bookingId}\nName: ${data.name}\nTarget Date: ${data.date}\nPayment Mode: ${data.paymentMode}\nUTR / Txn ID: ${data.txnId}\n----------------------------------------`;
   window.open(`https://wa.me/${farmWhatsapp}?text=${encodeURIComponent(waText)}`, '_blank');

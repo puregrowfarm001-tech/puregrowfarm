@@ -26,9 +26,35 @@
         50% { background-color: #b32424; }
         100% { background-color: #d93838; }
       }
+      .social-link-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 14px;
+        border-radius: 8px;
+        font-size: 13px;
+        font-weight: bold;
+        text-decoration: none;
+        color: #fff !important;
+        transition: transform 0.2s ease, opacity 0.2s ease;
+      }
+      .social-link-btn:hover {
+        transform: translateY(-2px);
+        opacity: 0.9;
+      }
+      .call-link {
+        color: var(--accent);
+        text-decoration: none;
+        font-weight: bold;
+        transition: color 0.2s ease;
+      }
+      .call-link:hover {
+        text-decoration: underline;
+        color: #1e6b30;
+      }
     </style>
 
-    <!-- 2. Header Navigation Area (Z-Index increased to prevent clipping) -->
+    <!-- 2. Header Navigation Area -->
     <header style="position: relative; z-index: 100000;">
       <div class="brand">
         <img src="mushroom/pgf logo.png" alt="Pure Grow Farm logo" class="logo-img">
@@ -158,9 +184,28 @@
                 <div class="card-title">Green, Dry, Powder, Khakhra and Papad</div>
               </div>
               <div class="card">
-                <div class="muted small-title">Direct Helpline Contact</div>
-                <div class="card-title">9067891039 Soham Gajera | 8200145732 Jeet Gajera</div>
+                <div class="muted small-title">Direct Helpline Contact (Click to Call)</div>
+                <div class="card-title" style="font-size: 16px; margin-top: 4px;">
+                  📞 <a href="tel:+919067891039" class="call-link">9067891039 (Soham Gajera)</a> | 
+                  📞 <a href="tel:+918200145732" class="call-link">8200145732 (Jeet Gajera)</a>
+                </div>
               </div>
+            </div>
+
+            <!-- Quick Connect & Social Badges -->
+            <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px;">
+              <a href="https://maps.google.com/?q=Pure+Grow+Farm+Makhiyala+Junagadh" target="_blank" rel="noreferrer" class="social-link-btn" style="background: #ea4335;">
+                📍 Farm Location (Google Maps)
+              </a>
+              <a href="https://www.instagram.com/" target="_blank" rel="noreferrer" class="social-link-btn" style="background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888);">
+                📸 Instagram
+              </a>
+              <a href="https://www.youtube.com/" target="_blank" rel="noreferrer" class="social-link-btn" style="background: #ff0000;">
+                ▶️ YouTube
+              </a>
+              <a href="https://www.facebook.com/" target="_blank" rel="noreferrer" class="social-link-btn" style="background: #1877f2;">
+                📘 Facebook
+              </a>
             </div>
           </div>
 
@@ -632,8 +677,8 @@
         
         <div style="margin-top: 35px; padding-top: 20px; border-top: 1px dashed var(--line); font-size: 12px; text-align: center; color: var(--muted); line-height: 1.6;">
           <strong style="color: #334155;">Pure Grow Farm Production Hub Contact Info:</strong><br>
-          📞 9067891039 (Soham Gajera) & 8200145732 (Jeet Gajera) | ✉️ puregrowfarm001@gmail.com<br>
-          📍 Address Yard: Village Makhiyala, City Junagadh, State Gujarat, Pincode 362011.
+          📞 <a href="tel:+919067891039" class="call-link">9067891039 (Soham Gajera)</a> & 📞 <a href="tel:+918200145732" class="call-link">8200145732 (Jeet Gajera)</a> | ✉️ <a href="mailto:puregrowfarm001@gmail.com" class="call-link">puregrowfarm001@gmail.com</a><br>
+          📍 <a href="https://maps.google.com/?q=Makhiyala+Junagadh+Gujarat+362011" target="_blank" rel="noreferrer" class="call-link">Address: Village Makhiyala, City Junagadh, State Gujarat, Pincode 362011</a>
         </div>
       </div>
       
@@ -643,7 +688,21 @@
       </div>
     </dialog>
 
-    <footer>
+    <footer style="padding: 24px 0; border-top: 1px solid var(--line); margin-top: 30px;">
+      <div style="display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; margin-bottom: 12px;">
+        <a href="Pure Grow Mushroom Farm, Makhiyala, Gujarat 362011" target="_blank" rel="noreferrer" class="social-link-btn" style="background: #ea4335;">
+          📍 Google Maps Location
+        </a>
+        <a href="https://www.instagram.com/_pure_grow_mushroom_farm_/" target="_blank" rel="noreferrer" class="social-link-btn" style="background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888);">
+          📸 Instagram
+        </a>
+        <a href="https://www.youtube.com/channel/UC2T-bDe5wEblhgQOYY8RAzQ" target="_blank" rel="noreferrer" class="social-link-btn" style="background: #ff0000;">
+          ▶️ YouTube
+        </a>
+        <a href="https://www.facebook.com/people/Pure-Grow-farm/61583444431310/" target="_blank" rel="noreferrer" class="social-link-btn" style="background: #1877f2;">
+          📘 Facebook
+        </a>
+      </div>
       <div>Pure Grow Farm - Oyster Mushrooms Enterprise © 2026</div>
     </footer>
   </div>

@@ -8,18 +8,18 @@ const farmName = "Pure Grow Farm";
 
 const ADMIN_CREDENTIALS = { user: "admin", pass: "PureGrow@2026" };
 
-// Default products configuration with initial stock levels
-const DEFAULT_PRODUCTS = [
-  { id: 1, name: "Fresh Green Oyster Mushroom", price: 180, unit: "1kg", image: "mushroom/Screenshot 2025-10-24 154001.png", detail: "Picked fresh, chilled and delivered within 24-48 hours.", type: "green", stock: 25 },
-  { id: 2, name: "Dried Oyster Mushroom", price: 800, unit: "1kg pack", image: "mushroom/oyst dry.webp", detail: "Slow-dried to preserve flavor and nutrients.", type: "dry", stock: 15 },
-  { id: 3, name: "Oyster Mushroom Powder", price: 130, unit: "100gm pack", image: "mushroom/oyster powder.png", detail: "Mushroom powder for soup, 1kg pack curry, health mix and snacks.", type: "powder", stock: 10 },
-  { id: 4, name: "Methi Mushroom Khakhra", price: 70, unit: "200gm pack", image: "mushroom/Methi khakhra 2.png", detail: "Crispy khakhra prepared with oyster mushroom powder.", type: "khakhra", stock: 20 },
-  { id: 5, name: "Adad Mushroom Papad", price: 120, unit: "1 pack", image: "mushroom/bulk.png", detail: "Papad enriched with mushroom nutrition.", type: "papad", stock: 12 },
-  { id: 6, name: "Bulk and Wholesale Supply", price: 0, unit: "Custom", bulk: true, image: "mushroom/bulk.png", detail: "Supply for restaurants, retailers and local markets.", stock: 9999 }
+// Default products catalog (Initial stock set to 0)
+const BASE_PRODUCTS = [
+  { id: 1, name: "Fresh Green Oyster Mushroom", price: 180, unit: "1kg", image: "mushroom/Screenshot 2025-10-24 154001.png", detail: "Picked fresh, chilled and delivered within 24-48 hours.", type: "green", stock: 0 },
+  { id: 2, name: "Dried Oyster Mushroom", price: 800, unit: "1kg pack", image: "mushroom/oyst dry.webp", detail: "Slow-dried to preserve flavor and nutrients.", type: "dry", stock: 0 },
+  { id: 3, name: "Oyster Mushroom Powder", price: 130, unit: "100gm pack", image: "mushroom/oyster powder.png", detail: "Mushroom powder for soup, 1kg pack curry, health mix and snacks.", type: "powder", stock: 0 },
+  { id: 4, name: "Methi Mushroom Khakhra", price: 70, unit: "200gm pack", image: "mushroom/Methi khakhra 2.png", detail: "Crispy khakhra prepared with oyster mushroom powder.", type: "khakhra", stock: 0 },
+  { id: 5, name: "Adad Mushroom Papad", price: 120, unit: "1 pack", image: "mushroom/bulk.png", detail: "Papad enriched with mushroom nutrition.", type: "papad", stock: 0 },
+  { id: 6, name: "Bulk and Wholesale Supply", price: 0, unit: "Custom", bulk: true, image: "mushroom/bulk.png", detail: "Supply for restaurants, retailers and local markets.", stock: 99999 }
 ];
 
-// Persistent stock initialization
-let products = JSON.parse(localStorage.getItem('pgf_live_products')) || DEFAULT_PRODUCTS;
+// Persistent stock mapping
+let products = JSON.parse(localStorage.getItem('pgf_live_products')) || BASE_PRODUCTS;
 
 const cart = new Map();
 
@@ -37,7 +37,7 @@ function getCleanData(key) {
   }
 }
 
-let currentInventoryStock = JSON.parse(localStorage.getItem('pgf_stock_counters')) || { dry: 150, khakhra: 85, papad: 120 };
+let currentInventoryStock = JSON.parse(localStorage.getItem('pgf_stock_counters')) || { dry: 0, khakhra: 0, papad: 0 };
 let usersDatabase = getCleanData('pgf_user_db');
 let orderRegistry = getCleanData('pgf_orders');
 let bookingsRegistry = getCleanData('pgf_bookings');
@@ -502,7 +502,7 @@ function deleteUserAccount(idx) {
 }
 
 // =========================================================
-// ADMIN POPULATE TABLES (EXACT DATE & TIME SHOWN)
+// ADMIN POPULATE TABLES & STOCK MANAGER IN ERP
 // =========================================================
 function populateAdminDashboardTables() {
   if (document.getElementById("adminOrdersTableBody")) {
@@ -690,6 +690,20 @@ function populateAdminDashboardTables() {
         </tr>
       `).join("");
     }
+  }
+}
+
+// Quick Admin Direct Stock Modifier
+function updateProductStockDirect(productId) {
+  const target = products.find(p => p.id === productId);
+  if (!target) return;
+  const newQty = prompt(`Naya available stock enter karein (${target.name}):`, target.stock);
+  if (newQty !== null && !isNaN(parseInt(newQty))) {
+    target.stock = Math.max(0, parseInt(newQty));
+    saveProductsToStorage();
+    renderProducts();
+    computeFinancialLedgerStatements();
+    alert(`Stock updated for ${target.name}: ${target.stock} units.`);
   }
 }
 
@@ -930,11 +944,20 @@ function saveAdminSale(e) {
   const rawDate = document.getElementById("saleLogDate").value;
   const qty = parseFloat(document.getElementById("saleQty").value);
   const rate = parseFloat(document.getElementById("saleRate").value);
+  const prodType = document.getElementById("saleProduct").value;
+
+  // Offline Sale hone par bhi catalog stock minus hona chahiye
+  const targetProd = products.find(p => p.type === prodType || p.name.toLowerCase().includes(prodType.toLowerCase()));
+  if (targetProd && !targetProd.bulk) {
+    targetProd.stock = Math.max(0, targetProd.stock - qty);
+    saveProductsToStorage();
+    renderProducts();
+  }
 
   const data = {
     saleId: "SALE-" + Date.now().toString().slice(-4),
     date: rawDate ? new Date(rawDate).toLocaleDateString('en-IN') : new Date().toLocaleDateString('en-IN'),
-    product: document.getElementById("saleProduct").value,
+    product: prodType,
     collector: document.getElementById("saleCollector").value,
     buyer: document.getElementById("saleBuyer").value.trim(),
     phone: document.getElementById("salePhone").value.trim(),
@@ -951,16 +974,31 @@ function saveAdminSale(e) {
   computeFinancialLedgerStatements();
 }
 
+// Bulk Buy / Harvesting hone par automatic stock increase karein
 function saveAdminPurchase(e) {
   e.preventDefault();
   const rawDate = document.getElementById("purLogDate").value;
   const qty = parseFloat(document.getElementById("purQty").value);
   const rate = parseFloat(document.getElementById("purRate").value);
+  const purType = document.getElementById("purProduct").value;
   
+  // Buy ya Harvest karne par catalog ka available stock automatic badh jayega
+  let matchedProd = null;
+  if (purType.includes("Green")) matchedProd = products.find(p => p.type === "green");
+  else if (purType.includes("Dry")) matchedProd = products.find(p => p.type === "dry");
+  else if (purType.includes("Khakhra")) matchedProd = products.find(p => p.type === "khakhra");
+  else if (purType.includes("Papad")) matchedProd = products.find(p => p.type === "papad");
+
+  if (matchedProd) {
+    matchedProd.stock = (matchedProd.stock || 0) + qty;
+    saveProductsToStorage();
+    renderProducts();
+  }
+
   const data = {
     purId: "PUR-" + Date.now().toString().slice(-4),
     date: rawDate ? new Date(rawDate).toLocaleDateString('en-IN') : new Date().toLocaleDateString('en-IN'),
-    product: document.getElementById("purProduct").value,
+    product: purType,
     funder: document.getElementById("purFunder").value,
     vendor: document.getElementById("purVendor").value.trim(),
     qty: qty,
@@ -973,6 +1011,7 @@ function saveAdminPurchase(e) {
   e.target.reset();
   initDefaultDatePickers();
   computeFinancialLedgerStatements();
+  alert(`✅ Inventory stock successfully added! (Updated ${matchedProd ? matchedProd.name : 'Stock'})`);
 }
 
 function saveAdminDamage(e) {
@@ -1021,7 +1060,7 @@ function downloadOfflineSaleInvoice(saleId) {
 }
 
 // =========================================================
-// PRODUCTS RENDERING WITH DYNAMIC STOCK BADGES
+// PRODUCTS CATALOG RENDERING & AUTOMATIC STOCK MONITORING
 // =========================================================
 function renderProducts(list = products) {
   if(!document.getElementById("productsList")) return;
@@ -1036,9 +1075,12 @@ function renderProducts(list = products) {
         
         <!-- Automatic Stock Status Badge -->
         <div style="margin-bottom: 8px;">
-          ${inStock 
-            ? `<span class="badge badge-confirmed" style="font-size:11px;">🟢 In Stock (${product.stock} available)</span>` 
-            : `<span class="badge" style="background:#fee2e2; color:#991b1b; font-size:11px;">🔴 Out of Stock</span>`
+          ${product.bulk ? 
+            `<span class="badge" style="background: #e0f2fe; color: #0369a1; font-size:11px;">📦 Custom Supply</span>` : 
+            (inStock 
+              ? `<span class="badge badge-confirmed" style="font-size:11px;">🟢 Available: ${product.stock} ${product.unit}</span>` 
+              : `<span class="badge" style="background:#fee2e2; color:#991b1b; font-size:11px;">🔴 Out of Stock</span>`
+            )
           }
         </div>
 
@@ -1061,7 +1103,7 @@ function renderProducts(list = products) {
 function addToCart(id) {
   const product = products.find(item => item.id === id);
   if (!product || product.stock <= 0) {
-    alert("⚠️ Maaf kijiye, yeh item stock me available nahi hai!");
+    alert("⚠️ Abhi yeh item stock me uplabdh nahi hai!");
     return;
   }
 
@@ -1069,7 +1111,7 @@ function addToCart(id) {
   const currentQty = current ? current.qty : 0;
 
   if (currentQty + 1 > product.stock) {
-    alert(`⚠️ Aap sirf ${product.stock} items hi cart me add kar sakte hain (Available stock limit)!`);
+    alert(`⚠️ Aap sirf ${product.stock} items hi cart me jod sakte hain kyunki itna hi stock bacha hai!`);
     return;
   }
 
@@ -1160,7 +1202,7 @@ function confirmOrder(e) {
   const currentTimestamp = new Date().toLocaleDateString('en-IN') + " " + new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
   const generatedOrderId = "PGF-INV-" + Date.now().toString().slice(-5);
 
-  // Deduct Stock Automatically
+  // Automatic Stock Deduction on successful order placement
   cart.forEach((item, prodId) => {
     const prod = products.find(p => p.id === prodId);
     if (prod && !prod.bulk) {
@@ -1362,7 +1404,7 @@ if (document.getElementById("productSearch")) {
 }
 
 // =========================================================
-// MOBILE & PC UNIVERSAL CERTIFICATE PRINT / PDF ENGINE
+// CERTIFICATE PDF ENGINE
 // =========================================================
 function downloadCertificatePDF(bookingId) {
   const targetBooking = bookingsRegistry.find(b => b && b.bookingId === bookingId);
@@ -1433,7 +1475,6 @@ function downloadCertificatePDF(bookingId) {
       </p>
       
       <div class="cert-footer-grid">
-        <!-- Left: Soham Gajera Sign -->
         <div style="text-align: center; width: 34%;">
           <div style="height: 50px; display: flex; align-items: flex-end; justify-content: center;">
             <img src="${sohamSignUrl}" alt="Soham Gajera Signature" class="sign-img">
@@ -1443,7 +1484,6 @@ function downloadCertificatePDF(bookingId) {
           <div style="font-size: 10px; color: #475569; margin-top: 2px;">Co-Founder & Managing Director</div>
         </div>
 
-        <!-- Center Stamp & Date -->
         <div style="text-align: center; width: 28%;">
           <img src="${logoUrl}" alt="Stamp" style="width: 55px; height: auto; opacity: 0.95;">
           <div style="font-size: 9px; font-weight: 800; color: #1e4620; margin-top: 2px; letter-spacing: 0.5px;">PURE GROW FARM</div>
@@ -1452,7 +1492,6 @@ function downloadCertificatePDF(bookingId) {
           </div>
         </div>
 
-        <!-- Right: Jeet Gajera Sign -->
         <div style="text-align: center; width: 34%;">
           <div style="height: 50px; display: flex; align-items: flex-end; justify-content: center;">
             <img src="${jeetSignUrl}" alt="Jeet Gajera Signature" class="sign-img">

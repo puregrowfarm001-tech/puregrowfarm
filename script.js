@@ -8,16 +8,24 @@ const farmName = "Pure Grow Farm";
 
 const ADMIN_CREDENTIALS = { user: "admin", pass: "PureGrow@2026" };
 
-const products = [
-  { id: 1, name: "Fresh Green Oyster Mushroom", price: 180, unit: "1kg", image: "mushroom/Screenshot 2025-10-24 154001.png", detail: "Picked fresh, chilled and delivered within 24-48 hours.", type: "green", available: true },
-  { id: 2, name: "Dried Oyster Mushroom", price: 800, unit: "1kg pack", image: "mushroom/oyst dry.webp", detail: "Slow-dried to preserve flavor and nutrients.", type: "dry", available: true },
-  { id: 3, name: "Oyster Mushroom Powder", price: 130, unit: "100gm pack", image: "mushroom/oyster powder.png", detail: "Mushroom powder for soup, 1kg pack curry, health mix and snacks.", type: "powder", available: true },
-  { id: 4, name: "Methi Mushroom Khakhra", price: 70, unit: "200gm pack", image: "mushroom/Methi khakhra 2.png", detail: "Crispy khakhra prepared with oyster mushroom powder.", type: "khakhra", available: true },
-  { id: 5, name: "Adad Mushroom Papad", price: 120, unit: "1 pack", image: "mushroom/bulk.png", detail: "Papad enriched with mushroom nutrition.", type: "papad", available: true },
-  { id: 6, name: "Bulk and Wholesale Supply", price: 0, unit: "Custom", bulk: true, image: "mushroom/bulk.png", detail: "Supply for restaurants, retailers and local markets.", available: true }
+// Default products configuration with initial stock levels
+const DEFAULT_PRODUCTS = [
+  { id: 1, name: "Fresh Green Oyster Mushroom", price: 180, unit: "1kg", image: "mushroom/Screenshot 2025-10-24 154001.png", detail: "Picked fresh, chilled and delivered within 24-48 hours.", type: "green", stock: 25 },
+  { id: 2, name: "Dried Oyster Mushroom", price: 800, unit: "1kg pack", image: "mushroom/oyst dry.webp", detail: "Slow-dried to preserve flavor and nutrients.", type: "dry", stock: 15 },
+  { id: 3, name: "Oyster Mushroom Powder", price: 130, unit: "100gm pack", image: "mushroom/oyster powder.png", detail: "Mushroom powder for soup, 1kg pack curry, health mix and snacks.", type: "powder", stock: 10 },
+  { id: 4, name: "Methi Mushroom Khakhra", price: 70, unit: "200gm pack", image: "mushroom/Methi khakhra 2.png", detail: "Crispy khakhra prepared with oyster mushroom powder.", type: "khakhra", stock: 20 },
+  { id: 5, name: "Adad Mushroom Papad", price: 120, unit: "1 pack", image: "mushroom/bulk.png", detail: "Papad enriched with mushroom nutrition.", type: "papad", stock: 12 },
+  { id: 6, name: "Bulk and Wholesale Supply", price: 0, unit: "Custom", bulk: true, image: "mushroom/bulk.png", detail: "Supply for restaurants, retailers and local markets.", stock: 9999 }
 ];
 
+// Persistent stock initialization
+let products = JSON.parse(localStorage.getItem('pgf_live_products')) || DEFAULT_PRODUCTS;
+
 const cart = new Map();
+
+function saveProductsToStorage() {
+  localStorage.setItem('pgf_live_products', JSON.stringify(products));
+}
 
 function getCleanData(key) {
   try {
@@ -1012,30 +1020,60 @@ function downloadOfflineSaleInvoice(saleId) {
   document.getElementById("invoiceDialog").showModal();
 }
 
+// =========================================================
+// PRODUCTS RENDERING WITH DYNAMIC STOCK BADGES
+// =========================================================
 function renderProducts(list = products) {
   if(!document.getElementById("productsList")) return;
-  document.getElementById("productsList").innerHTML = list.map(product => `
-    <article class="product">
-      <img src="${product.image}" alt="${product.name}">
-      <h3>${product.name}</h3>
-      <p class="muted">${product.detail}</p>
-      <div style="margin-bottom: 8px;">
-        <span class="badge" style="background: #dcfce7; color: #166534; font-size:11px;">🟢 Status: Available</span>
-      </div>
-      <div style="margin-top:auto;">
-        <div class="product-actions">
-          <div class="pill">Rs ${product.price} / ${product.unit}</div>
-          ${product.bulk ? `<button type="button" onclick="window.open('https://wa.me/${farmWhatsapp}')">Contact Bulk</button>` : `<button type="button" onclick="addToCart(${product.id})">Add Cart</button>`}
+  document.getElementById("productsList").innerHTML = list.map(product => {
+    const inStock = product.stock > 0;
+
+    return `
+      <article class="product">
+        <img src="${product.image}" alt="${product.name}">
+        <h3>${product.name}</h3>
+        <p class="muted">${product.detail}</p>
+        
+        <!-- Automatic Stock Status Badge -->
+        <div style="margin-bottom: 8px;">
+          ${inStock 
+            ? `<span class="badge badge-confirmed" style="font-size:11px;">🟢 In Stock (${product.stock} available)</span>` 
+            : `<span class="badge" style="background:#fee2e2; color:#991b1b; font-size:11px;">🔴 Out of Stock</span>`
+          }
         </div>
-      </div>
-    </article>
-  `).join("");
+
+        <div style="margin-top:auto;">
+          <div class="product-actions">
+            <div class="pill">Rs ${product.price} / ${product.unit}</div>
+            ${product.bulk ? 
+              `<button type="button" onclick="window.open('https://wa.me/${farmWhatsapp}')">Contact Bulk</button>` : 
+              `<button type="button" ${inStock ? '' : 'disabled style="background:#9ca3af; cursor:not-allowed;"'} onclick="addToCart(${product.id})">
+                ${inStock ? 'Add Cart' : 'Out of Stock'}
+              </button>`
+            }
+          </div>
+        </div>
+      </article>
+    `;
+  }).join("");
 }
 
 function addToCart(id) {
   const product = products.find(item => item.id === id);
+  if (!product || product.stock <= 0) {
+    alert("⚠️ Maaf kijiye, yeh item stock me available nahi hai!");
+    return;
+  }
+
   const current = cart.get(id);
-  cart.set(id, { ...product, qty: current ? current.qty + 1 : 1 });
+  const currentQty = current ? current.qty : 0;
+
+  if (currentQty + 1 > product.stock) {
+    alert(`⚠️ Aap sirf ${product.stock} items hi cart me add kar sakte hain (Available stock limit)!`);
+    return;
+  }
+
+  cart.set(id, { ...product, qty: currentQty + 1 });
   renderCart();
 }
 
@@ -1121,6 +1159,16 @@ function confirmOrder(e) {
   const bill = getTotals();
   const currentTimestamp = new Date().toLocaleDateString('en-IN') + " " + new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
   const generatedOrderId = "PGF-INV-" + Date.now().toString().slice(-5);
+
+  // Deduct Stock Automatically
+  cart.forEach((item, prodId) => {
+    const prod = products.find(p => p.id === prodId);
+    if (prod && !prod.bulk) {
+      prod.stock = Math.max(0, prod.stock - item.qty);
+    }
+  });
+  saveProductsToStorage();
+  renderProducts();
 
   const data = {
     orderId: generatedOrderId,
@@ -1315,7 +1363,6 @@ if (document.getElementById("productSearch")) {
 
 // =========================================================
 // MOBILE & PC UNIVERSAL CERTIFICATE PRINT / PDF ENGINE
-// (Updated: Pure Grow Farm Name Applied Throughout)
 // =========================================================
 function downloadCertificatePDF(bookingId) {
   const targetBooking = bookingsRegistry.find(b => b && b.bookingId === bookingId);
@@ -1333,7 +1380,6 @@ function downloadCertificatePDF(bookingId) {
 
   const actualApprovedDate = targetBooking.certIssueDate ? targetBooking.certIssueDate : (targetBooking.dateLogged ? targetBooking.dateLogged.split(" ")[0] : new Date().toLocaleDateString('en-IN'));
 
-  // Absolute Path Helper taaki Blob Window me image break na ho
   const basePath = window.location.href.substring(0, window.location.href.lastIndexOf('/') + 1);
   const logoUrl = basePath + "mushroom/pgf logo.png";
   const sohamSignUrl = basePath + "mushroom/soham sign.png";

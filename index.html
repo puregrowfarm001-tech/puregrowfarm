@@ -10,16 +10,7 @@
 </head>
 <body>
   <div class="container">
-    
-    <!-- 1. Top Notice Banner -->
-    <div style="background-color: #d93838; color: #ffffff; text-align: center; padding: 12px 20px; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; font-size: 15px; border-radius: 12px; margin-bottom: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); animation: warningPulse 2s infinite;">
-      <div style="font-weight: bold; margin-bottom: 6px;">
-        ⚠️ IMPORTANT NOTICE: Our website is temporarily down. To place an order or book a farm, please contact us directly. DO NOT make any online payments here.
-      </div>
-      <div style="font-weight: bold;">
-        ⚠️ आवश्यक सूचना: हमारी वेबसाइट अभी कुछ समय के लिए बंद है। यदि आप ऑर्डर देना चाहते हैं या फार्म बुक करना चाहते हैं, तो कृपया हमसे सीधा संपर्क करें। कृपया वेबसाइट पर कोई भी ऑनलाइन पेमेंट न करें।
-      </div>
-    </div>
+
     <style>
       @keyframes warningPulse {
         0% { background-color: #d93838; }
@@ -52,9 +43,18 @@
         text-decoration: underline;
         color: #1e6b30;
       }
+      .founder-contact-box {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        padding: 8px 12px;
+        background: #f8fafc;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+      }
     </style>
 
-    <!-- 2. Header Navigation Area -->
+    <!-- Header Navigation Area -->
     <header style="position: relative; z-index: 100000;">
       <div class="brand">
         <img src="mushroom/pgf logo.png" alt="Pure Grow Farm logo" class="logo-img">
@@ -137,6 +137,16 @@
       </div>
     </section>
 
+    <!-- Warning Notice (Placed below Login/Register auth box) -->
+    <div style="background-color: #d93838; color: #ffffff; text-align: center; padding: 12px 20px; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; font-size: 15px; border-radius: 12px; margin: 15px 0 25px 0; box-shadow: 0 4px 6px rgba(0,0,0,0.1); animation: warningPulse 2s infinite;">
+      <div style="font-weight: bold; margin-bottom: 6px;">
+        ⚠️ IMPORTANT NOTICE: Our website is temporarily down. To place an order or book a farm, please contact us directly. DO NOT make any online payments here.
+      </div>
+      <div style="font-weight: bold;">
+        ⚠️ आवश्यक सूचना: हमारी वेबसाइट अभी कुछ समय के लिए बंद है। यदि आप ऑर्डर देना चाहते हैं या फार्म बुक करना चाहते हैं, तो कृपया हमसे सीधा संपर्क करें। कृपया वेबसाइट पर कोई भी ऑनलाइन पेमेंट न करें।
+      </div>
+    </div>
+
     <!-- Dynamic User Session Dashboard Workspace -->
     <section id="dashboardWorkspace" class="user-dashboard" style="display:none;">
       <h2>Welcome Back, <span id="userDashboardName">Grower</span>!</h2>
@@ -183,11 +193,21 @@
                 <div class="muted small-title">Products Available</div>
                 <div class="card-title">Green, Dry, Powder, Khakhra and Papad</div>
               </div>
+              
+              <!-- Direct Helpline Contact with Co-Founder & Director Details -->
               <div class="card">
                 <div class="muted small-title">Direct Helpline Contact (Click to Call)</div>
-                <div class="card-title" style="font-size: 16px; margin-top: 4px;">
-                  📞 <a href="tel:+919067891039" class="call-link">9067891039 (Soham Gajera)</a> | 
-                  📞 <a href="tel:+918200145732" class="call-link">8200145732 (Jeet Gajera)</a>
+                <div style="display: grid; gap: 8px; margin-top: 8px;">
+                  <div class="founder-contact-box">
+                    <strong style="color: #0f1720; font-size: 14px;">Soham N. Gajera</strong>
+                    <span style="font-size: 11px; color: var(--muted); font-weight: 600;">Co-Founder & Managing Director</span>
+                    <a href="tel:+919067891039" class="call-link" style="font-size: 14px; margin-top: 2px;">📞 +91 9067891039</a>
+                  </div>
+                  <div class="founder-contact-box">
+                    <strong style="color: #0f1720; font-size: 14px;">Jeet A. Gajera</strong>
+                    <span style="font-size: 11px; color: var(--muted); font-weight: 600;">Co-Founder & Director – Agriculture & Production</span>
+                    <a href="tel:+918200145732" class="call-link" style="font-size: 14px; margin-top: 2px;">📞 +91 8200145732</a>
+                  </div>
                 </div>
               </div>
             </div>
@@ -218,7 +238,7 @@
         <section id="about" class="about">
           <div class="about-content">
             <h2>About Pure Grow Farm</h2>
-            <p class="muted">Pure Grow Farm is a family-run mushroom farm focused on sustainable oyster mushroom cultivation under technical expert supervision of Soham Gajera and Jeet Gajera.</p>
+            <p class="muted">Pure Grow Farm is a family-run mushroom farm focused on sustainable oyster mushroom cultivation under technical expert supervision of Soham N. Gajera (Co-Founder & Managing Director) and Jeet A. Gajera (Co-Founder & Director – Agriculture & Production).</p>
           </div>
         </section>
 
@@ -677,7 +697,7 @@
         
         <div style="margin-top: 35px; padding-top: 20px; border-top: 1px dashed var(--line); font-size: 12px; text-align: center; color: var(--muted); line-height: 1.6;">
           <strong style="color: #334155;">Pure Grow Farm Production Hub Contact Info:</strong><br>
-          📞 <a href="tel:+919067891039" class="call-link">9067891039 (Soham Gajera)</a> & 📞 <a href="tel:+918200145732" class="call-link">8200145732 (Jeet Gajera)</a> | ✉️ <a href="mailto:puregrowfarm001@gmail.com" class="call-link">puregrowfarm001@gmail.com</a><br>
+          📞 <a href="tel:+919067891039" class="call-link">9067891039 (Soham N. Gajera)</a> & 📞 <a href="tel:+918200145732" class="call-link">8200145732 (Jeet A. Gajera)</a> | ✉️ <a href="mailto:puregrowfarm001@gmail.com" class="call-link">puregrowfarm001@gmail.com</a><br>
           📍 <a href="https://maps.google.com/?q=Makhiyala+Junagadh+Gujarat+362011" target="_blank" rel="noreferrer" class="call-link">Address: Village Makhiyala, City Junagadh, State Gujarat, Pincode 362011</a>
         </div>
       </div>
@@ -688,23 +708,56 @@
       </div>
     </dialog>
 
-    <footer style="padding: 24px 0; border-top: 1px solid var(--line); margin-top: 30px;">
-      <div style="display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; margin-bottom: 12px;">
-        <a href="Pure Grow Mushroom Farm, Makhiyala, Gujarat 362011" target="_blank" rel="noreferrer" class="social-link-btn" style="background: #ea4335;">
-          📍 Google Maps Location
-        </a>
-        <a href="https://www.instagram.com/_pure_grow_mushroom_farm_/" target="_blank" rel="noreferrer" class="social-link-btn" style="background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888);">
-          📸 Instagram
-        </a>
-        <a href="https://www.youtube.com/channel/UC2T-bDe5wEblhgQOYY8RAzQ" target="_blank" rel="noreferrer" class="social-link-btn" style="background: #ff0000;">
-          ▶️ YouTube
-        </a>
-        <a href="https://www.facebook.com/people/Pure-Grow-farm/61583444431310/" target="_blank" rel="noreferrer" class="social-link-btn" style="background: #1877f2;">
-          📘 Facebook
-        </a>
+    <!-- Detailed Footer with Complete Contact Info -->
+    <footer style="padding: 30px 0; border-top: 1px solid var(--line); margin-top: 40px; background: #ffffff; border-radius: 16px;">
+      <div style="max-width: 900px; margin: 0 auto; padding: 0 15px;">
+        <div style="display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; margin-bottom: 24px;">
+          <a href="https://maps.google.com/?q=Pure+Grow+Farm+Makhiyala+Junagadh" target="_blank" rel="noreferrer" class="social-link-btn" style="background: #ea4335;">
+            📍 Google Maps Location
+          </a>
+          <a href="https://www.instagram.com/" target="_blank" rel="noreferrer" class="social-link-btn" style="background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888);">
+            📸 Instagram
+          </a>
+          <a href="https://www.youtube.com/" target="_blank" rel="noreferrer" class="social-link-btn" style="background: #ff0000;">
+            ▶️ YouTube
+          </a>
+          <a href="https://www.facebook.com/" target="_blank" rel="noreferrer" class="social-link-btn" style="background: #1877f2;">
+            📘 Facebook
+          </a>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 18px; text-align: left; background: #f8fafc; padding: 20px; border-radius: 12px; border: 1px solid var(--line); margin-bottom: 20px;">
+          <div>
+            <h4 style="margin: 0 0 10px 0; color: var(--accent); font-size: 15px;">📞 Management Contact</h4>
+            <div style="font-size: 13px; line-height: 1.6;">
+              <strong>Soham N. Gajera</strong><br>
+              <span class="muted" style="font-size: 12px;">Co-Founder & Managing Director</span><br>
+              Direct Call: <a href="tel:+919067891039" class="call-link">📞 +91 9067891039</a>
+            </div>
+            <div style="font-size: 13px; line-height: 1.6; margin-top: 10px;">
+              <strong>Jeet A. Gajera</strong><br>
+              <span class="muted" style="font-size: 12px;">Co-Founder & Director – Agriculture & Production</span><br>
+              Direct Call: <a href="tel:+918200145732" class="call-link">📞 +91 8200145732</a>
+            </div>
+          </div>
+
+          <div>
+            <h4 style="margin: 0 0 10px 0; color: var(--accent); font-size: 15px;">📍 Farm & Yard Address</h4>
+            <div style="font-size: 13px; line-height: 1.6; color: #475569;">
+              <strong>Pure Grow Farm Hub</strong><br>
+              Village: Makhiyala, City: Junagadh<br>
+              State: Gujarat, PIN: 362011<br>
+              Email: <a href="mailto:puregrowfarm001@gmail.com" class="call-link">puregrowfarm001@gmail.com</a>
+            </div>
+          </div>
+        </div>
+
+        <div style="color: var(--muted); font-size: 13px; text-align: center;">
+          Pure Grow Farm - Oyster Mushrooms Enterprise © 2026. All rights reserved.
+        </div>
       </div>
-      <div>Pure Grow Farm - Oyster Mushrooms Enterprise © 2026</div>
     </footer>
+
   </div>
 </body>
 </html>

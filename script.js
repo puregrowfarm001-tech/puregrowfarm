@@ -93,7 +93,7 @@ function pushNotification(targetRecipient, title, message, targetAction = 'gener
     recipient: targetRecipient,
     title: title,
     message: message,
-    action: targetAction, // 'certificate', 'order', 'booking', 'general'
+    action: targetAction,
     time: new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true }),
     date: new Date().toLocaleDateString('en-IN'),
     isRead: false
@@ -112,11 +112,9 @@ function handleNotificationClick(notifId) {
   localStorage.setItem('pgf_notifications', JSON.stringify(notificationsRegistry));
   renderNotificationBadge();
 
-  // Close dropdown
   const panel = document.getElementById("notificationDropdownPanel");
   if (panel) panel.style.display = "none";
 
-  // Contextual Navigation
   if (currentUser && currentUser.isAdmin) {
     if (notif.action === 'order') switchErpTab('erpOrdersTab', 'tabNavOrders');
     else if (notif.action === 'booking' || notif.action === 'certificate') switchErpTab('erpBookingsTab', 'tabNavBookings');
@@ -366,8 +364,21 @@ function handleLogout() {
 }
 
 // =========================================================
-// USER DASHBOARD - VERTICAL LIVE TIMELINE TRACKER
+// CLICK-TO-EXPAND ORDER CARDS (2ND SCREENSHOT STYLE)
 // =========================================================
+function toggleOrderDetailsView(orderId) {
+  const panel = document.getElementById(`order-details-${orderId}`);
+  const arrow = document.getElementById(`arrow-${orderId}`);
+  if (!panel) return;
+  if (panel.style.display === "none" || panel.style.display === "") {
+    panel.style.display = "block";
+    if (arrow) arrow.textContent = "▲";
+  } else {
+    panel.style.display = "none";
+    if (arrow) arrow.textContent = "▼";
+  }
+}
+
 function loadUserPanelData() {
   const oList = document.getElementById("userOrdersList");
   const bList = document.getElementById("userBookingsList");
@@ -393,87 +404,137 @@ function loadUserPanelData() {
     const stageMap = { 'Placed': 1, 'Packed': 2, 'Shipped': 3, 'OutForDelivery': 4, 'Delivered': 5 };
     const curLevel = stageMap[stage] || (isApproved ? 2 : 1);
 
+    // Dynamic Flipkart Style Status text & color
+    let statusDotColor = "#16a34a";
+    let statusText = "Delivered " + orderDate;
+    let subtitleText = "Your item has been delivered";
+
+    if (isPending) {
+      statusDotColor = "#eab308";
+      statusText = "Verification Pending";
+      subtitleText = "Admin is reviewing payment";
+    } else if (isCancelled) {
+      statusDotColor = "#ef4444";
+      statusText = "Cancelled on " + (orderDate.split(" ")[0] || orderDate);
+      subtitleText = "Your order was cancelled as per your request.";
+    } else if (isRejected) {
+      statusDotColor = "#ef4444";
+      statusText = "Order Rejected";
+      subtitleText = "Payment Not Verified / Invalid Txn";
+    } else {
+      if (stage === 'Placed') { statusText = "Order Placed " + orderDate; subtitleText = "Your order has been placed."; }
+      else if (stage === 'Packed') { statusText = "Seller Processed & Packed"; subtitleText = "Packed at farm yard."; }
+      else if (stage === 'Shipped') { statusText = "Shipped on " + orderDate; subtitleText = `${courier} - ${awb}`; }
+      else if (stage === 'OutForDelivery') { statusText = "Out For Delivery"; subtitleText = "Your item is out for delivery"; }
+      else if (stage === 'Delivered') { statusText = "Delivered " + orderDate; subtitleText = "Delivered to your address"; }
+    }
+
     return `
-      <div class="data-item-card" style="border: 1px solid ${isCancelled ? '#fdba74' : (isRejected ? '#fca5a5' : (isApproved ? '#86efac' : '#cbd5e1'))}; border-radius: 12px; padding: 14px; margin-bottom: 15px; background:#fff;">
-        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; border-bottom:1px solid #f1f5f9; padding-bottom:8px;">
-          <strong>Order ID: <span style="color:var(--accent);">${o.orderId}</span></strong>
-          <span style="font-size:12px; color:var(--muted); font-weight:600;">📅 ${orderDate}</span>
-        </div>
-        <div style="margin: 8px 0; font-size:13px;">
-          <span>Items: <strong>${o.products}</strong></span><br>
-          <span>Grand Total: <strong>Rs ${o.total}</strong> [Mode: <strong>${o.paymentMode || 'UPI'}</strong> | Txn: <code>${o.txnId || 'N/A'}</code>]</span>
-        </div>
-
-        ${isPending ? `
-          <div style="background: #fffbeb; border: 1px solid #fcd34d; border-radius: 8px; padding: 10px; margin-top: 8px; font-size: 13px; color: #92400e;">
-            ⏳ <strong>Status: Verification Pending</strong><br>
-            <span style="font-size:12px;">Admin jaise hi order verify karega, live status update hona shuru ho jayega.</span>
-          </div>
-        ` : ''}
-
-        ${(isApproved || stage === 'Placed') && !isCancelled && !isRejected ? `
-          <div style="margin-top: 12px; background: #ffffff; padding: 14px; border-radius: 8px; border: 1px solid #e2e8f0;">
-            <div class="vertical-timeline">
-              <div class="timeline-step ${curLevel >= 1 ? 'completed' : ''}">
-                <div class="timeline-dot"></div>
-                <div class="timeline-title">Order Confirmed <span>${orderDate}</span></div>
-                <div class="timeline-desc">Your Order has been placed.</div>
-                <div class="timeline-time">${orderDate}</div>
-              </div>
-
-              <div class="timeline-step ${curLevel >= 2 ? 'completed' : ''}">
-                <div class="timeline-dot"></div>
-                <div class="timeline-title">Seller Processed & Packed</div>
-                <div class="timeline-desc">Seller has processed and packed your mushroom order at Farm Hub.</div>
-                <div class="timeline-desc" style="color:#0284c7; font-size:12px;">Your item has been picked up by delivery partner.</div>
-              </div>
-
-              <div class="timeline-step ${curLevel >= 3 ? 'completed' : ''}">
-                <div class="timeline-dot"></div>
-                <div class="timeline-title">Shipped</div>
-                <div class="timeline-desc"><strong>${courier} - ${awb}</strong></div>
-                <div class="timeline-desc">Your item has been shipped. (📍 Hub: ${loc})</div>
-              </div>
-
-              <div class="timeline-step ${curLevel >= 4 ? 'completed' : ''}">
-                <div class="timeline-dot"></div>
-                <div class="timeline-title">Out For Delivery</div>
-                <div class="timeline-desc">Your item is out for delivery with executive.</div>
-              </div>
-
-              <div class="timeline-step ${curLevel >= 5 ? 'completed' : ''}">
-                <div class="timeline-dot"></div>
-                <div class="timeline-title">Delivered <span>(Expected: ${etaDate})</span></div>
-                <div class="timeline-desc">Item safely delivered to your doorstep.</div>
-              </div>
+      <div style="border: 1px solid #e2e8f0; border-radius: 10px; margin-bottom: 12px; background:#fff; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,0.04);">
+        <!-- Clickable summary header row (Screenshot 2 style) -->
+        <div onclick="toggleOrderDetailsView('${o.orderId}')" style="display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; cursor: pointer; gap: 12px; background: #ffffff; transition: background 0.2s ease;">
+          <div style="display: flex; align-items: center; gap: 14px; flex: 1;">
+            <img src="mushroom/bulk.png" alt="Product" style="width: 55px; height: 55px; object-fit: cover; border-radius: 8px; border: 1px solid #f1f5f9;">
+            <div>
+              <strong style="font-size: 14px; color: #1e293b; display: block;">${o.products}</strong>
+              <span style="font-size: 12px; color: #64748b;">Ref: ${o.orderId} | Total: <strong style="color: #0f172a;">₹${o.total}</strong></span>
             </div>
           </div>
-        ` : ''}
 
-        ${isCancelled ? `
-          <div style="margin-top: 12px; background: #ffffff; padding: 14px; border-radius: 8px; border: 1px solid #fed7aa;">
-            <div class="vertical-timeline">
-              <div class="timeline-step completed cancelled-line">
-                <div class="timeline-dot"></div>
-                <div class="timeline-title">Order Confirmed <span>${orderDate}</span></div>
-                <div class="timeline-desc">Your Order was placed.</div>
-              </div>
-              <div class="timeline-step cancelled">
-                <div class="timeline-dot"></div>
-                <div class="timeline-title" style="color:#ef4444;">Cancelled</div>
-                <div class="timeline-desc">Your order was cancelled. Reason: <em>${o.status.replace('Cancelled (Reason: ', '').replace(')', '')}</em></div>
-                <div class="timeline-desc" style="color:#c2410c; font-weight:bold; margin-top:4px;">Refund Stage: ${o.refundStage || 'Refund Initiated'} (Rs ${o.total})</div>
+          <div style="text-align: right; min-width: 180px;">
+            <div style="display: flex; align-items: center; justify-content: flex-end; gap: 6px;">
+              <span style="width: 9px; height: 9px; border-radius: 50%; background: ${statusDotColor}; display: inline-block;"></span>
+              <strong style="font-size: 13px; color: #1e293b;">${statusText}</strong>
+            </div>
+            <div style="font-size: 11px; color: #64748b; margin-top: 2px;">${subtitleText}</div>
+          </div>
+
+          <span id="arrow-${o.orderId}" style="font-size: 12px; color: #94a3b8; margin-left: 8px;">▼</span>
+        </div>
+
+        <!-- Hidden Detail View (Opens on Click) -->
+        <div id="order-details-${o.orderId}" style="display: none; padding: 14px 16px; background: #f8fafc; border-top: 1px solid #f1f5f9;">
+          
+          <div style="background:#fff; padding: 12px; border-radius: 8px; border: 1px solid #e2e8f0; font-size:13px; margin-bottom: 12px;">
+            <div><strong>Shipping Address:</strong> <span style="color:#475569;">${o.address || 'N/A'}</span></div>
+            <div style="margin-top:4px;"><strong>Payment Mode:</strong> <span class="badge" style="background:#eef2ff; color:#3730a3;">${o.paymentMode || 'UPI'}</span> | <strong>Txn ID:</strong> <code>${o.txnId || 'N/A'}</code></div>
+          </div>
+
+          ${isPending ? `
+            <div style="background: #fffbeb; border: 1px solid #fcd34d; border-radius: 8px; padding: 10px; font-size: 13px; color: #92400e;">
+              ⏳ <strong>Status: Verification Pending</strong><br>
+              <span style="font-size:12px;">Admin jaise hi order verify karega, live tracker update hona chalu ho jayega.</span>
+            </div>
+          ` : ''}
+
+          ${(isApproved || stage === 'Placed') && !isCancelled && !isRejected ? `
+            <div style="background: #ffffff; padding: 16px; border-radius: 8px; border: 1px solid #e2e8f0;">
+              <div class="vertical-timeline">
+                <div class="timeline-step ${curLevel >= 1 ? 'completed' : ''}">
+                  <div class="timeline-dot"></div>
+                  <div class="timeline-title">Order Confirmed <span>${orderDate}</span></div>
+                  <div class="timeline-desc">Your Order has been placed.</div>
+                </div>
+
+                <div class="timeline-step ${curLevel >= 2 ? 'completed' : ''}">
+                  <div class="timeline-dot"></div>
+                  <div class="timeline-title">Seller Processed & Packed</div>
+                  <div class="timeline-desc">Seller has processed and packed your mushroom order at Farm Hub.</div>
+                  <div class="timeline-desc" style="color:#0284c7; font-size:12px;">Your item has been picked up by delivery partner.</div>
+                </div>
+
+                <div class="timeline-step ${curLevel >= 3 ? 'completed' : ''}">
+                  <div class="timeline-dot"></div>
+                  <div class="timeline-title">Shipped</div>
+                  <div class="timeline-desc"><strong>${courier} - ${awb}</strong></div>
+                  <div class="timeline-desc">Your item has been shipped. (📍 Hub: ${loc})</div>
+                </div>
+
+                <div class="timeline-step ${curLevel >= 4 ? 'completed' : ''}">
+                  <div class="timeline-dot"></div>
+                  <div class="timeline-title">Out For Delivery</div>
+                  <div class="timeline-desc">Your item is out for delivery with executive.</div>
+                </div>
+
+                <div class="timeline-step ${curLevel >= 5 ? 'completed' : ''}">
+                  <div class="timeline-dot"></div>
+                  <div class="timeline-title">Delivered <span>(Expected: ${etaDate})</span></div>
+                  <div class="timeline-desc">Item safely delivered to your doorstep.</div>
+                </div>
               </div>
             </div>
-          </div>
-        ` : ''}
+          ` : ''}
 
-        ${isRejected ? `
-          <div style="background: #fef2f2; border: 1px solid #f87171; border-radius: 8px; padding: 12px; margin-top: 10px;">
-            <strong style="color: #991b1b; font-size: 14px;">❌ Order Rejected</strong>
-            <p style="margin: 4px 0 0 0; font-size: 12px; color: #7f1d1d;"><strong>Reason:</strong> ${o.status.replace('Rejected (Reason: ', '').replace(')', '')}</p>
-          </div>
-        ` : ''}
+          ${isCancelled ? `
+            <div style="background: #ffffff; padding: 16px; border-radius: 8px; border: 1px solid #fed7aa;">
+              <div style="background:#fff7ed; padding:12px; border-radius:8px; border-left:4px solid #ea580c; margin-bottom:12px;">
+                <strong style="color:#c2410c; font-size:14px;">Refund Completed (Refund ID: ${Date.now()})</strong>
+                <p style="margin: 4px 0 0 0; font-size: 12px; color: #7c2d12;">• Refund of ₹${o.total} was credited to your Bank Account linked with UPI ID on ${orderDate}.</p>
+              </div>
+
+              <div class="vertical-timeline">
+                <div class="timeline-step completed cancelled-line">
+                  <div class="timeline-dot"></div>
+                  <div class="timeline-title">Order Confirmed <span>${orderDate}</span></div>
+                  <div class="timeline-desc">Your Order was placed.</div>
+                </div>
+                <div class="timeline-step cancelled">
+                  <div class="timeline-dot"></div>
+                  <div class="timeline-title" style="color:#ef4444;">Cancelled</div>
+                  <div class="timeline-desc">Your order was cancelled as per your request.</div>
+                </div>
+              </div>
+            </div>
+          ` : ''}
+
+          ${isRejected ? `
+            <div style="background: #fef2f2; border: 1px solid #f87171; border-radius: 8px; padding: 12px;">
+              <strong style="color: #991b1b; font-size: 14px;">❌ Order Rejected</strong>
+              <p style="margin: 4px 0 0 0; font-size: 12px; color: #7f1d1d;"><strong>Reason:</strong> ${o.status.replace('Rejected (Reason: ', '').replace(')', '')}</p>
+            </div>
+          ` : ''}
+
+        </div>
       </div>
     `;
   }).join("") : "No active orders mapped for this profile.";
@@ -603,7 +664,6 @@ function saveDailyDryStockEntry(e) {
   dailyDryStockRegistry.unshift(dryEntry);
   localStorage.setItem('pgf_daily_dry_stock', JSON.stringify(dailyDryStockRegistry));
 
-  // Auto increment Dry Catalog Stock
   const dryProd = products.find(p => p.type === "dry");
   if (dryProd) {
     dryProd.stock = (dryProd.stock || 0) + qty;
@@ -852,7 +912,6 @@ function populateAdminDashboardTables() {
   }
 }
 
-// Edit Order details
 function adminEditOrderDetails(idx) {
   const o = orderRegistry[idx];
   const newName = prompt("Customer Name edit karein:", o.name);
@@ -876,7 +935,6 @@ function adminEditOrderDetails(idx) {
   alert("✅ Order details updated successfully!");
 }
 
-// Edit Certificate details
 function adminEditCertificateData(idx) {
   const b = bookingsRegistry[idx];
   const newName = prompt("Candidate Name for Certificate:", b.name);
@@ -915,7 +973,6 @@ function updateProductStockDirect(productId) {
   }
 }
 
-// Order status actions
 function handleOrderApprove(idx) {
   const o = orderRegistry[idx];
   o.status = "Approved";
@@ -990,7 +1047,6 @@ function setRefundStageDirect(idx, newRefStage) {
   populateAdminDashboardTables();
 }
 
-// Bookings actions
 function confirmBookingSlot(idx) {
   bookingsRegistry[idx].status = "Confirmed";
   bookingsRegistry[idx].approvedDate = new Date().toLocaleDateString('en-IN');
@@ -1597,21 +1653,21 @@ if (document.getElementById("productSearch")) {
 }
 
 // =========================================================
-// A4 SIZE CERTIFICATE PDF ENGINE
+// ORIGINAL LANDSCAPE (AADHU A4) CERTIFICATE PDF ENGINE
 // =========================================================
 function downloadCertificatePDF(bookingId) {
   const targetBooking = bookingsRegistry.find(b => b && b.bookingId === bookingId);
   if (!targetBooking) return alert("Certificate not found.");
   if (!targetBooking.certIssued) return alert("Certificate has not been issued yet by Farm Admin.");
 
-  const titleText = targetBooking.type === "Student" ? "Certificate of Internship" : "Certificate of Farming";
+  const titleText = targetBooking.type === "Student" ? "CERTIFICATE OF INTERNSHIP" : "CERTIFICATE OF FARMING TRAINING";
   const descText = targetBooking.type === "Student" 
     ? `has successfully completed an internship program in Oyster Mushroom Cultivation at Pure Grow Farm, at Makhiyala, Gujarat.`
     : `has successfully completed the practical farmer training framework module in Oyster Mushroom Cultivation at Pure Grow Farm, at Makhiyala, Gujarat.`;
   
   const durationContent = targetBooking.type === "Student" 
-    ? `from <strong>${targetBooking.start || 'N/A'}</strong> to <strong>${targetBooking.end || 'N/A'}</strong>`
-    : `on target session date <strong>${targetBooking.date || 'N/A'}</strong>`;
+    ? `from ${targetBooking.start || '2026-08-22'} to ${targetBooking.end || '2026-08-29'}`
+    : `on session date ${targetBooking.date || '2026-08-22'}`;
 
   const actualApprovedDate = targetBooking.certIssueDate ? targetBooking.certIssueDate : (targetBooking.dateLogged ? targetBooking.dateLogged.split(" ")[0] : new Date().toLocaleDateString('en-IN'));
 
@@ -1627,75 +1683,187 @@ function downloadCertificatePDF(bookingId) {
   <title>${titleText} - ${targetBooking.name}</title>
   <style>
     @page { 
-      size: A4 portrait; 
-      margin: 8mm; 
+      size: A4 landscape; 
+      margin: 6mm; 
     }
     * { box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-    body { margin: 0; padding: 10px; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #fff; text-align: center; }
-    .certificate-frame { width: 100%; max-width: 780px; min-height: 980px; background: #fff; border: 8px solid #1e4620; padding: 20px; box-sizing: border-box; margin: 0 auto; display: flex; flex-direction: column; justify-content: space-between; }
-    .inner-border { border: 2px solid #d97706; padding: 25px 20px; background: #ffffff; height: 100%; display: flex; flex-direction: column; justify-content: space-between; }
-    .cert-header-top { display: flex; justify-content: center; align-items: center; gap: 15px; }
-    .cert-title { font-size: 26px; font-weight: bold; color: #1e4620; text-transform: uppercase; letter-spacing: 1px; font-family: 'Times New Roman', Times, serif; margin: 20px 0 10px 0; }
-    .cert-name { font-size: 24px; font-weight: bold; color: #2b8a3e; border-bottom: 2px solid #d97706; display: inline-block; padding: 0 25px; margin: 15px auto; font-family: 'Times New Roman', Times, serif; }
-    .cert-desc { font-size: 14.5px; line-height: 1.8; text-align: justify; margin: 20px auto; max-width: 650px; color: #222; }
-    .cert-footer-grid { display: flex; justify-content: space-between; align-items: flex-end; margin-top: 40px; padding: 0 15px; }
-    .sign-img { width: 130px; height: 50px; object-fit: contain; display: block; margin: 0 auto -6px auto; mix-blend-mode: multiply; }
-    .no-print-bar { margin-bottom: 12px; background: #f0fdf4; border: 1px solid #bbf7d0; padding: 10px; border-radius: 8px; }
-    .no-print-btn { background: #2b8a3e; color: #fff; border: 0; padding: 8px 18px; font-weight: bold; border-radius: 6px; font-size: 14px; cursor: pointer; }
-    @media print { .no-print-bar { display: none !important; } body { padding: 0; } }
+    body { 
+      margin: 0; 
+      padding: 10px; 
+      font-family: Arial, Helvetica, sans-serif; 
+      background: #fff; 
+      text-align: center; 
+    }
+    .cert-outer-box {
+      width: 100%;
+      max-width: 1040px;
+      height: 670px;
+      background: #ffffff;
+      border: 8px solid #14532d;
+      padding: 16px;
+      box-sizing: border-box;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    .cert-inner-box {
+      border: 2px solid #ca8a04;
+      padding: 16px 24px;
+      height: 100%;
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      position: relative;
+    }
+    .cert-header {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+    }
+    .cert-brand-title {
+      font-size: 24px;
+      font-weight: 900;
+      color: #14532d;
+      letter-spacing: 1px;
+      margin: 0;
+    }
+    .cert-brand-sub {
+      font-size: 11px;
+      color: #64748b;
+      margin-top: 2px;
+    }
+    .main-title {
+      font-size: 26px;
+      font-weight: 800;
+      color: #14532d;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      margin: 10px 0 4px 0;
+      font-family: 'Times New Roman', Times, serif;
+    }
+    .cert-candidate-name {
+      font-size: 26px;
+      font-weight: 900;
+      color: #15803d;
+      text-transform: uppercase;
+      display: inline-block;
+      border-bottom: 2px solid #ca8a04;
+      padding: 0 20px;
+      margin: 6px auto;
+      font-family: 'Times New Roman', Times, serif;
+    }
+    .cert-para {
+      font-size: 13.5px;
+      line-height: 1.6;
+      text-align: justify;
+      color: #1e293b;
+      margin: 8px auto;
+      max-width: 900px;
+    }
+    .cert-signatures {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      margin-top: 15px;
+      padding: 0 20px;
+    }
+    .sign-col {
+      text-align: center;
+      width: 30%;
+    }
+    .sign-image {
+      width: 120px;
+      height: 46px;
+      object-fit: contain;
+      display: block;
+      margin: 0 auto -6px auto;
+      mix-blend-mode: multiply;
+    }
+    .sign-line {
+      border-top: 1.5px solid #334155;
+      width: 160px;
+      margin: 0 auto 4px auto;
+    }
+    .no-print-bar { 
+      margin-bottom: 12px; 
+      background: #f0fdf4; 
+      border: 1px solid #bbf7d0; 
+      padding: 8px; 
+      border-radius: 8px; 
+    }
+    .no-print-btn { 
+      background: #15803d; 
+      color: #fff; 
+      border: 0; 
+      padding: 8px 20px; 
+      font-weight: bold; 
+      border-radius: 6px; 
+      font-size: 14px; 
+      cursor: pointer; 
+    }
+    @media print { 
+      .no-print-bar { display: none !important; } 
+      body { padding: 0; } 
+    }
   </style>
 </head>
 <body>
   <div class="no-print-bar">
-    <button class="no-print-btn" onclick="window.print()">📥 Click Here to Download A4 PDF</button>
+    <button class="no-print-btn" onclick="window.print()">📥 Click Here to Download / Save A4 PDF (Landscape)</button>
   </div>
 
-  <div class="certificate-frame">
-    <div class="inner-border">
+  <div class="cert-outer-box">
+    <div class="cert-inner-box">
+      <!-- Header -->
       <div>
-        <div class="cert-header-top">
-          <img src="${logoUrl}" alt="Logo" style="width: 70px; height: auto;">
-          <div style="text-align:left;">
-            <h2 style="color: #1e4620; margin: 0; font-size: 22px; font-weight: 800;">PURE GROW FARM</h2>
-            <p style="margin: 2px 0 0 0; font-size: 12px; color:#6b7280;">Makhiyala, Gujarat, 362011 | puregrowfarm001@gmail.com</p>
+        <div class="cert-header">
+          <img src="${logoUrl}" alt="PGF Logo" style="width: 58px; height: auto;">
+          <div style="text-align: left;">
+            <div class="cert-brand-title">PURE GROW FARM</div>
+            <div class="cert-brand-sub">Makhiyala, Gujarat, 362011 | puregrowfarm001@gmail.com</div>
           </div>
         </div>
-        <hr style="border:0; border-top: 2px solid #2b8a3e; margin: 15px 0;">
-        <div class="cert-title">${titleText}</div>
-        <p style="font-style: italic; margin: 8px 0; color: #555; font-size: 14px;">This is to certify that</p>
-        <div class="cert-name">${targetBooking.name.toUpperCase()}</div>
-        <p style="font-style: italic; margin: 8px 0; color: #555; font-size: 14px;">${descText}</p>
-        <p class="cert-desc">
-          The program execution guidelines were conducted ${durationContent}. 
-          During this framework index period, the candidate gained foundational knowledge in mushroom biology, substrate preparation, spawn inoculation, and scientific crop management, demonstrating an exceptional work ethic.
-        </p>
+        <hr style="border:0; border-top: 1.5px solid #15803d; margin: 8px 0 6px 0;">
+        <div class="main-title">${titleText}</div>
+        <div style="font-style: italic; color: #475569; font-size: 13px;">This is to certify that</div>
+        <div class="cert-candidate-name">${targetBooking.name}</div>
+        <div style="font-style: italic; color: #475569; font-size: 13px; margin: 3px 0;">${descText}</div>
       </div>
-      
-      <div class="cert-footer-grid">
-        <div style="text-align: center; width: 34%;">
-          <div style="height: 50px; display: flex; align-items: flex-end; justify-content: center;">
-            <img src="${sohamSignUrl}" alt="Soham Gajera Signature" class="sign-img">
+
+      <!-- Main Body -->
+      <p class="cert-para">
+        The program execution guidelines were conducted ${durationContent}. During this framework index period, the candidate gained foundational knowledge in mushroom biology, substrate preparation, spawn inoculation, and scientific crop management, demonstrating an exceptional work ethic.
+      </p>
+
+      <!-- Footer Signatures -->
+      <div class="cert-signatures">
+        <div class="sign-col">
+          <div style="height: 46px; display: flex; align-items: flex-end; justify-content: center;">
+            <img src="${sohamSignUrl}" alt="Soham Sign" class="sign-image">
           </div>
-          <div style="border-top: 1.5px solid #333; width: 160px; margin: 0 auto 4px auto;"></div>
-          <div style="font-size: 13px; font-weight: bold; color: #1e4620;">Soham N Gajera</div>
-          <div style="font-size: 10px; color: #475569; margin-top: 2px;">Co-Founder & Managing Director</div>
+          <div class="sign-line"></div>
+          <strong style="font-size: 13px; color: #14532d;">Soham N Gajera</strong>
+          <div style="font-size: 10px; color: #64748b;">Co-Founder & Managing Director</div>
         </div>
 
-        <div style="text-align: center; width: 28%;">
-          <img src="${logoUrl}" alt="Stamp" style="width: 60px; height: auto; opacity: 0.95;">
-          <div style="font-size: 10px; font-weight: 800; color: #1e4620; margin-top: 2px; letter-spacing: 0.5px;">PURE GROW FARM</div>
-          <div style="font-size: 11px; color: #334155; margin-top: 3px;">
+        <div class="sign-col" style="width: 25%;">
+          <img src="${logoUrl}" alt="Stamp" style="width: 50px; height: auto; opacity: 0.9;">
+          <div style="font-size: 9px; font-weight: 800; color: #14532d; letter-spacing: 0.5px;">PURE GROW FARM</div>
+          <div style="font-size: 11px; color: #334155; margin-top: 2px;">
             <strong>Approved Date:</strong> ${actualApprovedDate}
           </div>
         </div>
 
-        <div style="text-align: center; width: 34%;">
-          <div style="height: 50px; display: flex; align-items: flex-end; justify-content: center;">
-            <img src="${jeetSignUrl}" alt="Jeet Gajera Signature" class="sign-img">
+        <div class="sign-col">
+          <div style="height: 46px; display: flex; align-items: flex-end; justify-content: center;">
+            <img src="${jeetSignUrl}" alt="Jeet Sign" class="sign-image">
           </div>
-          <div style="border-top: 1.5px solid #333; width: 160px; margin: 0 auto 4px auto;"></div>
-          <div style="font-size: 13px; font-weight: bold; color: #1e4620;">Jeet A Gajera</div>
-          <div style="font-size: 10px; color: #475569; margin-top: 2px;">Co-Founder & Director<br>(Agriculture & Production)</div>
+          <div class="sign-line"></div>
+          <strong style="font-size: 13px; color: #14532d;">Jeet A Gajera</strong>
+          <div style="font-size: 10px; color: #64748b;">Co-Founder & Director<br>(Agriculture & Production)</div>
         </div>
       </div>
     </div>
@@ -1703,7 +1871,7 @@ function downloadCertificatePDF(bookingId) {
 
   <script>
     window.addEventListener('load', function() {
-      setTimeout(function() { window.print(); }, 500);
+      setTimeout(function() { window.print(); }, 400);
     });
   <\/script>
 </body>

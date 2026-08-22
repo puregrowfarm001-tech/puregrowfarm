@@ -434,6 +434,7 @@ function toggleOrderDetailsView(orderId) {
   }
 }
 
+// USER PANEL: Displays exact Placed Date and Expected / Delivered Date
 function loadUserPanelData() {
   if (!currentUser) return;
   const oList = document.getElementById("userOrdersList");
@@ -453,20 +454,20 @@ function loadUserPanelData() {
       const isPending = o.status === 'Pending Verification';
 
       const stage = o.trackingStage || (isDelivered ? 'Delivered' : (isApproved ? 'Packed' : 'Placed'));
-      const orderDate = o.dateLogged || new Date().toLocaleDateString('en-IN');
+      const orderPlacedDate = o.dateLogged || new Date().toLocaleDateString('en-IN');
       const courier = o.courierName || "Ekart Logistics";
       const awb = o.trackingNumber || ("FMPC" + Math.floor(1000000000 + Math.random() * 9000000000));
       const loc = o.currentLocation || "Farm Facility";
-      const targetArrivalDate = o.deliveryDays || "Within 2-4 Business Days";
-      const refundCompletedDate = o.refundCreditedDate || orderDate;
+      const arrivalDeliveryDate = o.deliveryDays || "2-4 Business Days";
+      const refundCompletedDate = o.refundCreditedDate || orderPlacedDate;
       const prodImg = getOrderProductImage(o.products);
 
       const stageMap = { 'Placed': 1, 'Packed': 2, 'Shipped': 3, 'OutForDelivery': 4, 'Delivered': 5 };
       const curLevel = stageMap[stage] || (isDelivered ? 5 : (isApproved ? 2 : 1));
 
       let statusDotColor = "#16a34a";
-      let statusText = "Delivered " + orderDate;
-      let subtitleText = "Delivered to your address";
+      let statusText = "Delivered on " + (arrivalDeliveryDate !== "2-4 Business Days" ? arrivalDeliveryDate : orderPlacedDate);
+      let subtitleText = `Delivered to your address via ${courier}`;
 
       if (isPending) {
         statusDotColor = "#eab308";
@@ -487,11 +488,11 @@ function loadUserPanelData() {
         statusText = "Order Rejected";
         subtitleText = "Payment Not Verified / Invalid UTR";
       } else {
-        if (stage === 'Placed') { statusText = "Order Placed " + orderDate; subtitleText = "Your order has been placed."; }
-        else if (stage === 'Packed') { statusText = "Seller Processed & Packed"; subtitleText = "Packed at farm yard."; }
-        else if (stage === 'Shipped') { statusText = "Shipped on " + orderDate; subtitleText = `${courier} - ${awb}`; }
-        else if (stage === 'OutForDelivery') { statusText = "Out For Delivery"; subtitleText = "Your item is out for delivery"; }
-        else if (stage === 'Delivered') { statusText = "Delivered " + orderDate; subtitleText = "Delivered safely to your doorstep"; }
+        if (stage === 'Placed') { statusText = "Order Placed " + orderPlacedDate; subtitleText = "Your order has been placed."; }
+        else if (stage === 'Packed') { statusText = "Seller Packed & Ready"; subtitleText = `Dispatched with ${courier}`; }
+        else if (stage === 'Shipped') { statusText = "Shipped via " + courier; subtitleText = `AWB: ${awb}`; }
+        else if (stage === 'OutForDelivery') { statusText = "Out For Delivery"; subtitleText = `Arriving Today via ${courier}`; }
+        else if (stage === 'Delivered') { statusText = "Delivered " + (arrivalDeliveryDate !== "2-4 Business Days" ? arrivalDeliveryDate : orderPlacedDate); subtitleText = "Delivered safely to your doorstep"; }
       }
 
       return `
@@ -519,12 +520,16 @@ function loadUserPanelData() {
           </div>
 
           <div id="order-details-${o.orderId}" style="display: none; padding: 14px 16px; background: #f8fafc; border-top: 1px solid #f1f5f9;">
-            <div style="background:#fff; padding: 12px; border-radius: 8px; border: 1px solid #e2e8f0; font-size:13px; margin-bottom: 12px;">
+            <div style="background:#fff; padding: 12px; border-radius: 8px; border: 1px solid #e2e8f0; font-size:13px; margin-bottom: 12px; line-height:1.6;">
+              <div><strong>📅 Order Placed Date:</strong> <span style="color:#0284c7; font-weight:bold;">${orderPlacedDate}</span></div>
               <div><strong>Shipping Address:</strong> <span style="color:#475569;">${o.address || 'N/A'}</span></div>
+              <div><strong>Contact Number:</strong> <span style="color:#475569;">${o.phone || 'N/A'}</span></div>
               <div style="margin-top:4px;"><strong>Payment Mode:</strong> <span class="badge" style="background:#eef2ff; color:#3730a3;">${o.paymentMode || 'UPI'}</span> | <strong>Txn ID:</strong> <code>${o.txnId || 'N/A'}</code> | <strong>Your UPI:</strong> <code style="color:var(--accent); font-weight:bold;">${o.userUpiId || 'N/A'}</code></div>
+              
               ${isApproved && !isCancelled && !isRejected ? `
-                <div style="margin-top:6px; background:#f0fdf4; padding:6px 10px; border-radius:6px; border:1px solid #bbf7d0; color:#15803d; font-weight:bold;">
-                  📅 Expected Delivery Date: <span style="font-size:14px; text-decoration:underline;">${targetArrivalDate}</span>
+                <div style="margin-top:8px; background:#f0fdf4; padding:10px 12px; border-radius:8px; border:1px solid #bbf7d0; color:#15803d; font-size:13px; line-height:1.5;">
+                  <strong>🚚 Target Delivery Date (Kab Pahuchega):</strong> <span style="font-weight:800; font-size:14px; text-decoration:underline;">${arrivalDeliveryDate}</span><br>
+                  <strong>📦 Dispatched Courier:</strong> <span>${courier}</span> (AWB Tracking Code: <code>${awb}</code>)
                 </div>
               ` : ''}
             </div>
@@ -532,7 +537,7 @@ function loadUserPanelData() {
             ${isPending ? `
               <div style="background: #fffbeb; border: 1px solid #fcd34d; border-radius: 8px; padding: 10px; font-size: 13px; color: #92400e;">
                 ⏳ <strong>Status: Verification Pending</strong><br>
-                <span style="font-size:12px;">Admin jaise hi payment verify karke approve karega, live status aur delivery date activate ho jayegi.</span>
+                <span style="font-size:12px;">Admin jaise hi payment verify karke approve karega, live delivery date aur courier tracking activate ho jayegi.</span>
               </div>
             ` : ''}
 
@@ -541,15 +546,15 @@ function loadUserPanelData() {
                 <div class="vertical-timeline">
                   <div class="timeline-step ${curLevel >= 1 ? 'completed' : ''}">
                     <div class="timeline-dot"></div>
-                    <div class="timeline-title">Order Confirmed <span>${orderDate}</span></div>
-                    <div class="timeline-desc">Your Order has been placed.</div>
+                    <div class="timeline-title">Order Confirmed <span>${orderPlacedDate}</span></div>
+                    <div class="timeline-desc">Your Order was placed on ${orderPlacedDate}.</div>
                   </div>
 
                   <div class="timeline-step ${curLevel >= 2 ? 'completed' : ''}">
                     <div class="timeline-dot"></div>
                     <div class="timeline-title">Seller Processed & Packed</div>
-                    <div class="timeline-desc">Seller has processed and packed your mushroom order at Farm Hub.</div>
-                    <div class="timeline-desc" style="color:#0284c7; font-size:12px;">Your item has been picked up by delivery partner.</div>
+                    <div class="timeline-desc">Seller has packed your order at Farm Hub.</div>
+                    <div class="timeline-desc" style="color:#0284c7; font-size:12px;">Dispatched with delivery partner: <strong>${courier}</strong></div>
                   </div>
 
                   <div class="timeline-step ${curLevel >= 3 ? 'completed' : ''}">
@@ -562,12 +567,12 @@ function loadUserPanelData() {
                   <div class="timeline-step ${curLevel >= 4 ? 'completed' : ''}">
                     <div class="timeline-dot"></div>
                     <div class="timeline-title">Out For Delivery</div>
-                    <div class="timeline-desc">Your item is out for delivery with executive.</div>
+                    <div class="timeline-desc">Your item is out for delivery with ${courier} executive.</div>
                   </div>
 
                   <div class="timeline-step ${curLevel >= 5 ? 'completed' : ''}">
                     <div class="timeline-dot"></div>
-                    <div class="timeline-title">Delivered <span>(Arriving By: ${targetArrivalDate})</span></div>
+                    <div class="timeline-title">Delivered <span>(Arriving Date: ${arrivalDeliveryDate})</span></div>
                     <div class="timeline-desc">Item safely delivered to your doorstep.</div>
                   </div>
                 </div>
@@ -590,8 +595,8 @@ function loadUserPanelData() {
                 <div class="vertical-timeline">
                   <div class="timeline-step completed cancelled-line">
                     <div class="timeline-dot"></div>
-                    <div class="timeline-title">Order Placed <span>${orderDate}</span></div>
-                    <div class="timeline-desc">Your Order was placed.</div>
+                    <div class="timeline-title">Order Placed <span>${orderPlacedDate}</span></div>
+                    <div class="timeline-desc">Your Order was placed on ${orderPlacedDate}.</div>
                   </div>
                   
                   <div class="timeline-step ${o.refundStage === 'Refund Credited' ? 'completed' : 'cancelled'}">
@@ -836,6 +841,7 @@ function populateAdminDashboardTables() {
         const stage = o.trackingStage || (isDelivered ? 'Delivered' : (isApproved ? 'Packed' : 'Placed'));
         const loc = o.currentLocation || 'Farm Facility';
         const eta = o.deliveryDays || '';
+        const courier = o.courierName || 'Ekart Logistics';
         const refundDate = o.refundCreditedDate || getTodayIsoString();
         const displayDateTime = o.dateLogged || new Date().toLocaleDateString('en-IN');
         const userUpi = o.userUpiId || "N/A";
@@ -879,7 +885,7 @@ function populateAdminDashboardTables() {
 
                   <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
                     <span style="font-weight:bold; color:#0284c7;">Stage: ${stage}</span>
-                    <span style="color:var(--muted);">${eta ? 'Arrival: ' + eta : 'Set Date'}</span>
+                    <span style="color:var(--muted);">${courier}</span>
                   </div>
                   <div style="color:#334155; margin-bottom:6px;">📍 ${loc}</div>
 
@@ -1033,10 +1039,10 @@ function openOrderActionsMenu(idx) {
   const o = orderRegistry[idx];
   const choice = prompt(
     `👉 Select an action for Order #${o.orderId} (${o.name}):\n\n` +
-    `1. Approve Order\n` +
+    `1. Approve Order (Sets Delivery Date & Courier)\n` +
     `2. Reject Order\n` +
     `3. Cancel & Refund\n` +
-    `4. Edit Details\n\n` +
+    `4. Edit Details (Phone, Address & Txn ID)\n\n` +
     `Enter option number (1, 2, 3 or 4):`,
     "1"
   );
@@ -1070,27 +1076,32 @@ function updateOrderRefundDate(idx, newDate) {
   localStorage.setItem('pgf_orders', JSON.stringify(orderRegistry));
 }
 
+// STRICT EDIT DETAILS: Only Phone Number, Shipping Address, and Online Txn ID
 function adminEditOrderDetails(idx) {
   const o = orderRegistry[idx];
-  const newName = prompt("Customer Name edit karein:", o.name);
-  if (newName !== null && newName.trim() !== "") o.name = newName.trim();
 
-  const newLoc = prompt("Current Live Tracking Location:", o.currentLocation || "In Transit");
-  if (newLoc !== null && newLoc.trim() !== "") o.currentLocation = newLoc.trim();
+  // 1. Phone Number Edit
+  const newPhone = prompt("Customer Phone Number edit karein:", o.phone || "");
+  if (newPhone !== null && newPhone.trim() !== "") {
+    o.phone = newPhone.trim();
+  }
 
-  const newCourier = prompt("Courier Name:", o.courierName || "Ekart Logistics");
-  if (newCourier !== null && newCourier.trim() !== "") o.courierName = newCourier.trim();
+  // 2. Shipping Address Edit
+  const newAddress = prompt("Customer Shipping Address edit karein:", o.address || "");
+  if (newAddress !== null && newAddress.trim() !== "") {
+    o.address = newAddress.trim();
+  }
 
-  const newAwb = prompt("Tracking Number / AWB Code:", o.trackingNumber || ("FMPC" + Date.now().toString().slice(-6)));
-  if (newAwb !== null && newAwb.trim() !== "") o.trackingNumber = newAwb.trim();
-
-  const newEta = prompt("Estimated Delivery Date (YYYY-MM-DD):", o.deliveryDays || "");
-  if (newEta !== null && newEta.trim() !== "") o.deliveryDays = newEta.trim();
+  // 3. Online Txn ID (UTR) Edit
+  const newTxnId = prompt("Online Payment Transaction ID (UTR) edit karein:", o.txnId || "");
+  if (newTxnId !== null && newTxnId.trim() !== "") {
+    o.txnId = newTxnId.trim();
+  }
 
   localStorage.setItem('pgf_orders', JSON.stringify(orderRegistry));
-  pushNotification(o.email, '🚚 Order Update', `Your Order #${o.orderId} shipment details updated by Admin.`, 'order');
+  pushNotification(o.email, '🚚 Order Details Updated', `Your Order #${o.orderId} contact and delivery details have been updated by Admin.`, 'order');
   populateAdminDashboardTables();
-  alert("✅ Order details updated successfully!");
+  alert("✅ Order Details (Phone, Address, Txn ID) updated successfully!");
 }
 
 function adminEditCertificateData(idx) {
@@ -1117,21 +1128,39 @@ function adminEditCertificateData(idx) {
   alert("✅ Certificate records successfully updated!");
 }
 
+// APPROVE WORKFLOW: Sets exact delivery arrival date & courier name
 function handleOrderApprove(idx) {
   const o = orderRegistry[idx];
+
+  const defaultDeliveryDate = o.deliveryDays || getTodayIsoString();
+  const inputDeliveryDate = prompt("Order kis Date tak customer ko milega? (YYYY-MM-DD):", defaultDeliveryDate);
+  if (inputDeliveryDate === null) return;
+  const finalDeliveryDate = inputDeliveryDate.trim() || defaultDeliveryDate;
+
+  const defaultCourier = o.courierName || "Ekart Logistics";
+  const inputCourier = prompt("Order kis Courier partner se dispatch hoga? (e.g. Ekart, Delhivery, BlueDart, DTDC):", defaultCourier);
+  if (inputCourier === null) return;
+  const finalCourier = inputCourier.trim() || defaultCourier;
+
   o.status = "Approved";
   o.trackingStage = "Packed";
-  o.currentLocation = "Processing & Packing at Pure Grow Farm Hub";
-  o.courierName = "Ekart Logistics";
-  o.trackingNumber = "FMPC" + Math.floor(1000000000 + Math.random() * 9000000000);
-  o.deliveryDays = o.deliveryDays || getTodayIsoString();
+  o.deliveryDays = finalDeliveryDate;
+  o.courierName = finalCourier;
+  o.trackingNumber = o.trackingNumber || ("FMPC" + Math.floor(1000000000 + Math.random() * 9000000000));
+  o.currentLocation = `Processing & Dispatched via ${finalCourier} at Farm Hub`;
   o.paymentReceived = true;
   o.refundStage = "";
   
   localStorage.setItem('pgf_orders', JSON.stringify(orderRegistry));
-  pushNotification(o.email, '📦 Order Approved & Packed!', `Your Order #${o.orderId} is confirmed and packed. Expected delivery date: ${o.deliveryDays}.`, 'order');
+  
+  pushNotification(
+    o.email, 
+    '📦 Order Approved & Dispatched!', 
+    `Your Order #${o.orderId} is confirmed. Placed Date: ${o.dateLogged}. Expected Delivery Date: ${finalDeliveryDate} via ${finalCourier}.`, 
+    'order'
+  );
 
-  alert("✅ Option 1: Order Approved! Payment count ho gaya aur user ko live tracking mil gayi.");
+  alert(`✅ Order Approved Successfully!\n\n• Delivery Date: ${finalDeliveryDate}\n• Courier Partner: ${finalCourier}\n\nUser ke dashboard par exact order date aur arrival date dono activate ho gayi hain.`);
   populateAdminDashboardTables();
   computeFinancialLedgerStatements();
 }
@@ -1180,11 +1209,11 @@ function setOrderStageDirect(idx, newStage) {
   if (newStage === 'Placed') {
     o.currentLocation = "Farm Order Desk";
   } else if (newStage === 'Packed') {
-    o.currentLocation = "Pure Grow Farm Central Hub";
+    o.currentLocation = `Pure Grow Farm Central Hub (${o.courierName || 'Ekart Logistics'})`;
   } else if (newStage === 'Shipped') {
-    o.currentLocation = "In Transit - Ekart Hub";
+    o.currentLocation = `In Transit via ${o.courierName || 'Ekart Logistics'} Hub`;
   } else if (newStage === 'OutForDelivery') {
-    o.currentLocation = "Out for Delivery with Delivery Partner";
+    o.currentLocation = `Out for Delivery with ${o.courierName || 'Ekart Logistics'} Partner`;
   } else if (newStage === 'Delivered') {
     o.currentLocation = "Delivered to Customer Doorstep";
     o.status = "Delivered";
@@ -1688,6 +1717,7 @@ function confirmOrder(e) {
     txnId: document.getElementById("paymentId").value.trim(),
     dateLogged: currentTimestamp,
     deliveryDays: "",
+    courierName: "Ekart Logistics",
     refundCreditedDate: "",
     status: "Pending Verification"
   };

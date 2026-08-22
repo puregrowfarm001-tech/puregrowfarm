@@ -809,12 +809,14 @@ function populateAdminDashboardTables() {
   renderAdminLiveStockSummary();
   renderDailyDryStockTable();
 
-  // 1. Orders Manager Metrics & Table
+  // 1. Orders Manager Metrics & Table (ISOLATED from manual Sell table)
   const validOrders = orderRegistry.filter(o => o && o.name && o.orderId);
   const totalOrders = validOrders.length;
   
   const approvedOrdersList = validOrders.filter(o => o.status === 'Approved' || o.status === 'Delivered');
-  const approvedTotalRevenue = approvedOrdersList.reduce((sum, o) => sum + Number(o.total || 0), 0);
+  const approvedOnlineRevenue = approvedOrdersList.reduce((sum, o) => sum + Number(o.total || 0), 0);
+  const directOfflineSales = salesRegistry.reduce((sum, s) => sum + Number(s.paidAmount !== undefined ? s.paidAmount : s.total || 0), 0);
+  const approvedTotalRevenue = approvedOnlineRevenue + directOfflineSales;
   
   const pendingOrders = validOrders.filter(o => o.status !== 'Delivered' && o.trackingStage !== 'Delivered' && !o.status.startsWith('Cancelled') && !o.status.startsWith('Rejected')).length;
   const refundPendingCount = validOrders.filter(o => o.status && o.status.startsWith('Cancelled') && o.refundStage !== 'Refund Credited').length;
@@ -1257,26 +1259,6 @@ function confirmBookingSlot(idx) {
   localStorage.setItem('pgf_bookings', JSON.stringify(bookingsRegistry));
   
   const target = bookingsRegistry[idx];
-  const saleLog = { 
-    saleId: "SALE-" + Date.now().toString().slice(-4),
-    type: "sale", 
-    product: `Training Entry: ${target.type} Program`, 
-    collector: "Farm", 
-    buyer: target.name, 
-    phone: target.phone || "N/A",
-    address: "Pure Grow Farm Campus",
-    qty: 1, 
-    rate: target.fee, 
-    subtotal: target.fee,
-    delivery: 0,
-    paidAmount: target.fee,
-    notes: `Farm Course Booking [Ref: ${target.bookingId}]`,
-    total: target.fee, 
-    date: new Date().toLocaleDateString('en-IN') 
-  };
-  salesRegistry.push(saleLog);
-  localStorage.setItem('pgf_sales', JSON.stringify(salesRegistry));
-
   pushNotification(target.email, '🎓 Farm Booking Confirmed!', `Your ${target.type} program booking #${target.bookingId} has been confirmed.`, 'booking');
 
   alert(`✅ 1. Farm Booking Approved for ${target.name}!`);
@@ -1322,7 +1304,7 @@ function adminEditExpense(idx) {
   const newDate = prompt("1. Operation Date:", exp.date || getTodayIsoString());
   if (newDate !== null && newDate.trim() !== "") exp.date = newDate.trim();
 
-  const newCategory = prompt("2. Category (Farm / Mushroom):", exp.category || "Farm");
+  const newCategory = prompt("2. Category (Farm / Mushroom / Student & Farmer):", exp.category || "Farm");
   if (newCategory !== null && newCategory.trim() !== "") exp.category = newCategory.trim();
 
   const newPayer = prompt("3. Payer Party (Soham / Jeet / Farm):", exp.payer || "Farm");
@@ -2194,7 +2176,7 @@ function submitFarmerVisit(e) {
 if (document.getElementById("productSearch")) {
   document.getElementById("productSearch").addEventListener("input", function(e) {
     const searchTerm = e.target.value.toLowerCase().trim();
-    const filteredProducts = products.products.filter(product => {
+    const filteredProducts = products.filter(product => {
       return product.name.toLowerCase().includes(searchTerm) || 
              product.detail.toLowerCase().includes(searchTerm);
     });

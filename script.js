@@ -527,7 +527,7 @@ function loadUserPanelData() {
               <div style="margin-top:4px;"><strong>Payment Mode:</strong> <span class="badge" style="background:#eef2ff; color:#3730a3;">${o.paymentMode || 'UPI'}</span> | <strong>Txn ID:</strong> <code>${o.txnId || 'N/A'}</code> | <strong>Your UPI:</strong> <code style="color:var(--accent); font-weight:bold;">${o.userUpiId || 'N/A'}</code></div>
               
               ${isApproved && !isCancelled && !isRejected ? `
-                <div style="margin-top:8px; background:#f0fdf4; padding:10px 12px; border-radius:8px; border:1px solid #bbf7d0; color:#15803d; font-size:13px; line-height:1.5;">
+                <div style="margin-top:8px; background:#f0fdf4; padding:10px 12px; border-radius:6px; border:1px solid #bbf7d0; color:#15803d; font-size:13px; line-height:1.5;">
                   <strong>🚚 Target Delivery Date (Kab Pahuchega):</strong> <span style="font-weight:800; font-size:14px; text-decoration:underline;">${arrivalDeliveryDate}</span><br>
                   <strong>📦 Dispatched Courier:</strong> <span>${courier}</span> (AWB Tracking Code: <code>${awb}</code>)
                 </div>
@@ -804,7 +804,7 @@ function renderDailyDryStockTable() {
 }
 
 // =========================================================
-// ADMIN ERP TABLES, METRICS & POPUP ACTIONS CONTROLLER
+// ADMIN ERP TABLES, METRICS & INLINE COURIER EDIT
 // =========================================================
 function populateAdminDashboardTables() {
   renderAdminLiveStockSummary();
@@ -875,18 +875,22 @@ function populateAdminDashboardTables() {
               ${isCancelled ? `<br><small style="color:${o.refundStage === 'Refund Credited' ? '#16a34a' : '#ea580c'}; font-weight:bold;">Refund: ${o.refundStage || 'Initiated'} ${o.refundCreditedDate ? `(${o.refundCreditedDate})` : ''}</small>` : ''}
             </td>
             
-            <td style="min-width: 270px;">
+            <td style="min-width: 280px;">
               ${isApproved && !isCancelled && !isRejected ? `
                 <div style="background:#f8fafc; padding:8px; border-radius:8px; border:1px solid #e2e8f0; font-size:12px;">
+                  
+                  <!-- Delivery Date Picker -->
                   <div style="margin-bottom:6px; display:flex; align-items:center; gap:4px; background:#fff; padding:4px 6px; border-radius:6px; border:1px solid #cbd5e1;">
                     <label style="font-size:11px; font-weight:bold; color:#0f172a; white-space:nowrap;">📅 Delivery Date:</label>
                     <input type="date" value="${eta}" style="padding:2px 4px; font-size:11px; width:100%; border:1px solid #94a3b8; border-radius:4px;" onchange="updateExpectedDeliveryDate(${idx}, this.value)">
                   </div>
 
-                  <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
-                    <span style="font-weight:bold; color:#0284c7;">Stage: ${stage}</span>
-                    <span style="color:var(--muted);">${courier}</span>
+                  <!-- Direct Inline Editable Courier Name Input -->
+                  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px; gap:4px;">
+                    <span style="font-weight:bold; color:#0284c7; white-space:nowrap;">Stage: ${stage}</span>
+                    <input type="text" value="${courier}" placeholder="Courier Name (e.g. Ekart)" style="padding:2px 6px; font-size:11px; font-weight:bold; color:#334155; border:1px solid #94a3b8; border-radius:4px; width:140px; text-align:right;" onchange="updateOrderCourierDirect(${idx}, this.value)">
                   </div>
+                  
                   <div style="color:#334155; margin-bottom:6px;">📍 ${loc}</div>
 
                   <div style="display:flex; gap:3px; flex-wrap:wrap;">
@@ -1062,6 +1066,14 @@ function openOrderActionsMenu(idx) {
   }
 }
 
+// Direct Courier Name Update from Admin Card
+function updateOrderCourierDirect(idx, newCourier) {
+  if (!newCourier) return;
+  orderRegistry[idx].courierName = newCourier.trim();
+  localStorage.setItem('pgf_orders', JSON.stringify(orderRegistry));
+  pushNotification(orderRegistry[idx].email, '🚚 Courier Partner Updated', `Your Order #${orderRegistry[idx].orderId} will be delivered via: ${newCourier}.`, 'order');
+}
+
 function updateExpectedDeliveryDate(idx, newDate) {
   if (!newDate) return;
   orderRegistry[idx].deliveryDays = newDate.trim();
@@ -1080,19 +1092,16 @@ function updateOrderRefundDate(idx, newDate) {
 function adminEditOrderDetails(idx) {
   const o = orderRegistry[idx];
 
-  // 1. Phone Number Edit
   const newPhone = prompt("Customer Phone Number edit karein:", o.phone || "");
   if (newPhone !== null && newPhone.trim() !== "") {
     o.phone = newPhone.trim();
   }
 
-  // 2. Shipping Address Edit
   const newAddress = prompt("Customer Shipping Address edit karein:", o.address || "");
   if (newAddress !== null && newAddress.trim() !== "") {
     o.address = newAddress.trim();
   }
 
-  // 3. Online Txn ID (UTR) Edit
   const newTxnId = prompt("Online Payment Transaction ID (UTR) edit karein:", o.txnId || "");
   if (newTxnId !== null && newTxnId.trim() !== "") {
     o.txnId = newTxnId.trim();

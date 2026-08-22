@@ -434,7 +434,6 @@ function toggleOrderDetailsView(orderId) {
   }
 }
 
-// USER PANEL: Displays exact Placed Date and Expected / Delivered Date
 function loadUserPanelData() {
   if (!currentUser) return;
   const oList = document.getElementById("userOrdersList");
@@ -528,7 +527,7 @@ function loadUserPanelData() {
               
               ${isApproved && !isCancelled && !isRejected ? `
                 <div style="margin-top:8px; background:#f0fdf4; padding:10px 12px; border-radius:6px; border:1px solid #bbf7d0; color:#15803d; font-size:13px; line-height:1.5;">
-                  <strong>🚚 Target Delivery Date (Kab Pahuchega):</strong> <span style="font-weight:800; font-size:14px; text-decoration:underline;">${arrivalDeliveryDate}</span><br>
+                  <strong>🚚 Target Delivery Date:</strong> <span style="font-weight:800; font-size:14px; text-decoration:underline;">${arrivalDeliveryDate}</span><br>
                   <strong>📦 Dispatched Courier:</strong> <span>${courier}</span> (AWB Tracking Code: <code>${awb}</code>)
                 </div>
               ` : ''}
@@ -1316,24 +1315,34 @@ function rejectTrainingBooking(idx) {
 }
 
 // =========================================================
-// ACCOUNTING EDIT & DELETE CONTROLLERS (PAGES 1, 2, 3, 4)
+// ACCOUNTING EDIT & DELETE CONTROLLERS (ALL FIELDS EDITABLE)
 // =========================================================
 
-// 1. Expense Edit & Delete
+// 1. Expense Edit & Delete (All 6 Fields: Date, Category, Payer, Context, Amount, Notes)
 function adminEditExpense(idx) {
   const exp = expensesRegistry[idx];
+  
+  const newDate = prompt("Expense Date edit karein (DD/MM/YYYY ya YYYY-MM-DD):", exp.date || "");
+  if (newDate !== null && newDate.trim() !== "") exp.date = newDate.trim();
+
+  const newCat = prompt("Category edit karein (Farm / Mushroom / Damage Received):", exp.category || "Farm");
+  if (newCat !== null && newCat.trim() !== "") exp.category = newCat.trim();
+
+  const newPayer = prompt("Assigned Resource Party / Payer edit karein (Soham / Jeet / Farm):", exp.payer || "Farm");
+  if (newPayer !== null && newPayer.trim() !== "") exp.payer = newPayer.trim();
+
+  const newDesc = prompt("Expense Context / Description edit karein:", exp.desc || "");
+  if (newDesc !== null && newDesc.trim() !== "") exp.desc = newDesc.trim();
+
   const newAmt = prompt("Expense Amount edit karein (Rs):", exp.amount);
   if (newAmt !== null && !isNaN(parseFloat(newAmt))) exp.amount = parseFloat(newAmt);
-
-  const newDesc = prompt("Expense Context / Item edit karein:", exp.desc || "");
-  if (newDesc !== null && newDesc.trim() !== "") exp.desc = newDesc.trim();
 
   const newNotes = prompt("Notes / Remarks edit karein:", exp.notes || "");
   if (newNotes !== null) exp.notes = newNotes.trim();
 
   localStorage.setItem('pgf_expenses', JSON.stringify(expensesRegistry));
   computeFinancialLedgerStatements();
-  alert("✅ Expense row updated!");
+  alert("✅ Expense row updated successfully!");
 }
 
 function adminDeleteExpense(idx) {
@@ -1344,10 +1353,13 @@ function adminDeleteExpense(idx) {
   }
 }
 
-// 2. Sell Edit & Delete (With Received / Pending tracking)
+// 2. Sell Edit & Delete
 function adminEditSale(idx) {
   const s = salesRegistry[idx];
   
+  const newDate = prompt("Sale Date edit karein:", s.date || "");
+  if (newDate !== null && newDate.trim() !== "") s.date = newDate.trim();
+
   const newBuyer = prompt("Buyer Name edit karein:", s.buyer || "");
   if (newBuyer !== null && newBuyer.trim() !== "") s.buyer = newBuyer.trim();
 
@@ -1388,6 +1400,9 @@ function adminDeleteSale(idx) {
 // 3. Buy Edit & Delete (With Paid vs Pending to Vendor)
 function adminEditPurchase(idx) {
   const p = purchasesRegistry[idx];
+
+  const newDate = prompt("Purchase Date edit karein:", p.date || "");
+  if (newDate !== null && newDate.trim() !== "") p.date = newDate.trim();
   
   const newVendor = prompt("Vendor Name edit karein:", p.vendor || "");
   if (newVendor !== null && newVendor.trim() !== "") p.vendor = newVendor.trim();
@@ -1423,11 +1438,17 @@ function adminDeletePurchase(idx) {
 function adminEditDamage(idx) {
   const dmg = expensesRegistry[idx];
   
+  const newDate = prompt("Damage Date edit karein:", dmg.date || "");
+  if (newDate !== null && newDate.trim() !== "") dmg.date = newDate.trim();
+
+  const newDesc = prompt("Damage Reason Context edit karein:", dmg.desc || "");
+  if (newDesc !== null && newDesc.trim() !== "") dmg.desc = newDesc.trim();
+
+  const newPayer = prompt("Partner Party edit karein (Farm / Soham / Jeet):", dmg.payer || "Farm");
+  if (newPayer !== null && newPayer.trim() !== "") dmg.payer = newPayer.trim();
+
   const newAmt = prompt("Damage Amount edit karein (Rs):", dmg.amount);
   if (newAmt !== null && !isNaN(parseFloat(newAmt))) dmg.amount = parseFloat(newAmt);
-
-  const newDesc = prompt("Damage Reason edit karein:", dmg.desc || "");
-  if (newDesc !== null && newDesc.trim() !== "") dmg.desc = newDesc.trim();
 
   const newNotes = prompt("Damage Audit Notes edit karein:", dmg.notes || "");
   if (newNotes !== null) dmg.notes = newNotes.trim();
@@ -1665,7 +1686,9 @@ function saveAdminSale(e) {
   initDefaultDatePickers();
   computeFinancialLedgerStatements();
   renderAdminLiveStockSummary();
-  alert(`✅ Wholesale Sale Entry saved! Total: Rs ${grandTotal}, Received: Rs ${paid}`);
+  
+  // Auto open created invoice dialog
+  downloadOfflineSaleInvoice(data.saleId);
 }
 
 function saveAdminPurchase(e) {
@@ -1737,6 +1760,7 @@ function saveAdminDamage(e) {
   alert(`✅ Damage recorded: ${payerType === 'Farm' ? '+Rs ' + amountVal + ' added to Farm Vault' : '-Rs ' + amountVal + ' deducted from ' + payerType + ' expenses'}`);
 }
 
+// Generates Invoice, PDF Download & Custom WhatsApp Link for Sell Entry
 function downloadOfflineSaleInvoice(saleId) {
   const targetSale = salesRegistry.find(s => s.saleId === saleId);
   if(!targetSale) return alert("Invoice not found.");
@@ -1783,6 +1807,14 @@ function downloadOfflineSaleInvoice(saleId) {
     dueRow.style.display = "flex";
     document.getElementById("invPaid").textContent = `Rs ${paid.toFixed(2)}`;
     document.getElementById("invDue").textContent = `Rs ${due.toFixed(2)}`;
+  }
+
+  // Set WhatsApp button dynamically
+  const waBtn = document.getElementById("whatsappInvoice");
+  if (waBtn) {
+    const waText = `*PURE GROW FARM - WHOLESALE INVOICE*\n----------------------------------------\nInvoice Ref: ${targetSale.saleId}\nClient: ${targetSale.buyer}\nProduct: ${targetSale.product}\nQty: ${targetSale.qty}\nSubtotal: Rs ${sub.toFixed(2)}\nDelivery Charge: Rs ${del.toFixed(2)}\n*Grand Total: Rs ${grandTotal.toFixed(2)}*\nPaid Amount: Rs ${paid.toFixed(2)}\nBalance Due: Rs ${due.toFixed(2)}\n----------------------------------------\nThank you for choosing Pure Grow Farm!`;
+    const targetPhone = targetSale.phone && targetSale.phone.length >= 10 ? `91${targetSale.phone.replace(/[^0-9]/g, '').slice(-10)}` : farmWhatsapp;
+    waBtn.href = `https://wa.me/${targetPhone}?text=${encodeURIComponent(waText)}`;
   }
   
   document.getElementById("invoiceDialog").showModal();

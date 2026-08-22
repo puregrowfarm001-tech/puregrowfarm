@@ -403,12 +403,13 @@ function loadUserPanelData() {
   const myBookings = bookingsRegistry.filter(b => b && b.email === currentUser.email);
 
   oList.innerHTML = myOrders.length ? myOrders.map(o => {
-    const isApproved = o.status === 'Approved';
+    const isDelivered = o.status === 'Delivered' || o.trackingStage === 'Delivered';
+    const isApproved = o.status === 'Approved' || isDelivered;
     const isCancelled = o.status && o.status.startsWith('Cancelled');
     const isRejected = o.status && o.status.startsWith('Rejected');
     const isPending = o.status === 'Pending Verification';
 
-    const stage = o.trackingStage || (isApproved ? 'Packed' : 'Placed');
+    const stage = o.trackingStage || (isDelivered ? 'Delivered' : (isApproved ? 'Packed' : 'Placed'));
     const orderDate = o.dateLogged || new Date().toLocaleDateString('en-IN');
     const courier = o.courierName || "Ekart Logistics";
     const awb = o.trackingNumber || ("FMPC" + Math.floor(1000000000 + Math.random() * 9000000000));
@@ -417,7 +418,7 @@ function loadUserPanelData() {
     const prodImg = getOrderProductImage(o.products);
 
     const stageMap = { 'Placed': 1, 'Packed': 2, 'Shipped': 3, 'OutForDelivery': 4, 'Delivered': 5 };
-    const curLevel = stageMap[stage] || (isApproved ? 2 : 1);
+    const curLevel = stageMap[stage] || (isDelivered ? 5 : (isApproved ? 2 : 1));
 
     let statusDotColor = "#16a34a";
     let statusText = "Delivered " + orderDate;
@@ -440,13 +441,12 @@ function loadUserPanelData() {
       else if (stage === 'Packed') { statusText = "Seller Processed & Packed"; subtitleText = "Packed at farm yard."; }
       else if (stage === 'Shipped') { statusText = "Shipped on " + orderDate; subtitleText = `${courier} - ${awb}`; }
       else if (stage === 'OutForDelivery') { statusText = "Out For Delivery"; subtitleText = "Your item is out for delivery"; }
-      else if (stage === 'Delivered') { statusText = "Delivered " + orderDate; subtitleText = "Delivered to your address"; }
+      else if (stage === 'Delivered') { statusText = "Delivered " + orderDate; subtitleText = "Delivered safely to your doorstep"; }
     }
 
     return `
       <div style="border: 1px solid #e2e8f0; border-radius: 12px; margin-bottom: 14px; background:#fff; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,0.04);">
         
-        <!-- Interactive Header with Exact Product Image & Horizontal Scroll Safeguard -->
         <div onclick="toggleOrderDetailsView('${o.orderId}')" style="display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; cursor: pointer; gap: 10px; background: #ffffff; overflow-x: auto; -webkit-overflow-scrolling: touch;">
           <div style="display: flex; align-items: center; gap: 12px; min-width: 180px; flex: 1;">
             <img src="${prodImg}" alt="Product Photo" style="width: 58px; height: 58px; object-fit: cover; border-radius: 8px; border: 1px solid #e2e8f0; flex-shrink: 0; background:#f8fafc;">
@@ -469,7 +469,6 @@ function loadUserPanelData() {
           <span id="arrow-${o.orderId}" style="font-size: 11px; color: #94a3b8; margin-left: 4px; flex-shrink: 0;">▼</span>
         </div>
 
-        <!-- Detail View (Expands on Click) -->
         <div id="order-details-${o.orderId}" style="display: none; padding: 14px 16px; background: #f8fafc; border-top: 1px solid #f1f5f9;">
           
           <div style="background:#fff; padding: 12px; border-radius: 8px; border: 1px solid #e2e8f0; font-size:13px; margin-bottom: 12px;">
@@ -515,7 +514,7 @@ function loadUserPanelData() {
 
                 <div class="timeline-step ${curLevel >= 5 ? 'completed' : ''}">
                   <div class="timeline-dot"></div>
-                  <div class="timeline-title">Delivered <span>(Expected: ${etaDate})</span></div>
+                  <div class="timeline-title">Delivered <span>(Estimated Delivery: ${etaDate})</span></div>
                   <div class="timeline-desc">Item safely delivered to your doorstep.</div>
                 </div>
               </div>
@@ -738,15 +737,25 @@ function renderDailyDryStockTable() {
 }
 
 // =========================================================
-// ADMIN ERP POPULATION & EDIT CONTROLS
+// ADMIN ERP TABLES, METRICS & FLIPKART SCHEDULING
 // =========================================================
 function populateAdminDashboardTables() {
   renderAdminLiveStockSummary();
   renderDailyDryStockTable();
 
-  // 1. Orders Manager
+  // 1. Orders Manager Metrics & Grid
+  const validOrders = orderRegistry.filter(o => o && o.name && o.orderId);
+  const totalOrders = validOrders.length;
+  const totalOrdersAmount = validOrders.reduce((sum, o) => sum + Number(o.total || 0), 0);
+  const deliveredOrders = validOrders.filter(o => o.status === 'Delivered' || o.trackingStage === 'Delivered').length;
+  const pendingOrders = validOrders.filter(o => o.status !== 'Delivered' && o.trackingStage !== 'Delivered' && !o.status.startsWith('Cancelled') && !o.status.startsWith('Rejected')).length;
+
+  if (document.getElementById("adminTotalOrdersCount")) document.getElementById("adminTotalOrdersCount").textContent = totalOrders;
+  if (document.getElementById("adminTotalOrdersValue")) document.getElementById("adminTotalOrdersValue").textContent = `Rs ${totalOrdersAmount.toFixed(2)}`;
+  if (document.getElementById("adminDeliveredOrdersCount")) document.getElementById("adminDeliveredOrdersCount").textContent = deliveredOrders;
+  if (document.getElementById("adminPendingOrdersCount")) document.getElementById("adminPendingOrdersCount").textContent = pendingOrders;
+
   if (document.getElementById("adminOrdersTableBody")) {
-    const validOrders = orderRegistry.filter(o => o && o.name && o.orderId);
     if (!validOrders.length) {
       document.getElementById("adminOrdersTableBody").innerHTML = `<tr><td colspan="13" style="text-align:center; color:var(--muted); padding:24px; font-weight:bold;">No customer orders placed yet.</td></tr>`;
     } else {
@@ -756,11 +765,12 @@ function populateAdminDashboardTables() {
         const grandTotal = Number(o.total || (sub + del));
         const mode = o.paymentMode || "Online UPI";
         const status = o.status || "Pending Verification";
-        const isApproved = status === 'Approved';
+        const isDelivered = status === 'Delivered' || o.trackingStage === 'Delivered';
+        const isApproved = status === 'Approved' || isDelivered;
         const isCancelled = status.startsWith('Cancelled');
         const isRejected = status.startsWith('Rejected');
         
-        const stage = o.trackingStage || (isApproved ? 'Packed' : 'Placed');
+        const stage = o.trackingStage || (isDelivered ? 'Delivered' : (isApproved ? 'Packed' : 'Placed'));
         const loc = o.currentLocation || 'Farm Facility';
         const eta = o.deliveryDays || '2-4 Days';
         const displayDateTime = o.dateLogged || new Date().toLocaleDateString('en-IN');
@@ -788,15 +798,22 @@ function populateAdminDashboardTables() {
               <code>${o.txnId || 'N/A'}</code>
             </td>
             <td>
-              <span class="badge ${isCancelled ? 'badge-pending' : (isRejected ? 'badge-pending' : (isApproved ? 'badge-confirmed' : 'badge-pending'))}" style="${isRejected ? 'background:#fee2e2; color:#991b1b;' : (isCancelled ? 'background:#ffedd5; color:#c2410c;' : '')}">
+              <span class="badge ${isDelivered ? 'badge-confirmed' : (isCancelled ? 'badge-pending' : (isRejected ? 'badge-pending' : (isApproved ? 'badge-confirmed' : 'badge-pending')))}" style="${isRejected ? 'background:#fee2e2; color:#991b1b;' : (isCancelled ? 'background:#ffedd5; color:#c2410c;' : (isDelivered ? 'background:#16a34a; color:#fff;' : ''))}">
                 ${status}
               </span>
               ${isCancelled ? `<br><small style="color:#ea580c; font-weight:bold;">Refund: ${o.refundStage || 'Initiated'}</small>` : ''}
             </td>
             
-            <td style="min-width: 240px;">
+            <td style="min-width: 270px;">
               ${isApproved ? `
                 <div style="background:#f8fafc; padding:8px; border-radius:8px; border:1px solid #e2e8f0; font-size:12px;">
+                  
+                  <!-- Flipkart-like Expected Delivery Date Input -->
+                  <div style="margin-bottom:6px; display:flex; align-items:center; gap:4px; background:#fff; padding:4px 6px; border-radius:6px; border:1px solid #cbd5e1;">
+                    <label style="font-size:11px; font-weight:bold; color:#0f172a; white-space:nowrap;">📅 Arriving Date:</label>
+                    <input type="text" value="${eta}" placeholder="e.g. 28 Aug 2026" style="padding:2px 6px; font-size:11px; width:100%; border:1px solid #94a3b8; border-radius:4px;" onchange="updateExpectedDeliveryDate(${idx}, this.value)">
+                  </div>
+
                   <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
                     <span style="font-weight:bold; color:#0284c7;">Stage: ${stage}</span>
                     <span style="color:var(--muted);">${eta}</span>
@@ -808,7 +825,7 @@ function populateAdminDashboardTables() {
                     <button type="button" class="btn" style="padding:2px 5px; font-size:10px; min-height:22px; background:${stage==='Packed'?'#2b8a3e':'#94a3b8'};" onclick="setOrderStageDirect(${idx}, 'Packed')">Packed</button>
                     <button type="button" class="btn" style="padding:2px 5px; font-size:10px; min-height:22px; background:${stage==='Shipped'?'#2b8a3e':'#94a3b8'};" onclick="setOrderStageDirect(${idx}, 'Shipped')">Shipped</button>
                     <button type="button" class="btn" style="padding:2px 5px; font-size:10px; min-height:22px; background:${stage==='OutForDelivery'?'#2b8a3e':'#94a3b8'};" onclick="setOrderStageDirect(${idx}, 'OutForDelivery')">Out Delivery</button>
-                    <button type="button" class="btn" style="padding:2px 5px; font-size:10px; min-height:22px; background:${stage==='Delivered'?'#2b8a3e':'#94a3b8'};" onclick="setOrderStageDirect(${idx}, 'Delivered')">Delivered</button>
+                    <button type="button" class="btn" style="padding:2px 5px; font-size:10px; min-height:22px; background:${stage==='Delivered'?'#16a34a':'#94a3b8'};" onclick="setOrderStageDirect(${idx}, 'Delivered')">Delivered</button>
                   </div>
                 </div>
               ` : (isCancelled ? `
@@ -840,9 +857,17 @@ function populateAdminDashboardTables() {
     }
   }
 
-  // 2. Bookings Manager with Certificate Edit
+  // 2. Bookings Manager Metrics & Grid
+  const validBookings = bookingsRegistry.filter(b => b && b.name && b.bookingId);
+  const totalBookings = validBookings.length;
+  const totalBookingsFee = validBookings.filter(b => b.status === "Confirmed" || b.status === "Approved").reduce((sum, b) => sum + Number(b.fee || 0), 0);
+  const pendingCertificates = validBookings.filter(b => (b.status === "Confirmed" || b.status === "Approved") && !b.certIssued).length;
+
+  if (document.getElementById("adminTotalBookingsCount")) document.getElementById("adminTotalBookingsCount").textContent = totalBookings;
+  if (document.getElementById("adminTotalBookingsFee")) document.getElementById("adminTotalBookingsFee").textContent = `Rs ${totalBookingsFee.toFixed(2)}`;
+  if (document.getElementById("adminCertificatesPendingCount")) document.getElementById("adminCertificatesPendingCount").textContent = pendingCertificates;
+
   if (document.getElementById("adminBookingsTableBody")) {
-    const validBookings = bookingsRegistry.filter(b => b && b.name && b.bookingId);
     if (!validBookings.length) {
       document.getElementById("adminBookingsTableBody").innerHTML = `<tr><td colspan="10" style="text-align:center; color:var(--muted); padding:24px; font-weight:bold;">No student or farmer training registrations yet.</td></tr>`;
     } else {
@@ -885,7 +910,7 @@ function populateAdminDashboardTables() {
               <span class="badge ${isConfirmed ? 'badge-confirmed' : 'badge-pending'}">${isConfirmed ? '1. Confirmed' : 'Pending'}</span>
             </td>
             <td>
-              <span class="badge ${certIssued ? 'badge-confirmed' : 'badge-pending'}">${certIssued ? '2. Approved' : 'Locked'}</span>
+              <span class="badge ${certIssued ? 'badge-confirmed' : 'badge-pending'}">${certIssued ? '2. Approved' : 'Pending Approval'}</span>
             </td>
             <td>
               <div style="display:flex; flex-direction:column; gap:4px;">
@@ -928,6 +953,14 @@ function populateAdminDashboardTables() {
       `).join("");
     }
   }
+}
+
+function updateExpectedDeliveryDate(idx, newDate) {
+  if (!newDate) return;
+  orderRegistry[idx].deliveryDays = newDate.trim();
+  localStorage.setItem('pgf_orders', JSON.stringify(orderRegistry));
+  pushNotification(orderRegistry[idx].email, '🚚 Delivery Date Scheduled', `Your Order #${orderRegistry[idx].orderId} is scheduled to arrive on: ${newDate}.`, 'order');
+  populateAdminDashboardTables();
 }
 
 function adminEditOrderDetails(idx) {
@@ -984,12 +1017,12 @@ function handleOrderApprove(idx) {
   o.currentLocation = "Processing & Packing at Pure Grow Farm Hub";
   o.courierName = "Ekart Logistics";
   o.trackingNumber = "FMPC" + Math.floor(1000000000 + Math.random() * 9000000000);
-  o.deliveryDays = "2-4 Days";
+  o.deliveryDays = o.deliveryDays || "2-4 Days";
   o.paymentReceived = true;
   o.refundStage = "";
   
   localStorage.setItem('pgf_orders', JSON.stringify(orderRegistry));
-  pushNotification(o.email, '📦 Order Approved & Packed!', `Your Order #${o.orderId} is confirmed and packed. Expected delivery: 2-4 Days.`, 'order');
+  pushNotification(o.email, '📦 Order Approved & Packed!', `Your Order #${o.orderId} is confirmed and packed. Expected delivery: ${o.deliveryDays}.`, 'order');
 
   alert("✅ Order Approved! User ko notification aur live tracking mil gayi.");
   populateAdminDashboardTables();
@@ -1032,11 +1065,19 @@ function handleOrderCancelRefund(idx) {
 function setOrderStageDirect(idx, newStage) {
   const o = orderRegistry[idx];
   o.trackingStage = newStage;
-  if (newStage === 'Placed') o.currentLocation = "Farm Order Desk";
-  else if (newStage === 'Packed') o.currentLocation = "Pure Grow Farm Central Hub";
-  else if (newStage === 'Shipped') o.currentLocation = "In Transit - Ekart Hub";
-  else if (newStage === 'OutForDelivery') o.currentLocation = "Out for Delivery with Delivery Partner";
-  else if (newStage === 'Delivered') o.currentLocation = "Delivered to Customer Doorstep";
+
+  if (newStage === 'Placed') {
+    o.currentLocation = "Farm Order Desk";
+  } else if (newStage === 'Packed') {
+    o.currentLocation = "Pure Grow Farm Central Hub";
+  } else if (newStage === 'Shipped') {
+    o.currentLocation = "In Transit - Ekart Hub";
+  } else if (newStage === 'OutForDelivery') {
+    o.currentLocation = "Out for Delivery with Delivery Partner";
+  } else if (newStage === 'Delivered') {
+    o.currentLocation = "Delivered to Customer Doorstep";
+    o.status = "Delivered"; // Auto update order status
+  }
 
   localStorage.setItem('pgf_orders', JSON.stringify(orderRegistry));
   pushNotification(o.email, '🚚 Order Shipment Update', `Order #${o.orderId} stage updated to: ${newStage}. (${o.currentLocation})`, 'order');
@@ -1126,24 +1167,18 @@ function computeFinancialLedgerStatements() {
 
   let cashBalances = { Soham: 0, Jeet: 0, Farm: 0 };
   
-  // 1. Sales Inflow
   salesRegistry.forEach(s => { 
     if(cashBalances[s.collector] !== undefined) cashBalances[s.collector] += Number(s.total || 0); 
   });
   
-  // 2. Expenses Outflow
   expensesRegistry.filter(e => e.category !== "Damage Received").forEach(e => { 
     if(cashBalances[e.payer] !== undefined) cashBalances[e.payer] -= Number(e.amount || 0); 
   });
   
-  // 3. Purchases Outflow
   purchasesRegistry.forEach(p => { 
     if(cashBalances[p.funder] !== undefined) cashBalances[p.funder] -= Number(p.total || 0); 
   });
 
-  // 4. Damage Handling Rule:
-  // - If Soham or Jeet received damage: deducted from their account (-).
-  // - If Farm received damage: added into Farm vault (+).
   expensesRegistry.filter(e => e.category === "Damage Received").forEach(d => {
     const amt = Number(d.amount || 0);
     if (d.payer === "Farm") {
@@ -1512,6 +1547,7 @@ function confirmOrder(e) {
     paymentMode: document.getElementById("paymentMode").value,
     txnId: document.getElementById("paymentId").value.trim(),
     dateLogged: currentTimestamp,
+    deliveryDays: "Within 2-4 Days",
     status: "Pending Verification"
   };
 
@@ -1691,7 +1727,7 @@ if (document.getElementById("productSearch")) {
 }
 
 // =========================================================
-// ORIGINAL CERTIFICATE ENGINE (RESTORED EXACT TO 1ST CODE)
+// CERTIFICATE PDF ENGINE (OPTIMIZED FOR LAPTOP & MOBILE VIEW)
 // =========================================================
 function downloadCertificatePDF(bookingId) {
   const targetBooking = bookingsRegistry.find(b => b && b.bookingId === bookingId);
@@ -1718,13 +1754,28 @@ function downloadCertificatePDF(bookingId) {
 <html>
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=1024, initial-scale=0.4, user-scalable=yes">
   <title>${titleText} - ${targetBooking.name}</title>
   <style>
     @page { size: A4 landscape; margin: 6mm; }
     * { box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-    body { margin: 0; padding: 12px; font-family: Arial, sans-serif; background: #fff; text-align: center; }
-    .certificate-frame { width: 100%; max-width: 960px; background: #fff; border: 8px solid #1e4620; padding: 20px; box-sizing: border-box; margin: 0 auto; }
+    body { 
+      margin: 0; 
+      padding: 12px; 
+      font-family: Arial, sans-serif; 
+      background: #f8fafc; 
+      text-align: center;
+      min-width: 980px; 
+    }
+    .certificate-frame { 
+      width: 960px; 
+      background: #fff; 
+      border: 8px solid #1e4620; 
+      padding: 20px; 
+      box-sizing: border-box; 
+      margin: 0 auto; 
+      box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    }
     .inner-border { border: 2px solid #d97706; padding: 20px; background: #ffffff; }
     .cert-header-top { display: flex; justify-content: center; align-items: center; gap: 15px; }
     .cert-title { font-size: 28px; font-weight: bold; color: #1e4620; text-transform: uppercase; letter-spacing: 1px; font-family: 'Times New Roman', Times, serif; margin: 12px 0 6px 0; }
@@ -1732,9 +1783,9 @@ function downloadCertificatePDF(bookingId) {
     .cert-desc { font-size: 14px; line-height: 1.6; text-align: justify; margin: 12px auto; max-width: 820px; color: #222; }
     .cert-footer-grid { display: flex; justify-content: space-between; align-items: flex-end; margin-top: 25px; padding: 0 10px; }
     .sign-img { width: 120px; height: 48px; object-fit: contain; display: block; margin: 0 auto -8px auto; mix-blend-mode: multiply; }
-    .no-print-bar { margin-bottom: 12px; background: #f0fdf4; border: 1px solid #bbf7d0; padding: 10px; border-radius: 8px; }
+    .no-print-bar { margin-bottom: 12px; background: #f0fdf4; border: 1px solid #bbf7d0; padding: 10px; border-radius: 8px; width: 960px; margin-left: auto; margin-right: auto; }
     .no-print-btn { background: #2b8a3e; color: #fff; border: 0; padding: 8px 18px; font-weight: bold; border-radius: 6px; font-size: 14px; cursor: pointer; }
-    @media print { .no-print-bar { display: none !important; } body { padding: 0; } }
+    @media print { .no-print-bar { display: none !important; } body { padding: 0; background: #fff; min-width: 100%; } .certificate-frame { width: 100%; box-shadow: none; } }
   </style>
 </head>
 <body>

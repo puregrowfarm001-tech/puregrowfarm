@@ -46,6 +46,19 @@ let notificationsRegistry = getCleanData('pgf_notifications');
 let currentUser = JSON.parse(localStorage.getItem('pgf_session')) || null;
 
 // =========================================================
+// HELPER: PRODUCT IMAGE MAPPER
+// =========================================================
+function getOrderProductImage(orderProductsText) {
+  const text = (orderProductsText || "").toLowerCase();
+  if (text.includes("khakhra")) return "mushroom/Methi khakhra 2.png";
+  if (text.includes("dry") || text.includes("dried")) return "mushroom/oyst dry.webp";
+  if (text.includes("powder")) return "mushroom/oyster powder.png";
+  if (text.includes("papad")) return "mushroom/bulk.png";
+  if (text.includes("green") || text.includes("fresh")) return "mushroom/Screenshot 2025-10-24 154001.png";
+  return "mushroom/g mushroom.png";
+}
+
+// =========================================================
 // PASSWORD STRENGTH CHECKER & EYE TOGGLE
 // =========================================================
 function togglePasswordVisibility(inputId, btn) {
@@ -364,7 +377,7 @@ function handleLogout() {
 }
 
 // =========================================================
-// CLICK-TO-EXPAND ORDER CARDS (2ND SCREENSHOT STYLE)
+// CLICK-TO-EXPAND USER ORDER TRACKER
 // =========================================================
 function toggleOrderDetailsView(orderId) {
   const panel = document.getElementById(`order-details-${orderId}`);
@@ -400,14 +413,14 @@ function loadUserPanelData() {
     const awb = o.trackingNumber || ("FMPC" + Math.floor(1000000000 + Math.random() * 9000000000));
     const loc = o.currentLocation || "Farm Facility";
     const etaDate = o.deliveryDays || "Within 2-4 Business Days";
+    const prodImg = getOrderProductImage(o.products);
 
     const stageMap = { 'Placed': 1, 'Packed': 2, 'Shipped': 3, 'OutForDelivery': 4, 'Delivered': 5 };
     const curLevel = stageMap[stage] || (isApproved ? 2 : 1);
 
-    // Dynamic Flipkart Style Status text & color
     let statusDotColor = "#16a34a";
     let statusText = "Delivered " + orderDate;
-    let subtitleText = "Your item has been delivered";
+    let subtitleText = "Delivered to your address";
 
     if (isPending) {
       statusDotColor = "#eab308";
@@ -420,7 +433,7 @@ function loadUserPanelData() {
     } else if (isRejected) {
       statusDotColor = "#ef4444";
       statusText = "Order Rejected";
-      subtitleText = "Payment Not Verified / Invalid Txn";
+      subtitleText = "Payment Not Verified / Invalid UTR";
     } else {
       if (stage === 'Placed') { statusText = "Order Placed " + orderDate; subtitleText = "Your order has been placed."; }
       else if (stage === 'Packed') { statusText = "Seller Processed & Packed"; subtitleText = "Packed at farm yard."; }
@@ -430,29 +443,32 @@ function loadUserPanelData() {
     }
 
     return `
-      <div style="border: 1px solid #e2e8f0; border-radius: 10px; margin-bottom: 12px; background:#fff; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,0.04);">
-        <!-- Clickable summary header row (Screenshot 2 style) -->
-        <div onclick="toggleOrderDetailsView('${o.orderId}')" style="display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; cursor: pointer; gap: 12px; background: #ffffff; transition: background 0.2s ease;">
-          <div style="display: flex; align-items: center; gap: 14px; flex: 1;">
-            <img src="mushroom/bulk.png" alt="Product" style="width: 55px; height: 55px; object-fit: cover; border-radius: 8px; border: 1px solid #f1f5f9;">
+      <div style="border: 1px solid #e2e8f0; border-radius: 12px; margin-bottom: 14px; background:#fff; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,0.04);">
+        
+        <!-- Interactive Header with Exact Product Image & Horizontal Scroll Safeguard -->
+        <div onclick="toggleOrderDetailsView('${o.orderId}')" style="display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; cursor: pointer; gap: 10px; background: #ffffff; overflow-x: auto; -webkit-overflow-scrolling: touch;">
+          <div style="display: flex; align-items: center; gap: 12px; min-width: 180px; flex: 1;">
+            <img src="${prodImg}" alt="Product Photo" style="width: 58px; height: 58px; object-fit: cover; border-radius: 8px; border: 1px solid #e2e8f0; flex-shrink: 0; background:#f8fafc;">
             <div>
-              <strong style="font-size: 14px; color: #1e293b; display: block;">${o.products}</strong>
-              <span style="font-size: 12px; color: #64748b;">Ref: ${o.orderId} | Total: <strong style="color: #0f172a;">₹${o.total}</strong></span>
+              <strong style="font-size: 13.5px; color: #1e293b; display: block; line-height: 1.3;">${o.products}</strong>
+              <span style="font-size: 11.5px; color: #64748b; margin-top: 2px; display: block;">
+                Ref: ${o.orderId}<br>Total: <strong style="color: #0f172a;">₹${o.total}</strong>
+              </span>
             </div>
           </div>
 
-          <div style="text-align: right; min-width: 180px;">
-            <div style="display: flex; align-items: center; justify-content: flex-end; gap: 6px;">
-              <span style="width: 9px; height: 9px; border-radius: 50%; background: ${statusDotColor}; display: inline-block;"></span>
-              <strong style="font-size: 13px; color: #1e293b;">${statusText}</strong>
+          <div style="text-align: right; min-width: 150px; flex-shrink: 0;">
+            <div style="display: flex; align-items: center; justify-content: flex-end; gap: 5px;">
+              <span style="width: 8px; height: 8px; border-radius: 50%; background: ${statusDotColor}; display: inline-block; flex-shrink: 0;"></span>
+              <strong style="font-size: 12.5px; color: #1e293b; white-space: nowrap;">${statusText}</strong>
             </div>
-            <div style="font-size: 11px; color: #64748b; margin-top: 2px;">${subtitleText}</div>
+            <div style="font-size: 11px; color: #64748b; margin-top: 2px; line-height: 1.2;">${subtitleText}</div>
           </div>
 
-          <span id="arrow-${o.orderId}" style="font-size: 12px; color: #94a3b8; margin-left: 8px;">▼</span>
+          <span id="arrow-${o.orderId}" style="font-size: 11px; color: #94a3b8; margin-left: 4px; flex-shrink: 0;">▼</span>
         </div>
 
-        <!-- Hidden Detail View (Opens on Click) -->
+        <!-- Detail View (Expands on Click) -->
         <div id="order-details-${o.orderId}" style="display: none; padding: 14px 16px; background: #f8fafc; border-top: 1px solid #f1f5f9;">
           
           <div style="background:#fff; padding: 12px; border-radius: 8px; border: 1px solid #e2e8f0; font-size:13px; margin-bottom: 12px;">
@@ -463,7 +479,7 @@ function loadUserPanelData() {
           ${isPending ? `
             <div style="background: #fffbeb; border: 1px solid #fcd34d; border-radius: 8px; padding: 10px; font-size: 13px; color: #92400e;">
               ⏳ <strong>Status: Verification Pending</strong><br>
-              <span style="font-size:12px;">Admin jaise hi order verify karega, live tracker update hona chalu ho jayega.</span>
+              <span style="font-size:12px;">Admin jaise hi order verify karega, live status timeline start ho jayegi.</span>
             </div>
           ` : ''}
 
@@ -566,7 +582,7 @@ function loadUserPanelData() {
             <span style="font-weight: bold; font-size:13px; color: var(--accent);">${titleText}</span><br>
             <small class="muted">Ref ID: ${b.bookingId}</small>
           </div>
-          <button type="button" class="btn" style="min-height:30px; padding: 4px 10px; font-size:12px;" onclick="downloadCertificatePDF('${b.bookingId}')">📥 Download A4 PDF</button>
+          <button type="button" class="btn" style="min-height:30px; padding: 4px 10px; font-size:12px;" onclick="downloadCertificatePDF('${b.bookingId}')">📥 Download PDF</button>
         </div>
       `;
     });
@@ -878,7 +894,7 @@ function populateAdminDashboardTables() {
                   ${!certIssued ? `
                     <button class="btn" style="padding:4px 8px; min-height:auto; font-size:11px; background:#0284c7;" onclick="issueUserCertificate(${idx})">2. Approve Certificate</button>
                   ` : `
-                    <button type="button" class="btn" style="padding:3px 6px; min-height:auto; font-size:11px; background:var(--accent);" onclick="downloadCertificatePDF('${b.bookingId}')">📜 Download A4</button>
+                    <button type="button" class="btn" style="padding:3px 6px; min-height:auto; font-size:11px; background:var(--accent);" onclick="downloadCertificatePDF('${b.bookingId}')">📜 Download PDF</button>
                   `}
                 `}
                 <button type="button" class="btn" style="padding:3px 6px; min-height:auto; font-size:10px; background:#4b5563;" onclick="adminEditCertificateData(${idx})">✏️ Edit Certificate</button>
@@ -1653,25 +1669,25 @@ if (document.getElementById("productSearch")) {
 }
 
 // =========================================================
-// ORIGINAL LANDSCAPE (AADHU A4) CERTIFICATE PDF ENGINE
+// ORIGINAL CERTIFICATE ENGINE (RESTORED EXACT TO 1ST CODE)
 // =========================================================
 function downloadCertificatePDF(bookingId) {
   const targetBooking = bookingsRegistry.find(b => b && b.bookingId === bookingId);
   if (!targetBooking) return alert("Certificate not found.");
   if (!targetBooking.certIssued) return alert("Certificate has not been issued yet by Farm Admin.");
 
-  const titleText = targetBooking.type === "Student" ? "CERTIFICATE OF INTERNSHIP" : "CERTIFICATE OF FARMING TRAINING";
+  const titleText = targetBooking.type === "Student" ? "Certificate of Internship" : "Certificate of Farming";
   const descText = targetBooking.type === "Student" 
     ? `has successfully completed an internship program in Oyster Mushroom Cultivation at Pure Grow Farm, at Makhiyala, Gujarat.`
     : `has successfully completed the practical farmer training framework module in Oyster Mushroom Cultivation at Pure Grow Farm, at Makhiyala, Gujarat.`;
   
   const durationContent = targetBooking.type === "Student" 
-    ? `from ${targetBooking.start || '2026-08-22'} to ${targetBooking.end || '2026-08-29'}`
-    : `on session date ${targetBooking.date || '2026-08-22'}`;
+    ? `from <strong>${targetBooking.start || 'N/A'}</strong> to <strong>${targetBooking.end || 'N/A'}</strong>`
+    : `on target session date <strong>${targetBooking.date || 'N/A'}</strong>`;
 
   const actualApprovedDate = targetBooking.certIssueDate ? targetBooking.certIssueDate : (targetBooking.dateLogged ? targetBooking.dateLogged.split(" ")[0] : new Date().toLocaleDateString('en-IN'));
 
-  const basePath = window.location.origin + window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/') + 1);
+  const basePath = window.location.href.substring(0, window.location.href.lastIndexOf('/') + 1);
   const logoUrl = basePath + "mushroom/pgf logo.png";
   const sohamSignUrl = basePath + "mushroom/soham sign.png";
   const jeetSignUrl = basePath + "mushroom/jeet sign.png";
@@ -1680,190 +1696,74 @@ function downloadCertificatePDF(bookingId) {
 <html>
 <head>
   <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${titleText} - ${targetBooking.name}</title>
   <style>
-    @page { 
-      size: A4 landscape; 
-      margin: 6mm; 
-    }
+    @page { size: A4 landscape; margin: 6mm; }
     * { box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-    body { 
-      margin: 0; 
-      padding: 10px; 
-      font-family: Arial, Helvetica, sans-serif; 
-      background: #fff; 
-      text-align: center; 
-    }
-    .cert-outer-box {
-      width: 100%;
-      max-width: 1040px;
-      height: 670px;
-      background: #ffffff;
-      border: 8px solid #14532d;
-      padding: 16px;
-      box-sizing: border-box;
-      margin: 0 auto;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-    }
-    .cert-inner-box {
-      border: 2px solid #ca8a04;
-      padding: 16px 24px;
-      height: 100%;
-      box-sizing: border-box;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      position: relative;
-    }
-    .cert-header {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 16px;
-    }
-    .cert-brand-title {
-      font-size: 24px;
-      font-weight: 900;
-      color: #14532d;
-      letter-spacing: 1px;
-      margin: 0;
-    }
-    .cert-brand-sub {
-      font-size: 11px;
-      color: #64748b;
-      margin-top: 2px;
-    }
-    .main-title {
-      font-size: 26px;
-      font-weight: 800;
-      color: #14532d;
-      text-transform: uppercase;
-      letter-spacing: 2px;
-      margin: 10px 0 4px 0;
-      font-family: 'Times New Roman', Times, serif;
-    }
-    .cert-candidate-name {
-      font-size: 26px;
-      font-weight: 900;
-      color: #15803d;
-      text-transform: uppercase;
-      display: inline-block;
-      border-bottom: 2px solid #ca8a04;
-      padding: 0 20px;
-      margin: 6px auto;
-      font-family: 'Times New Roman', Times, serif;
-    }
-    .cert-para {
-      font-size: 13.5px;
-      line-height: 1.6;
-      text-align: justify;
-      color: #1e293b;
-      margin: 8px auto;
-      max-width: 900px;
-    }
-    .cert-signatures {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-end;
-      margin-top: 15px;
-      padding: 0 20px;
-    }
-    .sign-col {
-      text-align: center;
-      width: 30%;
-    }
-    .sign-image {
-      width: 120px;
-      height: 46px;
-      object-fit: contain;
-      display: block;
-      margin: 0 auto -6px auto;
-      mix-blend-mode: multiply;
-    }
-    .sign-line {
-      border-top: 1.5px solid #334155;
-      width: 160px;
-      margin: 0 auto 4px auto;
-    }
-    .no-print-bar { 
-      margin-bottom: 12px; 
-      background: #f0fdf4; 
-      border: 1px solid #bbf7d0; 
-      padding: 8px; 
-      border-radius: 8px; 
-    }
-    .no-print-btn { 
-      background: #15803d; 
-      color: #fff; 
-      border: 0; 
-      padding: 8px 20px; 
-      font-weight: bold; 
-      border-radius: 6px; 
-      font-size: 14px; 
-      cursor: pointer; 
-    }
-    @media print { 
-      .no-print-bar { display: none !important; } 
-      body { padding: 0; } 
-    }
+    body { margin: 0; padding: 12px; font-family: Arial, sans-serif; background: #fff; text-align: center; }
+    .certificate-frame { width: 100%; max-width: 960px; background: #fff; border: 8px solid #1e4620; padding: 20px; box-sizing: border-box; margin: 0 auto; }
+    .inner-border { border: 2px solid #d97706; padding: 20px; background: #ffffff; }
+    .cert-header-top { display: flex; justify-content: center; align-items: center; gap: 15px; }
+    .cert-title { font-size: 28px; font-weight: bold; color: #1e4620; text-transform: uppercase; letter-spacing: 1px; font-family: 'Times New Roman', Times, serif; margin: 12px 0 6px 0; }
+    .cert-name { font-size: 24px; font-weight: bold; color: #2b8a3e; border-bottom: 2px solid #d97706; display: inline-block; padding: 0 20px; margin: 6px auto; font-family: 'Times New Roman', Times, serif; }
+    .cert-desc { font-size: 14px; line-height: 1.6; text-align: justify; margin: 12px auto; max-width: 820px; color: #222; }
+    .cert-footer-grid { display: flex; justify-content: space-between; align-items: flex-end; margin-top: 25px; padding: 0 10px; }
+    .sign-img { width: 120px; height: 48px; object-fit: contain; display: block; margin: 0 auto -8px auto; mix-blend-mode: multiply; }
+    .no-print-bar { margin-bottom: 12px; background: #f0fdf4; border: 1px solid #bbf7d0; padding: 10px; border-radius: 8px; }
+    .no-print-btn { background: #2b8a3e; color: #fff; border: 0; padding: 8px 18px; font-weight: bold; border-radius: 6px; font-size: 14px; cursor: pointer; }
+    @media print { .no-print-bar { display: none !important; } body { padding: 0; } }
   </style>
 </head>
 <body>
   <div class="no-print-bar">
-    <button class="no-print-btn" onclick="window.print()">📥 Click Here to Download / Save A4 PDF (Landscape)</button>
+    <button class="no-print-btn" onclick="window.print()">📥 Click Here to Save / Download PDF</button>
   </div>
 
-  <div class="cert-outer-box">
-    <div class="cert-inner-box">
-      <!-- Header -->
-      <div>
-        <div class="cert-header">
-          <img src="${logoUrl}" alt="PGF Logo" style="width: 58px; height: auto;">
-          <div style="text-align: left;">
-            <div class="cert-brand-title">PURE GROW FARM</div>
-            <div class="cert-brand-sub">Makhiyala, Gujarat, 362011 | puregrowfarm001@gmail.com</div>
-          </div>
+  <div class="certificate-frame">
+    <div class="inner-border">
+      <div class="cert-header-top">
+        <img src="${logoUrl}" alt="Logo" style="width: 60px; height: auto;">
+        <div style="text-align:left;">
+          <h2 style="color: #1e4620; margin: 0; font-size: 20px; font-weight: 800;">PURE GROW FARM</h2>
+          <p style="margin: 2px 0 0 0; font-size: 11px; color:#6b7280;">Makhiyala, Gujarat, 362011 | puregrowfarm001@gmail.com</p>
         </div>
-        <hr style="border:0; border-top: 1.5px solid #15803d; margin: 8px 0 6px 0;">
-        <div class="main-title">${titleText}</div>
-        <div style="font-style: italic; color: #475569; font-size: 13px;">This is to certify that</div>
-        <div class="cert-candidate-name">${targetBooking.name}</div>
-        <div style="font-style: italic; color: #475569; font-size: 13px; margin: 3px 0;">${descText}</div>
       </div>
-
-      <!-- Main Body -->
-      <p class="cert-para">
-        The program execution guidelines were conducted ${durationContent}. During this framework index period, the candidate gained foundational knowledge in mushroom biology, substrate preparation, spawn inoculation, and scientific crop management, demonstrating an exceptional work ethic.
+      <hr style="border:0; border-top: 2px solid #2b8a3e; margin: 10px 0;">
+      <div class="cert-title">${titleText}</div>
+      <p style="font-style: italic; margin: 3px 0; color: #555; font-size: 13px;">This is to certify that</p>
+      <div class="cert-name">${targetBooking.name.toUpperCase()}</div>
+      <p style="font-style: italic; margin: 5px 0; color: #555; font-size: 13px;">${descText}</p>
+      <p class="cert-desc">
+        The program execution guidelines were conducted ${durationContent}. 
+        During this framework index period, the candidate gained foundational knowledge in mushroom biology, substrate preparation, spawn inoculation, and scientific crop management, demonstrating an exceptional work ethic.
       </p>
-
-      <!-- Footer Signatures -->
-      <div class="cert-signatures">
-        <div class="sign-col">
-          <div style="height: 46px; display: flex; align-items: flex-end; justify-content: center;">
-            <img src="${sohamSignUrl}" alt="Soham Sign" class="sign-image">
+      
+      <div class="cert-footer-grid">
+        <div style="text-align: center; width: 34%;">
+          <div style="height: 50px; display: flex; align-items: flex-end; justify-content: center;">
+            <img src="${sohamSignUrl}" alt="Soham Gajera Signature" class="sign-img">
           </div>
-          <div class="sign-line"></div>
-          <strong style="font-size: 13px; color: #14532d;">Soham N Gajera</strong>
-          <div style="font-size: 10px; color: #64748b;">Co-Founder & Managing Director</div>
+          <div style="border-top: 1.5px solid #333; width: 160px; margin: 0 auto 4px auto;"></div>
+          <div style="font-size: 13px; font-weight: bold; color: #1e4620;">Soham N Gajera</div>
+          <div style="font-size: 10px; color: #475569; margin-top: 2px;">Co-Founder & Managing Director</div>
         </div>
 
-        <div class="sign-col" style="width: 25%;">
-          <img src="${logoUrl}" alt="Stamp" style="width: 50px; height: auto; opacity: 0.9;">
-          <div style="font-size: 9px; font-weight: 800; color: #14532d; letter-spacing: 0.5px;">PURE GROW FARM</div>
-          <div style="font-size: 11px; color: #334155; margin-top: 2px;">
+        <div style="text-align: center; width: 28%;">
+          <img src="${logoUrl}" alt="Stamp" style="width: 55px; height: auto; opacity: 0.95;">
+          <div style="font-size: 9px; font-weight: 800; color: #1e4620; margin-top: 2px; letter-spacing: 0.5px;">PURE GROW FARM</div>
+          <div style="font-size: 11px; color: #334155; margin-top: 3px;">
             <strong>Approved Date:</strong> ${actualApprovedDate}
           </div>
         </div>
 
-        <div class="sign-col">
-          <div style="height: 46px; display: flex; align-items: flex-end; justify-content: center;">
-            <img src="${jeetSignUrl}" alt="Jeet Sign" class="sign-image">
+        <div style="text-align: center; width: 34%;">
+          <div style="height: 50px; display: flex; align-items: flex-end; justify-content: center;">
+            <img src="${jeetSignUrl}" alt="Jeet Gajera Signature" class="sign-img">
           </div>
-          <div class="sign-line"></div>
-          <strong style="font-size: 13px; color: #14532d;">Jeet A Gajera</strong>
-          <div style="font-size: 10px; color: #64748b;">Co-Founder & Director<br>(Agriculture & Production)</div>
+          <div style="border-top: 1.5px solid #333; width: 160px; margin: 0 auto 4px auto;"></div>
+          <div style="font-size: 13px; font-weight: bold; color: #1e4620;">Jeet A Gajera</div>
+          <div style="font-size: 10px; color: #475569; margin-top: 2px;">Co-Founder & Director<br>(Agriculture & Production)</div>
         </div>
       </div>
     </div>
@@ -1871,7 +1771,9 @@ function downloadCertificatePDF(bookingId) {
 
   <script>
     window.addEventListener('load', function() {
-      setTimeout(function() { window.print(); }, 400);
+      setTimeout(function() {
+        window.print();
+      }, 500);
     });
   <\/script>
 </body>

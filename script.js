@@ -527,7 +527,7 @@ function loadUserPanelData() {
               
               ${isApproved && !isCancelled && !isRejected ? `
                 <div style="margin-top:8px; background:#f0fdf4; padding:10px 12px; border-radius:6px; border:1px solid #bbf7d0; color:#15803d; font-size:13px; line-height:1.5;">
-                  <strong>🚚 Target Delivery Date:</strong> <span style="font-weight:800; font-size:14px; text-decoration:underline;">${arrivalDeliveryDate}</span><br>
+                  <strong>🚚 Target Delivery Date (Kab Pahuchega):</strong> <span style="font-weight:800; font-size:14px; text-decoration:underline;">${arrivalDeliveryDate}</span><br>
                   <strong>📦 Dispatched Courier:</strong> <span>${courier}</span> (AWB Tracking Code: <code>${awb}</code>)
                 </div>
               ` : ''}
@@ -1065,7 +1065,6 @@ function openOrderActionsMenu(idx) {
   }
 }
 
-// Direct Courier Name Update from Admin Card
 function updateOrderCourierDirect(idx, newCourier) {
   if (!newCourier) return;
   orderRegistry[idx].courierName = newCourier.trim();
@@ -1087,7 +1086,6 @@ function updateOrderRefundDate(idx, newDate) {
   localStorage.setItem('pgf_orders', JSON.stringify(orderRegistry));
 }
 
-// STRICT EDIT DETAILS: Phone, Address, Payment Mode, Txn ID & User UPI ID
 function adminEditOrderDetails(idx) {
   const o = orderRegistry[idx];
 
@@ -1136,7 +1134,6 @@ function adminEditCertificateData(idx) {
   alert("✅ Certificate records successfully updated!");
 }
 
-// APPROVE WORKFLOW: Sets exact delivery arrival date & courier name
 function handleOrderApprove(idx) {
   const o = orderRegistry[idx];
 
@@ -1315,34 +1312,34 @@ function rejectTrainingBooking(idx) {
 }
 
 // =========================================================
-// ACCOUNTING EDIT & DELETE CONTROLLERS (ALL FIELDS EDITABLE)
+// ACCOUNTING EDIT & DELETE CONTROLLERS (PAGES 1, 2, 3, 4)
 // =========================================================
 
-// 1. Expense Edit & Delete (All 6 Fields: Date, Category, Payer, Context, Amount, Notes)
+// 1. Expense Edit & Delete
 function adminEditExpense(idx) {
   const exp = expensesRegistry[idx];
-  
-  const newDate = prompt("Expense Date edit karein (DD/MM/YYYY ya YYYY-MM-DD):", exp.date || "");
+
+  const newDate = prompt("1. Operation Date:", exp.date || getTodayIsoString());
   if (newDate !== null && newDate.trim() !== "") exp.date = newDate.trim();
 
-  const newCat = prompt("Category edit karein (Farm / Mushroom / Damage Received):", exp.category || "Farm");
-  if (newCat !== null && newCat.trim() !== "") exp.category = newCat.trim();
+  const newCategory = prompt("2. Category (Farm / Mushroom):", exp.category || "Farm");
+  if (newCategory !== null && newCategory.trim() !== "") exp.category = newCategory.trim();
 
-  const newPayer = prompt("Assigned Resource Party / Payer edit karein (Soham / Jeet / Farm):", exp.payer || "Farm");
+  const newPayer = prompt("3. Payer Party (Soham / Jeet / Farm):", exp.payer || "Farm");
   if (newPayer !== null && newPayer.trim() !== "") exp.payer = newPayer.trim();
 
-  const newDesc = prompt("Expense Context / Description edit karein:", exp.desc || "");
+  const newDesc = prompt("4. Context / Item Summary:", exp.desc || "");
   if (newDesc !== null && newDesc.trim() !== "") exp.desc = newDesc.trim();
 
-  const newAmt = prompt("Expense Amount edit karein (Rs):", exp.amount);
+  const newAmt = prompt("5. Amount (Rs):", exp.amount);
   if (newAmt !== null && !isNaN(parseFloat(newAmt))) exp.amount = parseFloat(newAmt);
 
-  const newNotes = prompt("Notes / Remarks edit karein:", exp.notes || "");
+  const newNotes = prompt("6. Additional Notes / Memo:", exp.notes || "");
   if (newNotes !== null) exp.notes = newNotes.trim();
 
   localStorage.setItem('pgf_expenses', JSON.stringify(expensesRegistry));
   computeFinancialLedgerStatements();
-  alert("✅ Expense row updated successfully!");
+  alert("✅ Expense row updated!");
 }
 
 function adminDeleteExpense(idx) {
@@ -1357,31 +1354,31 @@ function adminDeleteExpense(idx) {
 function adminEditSale(idx) {
   const s = salesRegistry[idx];
   
-  const newDate = prompt("Sale Date edit karein:", s.date || "");
+  const newDate = prompt("1. Sale Date:", s.date || getTodayIsoString());
   if (newDate !== null && newDate.trim() !== "") s.date = newDate.trim();
 
-  const newBuyer = prompt("Buyer Name edit karein:", s.buyer || "");
+  const newBuyer = prompt("2. Buyer Name:", s.buyer || "");
   if (newBuyer !== null && newBuyer.trim() !== "") s.buyer = newBuyer.trim();
 
-  const newPhone = prompt("Buyer Phone edit karein:", s.phone || "");
+  const newPhone = prompt("3. Buyer Phone:", s.phone || "");
   if (newPhone !== null && newPhone.trim() !== "") s.phone = newPhone.trim();
 
-  const newQty = prompt("Qty Lots edit karein:", s.qty);
+  const newQty = prompt("4. Qty Lots:", s.qty);
   if (newQty !== null && !isNaN(parseFloat(newQty))) s.qty = parseFloat(newQty);
 
-  const newRate = prompt("Unit Spot Rate (Rs) edit karein:", s.rate);
+  const newRate = prompt("5. Unit Spot Rate (Rs):", s.rate);
   if (newRate !== null && !isNaN(parseFloat(newRate))) s.rate = parseFloat(newRate);
 
-  const newDel = prompt("Delivery Charge (Rs) edit karein:", s.delivery || 0);
+  const newDel = prompt("6. Delivery Charge (Rs):", s.delivery || 0);
   if (newDel !== null && !isNaN(parseFloat(newDel))) s.delivery = parseFloat(newDel);
 
   s.subtotal = s.qty * s.rate;
   s.total = s.subtotal + s.delivery;
 
-  const newPaid = prompt(`Received Payment Amount edit karein (Total Rs ${s.total}):`, s.paidAmount !== undefined ? s.paidAmount : s.total);
+  const newPaid = prompt(`7. Received Payment Amount (Total Rs ${s.total}):`, s.paidAmount !== undefined ? s.paidAmount : s.total);
   if (newPaid !== null && !isNaN(parseFloat(newPaid))) s.paidAmount = parseFloat(newPaid);
 
-  const newNotes = prompt("Sale Notes / Remarks edit karein:", s.notes || "");
+  const newNotes = prompt("8. Sale Notes / Remarks:", s.notes || "");
   if (newNotes !== null) s.notes = newNotes.trim();
 
   localStorage.setItem('pgf_sales', JSON.stringify(salesRegistry));
@@ -1397,28 +1394,28 @@ function adminDeleteSale(idx) {
   }
 }
 
-// 3. Buy Edit & Delete (With Paid vs Pending to Vendor)
+// 3. Buy Edit & Delete
 function adminEditPurchase(idx) {
   const p = purchasesRegistry[idx];
-
-  const newDate = prompt("Purchase Date edit karein:", p.date || "");
-  if (newDate !== null && newDate.trim() !== "") p.date = newDate.trim();
   
-  const newVendor = prompt("Vendor Name edit karein:", p.vendor || "");
+  const newDate = prompt("1. Purchase Date:", p.date || getTodayIsoString());
+  if (newDate !== null && newDate.trim() !== "") p.date = newDate.trim();
+
+  const newVendor = prompt("2. Vendor Name:", p.vendor || "");
   if (newVendor !== null && newVendor.trim() !== "") p.vendor = newVendor.trim();
 
-  const newQty = prompt("Weight / Qty Units edit karein:", p.qty);
+  const newQty = prompt("3. Qty Units:", p.qty);
   if (newQty !== null && !isNaN(parseFloat(newQty))) p.qty = parseFloat(newQty);
 
-  const newRate = prompt("Purchase Rate (Rs) edit karein:", p.rate);
+  const newRate = prompt("4. Rate (Rs):", p.rate);
   if (newRate !== null && !isNaN(parseFloat(newRate))) p.rate = parseFloat(newRate);
 
   p.total = p.qty * p.rate;
 
-  const newPaid = prompt(`Vendor ko Kitna Paisa Diya Hai? (Total Rs ${p.total}):`, p.paidAmount !== undefined ? p.paidAmount : p.total);
+  const newPaid = prompt(`5. Vendor ko Kitna Paisa Diya Hai? (Total Rs ${p.total}):`, p.paidAmount !== undefined ? p.paidAmount : p.total);
   if (newPaid !== null && !isNaN(parseFloat(newPaid))) p.paidAmount = parseFloat(newPaid);
 
-  const newNotes = prompt("Vendor Notes / Memo edit karein:", p.notes || "");
+  const newNotes = prompt("6. Vendor Notes / Memo:", p.notes || "");
   if (newNotes !== null) p.notes = newNotes.trim();
 
   localStorage.setItem('pgf_purchases', JSON.stringify(purchasesRegistry));
@@ -1438,19 +1435,19 @@ function adminDeletePurchase(idx) {
 function adminEditDamage(idx) {
   const dmg = expensesRegistry[idx];
   
-  const newDate = prompt("Damage Date edit karein:", dmg.date || "");
+  const newDate = prompt("1. Damage Date:", dmg.date || getTodayIsoString());
   if (newDate !== null && newDate.trim() !== "") dmg.date = newDate.trim();
 
-  const newDesc = prompt("Damage Reason Context edit karein:", dmg.desc || "");
-  if (newDesc !== null && newDesc.trim() !== "") dmg.desc = newDesc.trim();
-
-  const newPayer = prompt("Partner Party edit karein (Farm / Soham / Jeet):", dmg.payer || "Farm");
+  const newPayer = prompt("2. Partner / Vault Location (Farm / Soham / Jeet):", dmg.payer || "Farm");
   if (newPayer !== null && newPayer.trim() !== "") dmg.payer = newPayer.trim();
 
-  const newAmt = prompt("Damage Amount edit karein (Rs):", dmg.amount);
+  const newDesc = prompt("3. Damage Reason:", dmg.desc || "");
+  if (newDesc !== null && newDesc.trim() !== "") dmg.desc = newDesc.trim();
+
+  const newAmt = prompt("4. Damage Amount (Rs):", dmg.amount);
   if (newAmt !== null && !isNaN(parseFloat(newAmt))) dmg.amount = parseFloat(newAmt);
 
-  const newNotes = prompt("Damage Audit Notes edit karein:", dmg.notes || "");
+  const newNotes = prompt("5. Audit Notes:", dmg.notes || "");
   if (newNotes !== null) dmg.notes = newNotes.trim();
 
   localStorage.setItem('pgf_expenses', JSON.stringify(expensesRegistry));
@@ -1474,11 +1471,9 @@ function computeFinancialLedgerStatements() {
     .filter(o => o && (o.status === 'Approved' || o.status === 'Delivered'))
     .reduce((sum, o) => sum + Number(o.total || 0), 0);
 
-  // Direct offline sales count exact Received Payment Amount
   const directOfflineSales = salesRegistry.reduce((sum, s) => sum + Number(s.paidAmount !== undefined ? s.paidAmount : s.total || 0), 0);
   const totalSales = approvedOnlineOrdersRevenue + directOfflineSales;
 
-  // Actual purchase outflow is what was actually paid out
   const totalPurchases = purchasesRegistry.reduce((sum, p) => sum + Number(p.paidAmount !== undefined ? p.paidAmount : p.total || 0), 0);
   const totalExpenses = expensesRegistry.filter(e => e.category !== "Damage Received").reduce((sum, e) => sum + Number(e.amount || 0), 0);
   const totalDamages = expensesRegistry.filter(e => e.category === "Damage Received").reduce((sum, e) => sum + Number(e.amount || 0), 0);
@@ -1686,9 +1681,7 @@ function saveAdminSale(e) {
   initDefaultDatePickers();
   computeFinancialLedgerStatements();
   renderAdminLiveStockSummary();
-  
-  // Auto open created invoice dialog
-  downloadOfflineSaleInvoice(data.saleId);
+  alert(`✅ Wholesale Sale Entry saved! Total: Rs ${grandTotal}, Received: Rs ${paid}`);
 }
 
 function saveAdminPurchase(e) {
@@ -1760,7 +1753,6 @@ function saveAdminDamage(e) {
   alert(`✅ Damage recorded: ${payerType === 'Farm' ? '+Rs ' + amountVal + ' added to Farm Vault' : '-Rs ' + amountVal + ' deducted from ' + payerType + ' expenses'}`);
 }
 
-// Generates Invoice, PDF Download & Custom WhatsApp Link for Sell Entry
 function downloadOfflineSaleInvoice(saleId) {
   const targetSale = salesRegistry.find(s => s.saleId === saleId);
   if(!targetSale) return alert("Invoice not found.");
@@ -1809,12 +1801,31 @@ function downloadOfflineSaleInvoice(saleId) {
     document.getElementById("invDue").textContent = `Rs ${due.toFixed(2)}`;
   }
 
-  // Set WhatsApp button dynamically
+  const waTargetPhone = (targetSale.phone && targetSale.phone.replace(/[^0-9]/g, '')) || farmWhatsapp;
+  const cleanPhone = waTargetPhone.length === 10 ? "91" + waTargetPhone : waTargetPhone;
+
+  const waInvoiceText = 
+`*PURE GROW FARM - SALES INVOICE RECEIPT*
+----------------------------------------
+📄 *Invoice Ref:* ${targetSale.saleId}
+📅 *Date:* ${targetSale.date}
+👤 *Customer:* ${targetSale.buyer}
+📞 *Phone:* ${targetSale.phone || 'N/A'}
+📍 *Address:* ${targetSale.address || 'Direct Spot Delivery'}
+🍄 *Product:* ${targetSale.product} (${targetSale.qty} Units @ Rs ${targetSale.rate}/unit)
+----------------------------------------
+💰 *Subtotal:* Rs ${sub.toFixed(2)}
+🚚 *Delivery:* Rs ${del.toFixed(2)}
+💵 *Grand Total:* Rs ${grandTotal.toFixed(2)}
+✅ *Paid Amount:* Rs ${paid.toFixed(2)}
+${due > 0 ? `⚠️ *Pending Balance:* Rs ${due.toFixed(2)}\n` : `🎉 *Status:* Fully Paid\n`}${targetSale.notes ? `📝 *Note:* ${targetSale.notes}\n` : ''}----------------------------------------
+*Thank you for your business!*
+Pure Grow Farm, Makhiyala, Gujarat
+📞 +91 9067891039 | +91 8200145732`;
+
   const waBtn = document.getElementById("whatsappInvoice");
   if (waBtn) {
-    const waText = `*PURE GROW FARM - WHOLESALE INVOICE*\n----------------------------------------\nInvoice Ref: ${targetSale.saleId}\nClient: ${targetSale.buyer}\nProduct: ${targetSale.product}\nQty: ${targetSale.qty}\nSubtotal: Rs ${sub.toFixed(2)}\nDelivery Charge: Rs ${del.toFixed(2)}\n*Grand Total: Rs ${grandTotal.toFixed(2)}*\nPaid Amount: Rs ${paid.toFixed(2)}\nBalance Due: Rs ${due.toFixed(2)}\n----------------------------------------\nThank you for choosing Pure Grow Farm!`;
-    const targetPhone = targetSale.phone && targetSale.phone.length >= 10 ? `91${targetSale.phone.replace(/[^0-9]/g, '').slice(-10)}` : farmWhatsapp;
-    waBtn.href = `https://wa.me/${targetPhone}?text=${encodeURIComponent(waText)}`;
+    waBtn.href = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(waInvoiceText)}`;
   }
   
   document.getElementById("invoiceDialog").showModal();
@@ -2025,6 +2036,13 @@ function confirmOrder(e) {
   document.getElementById("invDelivery").textContent = "Rs " + bill.delivery;
   document.getElementById("invTotal").textContent = "Rs " + bill.total;
 
+  const paidRow = document.getElementById("invPaidRow");
+  const dueRow = document.getElementById("invDueRow");
+  const notesSec = document.getElementById("invNotesSection");
+  if (paidRow) paidRow.style.display = "none";
+  if (dueRow) dueRow.style.display = "none";
+  if (notesSec) notesSec.style.display = "none";
+
   pushNotification('ADMIN', '🛍️ New Order Placed!', `${data.name} placed order #${data.orderId} for Rs ${data.total}`, 'order');
   
   const waMessage = `NEW GOODS ORDER VERIFICATION FLOW:\n----------------------------------------\nInvoice Ref Code: ${data.orderId}\nClient Legal Name: ${data.name}\nClient UPI ID: ${data.userUpiId}\nProducts Mapped: ${data.products}\nTotal Paid Amount: Rs ${data.total}\nPayment Method: ${data.paymentMode}\nTransaction Hash ID Code: ${data.txnId}\n----------------------------------------`;
@@ -2176,7 +2194,7 @@ function submitFarmerVisit(e) {
 if (document.getElementById("productSearch")) {
   document.getElementById("productSearch").addEventListener("input", function(e) {
     const searchTerm = e.target.value.toLowerCase().trim();
-    const filteredProducts = products.filter(product => {
+    const filteredProducts = products.products.filter(product => {
       return product.name.toLowerCase().includes(searchTerm) || 
              product.detail.toLowerCase().includes(searchTerm);
     });

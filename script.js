@@ -8,7 +8,6 @@ const farmName = "Pure Grow Farm";
 
 const ADMIN_CREDENTIALS = { user: "admin", pass: "PureGrow@2026" };
 
-// Default Initial Products
 const BASE_PRODUCTS = [
   { id: 1, name: "Fresh Green Oyster Mushroom", price: 180, unit: "1kg", image: "mushroom/Screenshot 2025-10-24 154001.png", detail: "Picked fresh, chilled and delivered within 24-48 hours.", type: "green", stock: 0 },
   { id: 2, name: "Dried Oyster Mushroom", price: 800, unit: "1kg pack", image: "mushroom/oyst dry.webp", detail: "Slow-dried to preserve flavor and nutrients.", type: "dry", stock: 0 },
@@ -69,6 +68,31 @@ function copyToClipboard(text) {
 }
 
 // =========================================================
+// SEPARATE MODAL CONTROLLERS (ORDERS & BOOKINGS)
+// =========================================================
+function openOrdersModal() {
+  document.getElementById("userOrdersModal").classList.add("active-modal");
+  loadUserPanelData();
+}
+function closeOrdersModal() {
+  document.getElementById("userOrdersModal").classList.remove("active-modal");
+}
+
+function openBookingsModal() {
+  document.getElementById("userBookingsModal").classList.add("active-modal");
+  loadUserPanelData();
+}
+function closeBookingsModal() {
+  document.getElementById("userBookingsModal").classList.remove("active-modal");
+}
+
+function closeModalOutside(e, modalId) {
+  if (e.target.id === modalId) {
+    document.getElementById(modalId).classList.remove("active-modal");
+  }
+}
+
+// =========================================================
 // PASSWORD STRENGTH CHECKER & EYE TOGGLE
 // =========================================================
 function togglePasswordVisibility(inputId, btn) {
@@ -108,7 +132,7 @@ function checkPasswordStrength(pwd) {
 }
 
 // =========================================================
-// INTERACTIVE NOTIFICATIONS ENGINE (AUTO-READ DISMISS ON OPEN)
+// NOTIFICATIONS ENGINE WITH AUTO-READ DISMISS
 // =========================================================
 function pushNotification(targetRecipient, title, message, targetAction = 'general') {
   const newNotif = {
@@ -161,17 +185,10 @@ function handleNotificationClick(notifId) {
     else if (notif.action === 'booking' || notif.action === 'certificate') switchErpTab('erpBookingsTab', 'tabNavBookings');
     else switchErpTab('erpOrdersTab', 'tabNavOrders');
   } else {
-    if (notif.action === 'certificate') {
-      openHistoryModal();
-      const certSection = document.getElementById("historyCertificateWrapper");
-      if (certSection) certSection.scrollIntoView({ behavior: 'smooth' });
-    } else if (notif.action === 'order') {
-      openHistoryModal();
-    } else if (notif.action === 'booking') {
-      const visitSection = document.getElementById("visit");
-      if (visitSection) visitSection.scrollIntoView({ behavior: 'smooth' });
+    if (notif.action === 'certificate' || notif.action === 'booking') {
+      openBookingsModal();
     } else {
-      openHistoryModal();
+      openOrdersModal();
     }
   }
 }
@@ -220,7 +237,7 @@ function toggleNotificationDropdown() {
   if (panel.style.display === "none" || panel.style.display === "") {
     panel.style.display = "block";
     renderNotificationBadge();
-    markAllNotificationsAsRead(); // Auto marks read as soon as user opens bell
+    markAllNotificationsAsRead();
   } else {
     panel.style.display = "none";
   }
@@ -269,10 +286,6 @@ function initDefaultDatePickers() {
   if(document.getElementById("dmgLogDate")) document.getElementById("dmgLogDate").value = today;
   if(document.getElementById("dryLogDate")) document.getElementById("dryLogDate").value = today;
 }
-
-function openHistoryModal() { document.getElementById("userHistoryModal").classList.add("active-modal"); }
-function closeHistoryModal() { document.getElementById("userHistoryModal").classList.remove("active-modal"); }
-function closeHistoryModalOutside(e) { if(e.target.id === "userHistoryModal") closeHistoryModal(); }
 
 function switchAuthBox(boxId) {
   document.querySelectorAll('.auth-box').forEach(b => b.classList.remove('active'));
@@ -408,9 +421,6 @@ function handleLogout() {
   checkUserSession();
 }
 
-// =========================================================
-// CLICK-TO-EXPAND USER ORDER TRACKER
-// =========================================================
 function toggleOrderDetailsView(orderId) {
   const panel = document.getElementById(`order-details-${orderId}`);
   const arrow = document.getElementById(`arrow-${orderId}`);
@@ -425,6 +435,7 @@ function toggleOrderDetailsView(orderId) {
 }
 
 function loadUserPanelData() {
+  if (!currentUser) return;
   const oList = document.getElementById("userOrdersList");
   const bList = document.getElementById("userBookingsList");
   const historyCertWrapper = document.getElementById("historyCertificateWrapper");
@@ -433,217 +444,218 @@ function loadUserPanelData() {
   const myOrders = orderRegistry.filter(o => o && o.email === currentUser.email);
   const myBookings = bookingsRegistry.filter(b => b && b.email === currentUser.email);
 
-  oList.innerHTML = myOrders.length ? myOrders.map(o => {
-    const isDelivered = o.status === 'Delivered' || o.trackingStage === 'Delivered';
-    const isApproved = o.status === 'Approved' || isDelivered;
-    const isCancelled = o.status && o.status.startsWith('Cancelled');
-    const isRejected = o.status && o.status.startsWith('Rejected');
-    const isPending = o.status === 'Pending Verification';
+  if (oList) {
+    oList.innerHTML = myOrders.length ? myOrders.map(o => {
+      const isDelivered = o.status === 'Delivered' || o.trackingStage === 'Delivered';
+      const isApproved = o.status === 'Approved' || isDelivered;
+      const isCancelled = o.status && o.status.startsWith('Cancelled');
+      const isRejected = o.status && o.status.startsWith('Rejected');
+      const isPending = o.status === 'Pending Verification';
 
-    const stage = o.trackingStage || (isDelivered ? 'Delivered' : (isApproved ? 'Packed' : 'Placed'));
-    const orderDate = o.dateLogged || new Date().toLocaleDateString('en-IN');
-    const courier = o.courierName || "Ekart Logistics";
-    const awb = o.trackingNumber || ("FMPC" + Math.floor(1000000000 + Math.random() * 9000000000));
-    const loc = o.currentLocation || "Farm Facility";
-    const targetArrivalDate = o.deliveryDays || "Within 2-4 Business Days";
-    const refundCompletedDate = o.refundCreditedDate || orderDate;
-    const prodImg = getOrderProductImage(o.products);
+      const stage = o.trackingStage || (isDelivered ? 'Delivered' : (isApproved ? 'Packed' : 'Placed'));
+      const orderDate = o.dateLogged || new Date().toLocaleDateString('en-IN');
+      const courier = o.courierName || "Ekart Logistics";
+      const awb = o.trackingNumber || ("FMPC" + Math.floor(1000000000 + Math.random() * 9000000000));
+      const loc = o.currentLocation || "Farm Facility";
+      const targetArrivalDate = o.deliveryDays || "Within 2-4 Business Days";
+      const refundCompletedDate = o.refundCreditedDate || orderDate;
+      const prodImg = getOrderProductImage(o.products);
 
-    const stageMap = { 'Placed': 1, 'Packed': 2, 'Shipped': 3, 'OutForDelivery': 4, 'Delivered': 5 };
-    const curLevel = stageMap[stage] || (isDelivered ? 5 : (isApproved ? 2 : 1));
+      const stageMap = { 'Placed': 1, 'Packed': 2, 'Shipped': 3, 'OutForDelivery': 4, 'Delivered': 5 };
+      const curLevel = stageMap[stage] || (isDelivered ? 5 : (isApproved ? 2 : 1));
 
-    let statusDotColor = "#16a34a";
-    let statusText = "Delivered " + orderDate;
-    let subtitleText = "Delivered to your address";
+      let statusDotColor = "#16a34a";
+      let statusText = "Delivered " + orderDate;
+      let subtitleText = "Delivered to your address";
 
-    if (isPending) {
-      statusDotColor = "#eab308";
-      statusText = "Verification Pending";
-      subtitleText = "Admin is reviewing payment";
-    } else if (isCancelled) {
-      if (o.refundStage === 'Refund Credited') {
-        statusDotColor = "#16a34a";
-        statusText = "Refund Completed " + refundCompletedDate;
-        subtitleText = `Refund of ₹${o.total} credited to UPI`;
+      if (isPending) {
+        statusDotColor = "#eab308";
+        statusText = "Verification Pending";
+        subtitleText = "Admin is reviewing payment";
+      } else if (isCancelled) {
+        if (o.refundStage === 'Refund Credited') {
+          statusDotColor = "#16a34a";
+          statusText = "Refund Completed " + refundCompletedDate;
+          subtitleText = `Refund of ₹${o.total} credited to UPI`;
+        } else {
+          statusDotColor = "#ea580c";
+          statusText = "Cancelled / " + (o.refundStage || 'Refund Initiated');
+          subtitleText = "Your order was cancelled by Farm Admin.";
+        }
+      } else if (isRejected) {
+        statusDotColor = "#ef4444";
+        statusText = "Order Rejected";
+        subtitleText = "Payment Not Verified / Invalid UTR";
       } else {
-        statusDotColor = "#ea580c";
-        statusText = "Cancelled / " + (o.refundStage || 'Refund Initiated');
-        subtitleText = "Your order was cancelled by Farm Admin.";
+        if (stage === 'Placed') { statusText = "Order Placed " + orderDate; subtitleText = "Your order has been placed."; }
+        else if (stage === 'Packed') { statusText = "Seller Processed & Packed"; subtitleText = "Packed at farm yard."; }
+        else if (stage === 'Shipped') { statusText = "Shipped on " + orderDate; subtitleText = `${courier} - ${awb}`; }
+        else if (stage === 'OutForDelivery') { statusText = "Out For Delivery"; subtitleText = "Your item is out for delivery"; }
+        else if (stage === 'Delivered') { statusText = "Delivered " + orderDate; subtitleText = "Delivered safely to your doorstep"; }
       }
-    } else if (isRejected) {
-      statusDotColor = "#ef4444";
-      statusText = "Order Rejected";
-      subtitleText = "Payment Not Verified / Invalid UTR";
-    } else {
-      if (stage === 'Placed') { statusText = "Order Placed " + orderDate; subtitleText = "Your order has been placed."; }
-      else if (stage === 'Packed') { statusText = "Seller Processed & Packed"; subtitleText = "Packed at farm yard."; }
-      else if (stage === 'Shipped') { statusText = "Shipped on " + orderDate; subtitleText = `${courier} - ${awb}`; }
-      else if (stage === 'OutForDelivery') { statusText = "Out For Delivery"; subtitleText = "Your item is out for delivery"; }
-      else if (stage === 'Delivered') { statusText = "Delivered " + orderDate; subtitleText = "Delivered safely to your doorstep"; }
-    }
 
-    return `
-      <div style="border: 1px solid #e2e8f0; border-radius: 12px; margin-bottom: 14px; background:#fff; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,0.04);">
-        
-        <div onclick="toggleOrderDetailsView('${o.orderId}')" style="display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; cursor: pointer; gap: 10px; background: #ffffff; overflow-x: auto; -webkit-overflow-scrolling: touch;">
-          <div style="display: flex; align-items: center; gap: 12px; min-width: 180px; flex: 1;">
-            <img src="${prodImg}" alt="Product Photo" style="width: 58px; height: 58px; object-fit: cover; border-radius: 8px; border: 1px solid #e2e8f0; flex-shrink: 0; background:#f8fafc;">
-            <div>
-              <strong style="font-size: 13.5px; color: #1e293b; display: block; line-height: 1.3;">${o.products}</strong>
-              <span style="font-size: 11.5px; color: #64748b; margin-top: 2px; display: block;">
-                Ref: ${o.orderId}<br>Total: <strong style="color: #0f172a;">₹${o.total}</strong>
-              </span>
+      return `
+        <div style="border: 1px solid #e2e8f0; border-radius: 12px; margin-bottom: 14px; background:#fff; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,0.04);">
+          <div onclick="toggleOrderDetailsView('${o.orderId}')" style="display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; cursor: pointer; gap: 10px; background: #ffffff; overflow-x: auto; -webkit-overflow-scrolling: touch;">
+            <div style="display: flex; align-items: center; gap: 12px; min-width: 180px; flex: 1;">
+              <img src="${prodImg}" alt="Product Photo" style="width: 58px; height: 58px; object-fit: cover; border-radius: 8px; border: 1px solid #e2e8f0; flex-shrink: 0; background:#f8fafc;">
+              <div>
+                <strong style="font-size: 13.5px; color: #1e293b; display: block; line-height: 1.3;">${o.products}</strong>
+                <span style="font-size: 11.5px; color: #64748b; margin-top: 2px; display: block;">
+                  Ref: ${o.orderId}<br>Total: <strong style="color: #0f172a;">₹${o.total}</strong>
+                </span>
+              </div>
             </div>
+
+            <div style="text-align: right; min-width: 160px; flex-shrink: 0;">
+              <div style="display: flex; align-items: center; justify-content: flex-end; gap: 5px;">
+                <span style="width: 8px; height: 8px; border-radius: 50%; background: ${statusDotColor}; display: inline-block; flex-shrink: 0;"></span>
+                <strong style="font-size: 12.5px; color: #1e293b; white-space: nowrap;">${statusText}</strong>
+              </div>
+              <div style="font-size: 11px; color: #64748b; margin-top: 2px; line-height: 1.2;">${subtitleText}</div>
+            </div>
+
+            <span id="arrow-${o.orderId}" style="font-size: 11px; color: #94a3b8; margin-left: 4px; flex-shrink: 0;">▼</span>
           </div>
 
-          <div style="text-align: right; min-width: 160px; flex-shrink: 0;">
-            <div style="display: flex; align-items: center; justify-content: flex-end; gap: 5px;">
-              <span style="width: 8px; height: 8px; border-radius: 50%; background: ${statusDotColor}; display: inline-block; flex-shrink: 0;"></span>
-              <strong style="font-size: 12.5px; color: #1e293b; white-space: nowrap;">${statusText}</strong>
+          <div id="order-details-${o.orderId}" style="display: none; padding: 14px 16px; background: #f8fafc; border-top: 1px solid #f1f5f9;">
+            <div style="background:#fff; padding: 12px; border-radius: 8px; border: 1px solid #e2e8f0; font-size:13px; margin-bottom: 12px;">
+              <div><strong>Shipping Address:</strong> <span style="color:#475569;">${o.address || 'N/A'}</span></div>
+              <div style="margin-top:4px;"><strong>Payment Mode:</strong> <span class="badge" style="background:#eef2ff; color:#3730a3;">${o.paymentMode || 'UPI'}</span> | <strong>Txn ID:</strong> <code>${o.txnId || 'N/A'}</code> | <strong>Your UPI:</strong> <code style="color:var(--accent); font-weight:bold;">${o.userUpiId || 'N/A'}</code></div>
+              ${isApproved && !isCancelled && !isRejected ? `
+                <div style="margin-top:6px; background:#f0fdf4; padding:6px 10px; border-radius:6px; border:1px solid #bbf7d0; color:#15803d; font-weight:bold;">
+                  📅 Expected Delivery Date: <span style="font-size:14px; text-decoration:underline;">${targetArrivalDate}</span>
+                </div>
+              ` : ''}
             </div>
-            <div style="font-size: 11px; color: #64748b; margin-top: 2px; line-height: 1.2;">${subtitleText}</div>
-          </div>
 
-          <span id="arrow-${o.orderId}" style="font-size: 11px; color: #94a3b8; margin-left: 4px; flex-shrink: 0;">▼</span>
-        </div>
-
-        <div id="order-details-${o.orderId}" style="display: none; padding: 14px 16px; background: #f8fafc; border-top: 1px solid #f1f5f9;">
-          
-          <div style="background:#fff; padding: 12px; border-radius: 8px; border: 1px solid #e2e8f0; font-size:13px; margin-bottom: 12px;">
-            <div><strong>Shipping Address:</strong> <span style="color:#475569;">${o.address || 'N/A'}</span></div>
-            <div style="margin-top:4px;"><strong>Payment Mode:</strong> <span class="badge" style="background:#eef2ff; color:#3730a3;">${o.paymentMode || 'UPI'}</span> | <strong>Txn ID:</strong> <code>${o.txnId || 'N/A'}</code> | <strong>Your UPI:</strong> <code style="color:var(--accent); font-weight:bold;">${o.userUpiId || 'N/A'}</code></div>
-            ${isApproved && !isCancelled && !isRejected ? `
-              <div style="margin-top:6px; background:#f0fdf4; padding:6px 10px; border-radius:6px; border:1px solid #bbf7d0; color:#15803d; font-weight:bold;">
-                📅 Expected Delivery Date: <span style="font-size:14px; text-decoration:underline;">${targetArrivalDate}</span>
+            ${isPending ? `
+              <div style="background: #fffbeb; border: 1px solid #fcd34d; border-radius: 8px; padding: 10px; font-size: 13px; color: #92400e;">
+                ⏳ <strong>Status: Verification Pending</strong><br>
+                <span style="font-size:12px;">Admin jaise hi payment verify karke approve karega, live status aur delivery date activate ho jayegi.</span>
               </div>
             ` : ''}
-          </div>
 
-          ${isPending ? `
-            <div style="background: #fffbeb; border: 1px solid #fcd34d; border-radius: 8px; padding: 10px; font-size: 13px; color: #92400e;">
-              ⏳ <strong>Status: Verification Pending</strong><br>
-              <span style="font-size:12px;">Admin jaise hi payment verify karke approve karega, live status aur delivery date activate ho jayegi.</span>
-            </div>
-          ` : ''}
-
-          ${(isApproved || stage === 'Placed') && !isCancelled && !isRejected ? `
-            <div style="background: #ffffff; padding: 16px; border-radius: 8px; border: 1px solid #e2e8f0;">
-              <div class="vertical-timeline">
-                <div class="timeline-step ${curLevel >= 1 ? 'completed' : ''}">
-                  <div class="timeline-dot"></div>
-                  <div class="timeline-title">Order Confirmed <span>${orderDate}</span></div>
-                  <div class="timeline-desc">Your Order has been placed.</div>
-                </div>
-
-                <div class="timeline-step ${curLevel >= 2 ? 'completed' : ''}">
-                  <div class="timeline-dot"></div>
-                  <div class="timeline-title">Seller Processed & Packed</div>
-                  <div class="timeline-desc">Seller has processed and packed your mushroom order at Farm Hub.</div>
-                  <div class="timeline-desc" style="color:#0284c7; font-size:12px;">Your item has been picked up by delivery partner.</div>
-                </div>
-
-                <div class="timeline-step ${curLevel >= 3 ? 'completed' : ''}">
-                  <div class="timeline-dot"></div>
-                  <div class="timeline-title">Shipped</div>
-                  <div class="timeline-desc"><strong>${courier} - ${awb}</strong></div>
-                  <div class="timeline-desc">Your item has been shipped. (📍 Hub: ${loc})</div>
-                </div>
-
-                <div class="timeline-step ${curLevel >= 4 ? 'completed' : ''}">
-                  <div class="timeline-dot"></div>
-                  <div class="timeline-title">Out For Delivery</div>
-                  <div class="timeline-desc">Your item is out for delivery with executive.</div>
-                </div>
-
-                <div class="timeline-step ${curLevel >= 5 ? 'completed' : ''}">
-                  <div class="timeline-dot"></div>
-                  <div class="timeline-title">Delivered <span>(Arriving By: ${targetArrivalDate})</span></div>
-                  <div class="timeline-desc">Item safely delivered to your doorstep.</div>
-                </div>
-              </div>
-            </div>
-          ` : ''}
-
-          ${isCancelled ? `
-            <div style="background: #ffffff; padding: 16px; border-radius: 8px; border: 1px solid ${o.refundStage === 'Refund Credited' ? '#86efac' : '#fed7aa'};">
-              <div style="background:${o.refundStage === 'Refund Credited' ? '#f0fdf4' : '#fff7ed'}; padding:12px; border-radius:8px; border-left:4px solid ${o.refundStage === 'Refund Credited' ? '#16a34a' : '#ea580c'}; margin-bottom:12px;">
-                <strong style="color:${o.refundStage === 'Refund Credited' ? '#15803d' : '#c2410c'}; font-size:14px;">
-                  ${o.refundStage === 'Refund Credited' ? `✅ Refund Completed on ${refundCompletedDate}` : `Refund Status: ${o.refundStage || 'Refund Initiated'}`}
-                </strong>
-                <p style="margin: 4px 0 0 0; font-size: 12.5px; color:${o.refundStage === 'Refund Credited' ? '#166534' : '#7c2d12'};">
-                  ${o.refundStage === 'Refund Credited' 
-                    ? `• Refund of <strong>₹${o.total}</strong> has been transferred successfully on <strong>${refundCompletedDate}</strong> to your UPI ID: <strong>${o.userUpiId || 'Linked Bank'}</strong>.` 
-                    : `• Refund of ₹${o.total} for your order will be credited directly to your UPI ID: <strong>${o.userUpiId || 'Registered Account'}</strong>.`}
-                </p>
-              </div>
-
-              <div class="vertical-timeline">
-                <div class="timeline-step completed cancelled-line">
-                  <div class="timeline-dot"></div>
-                  <div class="timeline-title">Order Placed <span>${orderDate}</span></div>
-                  <div class="timeline-desc">Your Order was placed.</div>
-                </div>
-                
-                <div class="timeline-step ${o.refundStage === 'Refund Credited' ? 'completed' : 'cancelled'}">
-                  <div class="timeline-dot" style="${o.refundStage === 'Refund Credited' ? 'background:#16a34a;' : ''}"></div>
-                  <div class="timeline-title" style="color:${o.refundStage === 'Refund Credited' ? '#16a34a' : '#ef4444'};">
-                    ${o.refundStage === 'Refund Credited' ? `Refund Completed (${refundCompletedDate})` : 'Order Cancelled'}
+            ${(isApproved || stage === 'Placed') && !isCancelled && !isRejected ? `
+              <div style="background: #ffffff; padding: 16px; border-radius: 8px; border: 1px solid #e2e8f0;">
+                <div class="vertical-timeline">
+                  <div class="timeline-step ${curLevel >= 1 ? 'completed' : ''}">
+                    <div class="timeline-dot"></div>
+                    <div class="timeline-title">Order Confirmed <span>${orderDate}</span></div>
+                    <div class="timeline-desc">Your Order has been placed.</div>
                   </div>
-                  <div class="timeline-desc">${o.refundStage === 'Refund Credited' ? `Full refund of ₹${o.total} credited to your UPI.` : `Reason: ${o.status.replace('Cancelled (Reason: ', '').replace(')', '')}`}</div>
+
+                  <div class="timeline-step ${curLevel >= 2 ? 'completed' : ''}">
+                    <div class="timeline-dot"></div>
+                    <div class="timeline-title">Seller Processed & Packed</div>
+                    <div class="timeline-desc">Seller has processed and packed your mushroom order at Farm Hub.</div>
+                    <div class="timeline-desc" style="color:#0284c7; font-size:12px;">Your item has been picked up by delivery partner.</div>
+                  </div>
+
+                  <div class="timeline-step ${curLevel >= 3 ? 'completed' : ''}">
+                    <div class="timeline-dot"></div>
+                    <div class="timeline-title">Shipped</div>
+                    <div class="timeline-desc"><strong>${courier} - ${awb}</strong></div>
+                    <div class="timeline-desc">Your item has been shipped. (📍 Hub: ${loc})</div>
+                  </div>
+
+                  <div class="timeline-step ${curLevel >= 4 ? 'completed' : ''}">
+                    <div class="timeline-dot"></div>
+                    <div class="timeline-title">Out For Delivery</div>
+                    <div class="timeline-desc">Your item is out for delivery with executive.</div>
+                  </div>
+
+                  <div class="timeline-step ${curLevel >= 5 ? 'completed' : ''}">
+                    <div class="timeline-dot"></div>
+                    <div class="timeline-title">Delivered <span>(Arriving By: ${targetArrivalDate})</span></div>
+                    <div class="timeline-desc">Item safely delivered to your doorstep.</div>
+                  </div>
                 </div>
               </div>
-            </div>
-          ` : ''}
+            ` : ''}
 
-          ${isRejected ? `
-            <div style="background: #fef2f2; border: 1px solid #f87171; border-radius: 8px; padding: 12px;">
-              <strong style="color: #991b1b; font-size: 14px;">❌ Order Rejected</strong>
-              <p style="margin: 4px 0 0 0; font-size: 12px; color: #7f1d1d;"><strong>Reason:</strong> ${o.status.replace('Rejected (Reason: ', '').replace(')', '')}</p>
-            </div>
-          ` : ''}
+            ${isCancelled ? `
+              <div style="background: #ffffff; padding: 16px; border-radius: 8px; border: 1px solid ${o.refundStage === 'Refund Credited' ? '#86efac' : '#fed7aa'};">
+                <div style="background:${o.refundStage === 'Refund Credited' ? '#f0fdf4' : '#fff7ed'}; padding:12px; border-radius:8px; border-left:4px solid ${o.refundStage === 'Refund Credited' ? '#16a34a' : '#ea580c'}; margin-bottom:12px;">
+                  <strong style="color:${o.refundStage === 'Refund Credited' ? '#15803d' : '#c2410c'}; font-size:14px;">
+                    ${o.refundStage === 'Refund Credited' ? `✅ Refund Completed on ${refundCompletedDate}` : `Refund Status: ${o.refundStage || 'Refund Initiated'}`}
+                  </strong>
+                  <p style="margin: 4px 0 0 0; font-size: 12.5px; color:${o.refundStage === 'Refund Credited' ? '#166534' : '#7c2d12'};">
+                    ${o.refundStage === 'Refund Credited' 
+                      ? `• Refund of <strong>₹${o.total}</strong> has been transferred successfully on <strong>${refundCompletedDate}</strong> to your UPI ID: <strong>${o.userUpiId || 'Linked Bank'}</strong>.` 
+                      : `• Refund of ₹${o.total} for your order will be credited directly to your UPI ID: <strong>${o.userUpiId || 'Registered Account'}</strong>.`}
+                  </p>
+                </div>
 
-        </div>
-      </div>
-    `;
-  }).join("") : "No active orders mapped for this profile.";
+                <div class="vertical-timeline">
+                  <div class="timeline-step completed cancelled-line">
+                    <div class="timeline-dot"></div>
+                    <div class="timeline-title">Order Placed <span>${orderDate}</span></div>
+                    <div class="timeline-desc">Your Order was placed.</div>
+                  </div>
+                  
+                  <div class="timeline-step ${o.refundStage === 'Refund Credited' ? 'completed' : 'cancelled'}">
+                    <div class="timeline-dot" style="${o.refundStage === 'Refund Credited' ? 'background:#16a34a;' : ''}"></div>
+                    <div class="timeline-title" style="color:${o.refundStage === 'Refund Credited' ? '#16a34a' : '#ef4444'};">
+                      ${o.refundStage === 'Refund Credited' ? `Refund Completed (${refundCompletedDate})` : 'Order Cancelled'}
+                    </div>
+                    <div class="timeline-desc">${o.refundStage === 'Refund Credited' ? `Full refund of ₹${o.total} credited to your UPI.` : `Reason: ${o.status.replace('Cancelled (Reason: ', '').replace(')', '')}`}</div>
+                  </div>
+                </div>
+              </div>
+            ` : ''}
 
-  // Farm Bookings & Certificates Renderer
-  bList.innerHTML = myBookings.length ? myBookings.map(b => {
-    const isConfirmed = b.status === 'Confirmed' || b.status === 'Approved';
-    let statusColor = isConfirmed ? 'var(--accent)' : (b.status && b.status.startsWith('Rejected') ? 'var(--danger)' : 'var(--warn)');
-    const certNote = b.certIssued ? `<br><span style="color:var(--accent); font-weight:bold;">📜 Certificate Approved & Ready to Download below!</span>` : (isConfirmed ? `<br><span style="color:#d97706; font-size:12px;">⏳ Step 1: Farm Booking Confirmed. Step 2: Certificate will unlock after training.</span>` : '');
-    
-    return `
-      <div class="data-item-card" style="border: 1px solid #cbd5e1; border-radius: 10px; padding: 12px; margin-bottom: 10px; background:#fff;">
-        <strong>Booking ID: ${b.bookingId || ''}</strong><br>
-        <small>Booked On: ${b.dateLogged || ''}</small><br>
-        <strong>Scheme: ${b.type || ''} Visit [<span style="color:${statusColor}; font-weight:bold;">${isConfirmed ? 'Booking Confirmed' : (b.status || 'Pending Verification')}</span>]</strong>
-        <br><small>Your UPI ID: <code style="color:var(--accent);">${b.userUpiId || 'N/A'}</code></small>
-        ${certNote}
-      </div>
-    `;
-  }).join("") : "No course training applications logged.";
+            ${isRejected ? `
+              <div style="background: #fef2f2; border: 1px solid #f87171; border-radius: 8px; padding: 12px;">
+                <strong style="color: #991b1b; font-size: 14px;">❌ Order Rejected</strong>
+                <p style="margin: 4px 0 0 0; font-size: 12px; color: #7f1d1d;"><strong>Reason:</strong> ${o.status.replace('Rejected (Reason: ', '').replace(')', '')}</p>
+              </div>
+            ` : ''}
 
-  const issuedBookings = myBookings.filter(b => b.certIssued === true);
-
-  if (issuedBookings.length > 0) {
-    let historyCertHtml = "";
-    issuedBookings.forEach((b) => {
-      const titleText = b.type === "Student" ? "Certificate of Internship" : "Certificate of Farming";
-      historyCertHtml += `
-        <div style="padding: 10px; background: #fff; border: 1px solid var(--line); border-radius: 8px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
-          <div>
-            <span style="font-weight: bold; font-size:13px; color: var(--accent);">${titleText}</span><br>
-            <small class="muted">Ref ID: ${b.bookingId}</small>
           </div>
-          <button type="button" class="btn" style="min-height:30px; padding: 4px 10px; font-size:12px;" onclick="downloadCertificatePDF('${b.bookingId}')">📥 Download PDF</button>
         </div>
       `;
-    });
-    historyCertContainer.innerHTML = historyCertHtml;
-    historyCertWrapper.style.display = "block";
-  } else {
-    historyCertWrapper.style.display = "none";
+    }).join("") : "No active orders mapped for this profile.";
+  }
+
+  if (bList) {
+    bList.innerHTML = myBookings.length ? myBookings.map(b => {
+      const isConfirmed = b.status === 'Confirmed' || b.status === 'Approved';
+      let statusColor = isConfirmed ? 'var(--accent)' : (b.status && b.status.startsWith('Rejected') ? 'var(--danger)' : 'var(--warn)');
+      const certNote = b.certIssued ? `<br><span style="color:var(--accent); font-weight:bold;">📜 Certificate Approved & Ready to Download below!</span>` : (isConfirmed ? `<br><span style="color:#d97706; font-size:12px;">⏳ Step 1: Farm Booking Confirmed. Step 2: Certificate will unlock after training.</span>` : '');
+      
+      return `
+        <div class="data-item-card" style="border: 1px solid #cbd5e1; border-radius: 10px; padding: 12px; margin-bottom: 10px; background:#fff;">
+          <strong>Booking ID: ${b.bookingId || ''}</strong><br>
+          <small>Booked On: ${b.dateLogged || ''}</small><br>
+          <strong>Scheme: ${b.type || ''} Visit [<span style="color:${statusColor}; font-weight:bold;">${isConfirmed ? 'Booking Confirmed' : (b.status || 'Pending Verification')}</span>]</strong>
+          <br><small>Your UPI ID: <code style="color:var(--accent);">${b.userUpiId || 'N/A'}</code></small>
+          ${certNote}
+        </div>
+      `;
+    }).join("") : "No course training applications logged.";
+
+    const issuedBookings = myBookings.filter(b => b.certIssued === true);
+
+    if (issuedBookings.length > 0 && historyCertWrapper && historyCertContainer) {
+      let historyCertHtml = "";
+      issuedBookings.forEach((b) => {
+        const titleText = b.type === "Student" ? "Certificate of Internship" : "Certificate of Farming";
+        historyCertHtml += `
+          <div style="padding: 10px; background: #fff; border: 1px solid var(--line); border-radius: 8px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
+            <div>
+              <span style="font-weight: bold; font-size:13px; color: var(--accent);">${titleText}</span><br>
+              <small class="muted">Ref ID: ${b.bookingId}</small>
+            </div>
+            <button type="button" class="btn" style="min-height:30px; padding: 4px 10px; font-size:12px;" onclick="downloadCertificatePDF('${b.bookingId}')">📥 Download PDF</button>
+          </div>
+        `;
+      });
+      historyCertContainer.innerHTML = historyCertHtml;
+      historyCertWrapper.style.display = "block";
+    } else if (historyCertWrapper) {
+      historyCertWrapper.style.display = "none";
+    }
   }
 }
 
@@ -687,21 +699,18 @@ function renderAdminLiveStockSummary() {
   const papadProd = products.find(p => p.type === "papad") || { stock: 0 };
 
   container.innerHTML = `
-    <!-- Dry Mushroom Stock -->
     <div style="background: #fefce8; border: 1px solid #fef08a; padding: 14px; border-radius: 10px;">
       <div style="font-size: 13px; color: #854d0e; font-weight: bold;">🌾 Dry Mushroom Available Stock</div>
       <div style="font-size: 24px; font-weight: 900; color: #a16207; margin: 6px 0;">${dryProd.stock} kg</div>
       <small style="color:#64748b; font-size:11px;">(Controlled via Buy / Daily Drying Log)</small>
     </div>
 
-    <!-- Methi Khakhra Stock -->
     <div style="background: #fff7ed; border: 1px solid #ffedd5; padding: 14px; border-radius: 10px;">
       <div style="font-size: 13px; color: #9a3412; font-weight: bold;">🧇 Methi Khakhra Available Stock</div>
       <div style="font-size: 24px; font-weight: 900; color: #ea580c; margin: 6px 0;">${khakhraProd.stock} packs</div>
       <small style="color:#64748b; font-size:11px;">(Controlled via Buy Page)</small>
     </div>
 
-    <!-- Adad Papad Stock -->
     <div style="background: #f0fdf4; border: 1px solid #bbf7d0; padding: 14px; border-radius: 10px;">
       <div style="font-size: 13px; color: #166534; font-weight: bold;">🫓 Adad Papad Available Stock</div>
       <div style="font-size: 24px; font-weight: 900; color: #15803d; margin: 6px 0;">${papadProd.stock} packs</div>
@@ -790,7 +799,7 @@ function renderDailyDryStockTable() {
 }
 
 // =========================================================
-// ADMIN ERP TABLES, METRICS & FLIPKART SCHEDULING
+// ADMIN ERP TABLES, METRICS & POPUP ACTIONS CONTROLLER
 // =========================================================
 function populateAdminDashboardTables() {
   renderAdminLiveStockSummary();
@@ -800,7 +809,6 @@ function populateAdminDashboardTables() {
   const validOrders = orderRegistry.filter(o => o && o.name && o.orderId);
   const totalOrders = validOrders.length;
   
-  // Rule: Money counts ONLY if order status is Approved or Delivered
   const approvedOrdersList = validOrders.filter(o => o.status === 'Approved' || o.status === 'Delivered');
   const approvedTotalRevenue = approvedOrdersList.reduce((sum, o) => sum + Number(o.total || 0), 0);
   
@@ -864,8 +872,6 @@ function populateAdminDashboardTables() {
             <td style="min-width: 270px;">
               ${isApproved && !isCancelled && !isRejected ? `
                 <div style="background:#f8fafc; padding:8px; border-radius:8px; border:1px solid #e2e8f0; font-size:12px;">
-                  
-                  <!-- Flipkart Exact Date Picker -->
                   <div style="margin-bottom:6px; display:flex; align-items:center; gap:4px; background:#fff; padding:4px 6px; border-radius:6px; border:1px solid #cbd5e1;">
                     <label style="font-size:11px; font-weight:bold; color:#0f172a; white-space:nowrap;">📅 Delivery Date:</label>
                     <input type="date" value="${eta}" style="padding:2px 4px; font-size:11px; width:100%; border:1px solid #94a3b8; border-radius:4px;" onchange="updateExpectedDeliveryDate(${idx}, this.value)">
@@ -904,16 +910,9 @@ function populateAdminDashboardTables() {
             </td>
 
             <td>
-              <div style="display:flex; flex-direction:column; gap:4px;">
-                ${!isApproved && !isCancelled && !isRejected ? `
-                  <button class="btn" style="padding:4px 8px; min-height:auto; font-size:11px; background:var(--accent);" onclick="handleOrderApprove(${idx})">1. Approve</button>
-                  <button class="btn" style="padding:4px 8px; min-height:auto; font-size:11px; background:var(--danger);" onclick="handleOrderReject(${idx})">2. Reject</button>
-                  <button class="btn" style="padding:4px 8px; min-height:auto; font-size:11px; background:#ea580c;" onclick="handleOrderCancelRefund(${idx})">3. Cancel & Refund</button>
-                ` : `
-                  ${!isCancelled ? `<button class="btn" style="padding:3px 6px; min-height:auto; font-size:10px; background:#ea580c;" onclick="handleOrderCancelRefund(${idx})">Cancel Order</button>` : ''}
-                  <button class="btn" style="padding:3px 6px; min-height:auto; font-size:10px; background:#0284c7;" onclick="adminEditOrderDetails(${idx})">✏️ Edit Order</button>
-                `}
-              </div>
+              <button class="btn" style="padding:6px 10px; font-size:11.5px; background:#0f172a; border-radius:6px;" onclick="openOrderActionsMenu(${idx})">
+                ⚙️ Manage Order
+              </button>
             </td>
           </tr>
         `;
@@ -1029,6 +1028,34 @@ function populateAdminDashboardTables() {
   }
 }
 
+// 4-Option Menu on clicking Manage Order
+function openOrderActionsMenu(idx) {
+  const o = orderRegistry[idx];
+  const choice = prompt(
+    `👉 Select an action for Order #${o.orderId} (${o.name}):\n\n` +
+    `1. Approve Order\n` +
+    `2. Reject Order\n` +
+    `3. Cancel & Refund\n` +
+    `4. Edit Details\n\n` +
+    `Enter option number (1, 2, 3 or 4):`,
+    "1"
+  );
+
+  if (!choice) return;
+
+  if (choice.trim() === "1") {
+    handleOrderApprove(idx);
+  } else if (choice.trim() === "2") {
+    handleOrderReject(idx);
+  } else if (choice.trim() === "3") {
+    handleOrderCancelRefund(idx);
+  } else if (choice.trim() === "4") {
+    adminEditOrderDetails(idx);
+  } else {
+    alert("⚠️ Invalid option selected. Please enter 1, 2, 3, or 4.");
+  }
+}
+
 function updateExpectedDeliveryDate(idx, newDate) {
   if (!newDate) return;
   orderRegistry[idx].deliveryDays = newDate.trim();
@@ -1104,7 +1131,7 @@ function handleOrderApprove(idx) {
   localStorage.setItem('pgf_orders', JSON.stringify(orderRegistry));
   pushNotification(o.email, '📦 Order Approved & Packed!', `Your Order #${o.orderId} is confirmed and packed. Expected delivery date: ${o.deliveryDays}.`, 'order');
 
-  alert("✅ Order Approved! Payment count ho gaya aur user ko live tracking mil gayi.");
+  alert("✅ Option 1: Order Approved! Payment count ho gaya aur user ko live tracking mil gayi.");
   populateAdminDashboardTables();
   computeFinancialLedgerStatements();
 }
@@ -1122,7 +1149,7 @@ function handleOrderReject(idx) {
   localStorage.setItem('pgf_orders', JSON.stringify(orderRegistry));
   pushNotification(o.email, '❌ Order Rejected', `Your Order #${o.orderId} was rejected. Reason: ${reason}.`, 'order');
 
-  alert("❌ Order Reject ho gaya! (Iska paisa accounting me count nahi hoga)");
+  alert("❌ Option 2: Order Reject ho gaya! (Iska paisa accounting me count nahi hoga)");
   populateAdminDashboardTables();
   computeFinancialLedgerStatements();
 }
@@ -1139,10 +1166,9 @@ function handleOrderCancelRefund(idx) {
 
   localStorage.setItem('pgf_orders', JSON.stringify(orderRegistry));
   
-  // Mandatory push notification to User on cancel
   pushNotification(o.email, '⚠️ Order Cancelled', `Aapka Order #${o.orderId} cancel kar diya gaya hai. Reason: ${reason}. Refund aapke UPI ID (${o.userUpiId || 'Bank'}) par process kiya ja raha hai.`, 'order');
 
-  alert("🔄 Order Cancel ho gaya aur User ko cancellation notification bhej di gayi hai.");
+  alert("🔄 Option 3: Order Cancel ho gaya aur User ko cancellation notification bhej di gayi hai.");
   populateAdminDashboardTables();
   computeFinancialLedgerStatements();
 }
@@ -1161,7 +1187,7 @@ function setOrderStageDirect(idx, newStage) {
     o.currentLocation = "Out for Delivery with Delivery Partner";
   } else if (newStage === 'Delivered') {
     o.currentLocation = "Delivered to Customer Doorstep";
-    o.status = "Delivered"; // Auto update order status
+    o.status = "Delivered";
   }
 
   localStorage.setItem('pgf_orders', JSON.stringify(orderRegistry));
@@ -1262,7 +1288,6 @@ function computeFinancialLedgerStatements() {
   const totalExpenses = expensesRegistry.filter(e => e.category !== "Damage Received").reduce((sum, e) => sum + Number(e.amount || 0), 0);
   const totalDamages = expensesRegistry.filter(e => e.category === "Damage Received").reduce((sum, e) => sum + Number(e.amount || 0), 0);
 
-  // Money cuts from Farm Account only if order refund is marked 'Refund Credited'
   const totalCreditedRefunds = orderRegistry
     .filter(o => o && o.status && o.status.startsWith('Cancelled') && o.refundStage === 'Refund Credited')
     .reduce((sum, o) => sum + Number(o.total || 0), 0);

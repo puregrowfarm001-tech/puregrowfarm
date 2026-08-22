@@ -267,35 +267,36 @@
       </div>
     </div>
 
-    <!-- User Dashboard Workspace -->
+    <!-- User Dashboard Workspace (Separate Personal Buttons) -->
     <section id="dashboardWorkspace" class="user-dashboard" style="display:none;">
       <h2>Welcome Back, <span id="userDashboardName">Grower</span>!</h2>
-      <p class="muted">Your account tracks and loads all records natively from your farm profile.</p>
-      <div style="margin-top:10px;">
-        <button type="button" class="btn" onclick="openHistoryModal()">📦 View Order & Booking History</button>
+      <p class="muted">Access your dedicated farm records, orders tracking, and training certificates directly below.</p>
+      
+      <div style="display:flex; gap:12px; flex-wrap:wrap; margin-top:15px;">
+        <button type="button" class="btn" style="background:#16a34a;" onclick="openOrdersModal()">📦 My Orders History</button>
+        <button type="button" class="btn" style="background:#0284c7;" onclick="openBookingsModal()">🎓 My Farm & Training Bookings</button>
       </div>
     </section>
 
-    <!-- Activity History Modal -->
-    <div id="userHistoryModal" class="data-popup-modal" onclick="closeHistoryModalOutside(event)">
-      <div class="popup-content-box" style="max-width: 820px;">
-        <button type="button" class="close-popup-btn" onclick="closeHistoryModal()">Close (X)</button>
-        <h2>Your Activity Logs & Live Tracking</h2>
+    <!-- Modal 1: Personal Orders History -->
+    <div id="userOrdersModal" class="data-popup-modal" onclick="closeModalOutside(event, 'userOrdersModal')">
+      <div class="popup-content-box" style="max-width: 780px;">
+        <button type="button" class="close-popup-btn" onclick="closeOrdersModal()">Close (X)</button>
+        <h2>📦 Your Order History & Live Tracking</h2>
+        <div id="userOrdersList" class="muted" style="margin-top:15px;">No orders submitted yet.</div>
+      </div>
+    </div>
+
+    <!-- Modal 2: Personal Farm Training & Certificate History -->
+    <div id="userBookingsModal" class="data-popup-modal" onclick="closeModalOutside(event, 'userBookingsModal')">
+      <div class="popup-content-box" style="max-width: 780px;">
+        <button type="button" class="close-popup-btn" onclick="closeBookingsModal()">Close (X)</button>
+        <h2>🎓 Your Farm Training & Internships</h2>
+        <div id="userBookingsList" class="muted" style="margin-top:15px;">No program bookings registered.</div>
         
-        <div class="grid-data-layout">
-          <div class="data-item-card" style="background:#fff;">
-            <h3>📦 Your Orders & Live Tracking</h3>
-            <div id="userOrdersList" class="muted">No orders submitted yet.</div>
-          </div>
-          <div class="data-item-card" style="background:#fff;">
-            <h3>🎓 Your Farm Training Workshops</h3>
-            <div id="userBookingsList" class="muted">No program bookings registered.</div>
-            
-            <div id="historyCertificateWrapper" style="margin-top: 20px; border-top: 1px dashed var(--line); padding-top: 15px; display: none;">
-              <h4 style="color: var(--accent); margin-bottom: 10px;">📜 Issued Certificates</h4>
-              <div id="historyCertificatesContainer"></div>
-            </div>
-          </div>
+        <div id="historyCertificateWrapper" style="margin-top: 20px; border-top: 1px dashed var(--line); padding-top: 15px; display: none;">
+          <h4 style="color: var(--accent); margin-bottom: 10px;">📜 Issued Certificates</h4>
+          <div id="historyCertificatesContainer"></div>
         </div>
       </div>
     </div>
@@ -389,7 +390,6 @@
                 <input type="email" id="email" placeholder="Email" readonly required style="background:#f3f4f6; cursor:not-allowed;">
                 <input type="text" id="address" placeholder="Complete Shipping Address" required>
                 
-                <!-- Mandatory User UPI ID Input for refund / verification -->
                 <input type="text" id="userUpiId" placeholder="Your UPI ID (e.g. name@okhdfcbank / 9876543210@paytm) *" required oninput="validateOrderForm()">
                 
                 <select id="paymentMode" required onchange="openProductPayment()">
@@ -446,7 +446,6 @@
                 <div class="bill-row total"><span>Grand Total Fee</span><strong style="color:var(--accent);">Rs 100</strong></div>
               </div>
               
-              <!-- Mandatory Student UPI ID -->
               <input type="text" id="suserUpi" placeholder="Your UPI ID (e.g. student@okaxis) *" required oninput="validateStudentForm()">
 
               <select id="spaymentMode" required onchange="openVisitPayment('studentForm', 100)">
@@ -475,7 +474,6 @@
                 <div class="bill-row total"><span>Grand Total Fee</span><strong style="color:var(--accent);">Rs 699</strong></div>
               </div>
 
-              <!-- Mandatory Farmer UPI ID -->
               <input type="text" id="fuserUpi" placeholder="Your UPI ID (e.g. farmer@upi) *" required oninput="validateFarmerForm()">
 
               <select id="fpaymentMode" required onchange="openVisitPayment('farmerForm', 699)">
@@ -522,7 +520,6 @@
       <div id="erpOrdersTab" class="erp-section active">
         <h3>E-Commerce Customer Orders Grid Ledger & Shipment Management</h3>
         
-        <!-- Orders Top Summary Cards (Delivered removed, Refund Pending added) -->
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; margin-bottom: 18px;">
           <div style="background: #eff6ff; border: 1px solid #bfdbfe; padding: 12px; border-radius: 10px;">
             <div style="font-size: 12px; color: #1e40af; font-weight: bold;">📦 Total Orders Received</div>
@@ -567,7 +564,6 @@
       <div id="erpBookingsTab" class="erp-section">
         <h3>Farm Training Workshop & Student Internship Bookings Ledger</h3>
         
-        <!-- Farm Bookings Top Summary Statistic Metrics -->
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 18px;">
           <div style="background: #e0f2fe; border: 1px solid #bae6fd; padding: 12px; border-radius: 10px;">
             <div style="font-size: 12px; color: #0369a1; font-weight: bold;">🎓 Total Students</div>
@@ -649,13 +645,11 @@
           <div class="partner-cash-card" style="background:#fee2e2; color:#991b1b;">📉 Total Farm Kharcha (Expenses + Purchases): <span id="totalFarmKharcha">Rs 0.00</span></div>
         </div>
 
-        <!-- Live Farm Stock Summary (Dry, Khakhra, Papad) -->
         <div style="background: #fff; padding: 18px; border-radius: 12px; border: 1px solid var(--line); margin-bottom: 20px;">
           <h4 style="margin: 0 0 12px 0; color: var(--accent); font-size: 16px;">📊 Live Farm Stock Summary (Dry Mushroom, Khakhra & Papad)</h4>
           <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px;" id="adminLiveStockCardsContainer"></div>
         </div>
 
-        <!-- 5 Sub Tabs inside Accounting -->
         <div style="margin: 20px 0; display: flex; gap: 8px; flex-wrap: wrap;">
           <button type="button" class="btn" id="btnSubTabDryStock" onclick="switchSubAccountingTab('subTabDryStock')">🌾 Daily Dry Mushroom Stock Page</button>
           <button type="button" class="btn" id="btnSubTabExpense" onclick="switchSubAccountingTab('subTabExpense')">1. Expenses Page</button>
@@ -664,7 +658,6 @@
           <button type="button" class="btn" id="btnSubTabDamage" onclick="switchSubAccountingTab('subTabDamage')">4. Damage Page</button>
         </div>
 
-        <!-- Sub Tab 0: Daily Dry Mushroom Stock Manager -->
         <div id="subTabDryStock" class="sub-accounting-section" style="display:none;">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
             <h4 style="margin:0;">🌾 Daily Dry Mushroom Production & Inward Stock Ledger</h4>
@@ -698,7 +691,6 @@
           </div>
         </div>
 
-        <!-- Sub Tab 1: Expense -->
         <div id="subTabExpense" class="sub-accounting-section" style="display:none;">
           <h4>1. Log Operational Outflow & Records</h4>
           <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap:16px;">
@@ -733,7 +725,6 @@
           </div>
         </div>
 
-        <!-- Sub Tab 2: Sell -->
         <div id="subTabSell" class="sub-accounting-section" style="display:none;">
           <h4>2. Log Manual Wholesale Production Sale (Direct Offline Inflow)</h4>
           <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap:16px;">
@@ -783,7 +774,6 @@
           </div>
         </div>
 
-        <!-- Sub Tab 3: Buy -->
         <div id="subTabBuy" class="sub-accounting-section" style="display:none;">
           <h4>3. Log Raw Inventory Material Bulk Buy Outflow</h4>
           <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap:16px;">
@@ -815,7 +805,6 @@
           </div>
         </div>
 
-        <!-- Sub Tab 4: Damage -->
         <div id="subTabDamage" class="sub-accounting-section" style="display:none;">
           <h4>4. Log Damages Inward & Loss Factor Records</h4>
           <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap:16px;">

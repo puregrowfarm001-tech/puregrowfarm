@@ -53,7 +53,7 @@
         border-radius: 8px;
       }
 
-      /* Vertical Live Timeline Tracker (Flipkart / Ekart Style) */
+      /* Vertical Live Timeline Tracker */
       .vertical-timeline {
         position: relative;
         padding-left: 30px;
@@ -152,6 +152,15 @@
         margin-top: 4px;
         text-align: left;
       }
+
+      .notif-interactive-card {
+        cursor: pointer;
+        transition: background 0.2s ease, transform 0.1s ease;
+      }
+      .notif-interactive-card:hover {
+        background: #e0f2fe !important;
+        transform: translateY(-1px);
+      }
     </style>
 
     <!-- Header Navigation Area -->
@@ -188,7 +197,7 @@
               <strong style="font-size:14px; color:#0f1720;">Notifications Alert</strong>
               <button type="button" style="background:none; border:none; color:var(--accent); font-size:11px; font-weight:bold; cursor:pointer; padding:0;" onclick="clearAllNotifications()">Clear All</button>
             </div>
-            <div id="notificationListBody" style="max-height:260px; overflow-y:auto; display:flex; flex-direction:column; gap:8px;">
+            <div id="notificationListBody" style="max-height:280px; overflow-y:auto; display:flex; flex-direction:column; gap:8px;">
               <span class="muted" style="font-size:12px; text-align:center; padding:10px;">No new alerts.</span>
             </div>
           </div>
@@ -310,7 +319,6 @@
                 <div class="card-title">Green, Dry, Powder, Khakhra and Papad</div>
               </div>
               
-              <!-- Direct Helpline Contact with Co-Founder & Director Details -->
               <div class="card">
                 <div class="muted small-title">Direct Helpline Contact (Click to Call)</div>
                 <div style="display: grid; gap: 8px; margin-top: 8px;">
@@ -328,7 +336,6 @@
               </div>
             </div>
 
-            <!-- Quick Connect & Social Badges -->
             <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px;">
               <a href="https://google.com/maps?gs_lcrp=EgZjaHJvbWUqBggCEEUYOzIGCAAQRRg8MgYIARBFGDkyBggCEEUYOzIICAMQRRgnGDsyCQgEEAAYChiABDIJCAUQABgKGIAEMgcIBhAAGIAEMgYIBxBFGDzSAQg0NDc4ajBqN6gCALACAA&um=1&ie=UTF-8&fb=1&gl=in&sa=X&geocode=KZFK8z4xA1g5McbyFQEC-sPP&daddr=Makhiyala,+Gujarat+362011" target="_blank" rel="noreferrer" class="social-link-btn" style="background: #ea4335;">
                 📍 Farm Location (Google Maps)
@@ -502,7 +509,7 @@
       <div class="erp-nav" id="erpNavbarBlock">
         <button class="btn active-tab" id="tabNavOrders" onclick="switchErpTab('erpOrdersTab', 'tabNavOrders')">Orders Manager Page</button>
         <button class="btn" id="tabNavBookings" onclick="switchErpTab('erpBookingsTab', 'tabNavBookings')">Farm Training Bookings Page</button>
-        <button class="btn" id="tabNavAccounting" onclick="switchErpTab('erpAccountingTab', 'tabNavAccounting')">Farm Core Financial Data Page</button>
+        <button class="btn" id="tabNavAccounting" onclick="switchErpTab('erpAccountingTab', 'tabNavAccounting')">Farm Core Financial & Stock Page</button>
         <button class="btn" id="tabNavUsers" onclick="switchErpTab('erpUsersTab', 'tabNavUsers')">Registered Accounts Ledger</button>
       </div>
 
@@ -586,18 +593,53 @@
           <div class="partner-cash-card" style="background:#dcfce7; color:#166534;">🏢 Farm Vault Main Cash Balance: <span id="cashFarm">Rs 0.00</span></div>
         </div>
 
-        <!-- Live Farm Stock Summary & Daily Green/Dry Counter -->
+        <!-- Live Farm Stock Summary (Dry, Khakhra, Papad) -->
         <div style="background: #fff; padding: 18px; border-radius: 12px; border: 1px solid var(--line); margin-bottom: 20px;">
-          <h4 style="margin: 0 0 12px 0; color: var(--accent); font-size: 16px;">📊 Live Farm Stock Summary & Daily Green/Dry Counters</h4>
-          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px;" id="adminLiveStockCardsContainer"></div>
+          <h4 style="margin: 0 0 12px 0; color: var(--accent); font-size: 16px;">📊 Live Farm Stock Summary (Dry Mushroom, Khakhra & Papad)</h4>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px;" id="adminLiveStockCardsContainer"></div>
         </div>
 
-        <!-- 4 Sub Tabs inside Accounting -->
+        <!-- 5 Sub Tabs inside Accounting (With Daily Dry Log) -->
         <div style="margin: 20px 0; display: flex; gap: 8px; flex-wrap: wrap;">
+          <button type="button" class="btn" id="btnSubTabDryStock" onclick="switchSubAccountingTab('subTabDryStock')">🌾 Daily Dry Mushroom Stock Page</button>
           <button type="button" class="btn" id="btnSubTabExpense" onclick="switchSubAccountingTab('subTabExpense')">1. Expenses Page</button>
           <button type="button" class="btn" id="btnSubTabSell" onclick="switchSubAccountingTab('subTabSell')">2. Sell Page</button>
           <button type="button" class="btn" id="btnSubTabBuy" onclick="switchSubAccountingTab('subTabBuy')">3. Buy Page</button>
           <button type="button" class="btn" id="btnSubTabDamage" onclick="switchSubAccountingTab('subTabDamage')">4. Damage Page</button>
+        </div>
+
+        <!-- Sub Tab 0: Daily Dry Mushroom Stock Manager -->
+        <div id="subTabDryStock" class="sub-accounting-section" style="display:none;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+            <h4 style="margin:0;">🌾 Daily Dry Mushroom Production & Inward Stock Ledger</h4>
+            <span style="font-size:14px; font-weight:bold; color:var(--accent); background:#f0fdf4; padding:6px 12px; border-radius:8px; border:1px solid #bbf7d0;">
+              Total Dry Stock Inwarded: <span id="dailyDryTotalSum">0 kg</span>
+            </span>
+          </div>
+
+          <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap:16px;">
+            <div class="db-card">
+              <form onsubmit="saveDailyDryStockEntry(event)">
+                <label>Select Production Date: <input type="date" id="dryLogDate" required></label>
+                <input type="number" step="0.01" id="dryLogQty" placeholder="Weight of Dry Mushroom (kg)" required>
+                <input type="text" id="dryLogNotes" placeholder="Context / Batch Description (e.g. Polyhouse 1 Dry Yield)" required>
+                <button type="submit" style="background:#ca8a04;">+ Add Daily Dry Stock</button>
+              </form>
+            </div>
+            <div class="table-responsive">
+              <table class="sub-table">
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Batch Context</th>
+                    <th>Dry Weight (kg)</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="dailyDryStockTableBody"></tbody>
+              </table>
+            </div>
+          </div>
         </div>
 
         <!-- Sub Tab 1: Expense -->
@@ -644,8 +686,10 @@
                 <label>Select Sale Date: <input type="date" id="saleLogDate" required></label>
                 <label>Mushroom Catalog Stock Variant Type:
                   <select id="saleProduct" required>
-                    <option value="Green">Fresh Green Oyster Mushroom Bulk Lot</option>
                     <option value="Dry">Dry Dehydrated Mushroom Pack Lot</option>
+                    <option value="Khakhra">Methi Mushroom Khakhra Lot</option>
+                    <option value="Papad">Adad Mushroom Papad Lot</option>
+                    <option value="Green">Fresh Green Oyster Mushroom Bulk Lot</option>
                     <option value="Powder">Fine Ground Spore Mushroom Powder Lot</option>
                   </select>
                 </label>
@@ -692,10 +736,10 @@
                 <label>Select Purchase Date: <input type="date" id="purLogDate" required></label>
                 <label>Procurement Resource Inward Lot:
                   <select id="purProduct" required>
-                    <option value="Green">Green Mushroom Base Inward Spores</option>
                     <option value="Dry">Dry Bulk Base Inward Lots</option>
                     <option value="Khakhra Lots">Khakhra Production Raw Multi-Lots</option>
                     <option value="Papad Lots">Papad Production Raw Multi-Lots</option>
+                    <option value="Green">Green Mushroom Base Inward Spores</option>
                   </select>
                 </label>
                 <label>Funding Inward Resource Channel Provider:

@@ -28,7 +28,7 @@ function getCleanData(key) {
   try {
     const raw = JSON.parse(localStorage.getItem(key)) || [];
     if (!Array.isArray(raw)) return [];
-    return raw.filter(item => item && (item.name || item.orderId || item.bookingId || item.saleId || item.expId || item.id));
+    return raw.filter(item => item && (item.name || item.orderId || item.bookingId || item.saleId || item.expId || item.dryId || item.id));
   } catch (e) {
     return [];
   }
@@ -40,6 +40,7 @@ let bookingsRegistry = getCleanData('pgf_bookings');
 let expensesRegistry = getCleanData('pgf_expenses');
 let salesRegistry = getCleanData('pgf_sales');
 let purchasesRegistry = getCleanData('pgf_purchases');
+let dailyDryStockRegistry = getCleanData('pgf_daily_dry_stock');
 let notificationsRegistry = getCleanData('pgf_notifications');
 
 let currentUser = JSON.parse(localStorage.getItem('pgf_session')) || null;
@@ -60,7 +61,6 @@ function togglePasswordVisibility(inputId, btn) {
 }
 
 function isPasswordStrong(pwd) {
-  // Min 8 chars, 1 uppercase, 1 lowercase, 1 number, 1 special character
   const regex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
   return regex.test(pwd);
 }
@@ -85,23 +85,56 @@ function checkPasswordStrength(pwd) {
 }
 
 // =========================================================
-// NOTIFICATIONS ENGINE
+// INTERACTIVE NOTIFICATIONS ENGINE
 // =========================================================
-function pushNotification(targetRecipient, title, message, type = 'info') {
+function pushNotification(targetRecipient, title, message, targetAction = 'general') {
   const newNotif = {
     id: "NOTIF-" + Date.now(),
     recipient: targetRecipient,
     title: title,
     message: message,
+    action: targetAction, // 'certificate', 'order', 'booking', 'general'
     time: new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true }),
     date: new Date().toLocaleDateString('en-IN'),
-    type: type,
     isRead: false
   };
 
   notificationsRegistry.unshift(newNotif);
   localStorage.setItem('pgf_notifications', JSON.stringify(notificationsRegistry));
   renderNotificationBadge();
+}
+
+function handleNotificationClick(notifId) {
+  const notif = notificationsRegistry.find(n => n.id === notifId);
+  if (!notif) return;
+
+  notif.isRead = true;
+  localStorage.setItem('pgf_notifications', JSON.stringify(notificationsRegistry));
+  renderNotificationBadge();
+
+  // Close dropdown
+  const panel = document.getElementById("notificationDropdownPanel");
+  if (panel) panel.style.display = "none";
+
+  // Contextual Navigation
+  if (currentUser && currentUser.isAdmin) {
+    if (notif.action === 'order') switchErpTab('erpOrdersTab', 'tabNavOrders');
+    else if (notif.action === 'booking' || notif.action === 'certificate') switchErpTab('erpBookingsTab', 'tabNavBookings');
+    else switchErpTab('erpOrdersTab', 'tabNavOrders');
+  } else {
+    if (notif.action === 'certificate') {
+      openHistoryModal();
+      const certSection = document.getElementById("historyCertificateWrapper");
+      if (certSection) certSection.scrollIntoView({ behavior: 'smooth' });
+    } else if (notif.action === 'order') {
+      openHistoryModal();
+    } else if (notif.action === 'booking') {
+      const visitSection = document.getElementById("visit");
+      if (visitSection) visitSection.scrollIntoView({ behavior: 'smooth' });
+    } else {
+      openHistoryModal();
+    }
+  }
 }
 
 function renderNotificationBadge() {
@@ -130,12 +163,13 @@ function renderNotificationBadge() {
     listBody.innerHTML = `<span class="muted" style="font-size:12px; text-align:center; padding:10px;">No alerts yet.</span>`;
   } else {
     listBody.innerHTML = myNotifs.map(n => `
-      <div style="background:${n.isRead ? '#f8fafc' : '#eff6ff'}; border:1px solid ${n.isRead ? '#e2e8f0' : '#bfdbfe'}; border-radius:8px; padding:8px 10px; font-size:12px;">
+      <div class="notif-interactive-card" onclick="handleNotificationClick('${n.id}')" style="background:${n.isRead ? '#f8fafc' : '#eff6ff'}; border:1px solid ${n.isRead ? '#e2e8f0' : '#bfdbfe'}; border-radius:8px; padding:10px; font-size:12px;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:3px;">
           <strong style="color:${n.isRead ? '#334155' : '#1d4ed8'};">${n.title}</strong>
           <span style="font-size:10px; color:#64748b;">${n.time}</span>
         </div>
         <div style="color:#475569; line-height:1.3;">${n.message}</div>
+        <div style="font-size:10px; color:var(--accent); margin-top:4px; font-weight:bold;">👉 Click to open details</div>
       </div>
     `).join("");
   }
@@ -146,14 +180,7 @@ function toggleNotificationDropdown() {
   if (!panel) return;
   if (panel.style.display === "none" || panel.style.display === "") {
     panel.style.display = "block";
-    const currentRecipient = currentUser ? (currentUser.isAdmin ? 'ADMIN' : currentUser.email) : null;
-    if (currentRecipient) {
-      notificationsRegistry.forEach(n => {
-        if (n.recipient === currentRecipient || (currentUser.isAdmin && n.recipient === 'ADMIN')) n.isRead = true;
-      });
-      localStorage.setItem('pgf_notifications', JSON.stringify(notificationsRegistry));
-      renderNotificationBadge();
-    }
+    renderNotificationBadge();
   } else {
     panel.style.display = "none";
   }
@@ -197,6 +224,7 @@ function initDefaultDatePickers() {
   if(document.getElementById("saleLogDate")) document.getElementById("saleLogDate").value = today;
   if(document.getElementById("purLogDate")) document.getElementById("purLogDate").value = today;
   if(document.getElementById("dmgLogDate")) document.getElementById("dmgLogDate").value = today;
+  if(document.getElementById("dryLogDate")) document.getElementById("dryLogDate").value = today;
 }
 
 function openHistoryModal() { document.getElementById("userHistoryModal").classList.add("active-modal"); }
@@ -218,7 +246,8 @@ function triggerAdminView() {
   computeFinancialLedgerStatements();
   renderNotificationBadge();
   renderAdminLiveStockSummary();
-  switchSubAccountingTab('subTabExpense');
+  renderDailyDryStockTable();
+  switchSubAccountingTab('subTabDryStock');
 }
 
 function exitAdminPanel() { handleLogout(); }
@@ -316,7 +345,7 @@ function handleRegister(e) {
   usersDatabase.push(newUser);
   localStorage.setItem('pgf_user_db', JSON.stringify(usersDatabase));
 
-  pushNotification('ADMIN', '👤 New Account Created', `${name} (${email}) has registered.`);
+  pushNotification('ADMIN', '👤 New Account Created', `${name} (${email}) has registered.`, 'general');
 
   currentUser = { name, email, phone, isAdmin: false };
   localStorage.setItem('pgf_session', JSON.stringify(currentUser));
@@ -385,8 +414,6 @@ function loadUserPanelData() {
         ${(isApproved || stage === 'Placed') && !isCancelled && !isRejected ? `
           <div style="margin-top: 12px; background: #ffffff; padding: 14px; border-radius: 8px; border: 1px solid #e2e8f0;">
             <div class="vertical-timeline">
-              
-              <!-- 1. Order Confirmed / Placed -->
               <div class="timeline-step ${curLevel >= 1 ? 'completed' : ''}">
                 <div class="timeline-dot"></div>
                 <div class="timeline-title">Order Confirmed <span>${orderDate}</span></div>
@@ -394,7 +421,6 @@ function loadUserPanelData() {
                 <div class="timeline-time">${orderDate}</div>
               </div>
 
-              <!-- 2. Processing & Packed -->
               <div class="timeline-step ${curLevel >= 2 ? 'completed' : ''}">
                 <div class="timeline-dot"></div>
                 <div class="timeline-title">Seller Processed & Packed</div>
@@ -402,7 +428,6 @@ function loadUserPanelData() {
                 <div class="timeline-desc" style="color:#0284c7; font-size:12px;">Your item has been picked up by delivery partner.</div>
               </div>
 
-              <!-- 3. Shipped -->
               <div class="timeline-step ${curLevel >= 3 ? 'completed' : ''}">
                 <div class="timeline-dot"></div>
                 <div class="timeline-title">Shipped</div>
@@ -410,20 +435,17 @@ function loadUserPanelData() {
                 <div class="timeline-desc">Your item has been shipped. (📍 Hub: ${loc})</div>
               </div>
 
-              <!-- 4. Out For Delivery -->
               <div class="timeline-step ${curLevel >= 4 ? 'completed' : ''}">
                 <div class="timeline-dot"></div>
                 <div class="timeline-title">Out For Delivery</div>
                 <div class="timeline-desc">Your item is out for delivery with executive.</div>
               </div>
 
-              <!-- 5. Delivered -->
               <div class="timeline-step ${curLevel >= 5 ? 'completed' : ''}">
                 <div class="timeline-dot"></div>
                 <div class="timeline-title">Delivered <span>(Expected: ${etaDate})</span></div>
                 <div class="timeline-desc">Item safely delivered to your doorstep.</div>
               </div>
-
             </div>
           </div>
         ` : ''}
@@ -505,7 +527,7 @@ function switchSubAccountingTab(subTabId) {
   document.querySelectorAll('.sub-accounting-section').forEach(section => section.style.display = 'none');
   document.getElementById(subTabId).style.display = 'block';
   
-  const buttons = ['btnSubTabExpense', 'btnSubTabSell', 'btnSubTabBuy', 'btnSubTabDamage'];
+  const buttons = ['btnSubTabDryStock', 'btnSubTabExpense', 'btnSubTabSell', 'btnSubTabBuy', 'btnSubTabDamage'];
   buttons.forEach(bId => {
     if(document.getElementById(bId)) document.getElementById(bId).style.background = 'var(--muted)';
   });
@@ -523,41 +545,118 @@ function deleteUserAccount(idx) {
 }
 
 // =========================================================
-// LIVE STOCK MANAGER & DAILY GREEN / DRY COUNTER (ERP)
+// LIVE STOCK SUMMARY (DRY MUSHROOM, KHAKHRA & PAPAD)
 // =========================================================
 function renderAdminLiveStockSummary() {
   const container = document.getElementById("adminLiveStockCardsContainer");
   if (!container) return;
 
-  const greenProd = products.find(p => p.type === "green") || { stock: 0 };
   const dryProd = products.find(p => p.type === "dry") || { stock: 0 };
-  const powderProd = products.find(p => p.type === "powder") || { stock: 0 };
+  const khakhraProd = products.find(p => p.type === "khakhra") || { stock: 0 };
+  const papadProd = products.find(p => p.type === "papad") || { stock: 0 };
 
   container.innerHTML = `
-    <div style="background: #f0fdf4; border: 1px solid #bbf7d0; padding: 12px; border-radius: 8px;">
-      <span style="font-size: 12px; color: #166534; font-weight: bold;">🟢 Fresh Green Stock</span>
-      <div style="font-size: 20px; font-weight: 900; color: #15803d; margin: 4px 0;">${greenProd.stock} kg</div>
-      <button class="btn" style="padding: 2px 8px; font-size: 11px; min-height: 24px; background: #16a34a;" onclick="updateProductStockDirect(1)">✏️ Edit Stock</button>
+    <!-- Dry Mushroom Stock -->
+    <div style="background: #fefce8; border: 1px solid #fef08a; padding: 14px; border-radius: 10px;">
+      <div style="font-size: 13px; color: #854d0e; font-weight: bold;">🌾 Dry Mushroom Available Stock</div>
+      <div style="font-size: 24px; font-weight: 900; color: #a16207; margin: 6px 0;">${dryProd.stock} kg</div>
+      <button class="btn" style="padding: 4px 10px; font-size: 11px; min-height: 24px; background: #ca8a04;" onclick="updateProductStockDirect(2)">✏️ Edit Dry Stock</button>
     </div>
 
-    <div style="background: #fefce8; border: 1px solid #fef08a; padding: 12px; border-radius: 8px;">
-      <span style="font-size: 12px; color: #854d0e; font-weight: bold;">🌾 Dry Mushroom Stock</span>
-      <div style="font-size: 20px; font-weight: 900; color: #a16207; margin: 4px 0;">${dryProd.stock} kg</div>
-      <button class="btn" style="padding: 2px 8px; font-size: 11px; min-height: 24px; background: #ca8a04;" onclick="updateProductStockDirect(2)">✏️ Edit Stock</button>
+    <!-- Methi Khakhra Stock -->
+    <div style="background: #fff7ed; border: 1px solid #ffedd5; padding: 14px; border-radius: 10px;">
+      <div style="font-size: 13px; color: #9a3412; font-weight: bold;">🧇 Methi Khakhra Available Stock</div>
+      <div style="font-size: 24px; font-weight: 900; color: #ea580c; margin: 6px 0;">${khakhraProd.stock} packs</div>
+      <button class="btn" style="padding: 4px 10px; font-size: 11px; min-height: 24px; background: #ea580c;" onclick="updateProductStockDirect(4)">✏️ Edit Khakhra Stock</button>
     </div>
 
-    <div style="background: #faf5ff; border: 1px solid #e9d5ff; padding: 12px; border-radius: 8px;">
-      <span style="font-size: 12px; color: #6b21a8; font-weight: bold;">✨ Mushroom Powder Stock</span>
-      <div style="font-size: 20px; font-weight: 900; color: #7e22ce; margin: 4px 0;">${powderProd.stock} packs</div>
-      <button class="btn" style="padding: 2px 8px; font-size: 11px; min-height: 24px; background: #9333ea;" onclick="updateProductStockDirect(3)">✏️ Edit Stock</button>
-    </div>
-
-    <div style="background: #eff6ff; border: 1px solid #bfdbfe; padding: 12px; border-radius: 8px;">
-      <span style="font-size: 12px; color: #1e40af; font-weight: bold;">⚖️ Combined Total Farm Stock</span>
-      <div style="font-size: 20px; font-weight: 900; color: #1d4ed8; margin: 4px 0;">${(Number(greenProd.stock) + Number(dryProd.stock)).toFixed(2)} kg</div>
-      <small style="color: #64748b; font-size: 11px;">(Daily Green + Dry Harvest Total)</small>
+    <!-- Adad Papad Stock -->
+    <div style="background: #f0fdf4; border: 1px solid #bbf7d0; padding: 14px; border-radius: 10px;">
+      <div style="font-size: 13px; color: #166534; font-weight: bold;">🫓 Adad Papad Available Stock</div>
+      <div style="font-size: 24px; font-weight: 900; color: #15803d; margin: 6px 0;">${papadProd.stock} packs</div>
+      <button class="btn" style="padding: 4px 10px; font-size: 11px; min-height: 24px; background: #16a34a;" onclick="updateProductStockDirect(5)">✏️ Edit Papad Stock</button>
     </div>
   `;
+}
+
+// =========================================================
+// DAILY DRY MUSHROOM STOCK MANAGEMENT & TOTALS
+// =========================================================
+function saveDailyDryStockEntry(e) {
+  e.preventDefault();
+  const rawDate = document.getElementById("dryLogDate").value;
+  const qty = parseFloat(document.getElementById("dryLogQty").value);
+  const notes = document.getElementById("dryLogNotes").value.trim();
+
+  if (isNaN(qty) || qty <= 0) {
+    alert("Kripya valid dry weight dalein!");
+    return;
+  }
+
+  const dryEntry = {
+    dryId: "DRY-" + Date.now().toString().slice(-4),
+    date: rawDate ? new Date(rawDate).toLocaleDateString('en-IN') : new Date().toLocaleDateString('en-IN'),
+    qty: qty,
+    notes: notes || "Daily Farm Drying Batch"
+  };
+
+  dailyDryStockRegistry.unshift(dryEntry);
+  localStorage.setItem('pgf_daily_dry_stock', JSON.stringify(dailyDryStockRegistry));
+
+  // Auto increment Dry Catalog Stock
+  const dryProd = products.find(p => p.type === "dry");
+  if (dryProd) {
+    dryProd.stock = (dryProd.stock || 0) + qty;
+    saveProductsToStorage();
+    renderProducts();
+  }
+
+  e.target.reset();
+  initDefaultDatePickers();
+  renderDailyDryStockTable();
+  renderAdminLiveStockSummary();
+  alert(`✅ ${qty} kg Daily Dry Mushroom Stock successfully added!`);
+}
+
+function deleteDailyDryEntry(idx) {
+  const item = dailyDryStockRegistry[idx];
+  if (confirm(`Delete this dry stock entry (${item.qty} kg)?`)) {
+    const dryProd = products.find(p => p.type === "dry");
+    if (dryProd) {
+      dryProd.stock = Math.max(0, (dryProd.stock || 0) - item.qty);
+      saveProductsToStorage();
+      renderProducts();
+    }
+    dailyDryStockRegistry.splice(idx, 1);
+    localStorage.setItem('pgf_daily_dry_stock', JSON.stringify(dailyDryStockRegistry));
+    renderDailyDryStockTable();
+    renderAdminLiveStockSummary();
+  }
+}
+
+function renderDailyDryStockTable() {
+  const tbody = document.getElementById("dailyDryStockTableBody");
+  const totalDisplay = document.getElementById("dailyDryTotalSum");
+  if (!tbody) return;
+
+  const totalDryWeight = dailyDryStockRegistry.reduce((sum, item) => sum + Number(item.qty || 0), 0);
+  if (totalDisplay) totalDisplay.textContent = `${totalDryWeight.toFixed(2)} kg`;
+
+  if (!dailyDryStockRegistry.length) {
+    tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:var(--muted); padding:16px;">No daily dry mushroom records logged yet.</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = dailyDryStockRegistry.map((item, idx) => `
+    <tr>
+      <td>${item.date}</td>
+      <td>${item.notes}</td>
+      <td style="color:#a16207; font-weight:bold; font-size:14px;">${item.qty} kg</td>
+      <td>
+        <button type="button" class="btn" style="padding:2px 6px; min-height:auto; font-size:11px; background:var(--danger);" onclick="deleteDailyDryEntry(${idx})">Delete</button>
+      </td>
+    </tr>
+  `).join("");
 }
 
 // =========================================================
@@ -565,6 +664,7 @@ function renderAdminLiveStockSummary() {
 // =========================================================
 function populateAdminDashboardTables() {
   renderAdminLiveStockSummary();
+  renderDailyDryStockTable();
 
   // 1. Orders Manager
   if (document.getElementById("adminOrdersTableBody")) {
@@ -721,7 +821,6 @@ function populateAdminDashboardTables() {
                     <button type="button" class="btn" style="padding:3px 6px; min-height:auto; font-size:11px; background:var(--accent);" onclick="downloadCertificatePDF('${b.bookingId}')">📜 Download A4</button>
                   `}
                 `}
-                <!-- Certificate details edit button -->
                 <button type="button" class="btn" style="padding:3px 6px; min-height:auto; font-size:10px; background:#4b5563;" onclick="adminEditCertificateData(${idx})">✏️ Edit Certificate</button>
               </div>
             </td>
@@ -772,7 +871,7 @@ function adminEditOrderDetails(idx) {
   if (newEta !== null && newEta.trim() !== "") o.deliveryDays = newEta.trim();
 
   localStorage.setItem('pgf_orders', JSON.stringify(orderRegistry));
-  pushNotification(o.email, '🚚 Order Update', `Your Order #${o.orderId} shipment details updated by Admin.`);
+  pushNotification(o.email, '🚚 Order Update', `Your Order #${o.orderId} shipment details updated by Admin.`, 'order');
   populateAdminDashboardTables();
   alert("✅ Order details updated successfully!");
 }
@@ -829,7 +928,7 @@ function handleOrderApprove(idx) {
   o.refundStage = "";
   
   localStorage.setItem('pgf_orders', JSON.stringify(orderRegistry));
-  pushNotification(o.email, '📦 Order Approved & Packed!', `Your Order #${o.orderId} is confirmed and packed. Expected delivery: 2-4 Days.`);
+  pushNotification(o.email, '📦 Order Approved & Packed!', `Your Order #${o.orderId} is confirmed and packed. Expected delivery: 2-4 Days.`, 'order');
 
   alert("✅ Order Approved! User ko notification aur live tracking mil gayi.");
   populateAdminDashboardTables();
@@ -847,7 +946,7 @@ function handleOrderReject(idx) {
   o.refundStage = "";
 
   localStorage.setItem('pgf_orders', JSON.stringify(orderRegistry));
-  pushNotification(o.email, '❌ Order Rejected', `Your Order #${o.orderId} was rejected. Reason: ${reason}.`);
+  pushNotification(o.email, '❌ Order Rejected', `Your Order #${o.orderId} was rejected. Reason: ${reason}.`, 'order');
 
   alert("❌ Order Reject ho gaya!");
   populateAdminDashboardTables();
@@ -863,7 +962,7 @@ function handleOrderCancelRefund(idx) {
   o.refundStage = "Refund Initiated";
 
   localStorage.setItem('pgf_orders', JSON.stringify(orderRegistry));
-  pushNotification(o.email, '🔄 Order Cancelled & Refund Initiated', `Your Order #${o.orderId} was cancelled. Rs ${o.total} refund initiated.`);
+  pushNotification(o.email, '🔄 Order Cancelled & Refund Initiated', `Your Order #${o.orderId} was cancelled. Rs ${o.total} refund initiated.`, 'order');
 
   alert("🔄 Order Cancelled & Refund initiated.");
   populateAdminDashboardTables();
@@ -879,7 +978,7 @@ function setOrderStageDirect(idx, newStage) {
   else if (newStage === 'Delivered') o.currentLocation = "Delivered to Customer Doorstep";
 
   localStorage.setItem('pgf_orders', JSON.stringify(orderRegistry));
-  pushNotification(o.email, '🚚 Order Shipment Update', `Order #${o.orderId} stage updated to: ${newStage}. (${o.currentLocation})`);
+  pushNotification(o.email, '🚚 Order Shipment Update', `Order #${o.orderId} stage updated to: ${newStage}. (${o.currentLocation})`, 'order');
   populateAdminDashboardTables();
 }
 
@@ -887,7 +986,7 @@ function setRefundStageDirect(idx, newRefStage) {
   const o = orderRegistry[idx];
   o.refundStage = newRefStage;
   localStorage.setItem('pgf_orders', JSON.stringify(orderRegistry));
-  pushNotification(o.email, '💰 Refund Status Update', `Refund for Order #${o.orderId} status: ${newRefStage}.`);
+  pushNotification(o.email, '💰 Refund Status Update', `Refund for Order #${o.orderId} status: ${newRefStage}.`, 'order');
   populateAdminDashboardTables();
 }
 
@@ -915,7 +1014,7 @@ function confirmBookingSlot(idx) {
   salesRegistry.push(saleLog);
   localStorage.setItem('pgf_sales', JSON.stringify(salesRegistry));
 
-  pushNotification(target.email, '🎓 Farm Booking Confirmed!', `Your ${target.type} program booking #${target.bookingId} has been confirmed.`);
+  pushNotification(target.email, '🎓 Farm Booking Confirmed!', `Your ${target.type} program booking #${target.bookingId} has been confirmed.`, 'booking');
 
   alert(`✅ 1. Farm Booking Approved for ${target.name}!`);
   populateAdminDashboardTables();
@@ -929,7 +1028,7 @@ function issueUserCertificate(idx) {
     target.certIssueDate = new Date().toLocaleDateString('en-IN');
     localStorage.setItem('pgf_bookings', JSON.stringify(bookingsRegistry));
 
-    pushNotification(target.email, '📜 Certificate Issued & Ready!', `Your certificate for ${target.type} program (#${target.bookingId}) is ready to download.`);
+    pushNotification(target.email, '📜 Certificate Issued & Ready!', `Your certificate for ${target.type} program (#${target.bookingId}) is ready to download.`, 'certificate');
 
     alert("✅ 2. Certificate Approved ho gaya!");
     populateAdminDashboardTables();
@@ -945,7 +1044,7 @@ function rejectTrainingBooking(idx) {
   target.certIssued = false;
   localStorage.setItem('pgf_bookings', JSON.stringify(bookingsRegistry));
 
-  pushNotification(target.email, '❌ Farm Booking Rejected', `Your booking #${target.bookingId} was rejected. Reason: ${reason}.`);
+  pushNotification(target.email, '❌ Farm Booking Rejected', `Your booking #${target.bookingId} was rejected. Reason: ${reason}.`, 'booking');
   populateAdminDashboardTables();
 }
 
@@ -1068,10 +1167,10 @@ function saveAdminPurchase(e) {
   const purType = document.getElementById("purProduct").value;
   
   let matchedProd = null;
-  if (purType.includes("Green")) matchedProd = products.find(p => p.type === "green");
-  else if (purType.includes("Dry")) matchedProd = products.find(p => p.type === "dry");
+  if (purType.includes("Dry")) matchedProd = products.find(p => p.type === "dry");
   else if (purType.includes("Khakhra")) matchedProd = products.find(p => p.type === "khakhra");
   else if (purType.includes("Papad")) matchedProd = products.find(p => p.type === "papad");
+  else if (purType.includes("Green")) matchedProd = products.find(p => p.type === "green");
 
   if (matchedProd) {
     matchedProd.stock = (matchedProd.stock || 0) + qty;
@@ -1344,7 +1443,7 @@ function confirmOrder(e) {
   document.getElementById("invDelivery").textContent = "Rs " + bill.delivery;
   document.getElementById("invTotal").textContent = "Rs " + bill.total;
 
-  pushNotification('ADMIN', '🛍️ New Order Placed!', `${data.name} placed order #${data.orderId} for Rs ${data.total}`);
+  pushNotification('ADMIN', '🛍️ New Order Placed!', `${data.name} placed order #${data.orderId} for Rs ${data.total}`, 'order');
   
   const waMessage = `NEW GOODS ORDER VERIFICATION FLOW:\n----------------------------------------\nInvoice Ref Code: ${data.orderId}\nClient Legal Name: ${data.name}\nProducts Mapped: ${data.products}\nTotal Paid Amount: Rs ${data.total}\nPayment Method: ${data.paymentMode}\nTransaction Hash ID Code: ${data.txnId}\n----------------------------------------`;
   
@@ -1446,7 +1545,7 @@ function submitStudentVisit(e) {
   bookingsRegistry.unshift(data);
   localStorage.setItem('pgf_bookings', JSON.stringify(bookingsRegistry));
 
-  pushNotification('ADMIN', '🎓 New Student Registration', `${data.name} applied for Internship (#${data.bookingId}).`);
+  pushNotification('ADMIN', '🎓 New Student Registration', `${data.name} applied for Internship (#${data.bookingId}).`, 'booking');
 
   const waText = `NEW STUDENT INTERNSHIP REGISTRATION:\n----------------------------------------\nBooking Ref ID: ${data.bookingId}\nName: ${data.name}\nCollege: ${data.college}\nCourse: ${data.course}\nUTR Tracking Number: ${data.txnId}\n----------------------------------------`;
   window.open(`https://wa.me/${farmWhatsapp}?text=${encodeURIComponent(waText)}`, '_blank');
@@ -1476,7 +1575,7 @@ function submitFarmerVisit(e) {
   bookingsRegistry.unshift(data);
   localStorage.setItem('pgf_bookings', JSON.stringify(bookingsRegistry));
 
-  pushNotification('ADMIN', '👨‍🌾 New Farmer Training Booking', `${data.name} booked training (#${data.bookingId}) for ${data.date}.`);
+  pushNotification('ADMIN', '👨‍🌾 New Farmer Training Booking', `${data.name} booked training (#${data.bookingId}) for ${data.date}.`, 'booking');
 
   const waText = `NEW FARMER TRAINING BOOKING:\n----------------------------------------\nBooking Ref ID: ${data.bookingId}\nName: ${data.name}\nTraining Date: ${data.date}\nUTR Tracking Number: ${data.txnId}\n----------------------------------------`;
   window.open(`https://wa.me/${farmWhatsapp}?text=${encodeURIComponent(waText)}`, '_blank');

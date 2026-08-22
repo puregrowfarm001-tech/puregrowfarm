@@ -119,13 +119,8 @@
         color: #334155;
         margin-top: 3px;
       }
-      .timeline-time {
-        font-size: 11px;
-        color: #94a3b8;
-        margin-top: 2px;
-      }
 
-      /* Password strength & eye button */
+      /* Password input with eye icon */
       .password-input-group {
         position: relative;
         display: flex;
@@ -180,12 +175,12 @@
           <a href="#gallery" class="muted">Gallery</a>
         </nav>
 
-        <!-- Header Shopping Cart Button -->
+        <!-- Header Cart Button -->
         <button type="button" class="btn" style="background:#16a34a; color:#fff; padding:6px 14px; min-height:36px; border-radius:999px; position:relative;" onclick="scrollToCartSection()">
           🛒 Cart <span id="headerCartCount" style="background:#fff; color:#16a34a; font-size:11px; font-weight:bold; border-radius:50%; padding:2px 6px; margin-left:4px;">0</span>
         </button>
 
-        <!-- Dynamic Real-Time Notification Bell Component -->
+        <!-- Notification Bell Component -->
         <div id="notificationBellWrapper" class="notification-bell-container" style="position: relative; display: inline-block;">
           <button type="button" class="btn" style="background:#f1f5f9; color:#1e293b; border:1px solid var(--line); padding:6px 12px; min-height:36px; border-radius:999px; position:relative;" onclick="toggleNotificationDropdown()">
             🔔 <span id="notificationCountBadge" style="display:none; position:absolute; top:-4px; right:-4px; background:#ef4444; color:#fff; font-size:10px; font-weight:bold; border-radius:50%; width:18px; height:18px; line-height:18px; text-align:center;">0</span>
@@ -262,7 +257,7 @@
       </div>
     </section>
 
-    <!-- Warning Notice -->
+    <!-- Temporary Maintenance Notice -->
     <div style="background-color: #d93838; color: #ffffff; text-align: center; padding: 12px 20px; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; font-size: 15px; border-radius: 12px; margin: 15px 0 25px 0; box-shadow: 0 4px 6px rgba(0,0,0,0.1); animation: warningPulse 2s infinite;">
       <div style="font-weight: bold; margin-bottom: 6px;">
         ⚠️ IMPORTANT NOTICE: Our website is temporarily down. To place an order or book a farm, please contact us directly. DO NOT make any online payments here.
@@ -272,7 +267,7 @@
       </div>
     </div>
 
-    <!-- Dynamic User Session Dashboard Workspace -->
+    <!-- User Dashboard Workspace -->
     <section id="dashboardWorkspace" class="user-dashboard" style="display:none;">
       <h2>Welcome Back, <span id="userDashboardName">Grower</span>!</h2>
       <p class="muted">Your account tracks and loads all records natively from your farm profile.</p>
@@ -281,7 +276,7 @@
       </div>
     </section>
 
-    <!-- Activity History Logs Popup Screen -->
+    <!-- Activity History Modal -->
     <div id="userHistoryModal" class="data-popup-modal" onclick="closeHistoryModalOutside(event)">
       <div class="popup-content-box" style="max-width: 820px;">
         <button type="button" class="close-popup-btn" onclick="closeHistoryModal()">Close (X)</button>
@@ -305,7 +300,7 @@
       </div>
     </div>
 
-    <!-- Primary Public Content View Space -->
+    <!-- Public Store Content -->
     <div id="publicContent">
       <main>
         <section class="hero">
@@ -570,16 +565,24 @@
         
         <div class="fin-grid">
           <div class="fin-card">
-            <div class="muted small-title">Total Website Sales Revenue</div>
+            <div class="muted small-title">Total Website Sales Revenue (Net)</div>
             <div class="fin-val" id="finTotalRevenue">Rs 0.00</div>
           </div>
           <div class="fin-card">
-            <div class="muted small-title">Total Procurement Purchases Outflow</div>
+            <div class="muted small-title">Total Farm Purchases Outflow</div>
             <div class="fin-val" id="finTotalPurchases" style="color:var(--danger);">Rs 0.00</div>
           </div>
           <div class="fin-card">
-            <div class="muted small-title">Total Miscellaneous Expenses Outflow</div>
+            <div class="muted small-title">Total Farm Direct Expenses Outflow</div>
             <div class="fin-val" id="finTotalExpenses" style="color:var(--warn);">Rs 0.00</div>
+          </div>
+          <div class="fin-card">
+            <div class="muted small-title">Total Order Refunds Returned Outflow</div>
+            <div class="fin-val" id="finTotalRefunds" style="color:#ea580c;">Rs 0.00</div>
+          </div>
+          <div class="fin-card" style="background:#f0fdf4; border: 2px solid #86efac;">
+            <div class="muted small-title">🏢 Farm Total Cash Available (Net Vault Balance)</div>
+            <div class="fin-val" id="cashFarm" style="color:#15803d; font-size:24px; font-weight:900;">Rs 0.00</div>
           </div>
           <div class="fin-card" style="background:var(--soft);">
             <div class="muted small-title">Unified Net Profit Statement (P&L)</div>
@@ -590,7 +593,7 @@
         <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap:12px; margin-bottom:20px;">
           <div class="partner-cash-card" style="background:#eef2ff; color:#3730a3;">👤 Soham Gajera Hand Cash: <span id="cashSoham">Rs 0.00</span></div>
           <div class="partner-cash-card" style="background:#fef3c7; color:#92400e;">👤 Jeet Gajera Hand Cash: <span id="cashJeet">Rs 0.00</span></div>
-          <div class="partner-cash-card" style="background:#dcfce7; color:#166534;">🏢 Farm Vault Main Cash Balance: <span id="cashFarm">Rs 0.00</span></div>
+          <div class="partner-cash-card" style="background:#fee2e2; color:#991b1b;">📉 Total Farm Kharcha (Expenses + Purchases): <span id="totalFarmKharcha">Rs 0.00</span></div>
         </div>
 
         <!-- Live Farm Stock Summary (Dry, Khakhra, Papad) -->
@@ -599,7 +602,7 @@
           <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px;" id="adminLiveStockCardsContainer"></div>
         </div>
 
-        <!-- 5 Sub Tabs inside Accounting (With Daily Dry Log) -->
+        <!-- 5 Sub Tabs inside Accounting -->
         <div style="margin: 20px 0; display: flex; gap: 8px; flex-wrap: wrap;">
           <button type="button" class="btn" id="btnSubTabDryStock" onclick="switchSubAccountingTab('subTabDryStock')">🌾 Daily Dry Mushroom Stock Page</button>
           <button type="button" class="btn" id="btnSubTabExpense" onclick="switchSubAccountingTab('subTabExpense')">1. Expenses Page</button>
@@ -768,17 +771,17 @@
                 <label>Select Damage Log Date: <input type="date" id="dmgLogDate" required></label>
                 <label>Resource Target Party Location:
                   <select id="dmgPayer" required>
-                    <option value="Farm">Farm General Account General Vault</option>
-                    <option value="Soham">Soham Gajera Account</option>
-                    <option value="Jeet">Jeet Gajera Account</option>
+                    <option value="Farm">Farm General Account Vault (+ Inflow to Vault)</option>
+                    <option value="Soham">Soham Gajera Personal (- Deduct from Balance)</option>
+                    <option value="Jeet">Jeet Gajera Personal (- Deduct from Balance)</option>
                   </select>
                 </label>
                 <input type="text" id="dmgDesc" placeholder="Damage Reason Context" required>
-                <input type="number" id="dmgAmount" placeholder="Financial Compensation Value Inflow (Rs)" required>
-                <button type="submit" style="background:var(--danger);">Log Damage Record Inflow</button>
+                <input type="number" id="dmgAmount" placeholder="Financial Value Factor (Rs)" required>
+                <button type="submit" style="background:var(--danger);">Log Damage Record</button>
               </form>
             </div>
-            <div class="table-responsive"><table class="sub-table"><thead><tr><th>Date</th><th>Context Info</th><th>Partner Party</th><th>Amount Inflow</th></tr></thead><tbody id="subDamageTableBody"></tbody></table></div>
+            <div class="table-responsive"><table class="sub-table"><thead><tr><th>Date</th><th>Context Info</th><th>Partner Party</th><th>Adjusted Amount</th></tr></thead><tbody id="subDamageTableBody"></tbody></table></div>
           </div>
         </div>
       </div>
@@ -804,7 +807,7 @@
       </div>
     </section>
 
-    <!-- Professional Dynamic Column Invoice Modal -->
+    <!-- Professional Dynamic Invoice Modal -->
     <dialog id="invoiceDialog" style="border: none; border-radius: 16px; box-shadow: 0 10px 40px rgba(0,0,0,0.2); padding: 0; width: min(800px, calc(100% - 30px));">
       <div class="dialog-head" style="background: var(--accent); color: white; padding: 15px 24px; display: flex; justify-content: space-between; align-items: center;">
         <h3 style="margin: 0; font-size: 18px; font-weight: 700;">📄 Farm Generated System Invoice</h3>
@@ -874,7 +877,7 @@
       </div>
     </dialog>
 
-    <!-- Detailed Footer -->
+    <!-- Footer -->
     <footer style="padding: 30px 0; border-top: 1px solid var(--line); margin-top: 40px; background: #ffffff; border-radius: 16px;">
       <div style="max-width: 900px; margin: 0 auto; padding: 0 15px;">
         <div style="display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; margin-bottom: 24px;">

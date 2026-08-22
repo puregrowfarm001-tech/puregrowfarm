@@ -108,7 +108,7 @@ function checkPasswordStrength(pwd) {
 }
 
 // =========================================================
-// INTERACTIVE NOTIFICATIONS ENGINE
+// INTERACTIVE NOTIFICATIONS ENGINE (AUTO-READ DISMISS ON OPEN)
 // =========================================================
 function pushNotification(targetRecipient, title, message, targetAction = 'general') {
   const newNotif = {
@@ -125,6 +125,24 @@ function pushNotification(targetRecipient, title, message, targetAction = 'gener
   notificationsRegistry.unshift(newNotif);
   localStorage.setItem('pgf_notifications', JSON.stringify(notificationsRegistry));
   renderNotificationBadge();
+}
+
+function markAllNotificationsAsRead() {
+  const currentRecipient = currentUser ? (currentUser.isAdmin ? 'ADMIN' : currentUser.email) : null;
+  if (!currentRecipient) return;
+
+  let changed = false;
+  notificationsRegistry.forEach(n => {
+    if ((n.recipient === currentRecipient || (currentUser.isAdmin && n.recipient === 'ADMIN')) && !n.isRead) {
+      n.isRead = true;
+      changed = true;
+    }
+  });
+
+  if (changed) {
+    localStorage.setItem('pgf_notifications', JSON.stringify(notificationsRegistry));
+    renderNotificationBadge();
+  }
 }
 
 function handleNotificationClick(notifId) {
@@ -202,6 +220,7 @@ function toggleNotificationDropdown() {
   if (panel.style.display === "none" || panel.style.display === "") {
     panel.style.display = "block";
     renderNotificationBadge();
+    markAllNotificationsAsRead(); // Auto marks read as soon as user opens bell
   } else {
     panel.style.display = "none";
   }
@@ -220,6 +239,9 @@ document.addEventListener('click', function(e) {
   const wrapper = document.getElementById("notificationBellWrapper");
   const panel = document.getElementById("notificationDropdownPanel");
   if (wrapper && panel && !wrapper.contains(e.target)) {
+    if (panel.style.display === "block") {
+      markAllNotificationsAsRead();
+    }
     panel.style.display = "none";
   }
 });
@@ -424,6 +446,7 @@ function loadUserPanelData() {
     const awb = o.trackingNumber || ("FMPC" + Math.floor(1000000000 + Math.random() * 9000000000));
     const loc = o.currentLocation || "Farm Facility";
     const targetArrivalDate = o.deliveryDays || "Within 2-4 Business Days";
+    const refundCompletedDate = o.refundCreditedDate || orderDate;
     const prodImg = getOrderProductImage(o.products);
 
     const stageMap = { 'Placed': 1, 'Packed': 2, 'Shipped': 3, 'OutForDelivery': 4, 'Delivered': 5 };
@@ -438,9 +461,15 @@ function loadUserPanelData() {
       statusText = "Verification Pending";
       subtitleText = "Admin is reviewing payment";
     } else if (isCancelled) {
-      statusDotColor = "#ef4444";
-      statusText = "Cancelled on " + (orderDate.split(" ")[0] || orderDate);
-      subtitleText = "Your order was cancelled by Farm Administration.";
+      if (o.refundStage === 'Refund Credited') {
+        statusDotColor = "#16a34a";
+        statusText = "Refund Completed " + refundCompletedDate;
+        subtitleText = `Refund of ₹${o.total} credited to UPI`;
+      } else {
+        statusDotColor = "#ea580c";
+        statusText = "Cancelled / " + (o.refundStage || 'Refund Initiated');
+        subtitleText = "Your order was cancelled by Farm Admin.";
+      }
     } else if (isRejected) {
       statusDotColor = "#ef4444";
       statusText = "Order Rejected";
@@ -467,7 +496,7 @@ function loadUserPanelData() {
             </div>
           </div>
 
-          <div style="text-align: right; min-width: 150px; flex-shrink: 0;">
+          <div style="text-align: right; min-width: 160px; flex-shrink: 0;">
             <div style="display: flex; align-items: center; justify-content: flex-end; gap: 5px;">
               <span style="width: 8px; height: 8px; border-radius: 50%; background: ${statusDotColor}; display: inline-block; flex-shrink: 0;"></span>
               <strong style="font-size: 12.5px; color: #1e293b; white-space: nowrap;">${statusText}</strong>
@@ -536,24 +565,31 @@ function loadUserPanelData() {
           ` : ''}
 
           ${isCancelled ? `
-            <div style="background: #ffffff; padding: 16px; border-radius: 8px; border: 1px solid #fed7aa;">
-              <div style="background:#fff7ed; padding:12px; border-radius:8px; border-left:4px solid #ea580c; margin-bottom:12px;">
-                <strong style="color:#c2410c; font-size:14px;">Refund Status: ${o.refundStage || 'Refund Initiated'}</strong>
-                <p style="margin: 4px 0 0 0; font-size: 12px; color: #7c2d12;">
-                  • Refund of ₹${o.total} for your order will be credited directly to your UPI ID: <strong>${o.userUpiId || 'Registered Account'}</strong>.
+            <div style="background: #ffffff; padding: 16px; border-radius: 8px; border: 1px solid ${o.refundStage === 'Refund Credited' ? '#86efac' : '#fed7aa'};">
+              <div style="background:${o.refundStage === 'Refund Credited' ? '#f0fdf4' : '#fff7ed'}; padding:12px; border-radius:8px; border-left:4px solid ${o.refundStage === 'Refund Credited' ? '#16a34a' : '#ea580c'}; margin-bottom:12px;">
+                <strong style="color:${o.refundStage === 'Refund Credited' ? '#15803d' : '#c2410c'}; font-size:14px;">
+                  ${o.refundStage === 'Refund Credited' ? `✅ Refund Completed on ${refundCompletedDate}` : `Refund Status: ${o.refundStage || 'Refund Initiated'}`}
+                </strong>
+                <p style="margin: 4px 0 0 0; font-size: 12.5px; color:${o.refundStage === 'Refund Credited' ? '#166534' : '#7c2d12'};">
+                  ${o.refundStage === 'Refund Credited' 
+                    ? `• Refund of <strong>₹${o.total}</strong> has been transferred successfully on <strong>${refundCompletedDate}</strong> to your UPI ID: <strong>${o.userUpiId || 'Linked Bank'}</strong>.` 
+                    : `• Refund of ₹${o.total} for your order will be credited directly to your UPI ID: <strong>${o.userUpiId || 'Registered Account'}</strong>.`}
                 </p>
               </div>
 
               <div class="vertical-timeline">
                 <div class="timeline-step completed cancelled-line">
                   <div class="timeline-dot"></div>
-                  <div class="timeline-title">Order Confirmed <span>${orderDate}</span></div>
+                  <div class="timeline-title">Order Placed <span>${orderDate}</span></div>
                   <div class="timeline-desc">Your Order was placed.</div>
                 </div>
-                <div class="timeline-step cancelled">
-                  <div class="timeline-dot"></div>
-                  <div class="timeline-title" style="color:#ef4444;">Cancelled by Admin</div>
-                  <div class="timeline-desc">Reason: ${o.status.replace('Cancelled (Reason: ', '').replace(')', '')}</div>
+                
+                <div class="timeline-step ${o.refundStage === 'Refund Credited' ? 'completed' : 'cancelled'}">
+                  <div class="timeline-dot" style="${o.refundStage === 'Refund Credited' ? 'background:#16a34a;' : ''}"></div>
+                  <div class="timeline-title" style="color:${o.refundStage === 'Refund Credited' ? '#16a34a' : '#ef4444'};">
+                    ${o.refundStage === 'Refund Credited' ? `Refund Completed (${refundCompletedDate})` : 'Order Cancelled'}
+                  </div>
+                  <div class="timeline-desc">${o.refundStage === 'Refund Credited' ? `Full refund of ₹${o.total} credited to your UPI.` : `Reason: ${o.status.replace('Cancelled (Reason: ', '').replace(')', '')}`}</div>
                 </div>
               </div>
             </div>
@@ -764,7 +800,7 @@ function populateAdminDashboardTables() {
   const validOrders = orderRegistry.filter(o => o && o.name && o.orderId);
   const totalOrders = validOrders.length;
   
-  // Rule: Money counts ONLY if order status is Approved or Delivered (Pending/Rejected/Cancelled don't count)
+  // Rule: Money counts ONLY if order status is Approved or Delivered
   const approvedOrdersList = validOrders.filter(o => o.status === 'Approved' || o.status === 'Delivered');
   const approvedTotalRevenue = approvedOrdersList.reduce((sum, o) => sum + Number(o.total || 0), 0);
   
@@ -792,6 +828,7 @@ function populateAdminDashboardTables() {
         const stage = o.trackingStage || (isDelivered ? 'Delivered' : (isApproved ? 'Packed' : 'Placed'));
         const loc = o.currentLocation || 'Farm Facility';
         const eta = o.deliveryDays || '';
+        const refundDate = o.refundCreditedDate || getTodayIsoString();
         const displayDateTime = o.dateLogged || new Date().toLocaleDateString('en-IN');
         const userUpi = o.userUpiId || "N/A";
 
@@ -821,7 +858,7 @@ function populateAdminDashboardTables() {
               <span class="badge ${isDelivered ? 'badge-confirmed' : (isCancelled ? 'badge-pending' : (isRejected ? 'badge-pending' : (isApproved ? 'badge-confirmed' : 'badge-pending')))}" style="${isRejected ? 'background:#fee2e2; color:#991b1b;' : (isCancelled ? 'background:#ffedd5; color:#c2410c;' : (isDelivered ? 'background:#16a34a; color:#fff;' : ''))}">
                 ${status}
               </span>
-              ${isCancelled ? `<br><small style="color:${o.refundStage === 'Refund Credited' ? '#16a34a' : '#ea580c'}; font-weight:bold;">Refund: ${o.refundStage || 'Initiated'}</small>` : ''}
+              ${isCancelled ? `<br><small style="color:${o.refundStage === 'Refund Credited' ? '#16a34a' : '#ea580c'}; font-weight:bold;">Refund: ${o.refundStage || 'Initiated'} ${o.refundCreditedDate ? `(${o.refundCreditedDate})` : ''}</small>` : ''}
             </td>
             
             <td style="min-width: 270px;">
@@ -851,7 +888,13 @@ function populateAdminDashboardTables() {
               ` : (isCancelled ? `
                 <div style="background:#fffaf5; padding:8px; border-radius:8px; border:1px solid #fdba74; font-size:12px;">
                   <span style="font-weight:bold; color:#ea580c;">Refund Control Action</span>
-                  <div style="display:flex; gap:4px; flex-wrap:wrap; margin-top:6px;">
+                  
+                  <div style="margin: 6px 0 4px 0; display:flex; align-items:center; gap:4px; background:#fff; padding:3px 6px; border-radius:4px; border:1px solid #cbd5e1;">
+                    <label style="font-size:10.5px; font-weight:bold; white-space:nowrap;">📅 Refund Date:</label>
+                    <input type="date" value="${refundDate}" id="refundDateInput_${idx}" style="padding:1px 4px; font-size:11px; width:100%; border:1px solid #94a3b8; border-radius:4px;" onchange="updateOrderRefundDate(${idx}, this.value)">
+                  </div>
+
+                  <div style="display:flex; gap:4px; flex-wrap:wrap; margin-top:4px;">
                     <button type="button" class="btn" style="padding:3px 6px; font-size:11px; min-height:24px; background:${o.refundStage==='Refund Initiated'?'#ea580c':'#94a3b8'};" onclick="setRefundStageDirect(${idx}, 'Refund Initiated')">Initiated</button>
                     <button type="button" class="btn" style="padding:3px 6px; font-size:11px; min-height:24px; background:${o.refundStage==='Refund Processing'?'#ea580c':'#94a3b8'};" onclick="setRefundStageDirect(${idx}, 'Refund Processing')">Processing</button>
                     <button type="button" class="btn" style="padding:3px 6px; font-size:11px; min-height:24px; background:${o.refundStage==='Refund Credited'?'#16a34a':'#dc2626'}; font-weight:bold;" onclick="setRefundStageDirect(${idx}, 'Refund Credited')">💸 Credited (Deduct Cash)</button>
@@ -896,7 +939,7 @@ function populateAdminDashboardTables() {
     if (!validBookings.length) {
       document.getElementById("adminBookingsTableBody").innerHTML = `<tr><td colspan="10" style="text-align:center; color:var(--muted); padding:24px; font-weight:bold;">No student or farmer training registrations yet.</td></tr>`;
     } else {
-      bookingsTbody = document.getElementById("adminBookingsTableBody");
+      const bookingsTbody = document.getElementById("adminBookingsTableBody");
       bookingsTbody.innerHTML = validBookings.map((b, idx) => {
         const isStudent = b.type === "Student";
         const submittedDetails = isStudent ? `
@@ -994,6 +1037,12 @@ function updateExpectedDeliveryDate(idx, newDate) {
   populateAdminDashboardTables();
 }
 
+function updateOrderRefundDate(idx, newDate) {
+  if (!newDate) return;
+  orderRegistry[idx].refundCreditedDate = newDate.trim();
+  localStorage.setItem('pgf_orders', JSON.stringify(orderRegistry));
+}
+
 function adminEditOrderDetails(idx) {
   const o = orderRegistry[idx];
   const newName = prompt("Customer Name edit karein:", o.name);
@@ -1086,6 +1135,7 @@ function handleOrderCancelRefund(idx) {
   o.status = `Cancelled (Reason: ${reason})`;
   o.trackingStage = "Cancelled";
   o.refundStage = "Refund Initiated";
+  o.refundCreditedDate = "";
 
   localStorage.setItem('pgf_orders', JSON.stringify(orderRegistry));
   
@@ -1123,11 +1173,15 @@ function setRefundStageDirect(idx, newRefStage) {
   const o = orderRegistry[idx];
   o.refundStage = newRefStage;
   
+  const refundInput = document.getElementById(`refundDateInput_${idx}`);
+  const selectedDate = refundInput ? refundInput.value : getTodayIsoString();
+  o.refundCreditedDate = selectedDate;
+
   localStorage.setItem('pgf_orders', JSON.stringify(orderRegistry));
   
   if (newRefStage === 'Refund Credited') {
-    pushNotification(o.email, '💰 Refund Completed', `₹${o.total} has been successfully credited back to your UPI ID: ${o.userUpiId || 'Bank Account'}.`, 'order');
-    alert(`💸 Refund of ₹${o.total} marked as Credited! Farm Cash Vault se paisa deduct ho gaya.`);
+    pushNotification(o.email, '💰 Refund Completed', `₹${o.total} has been successfully credited on ${selectedDate} to your UPI ID: ${o.userUpiId || 'Bank Account'}.`, 'order');
+    alert(`💸 Refund of ₹${o.total} marked as Credited on ${selectedDate}! Farm Cash Vault se paisa deduct ho gaya.`);
   } else {
     pushNotification(o.email, '💰 Refund Status Update', `Refund for Order #${o.orderId} status: ${newRefStage}.`, 'order');
   }
@@ -1197,7 +1251,6 @@ function rejectTrainingBooking(idx) {
 // FINANCIAL LEDGER & EXACT FARM REVENUE RULES
 // =========================================================
 function computeFinancialLedgerStatements() {
-  // RULE 1: Only Approved/Delivered orders or Farm confirmed bookings count in Sales
   const approvedOnlineOrdersRevenue = orderRegistry
     .filter(o => o && (o.status === 'Approved' || o.status === 'Delivered'))
     .reduce((sum, o) => sum + Number(o.total || 0), 0);
@@ -1209,7 +1262,7 @@ function computeFinancialLedgerStatements() {
   const totalExpenses = expensesRegistry.filter(e => e.category !== "Damage Received").reduce((sum, e) => sum + Number(e.amount || 0), 0);
   const totalDamages = expensesRegistry.filter(e => e.category === "Damage Received").reduce((sum, e) => sum + Number(e.amount || 0), 0);
 
-  // RULE 2: Money cuts from Farm Account only if order refund is marked 'Refund Credited'
+  // Money cuts from Farm Account only if order refund is marked 'Refund Credited'
   const totalCreditedRefunds = orderRegistry
     .filter(o => o && o.status && o.status.startsWith('Cancelled') && o.refundStage === 'Refund Credited')
     .reduce((sum, o) => sum + Number(o.total || 0), 0);
@@ -1224,10 +1277,7 @@ function computeFinancialLedgerStatements() {
 
   let cashBalances = { Soham: 0, Jeet: 0, Farm: 0 };
   
-  // Farm account gets all approved online orders
   cashBalances.Farm += approvedOnlineOrdersRevenue;
-  
-  // Deduct credited refunds strictly from Farm Account
   cashBalances.Farm -= totalCreditedRefunds;
 
   salesRegistry.forEach(s => { 
@@ -1613,6 +1663,7 @@ function confirmOrder(e) {
     txnId: document.getElementById("paymentId").value.trim(),
     dateLogged: currentTimestamp,
     deliveryDays: "",
+    refundCreditedDate: "",
     status: "Pending Verification"
   };
 

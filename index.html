@@ -175,18 +175,15 @@
           <a href="#gallery" class="muted">Gallery</a>
         </nav>
 
-        <!-- Header Cart Button -->
         <button type="button" class="btn" style="background:#16a34a; color:#fff; padding:6px 14px; min-height:36px; border-radius:999px; position:relative;" onclick="scrollToCartSection()">
           🛒 Cart <span id="headerCartCount" style="background:#fff; color:#16a34a; font-size:11px; font-weight:bold; border-radius:50%; padding:2px 6px; margin-left:4px;">0</span>
         </button>
 
-        <!-- Notification Bell Component -->
         <div id="notificationBellWrapper" class="notification-bell-container" style="position: relative; display: inline-block;">
           <button type="button" class="btn" style="background:#f1f5f9; color:#1e293b; border:1px solid var(--line); padding:6px 12px; min-height:36px; border-radius:999px; position:relative;" onclick="toggleNotificationDropdown()">
             🔔 <span id="notificationCountBadge" style="display:none; position:absolute; top:-4px; right:-4px; background:#ef4444; color:#fff; font-size:10px; font-weight:bold; border-radius:50%; width:18px; height:18px; line-height:18px; text-align:center;">0</span>
           </button>
 
-          <!-- Notification Dropdown Panel -->
           <div id="notificationDropdownPanel" style="display:none; position:absolute; right:0; top:45px; width:min(340px, 90vw); background:#fff; border:1px solid var(--line); border-radius:12px; box-shadow:0 10px 25px rgba(0,0,0,0.18); z-index:100000; padding:12px;">
             <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--line); padding-bottom:8px; margin-bottom:8px;">
               <strong style="font-size:14px; color:#0f1720;">Notifications Alert</strong>
@@ -257,17 +254,7 @@
       </div>
     </section>
 
-    <!-- Temporary Maintenance Notice -->
-    <div style="background-color: #d93838; color: #ffffff; text-align: center; padding: 12px 20px; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; font-size: 15px; border-radius: 12px; margin: 15px 0 25px 0; box-shadow: 0 4px 6px rgba(0,0,0,0.1); animation: warningPulse 2s infinite;">
-      <div style="font-weight: bold; margin-bottom: 6px;">
-        ⚠️ IMPORTANT NOTICE: Our website is temporarily down. To place an order or book a farm, please contact us directly. DO NOT make any online payments here.
-      </div>
-      <div style="font-weight: bold;">
-        ⚠️ आवश्यक सूचना: हमारी वेबसाइट अभी कुछ समय के लिए बंद है। यदि आप ऑर्डर देना चाहते हैं या फार्म बुक करना चाहते हैं, तो कृपया हमसे सीधा संपर्क करें। कृपया वेबसाइट पर कोई भी ऑनलाइन पेमेंट न करें।
-      </div>
-    </div>
-
-    <!-- User Dashboard Workspace (Separate Personal Buttons) -->
+    <!-- User Dashboard Workspace -->
     <section id="dashboardWorkspace" class="user-dashboard" style="display:none;">
       <h2>Welcome Back, <span id="userDashboardName">Grower</span>!</h2>
       <p class="muted">Access your dedicated farm records, orders tracking, and training certificates directly below.</p>
@@ -658,6 +645,7 @@
           <button type="button" class="btn" id="btnSubTabDamage" onclick="switchSubAccountingTab('subTabDamage')">4. Damage Page</button>
         </div>
 
+        <!-- Sub Tab 0: Daily Dry Mushroom Stock Manager -->
         <div id="subTabDryStock" class="sub-accounting-section" style="display:none;">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
             <h4 style="margin:0;">🌾 Daily Dry Mushroom Production & Inward Stock Ledger</h4>
@@ -691,6 +679,7 @@
           </div>
         </div>
 
+        <!-- Sub Tab 1: Expense Page -->
         <div id="subTabExpense" class="sub-accounting-section" style="display:none;">
           <h4>1. Log Operational Outflow & Records</h4>
           <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap:16px;">
@@ -718,14 +707,30 @@
                 </label>
                 <input type="text" id="expDesc" placeholder="Item Context Specification Summary" required>
                 <input type="number" id="expAmount" placeholder="Amount Value Factor (Rs)" required>
+                <input type="text" id="expNotes" placeholder="Additional Notes / Remarks (Optional)">
                 <button type="submit">Log Outflow Ledger Row</button>
               </form>
             </div>
-            <div class="table-responsive"><table class="sub-table"><thead><tr><th>Date</th><th>Category</th><th>Payer</th><th>Context</th><th>Amount</th></tr></thead><tbody id="subExpenseTableBody"></tbody></table></div>
+            <div class="table-responsive">
+              <table class="sub-table">
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Category</th>
+                    <th>Payer</th>
+                    <th>Context</th>
+                    <th>Amount</th>
+                    <th>Notes</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="subExpenseTableBody"></tbody>
+              </table>
+            </div>
           </div>
         </div>
 
-        <!-- Sub Tab 2: Sell (With Delivery Logistics Charge) -->
+        <!-- Sub Tab 2: Sell Page -->
         <div id="subTabSell" class="sub-accounting-section" style="display:none;">
           <h4>2. Log Manual Wholesale Production Sale (Direct Offline Inflow)</h4>
           <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap:16px;">
@@ -753,9 +758,9 @@
                 <input type="text" id="saleAddress" placeholder="Client Shipping Address" required>
                 <input type="number" step="0.01" id="saleQty" placeholder="Dispatched Weight Lots (kg/Packs)" required>
                 <input type="number" id="saleRate" placeholder="Agreed Unit Spot Cost (Rs)" required>
-                
                 <input type="number" id="saleDelivery" placeholder="Delivery Logistics Charge (Rs) [0 for Free]" value="0" min="0">
-                
+                <input type="number" id="salePaidAmount" placeholder="Received Payment Amount (Rs)" required>
+                <input type="text" id="saleNotes" placeholder="Client Notes / Remarks (e.g. Paid via GPay, 100 pending)">
                 <button type="submit">Log Operational Sales Inflow</button>
               </form>
             </div>
@@ -766,10 +771,10 @@
                     <th>Date</th>
                     <th>Product</th>
                     <th>Buyer</th>
-                    <th>Phone</th>
                     <th>Qty</th>
-                    <th>Delivery</th>
                     <th>Total</th>
+                    <th>Received / Pending</th>
+                    <th>Notes</th>
                     <th>Action</th>
                   </tr>
                 </thead>
@@ -779,6 +784,7 @@
           </div>
         </div>
 
+        <!-- Sub Tab 3: Buy Page -->
         <div id="subTabBuy" class="sub-accounting-section" style="display:none;">
           <h4>3. Log Raw Inventory Material Bulk Buy Outflow</h4>
           <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap:16px;">
@@ -803,13 +809,30 @@
                 <input type="text" id="purVendor" placeholder="Vendor Farmer Source Entity Name" required>
                 <input type="number" step="0.01" id="purQty" placeholder="InwardLot Weight Volume Units" required>
                 <input type="number" id="purRate" placeholder="Purchase Valuation Factor (Rs)" required>
+                <input type="text" id="purNotes" placeholder="Vendor Notes / Batch Memo (Optional)">
                 <button type="submit">Execute Inventory Buy Inflow</button>
               </form>
             </div>
-            <div class="table-responsive"><table class="sub-table"><thead><tr><th>Date</th><th>Resource</th><th>Vendor</th><th>Qty</th><th>Total</th></tr></thead><tbody id="subBuyTableBody"></tbody></table></div>
+            <div class="table-responsive">
+              <table class="sub-table">
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Resource</th>
+                    <th>Vendor</th>
+                    <th>Qty</th>
+                    <th>Total</th>
+                    <th>Notes</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="subBuyTableBody"></tbody>
+              </table>
+            </div>
           </div>
         </div>
 
+        <!-- Sub Tab 4: Damage Page -->
         <div id="subTabDamage" class="sub-accounting-section" style="display:none;">
           <h4>4. Log Damages Inward & Loss Factor Records</h4>
           <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap:16px;">
@@ -825,10 +848,25 @@
                 </label>
                 <input type="text" id="dmgDesc" placeholder="Damage Reason Context" required>
                 <input type="number" id="dmgAmount" placeholder="Financial Value Factor (Rs)" required>
+                <input type="text" id="dmgNotes" placeholder="Damage Audit Notes / Memo (Optional)">
                 <button type="submit" style="background:var(--danger);">Log Damage Record</button>
               </form>
             </div>
-            <div class="table-responsive"><table class="sub-table"><thead><tr><th>Date</th><th>Context Info</th><th>Partner Party</th><th>Adjusted Amount</th></tr></thead><tbody id="subDamageTableBody"></tbody></table></div>
+            <div class="table-responsive">
+              <table class="sub-table">
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Context Info</th>
+                    <th>Partner Party</th>
+                    <th>Adjusted Amount</th>
+                    <th>Notes</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="subDamageTableBody"></tbody>
+              </table>
+            </div>
           </div>
         </div>
       </div>
@@ -900,6 +938,7 @@
             <strong>Payment Method:</strong> UPI / Online Mobile Gateway App<br>
             <strong>Bank Partner Name:</strong> HDFC Bank India Limited<br>
             <strong>Account UPI Identifier:</strong> <code style="background: #f3f4f6; padding: 2px 6px; border-radius: 4px; color: var(--accent); font-weight: bold;">sohamgajera01@okhdfcbank</code>
+            <div id="invNotesSection" style="margin-top: 8px; font-size: 12px; color: #1e293b; background: #e0f2fe; padding: 6px 10px; border-radius: 6px; display: none;"></div>
             <p style="font-style: italic; color: var(--accent); font-weight: 700; margin-top: 12px; font-size: 14px;">Thank you for your business purchase order!</p>
           </div>
           <div style="width: 250px; background: #f8faf8; padding: 16px; border-radius: 12px; border: 1px solid var(--line);">
@@ -908,6 +947,8 @@
             <div style="display: flex; justify-content: space-between; padding: 4px 0; font-size: 14px; color: #4b5563;"><span>Tax Rate (0%):</span><span style="font-weight: bold; color: #111;">Rs 0.00</span></div>
             <hr style="border: 0; border-top: 1px solid var(--line); margin: 8px 0;">
             <div style="display: flex; justify-content: space-between; padding: 4px 0; font-size: 18px; color: var(--accent); font-weight: bold;"><span>Total:</span><span id="invTotal">Rs 0</span></div>
+            <div id="invPaidRow" style="display: none; justify-content: space-between; padding: 4px 0; font-size: 13px; color: #16a34a; font-weight: bold;"><span>Paid Amount:</span><span id="invPaid">Rs 0</span></div>
+            <div id="invDueRow" style="display: none; justify-content: space-between; padding: 4px 0; font-size: 13px; color: #dc2626; font-weight: bold;"><span>Balance Due:</span><span id="invDue">Rs 0</span></div>
           </div>
         </div>
         

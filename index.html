@@ -388,6 +388,10 @@
                 <input type="tel" id="phone" placeholder="Phone number" readonly required style="background:#f3f4f6; cursor:not-allowed;">
                 <input type="email" id="email" placeholder="Email" readonly required style="background:#f3f4f6; cursor:not-allowed;">
                 <input type="text" id="address" placeholder="Complete Shipping Address" required>
+                
+                <!-- Mandatory User UPI ID Input for refund / verification -->
+                <input type="text" id="userUpiId" placeholder="Your UPI ID (e.g. name@okhdfcbank / 9876543210@paytm) *" required oninput="validateOrderForm()">
+                
                 <select id="paymentMode" required onchange="openProductPayment()">
                   <option value="">Select online payment mode</option>
                   <option value="GPay">GPay App</option>
@@ -396,7 +400,7 @@
                   <option value="UPI">Any UPI App / Gateway</option>
                 </select>
                 <div id="productPaymentHelp" class="payment-help"></div>
-                <input type="text" id="paymentId" placeholder="Online payment transaction ID (UTR)" disabled required oninput="validateOrderForm()">
+                <input type="text" id="paymentId" placeholder="Online payment transaction ID (UTR) *" disabled required oninput="validateOrderForm()">
                 <button type="submit" id="confirmOrderBtn" disabled>Confirm Purchase Order</button>
               </form>
             </aside>
@@ -442,6 +446,9 @@
                 <div class="bill-row total"><span>Grand Total Fee</span><strong style="color:var(--accent);">Rs 100</strong></div>
               </div>
               
+              <!-- Mandatory Student UPI ID -->
+              <input type="text" id="suserUpi" placeholder="Your UPI ID (e.g. student@okaxis) *" required oninput="validateStudentForm()">
+
               <select id="spaymentMode" required onchange="openVisitPayment('studentForm', 100)">
                 <option value="">Select online payment mode</option>
                 <option value="GPay">GPay App</option>
@@ -451,7 +458,7 @@
               </select>
 
               <div id="studentPaymentHelp" class="payment-help"></div>
-              <input type="text" id="spayment" placeholder="Online payment transaction ID (UTR)" disabled required oninput="validateStudentForm()">
+              <input type="text" id="spayment" placeholder="Online payment transaction ID (UTR) *" disabled required oninput="validateStudentForm()">
               <button type="submit" id="studentSubmitBtn" disabled>Confirm Student Registration</button>
             </form>
 
@@ -468,6 +475,9 @@
                 <div class="bill-row total"><span>Grand Total Fee</span><strong style="color:var(--accent);">Rs 699</strong></div>
               </div>
 
+              <!-- Mandatory Farmer UPI ID -->
+              <input type="text" id="fuserUpi" placeholder="Your UPI ID (e.g. farmer@upi) *" required oninput="validateFarmerForm()">
+
               <select id="fpaymentMode" required onchange="openVisitPayment('farmerForm', 699)">
                 <option value="">Select online payment mode</option>
                 <option value="GPay">GPay App</option>
@@ -477,7 +487,7 @@
               </select>
 
               <div id="farmerPaymentHelp" class="payment-help"></div>
-              <input type="text" id="fpayment" placeholder="Online payment transaction ID (UTR)" disabled required oninput="validateFarmerForm()">
+              <input type="text" id="fpayment" placeholder="Online payment transaction ID (UTR) *" disabled required oninput="validateFarmerForm()">
               <button type="submit" id="farmerSubmitBtn" disabled>Confirm Farmer Training Seat</button>
             </form>
           </div>
@@ -512,23 +522,23 @@
       <div id="erpOrdersTab" class="erp-section active">
         <h3>E-Commerce Customer Orders Grid Ledger & Shipment Management</h3>
         
-        <!-- Orders Top Summary Statistic Metrics -->
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 18px;">
+        <!-- Orders Top Summary Cards (Delivered removed, Refund Pending added) -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; margin-bottom: 18px;">
           <div style="background: #eff6ff; border: 1px solid #bfdbfe; padding: 12px; border-radius: 10px;">
             <div style="font-size: 12px; color: #1e40af; font-weight: bold;">📦 Total Orders Received</div>
             <div id="adminTotalOrdersCount" style="font-size: 22px; font-weight: 800; color: #1d4ed8; margin-top: 4px;">0</div>
           </div>
           <div style="background: #f0fdf4; border: 1px solid #bbf7d0; padding: 12px; border-radius: 10px;">
-            <div style="font-size: 12px; color: #166534; font-weight: bold;">💰 Total Orders Value</div>
-            <div id="adminTotalOrdersValue" style="font-size: 22px; font-weight: 800; color: #15803d; margin-top: 4px;">Rs 0.00</div>
-          </div>
-          <div style="background: #f0fdf4; border: 1px solid #86efac; padding: 12px; border-radius: 10px;">
-            <div style="font-size: 12px; color: #15803d; font-weight: bold;">✅ Total Delivered Orders</div>
-            <div id="adminDeliveredOrdersCount" style="font-size: 22px; font-weight: 800; color: #16a34a; margin-top: 4px;">0</div>
+            <div style="font-size: 12px; color: #166534; font-weight: bold;">💰 Total Farm Revenue (Approved)</div>
+            <div id="adminApprovedRevenueValue" style="font-size: 22px; font-weight: 800; color: #15803d; margin-top: 4px;">Rs 0.00</div>
           </div>
           <div style="background: #fffbeb; border: 1px solid #fde68a; padding: 12px; border-radius: 10px;">
             <div style="font-size: 12px; color: #92400e; font-weight: bold;">⏳ Orders Pending Delivery</div>
             <div id="adminPendingOrdersCount" style="font-size: 22px; font-weight: 800; color: #d97706; margin-top: 4px;">0</div>
+          </div>
+          <div style="background: #fff7ed; border: 1px solid #fed7aa; padding: 12px; border-radius: 10px;">
+            <div style="font-size: 12px; color: #9a3412; font-weight: bold;">🔄 Refund Pending Orders</div>
+            <div id="adminRefundPendingCount" style="font-size: 22px; font-weight: 800; color: #ea580c; margin-top: 4px;">0</div>
           </div>
         </div>
 
@@ -538,14 +548,11 @@
               <tr>
                 <th>Order ID</th>
                 <th>Order Placed Date & Time</th>
-                <th>Client Name</th>
-                <th>Phone / Email</th>
+                <th>Client Details</th>
                 <th>Shipping Address</th>
                 <th>Products Ordered</th>
-                <th>Subtotal</th>
-                <th>Delivery Charge</th>
-                <th>Grand Total</th>
-                <th>Payment Mode & Txn ID</th>
+                <th>Total</th>
+                <th>Payment Mode, Txn ID & User UPI</th>
                 <th>Order Status</th>
                 <th>Flipkart Expected Delivery Date & Tracking</th>
                 <th>Actions</th>
@@ -561,17 +568,25 @@
         <h3>Farm Training Workshop & Student Internship Bookings Ledger</h3>
         
         <!-- Farm Bookings Top Summary Statistic Metrics -->
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 18px;">
-          <div style="background: #eff6ff; border: 1px solid #bfdbfe; padding: 12px; border-radius: 10px;">
-            <div style="font-size: 12px; color: #1e40af; font-weight: bold;">🎓 Total Farm Bookings</div>
-            <div id="adminTotalBookingsCount" style="font-size: 22px; font-weight: 800; color: #1d4ed8; margin-top: 4px;">0</div>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 18px;">
+          <div style="background: #e0f2fe; border: 1px solid #bae6fd; padding: 12px; border-radius: 10px;">
+            <div style="font-size: 12px; color: #0369a1; font-weight: bold;">🎓 Total Students</div>
+            <div id="adminTotalStudentsCount" style="font-size: 22px; font-weight: 800; color: #0284c7; margin-top: 4px;">0</div>
+          </div>
+          <div style="background: #fef3c7; border: 1px solid #fde68a; padding: 12px; border-radius: 10px;">
+            <div style="font-size: 12px; color: #92400e; font-weight: bold;">👨‍🌾 Total Farmers</div>
+            <div id="adminTotalFarmersCount" style="font-size: 22px; font-weight: 800; color: #b45309; margin-top: 4px;">0</div>
           </div>
           <div style="background: #f0fdf4; border: 1px solid #bbf7d0; padding: 12px; border-radius: 10px;">
-            <div style="font-size: 12px; color: #166534; font-weight: bold;">💵 Farm Booking Total Revenue Received</div>
+            <div style="font-size: 12px; color: #166534; font-weight: bold;">💵 Farm Booking Total Revenue</div>
             <div id="adminTotalBookingsFee" style="font-size: 22px; font-weight: 800; color: #15803d; margin-top: 4px;">Rs 0.00</div>
           </div>
+          <div style="background: #fffbeb; border: 1px solid #fde68a; padding: 12px; border-radius: 10px;">
+            <div style="font-size: 12px; color: #92400e; font-weight: bold;">⏳ Farm Bookings Pending</div>
+            <div id="adminBookingsPendingCount" style="font-size: 22px; font-weight: 800; color: #d97706; margin-top: 4px;">0</div>
+          </div>
           <div style="background: #fff7ed; border: 1px solid #fed7aa; padding: 12px; border-radius: 10px;">
-            <div style="font-size: 12px; color: #9a3412; font-weight: bold;">📜 Certificates Pending Approval</div>
+            <div style="font-size: 12px; color: #9a3412; font-weight: bold;">📜 Certificates Pending</div>
             <div id="adminCertificatesPendingCount" style="font-size: 22px; font-weight: 800; color: #ea580c; margin-top: 4px;">0</div>
           </div>
         </div>
@@ -585,7 +600,7 @@
                 <th>User Profile</th>
                 <th>Submitted Academic / Session Details</th>
                 <th>Fee Paid</th>
-                <th>Payment Mode & Txn ID</th>
+                <th>Payment Mode, Txn ID & UPI</th>
                 <th>Booking Date & Time</th>
                 <th>1. Farm Booking Status</th>
                 <th>2. Certificate Approval</th>
@@ -603,7 +618,7 @@
         
         <div class="fin-grid">
           <div class="fin-card">
-            <div class="muted small-title">Total Website Sales Revenue (Net)</div>
+            <div class="muted small-title">Total Approved Sales Revenue (Net)</div>
             <div class="fin-val" id="finTotalRevenue">Rs 0.00</div>
           </div>
           <div class="fin-card">
@@ -615,7 +630,7 @@
             <div class="fin-val" id="finTotalExpenses" style="color:var(--warn);">Rs 0.00</div>
           </div>
           <div class="fin-card">
-            <div class="muted small-title">Total Order Refunds Returned Outflow</div>
+            <div class="muted small-title">Total Credited Order Refunds Returned Outflow</div>
             <div class="fin-val" id="finTotalRefunds" style="color:#ea580c;">Rs 0.00</div>
           </div>
           <div class="fin-card" style="background:#f0fdf4; border: 2px solid #86efac;">

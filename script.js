@@ -8,7 +8,7 @@ const farmName = "Pure Grow Farm";
 
 const ADMIN_CREDENTIALS = { user: "admin", pass: "PureGrow@2026" };
 
-// Default Initial Products (Stock starts at 0, adds strictly via Buy/Daily log)
+// Default Initial Products
 const BASE_PRODUCTS = [
   { id: 1, name: "Fresh Green Oyster Mushroom", price: 180, unit: "1kg", image: "mushroom/Screenshot 2025-10-24 154001.png", detail: "Picked fresh, chilled and delivered within 24-48 hours.", type: "green", stock: 0 },
   { id: 2, name: "Dried Oyster Mushroom", price: 800, unit: "1kg pack", image: "mushroom/oyst dry.webp", detail: "Slow-dried to preserve flavor and nutrients.", type: "dry", stock: 0 },
@@ -47,7 +47,7 @@ let notificationsRegistry = getCleanData('pgf_notifications');
 let currentUser = JSON.parse(localStorage.getItem('pgf_session')) || null;
 
 // =========================================================
-// HELPER: PRODUCT IMAGE MAPPER
+// HELPER: PRODUCT IMAGE MAPPER & 1-CLICK CLIPBOARD COPY
 // =========================================================
 function getOrderProductImage(orderProductsText) {
   const text = (orderProductsText || "").toLowerCase();
@@ -57,6 +57,15 @@ function getOrderProductImage(orderProductsText) {
   if (text.includes("papad")) return "mushroom/bulk.png";
   if (text.includes("green") || text.includes("fresh")) return "mushroom/Screenshot 2025-10-24 154001.png";
   return "mushroom/g mushroom.png";
+}
+
+function copyToClipboard(text) {
+  if (!text || text === 'N/A') return;
+  navigator.clipboard.writeText(text).then(() => {
+    alert(`📋 Copied: ${text}`);
+  }).catch(() => {
+    prompt("Copy UPI ID:", text);
+  });
 }
 
 // =========================================================
@@ -414,7 +423,7 @@ function loadUserPanelData() {
     const courier = o.courierName || "Ekart Logistics";
     const awb = o.trackingNumber || ("FMPC" + Math.floor(1000000000 + Math.random() * 9000000000));
     const loc = o.currentLocation || "Farm Facility";
-    const etaDate = o.deliveryDays || "Within 2-4 Business Days";
+    const targetArrivalDate = o.deliveryDays || "Within 2-4 Business Days";
     const prodImg = getOrderProductImage(o.products);
 
     const stageMap = { 'Placed': 1, 'Packed': 2, 'Shipped': 3, 'OutForDelivery': 4, 'Delivered': 5 };
@@ -431,7 +440,7 @@ function loadUserPanelData() {
     } else if (isCancelled) {
       statusDotColor = "#ef4444";
       statusText = "Cancelled on " + (orderDate.split(" ")[0] || orderDate);
-      subtitleText = "Your order was cancelled as per your request.";
+      subtitleText = "Your order was cancelled by Farm Administration.";
     } else if (isRejected) {
       statusDotColor = "#ef4444";
       statusText = "Order Rejected";
@@ -473,13 +482,18 @@ function loadUserPanelData() {
           
           <div style="background:#fff; padding: 12px; border-radius: 8px; border: 1px solid #e2e8f0; font-size:13px; margin-bottom: 12px;">
             <div><strong>Shipping Address:</strong> <span style="color:#475569;">${o.address || 'N/A'}</span></div>
-            <div style="margin-top:4px;"><strong>Payment Mode:</strong> <span class="badge" style="background:#eef2ff; color:#3730a3;">${o.paymentMode || 'UPI'}</span> | <strong>Txn ID:</strong> <code>${o.txnId || 'N/A'}</code></div>
+            <div style="margin-top:4px;"><strong>Payment Mode:</strong> <span class="badge" style="background:#eef2ff; color:#3730a3;">${o.paymentMode || 'UPI'}</span> | <strong>Txn ID:</strong> <code>${o.txnId || 'N/A'}</code> | <strong>Your UPI:</strong> <code style="color:var(--accent); font-weight:bold;">${o.userUpiId || 'N/A'}</code></div>
+            ${isApproved && !isCancelled && !isRejected ? `
+              <div style="margin-top:6px; background:#f0fdf4; padding:6px 10px; border-radius:6px; border:1px solid #bbf7d0; color:#15803d; font-weight:bold;">
+                📅 Expected Delivery Date: <span style="font-size:14px; text-decoration:underline;">${targetArrivalDate}</span>
+              </div>
+            ` : ''}
           </div>
 
           ${isPending ? `
             <div style="background: #fffbeb; border: 1px solid #fcd34d; border-radius: 8px; padding: 10px; font-size: 13px; color: #92400e;">
               ⏳ <strong>Status: Verification Pending</strong><br>
-              <span style="font-size:12px;">Admin jaise hi order verify karega, live status timeline start ho jayegi.</span>
+              <span style="font-size:12px;">Admin jaise hi payment verify karke approve karega, live status aur delivery date activate ho jayegi.</span>
             </div>
           ` : ''}
 
@@ -514,7 +528,7 @@ function loadUserPanelData() {
 
                 <div class="timeline-step ${curLevel >= 5 ? 'completed' : ''}">
                   <div class="timeline-dot"></div>
-                  <div class="timeline-title">Delivered <span>(Estimated Delivery: ${etaDate})</span></div>
+                  <div class="timeline-title">Delivered <span>(Arriving By: ${targetArrivalDate})</span></div>
                   <div class="timeline-desc">Item safely delivered to your doorstep.</div>
                 </div>
               </div>
@@ -524,8 +538,10 @@ function loadUserPanelData() {
           ${isCancelled ? `
             <div style="background: #ffffff; padding: 16px; border-radius: 8px; border: 1px solid #fed7aa;">
               <div style="background:#fff7ed; padding:12px; border-radius:8px; border-left:4px solid #ea580c; margin-bottom:12px;">
-                <strong style="color:#c2410c; font-size:14px;">Refund Completed (Refund ID: ${Date.now()})</strong>
-                <p style="margin: 4px 0 0 0; font-size: 12px; color: #7c2d12;">• Refund of ₹${o.total} was credited to your Bank Account linked with UPI ID on ${orderDate}.</p>
+                <strong style="color:#c2410c; font-size:14px;">Refund Status: ${o.refundStage || 'Refund Initiated'}</strong>
+                <p style="margin: 4px 0 0 0; font-size: 12px; color: #7c2d12;">
+                  • Refund of ₹${o.total} for your order will be credited directly to your UPI ID: <strong>${o.userUpiId || 'Registered Account'}</strong>.
+                </p>
               </div>
 
               <div class="vertical-timeline">
@@ -536,8 +552,8 @@ function loadUserPanelData() {
                 </div>
                 <div class="timeline-step cancelled">
                   <div class="timeline-dot"></div>
-                  <div class="timeline-title" style="color:#ef4444;">Cancelled</div>
-                  <div class="timeline-desc">Your order was cancelled as per your request.</div>
+                  <div class="timeline-title" style="color:#ef4444;">Cancelled by Admin</div>
+                  <div class="timeline-desc">Reason: ${o.status.replace('Cancelled (Reason: ', '').replace(')', '')}</div>
                 </div>
               </div>
             </div>
@@ -566,6 +582,7 @@ function loadUserPanelData() {
         <strong>Booking ID: ${b.bookingId || ''}</strong><br>
         <small>Booked On: ${b.dateLogged || ''}</small><br>
         <strong>Scheme: ${b.type || ''} Visit [<span style="color:${statusColor}; font-weight:bold;">${isConfirmed ? 'Booking Confirmed' : (b.status || 'Pending Verification')}</span>]</strong>
+        <br><small>Your UPI ID: <code style="color:var(--accent);">${b.userUpiId || 'N/A'}</code></small>
         ${certNote}
       </div>
     `;
@@ -743,26 +760,28 @@ function populateAdminDashboardTables() {
   renderAdminLiveStockSummary();
   renderDailyDryStockTable();
 
-  // 1. Orders Manager Metrics & Grid
+  // 1. Orders Manager Metrics & Table
   const validOrders = orderRegistry.filter(o => o && o.name && o.orderId);
   const totalOrders = validOrders.length;
-  const totalOrdersAmount = validOrders.reduce((sum, o) => sum + Number(o.total || 0), 0);
-  const deliveredOrders = validOrders.filter(o => o.status === 'Delivered' || o.trackingStage === 'Delivered').length;
+  
+  // Rule: Money counts ONLY if order status is Approved or Delivered (Pending/Rejected/Cancelled don't count)
+  const approvedOrdersList = validOrders.filter(o => o.status === 'Approved' || o.status === 'Delivered');
+  const approvedTotalRevenue = approvedOrdersList.reduce((sum, o) => sum + Number(o.total || 0), 0);
+  
   const pendingOrders = validOrders.filter(o => o.status !== 'Delivered' && o.trackingStage !== 'Delivered' && !o.status.startsWith('Cancelled') && !o.status.startsWith('Rejected')).length;
+  const refundPendingCount = validOrders.filter(o => o.status && o.status.startsWith('Cancelled') && o.refundStage !== 'Refund Credited').length;
 
   if (document.getElementById("adminTotalOrdersCount")) document.getElementById("adminTotalOrdersCount").textContent = totalOrders;
-  if (document.getElementById("adminTotalOrdersValue")) document.getElementById("adminTotalOrdersValue").textContent = `Rs ${totalOrdersAmount.toFixed(2)}`;
-  if (document.getElementById("adminDeliveredOrdersCount")) document.getElementById("adminDeliveredOrdersCount").textContent = deliveredOrders;
+  if (document.getElementById("adminApprovedRevenueValue")) document.getElementById("adminApprovedRevenueValue").textContent = `Rs ${approvedTotalRevenue.toFixed(2)}`;
   if (document.getElementById("adminPendingOrdersCount")) document.getElementById("adminPendingOrdersCount").textContent = pendingOrders;
+  if (document.getElementById("adminRefundPendingCount")) document.getElementById("adminRefundPendingCount").textContent = refundPendingCount;
 
   if (document.getElementById("adminOrdersTableBody")) {
     if (!validOrders.length) {
-      document.getElementById("adminOrdersTableBody").innerHTML = `<tr><td colspan="13" style="text-align:center; color:var(--muted); padding:24px; font-weight:bold;">No customer orders placed yet.</td></tr>`;
+      document.getElementById("adminOrdersTableBody").innerHTML = `<tr><td colspan="10" style="text-align:center; color:var(--muted); padding:24px; font-weight:bold;">No customer orders placed yet.</td></tr>`;
     } else {
       document.getElementById("adminOrdersTableBody").innerHTML = validOrders.map((o, idx) => {
-        const sub = Number(o.subtotal || (o.total > 1000 ? o.total : o.total - 50) || 0);
-        const del = Number(o.delivery !== undefined ? o.delivery : (o.total > 1000 ? 0 : 50));
-        const grandTotal = Number(o.total || (sub + del));
+        const grandTotal = Number(o.total || 0);
         const mode = o.paymentMode || "Online UPI";
         const status = o.status || "Pending Verification";
         const isDelivered = status === 'Delivered' || o.trackingStage === 'Delivered';
@@ -772,51 +791,52 @@ function populateAdminDashboardTables() {
         
         const stage = o.trackingStage || (isDelivered ? 'Delivered' : (isApproved ? 'Packed' : 'Placed'));
         const loc = o.currentLocation || 'Farm Facility';
-        const eta = o.deliveryDays || '2-4 Days';
+        const eta = o.deliveryDays || '';
         const displayDateTime = o.dateLogged || new Date().toLocaleDateString('en-IN');
+        const userUpi = o.userUpiId || "N/A";
 
         return `
           <tr>
             <td><strong>${o.orderId}</strong></td>
             <td style="white-space: nowrap;">
-              <span style="color:#0284c7; font-weight:bold; font-size:13px;">📅 ${displayDateTime}</span>
+              <span style="color:#0284c7; font-weight:bold; font-size:12px;">📅 ${displayDateTime}</span>
             </td>
-            <td><strong>${o.name}</strong></td>
             <td>
-              ${o.phone || 'N/A'}<br>
+              <strong>${o.name}</strong><br>
+              <small>${o.phone || 'N/A'}</small><br>
               <small class="muted">${o.email || ''}</small>
             </td>
             <td><small>${o.address || 'N/A'}</small></td>
             <td>${o.products || 'N/A'}</td>
-            <td>Rs ${sub}</td>
-            <td style="color:${del === 0 ? 'var(--accent)' : 'inherit'}; font-weight:bold;">
-              ${del === 0 ? 'FREE' : 'Rs ' + del}
-            </td>
-            <td style="color:var(--accent); font-weight:bold; font-size:15px;">Rs ${grandTotal}</td>
+            <td style="color:var(--accent); font-weight:bold; font-size:14px;">Rs ${grandTotal}</td>
             <td>
-              <span class="badge" style="background:#eef2ff; color:#3730a3; margin-bottom:4px; font-weight:bold;">${mode}</span><br>
-              <code>${o.txnId || 'N/A'}</code>
+              <span class="badge" style="background:#eef2ff; color:#3730a3; margin-bottom:3px; font-weight:bold;">${mode}</span><br>
+              <small>Txn: <code>${o.txnId || 'N/A'}</code></small><br>
+              <div style="display:flex; align-items:center; gap:4px; margin-top:2px;">
+                <code style="background:#f1f5f9; padding:2px 4px; border-radius:4px; color:#0f172a; font-size:11px;">UPI: ${userUpi}</code>
+                ${userUpi !== 'N/A' ? `<button type="button" title="Copy UPI ID" style="padding:1px 5px; min-height:auto; font-size:10px; background:#0284c7;" onclick="copyToClipboard('${userUpi}')">📋</button>` : ''}
+              </div>
             </td>
             <td>
               <span class="badge ${isDelivered ? 'badge-confirmed' : (isCancelled ? 'badge-pending' : (isRejected ? 'badge-pending' : (isApproved ? 'badge-confirmed' : 'badge-pending')))}" style="${isRejected ? 'background:#fee2e2; color:#991b1b;' : (isCancelled ? 'background:#ffedd5; color:#c2410c;' : (isDelivered ? 'background:#16a34a; color:#fff;' : ''))}">
                 ${status}
               </span>
-              ${isCancelled ? `<br><small style="color:#ea580c; font-weight:bold;">Refund: ${o.refundStage || 'Initiated'}</small>` : ''}
+              ${isCancelled ? `<br><small style="color:${o.refundStage === 'Refund Credited' ? '#16a34a' : '#ea580c'}; font-weight:bold;">Refund: ${o.refundStage || 'Initiated'}</small>` : ''}
             </td>
             
             <td style="min-width: 270px;">
-              ${isApproved ? `
+              ${isApproved && !isCancelled && !isRejected ? `
                 <div style="background:#f8fafc; padding:8px; border-radius:8px; border:1px solid #e2e8f0; font-size:12px;">
                   
-                  <!-- Flipkart-like Expected Delivery Date Input -->
+                  <!-- Flipkart Exact Date Picker -->
                   <div style="margin-bottom:6px; display:flex; align-items:center; gap:4px; background:#fff; padding:4px 6px; border-radius:6px; border:1px solid #cbd5e1;">
-                    <label style="font-size:11px; font-weight:bold; color:#0f172a; white-space:nowrap;">📅 Arriving Date:</label>
-                    <input type="text" value="${eta}" placeholder="e.g. 28 Aug 2026" style="padding:2px 6px; font-size:11px; width:100%; border:1px solid #94a3b8; border-radius:4px;" onchange="updateExpectedDeliveryDate(${idx}, this.value)">
+                    <label style="font-size:11px; font-weight:bold; color:#0f172a; white-space:nowrap;">📅 Delivery Date:</label>
+                    <input type="date" value="${eta}" style="padding:2px 4px; font-size:11px; width:100%; border:1px solid #94a3b8; border-radius:4px;" onchange="updateExpectedDeliveryDate(${idx}, this.value)">
                   </div>
 
                   <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
                     <span style="font-weight:bold; color:#0284c7;">Stage: ${stage}</span>
-                    <span style="color:var(--muted);">${eta}</span>
+                    <span style="color:var(--muted);">${eta ? 'Arrival: ' + eta : 'Set Date'}</span>
                   </div>
                   <div style="color:#334155; margin-bottom:6px;">📍 ${loc}</div>
 
@@ -830,11 +850,11 @@ function populateAdminDashboardTables() {
                 </div>
               ` : (isCancelled ? `
                 <div style="background:#fffaf5; padding:8px; border-radius:8px; border:1px solid #fdba74; font-size:12px;">
-                  <span style="font-weight:bold; color:#ea580c;">Refund Control</span>
-                  <div style="display:flex; gap:3px; flex-wrap:wrap; margin-top:4px;">
-                    <button type="button" class="btn" style="padding:2px 5px; font-size:10px; min-height:22px; background:${o.refundStage==='Refund Initiated'?'#ea580c':'#94a3b8'};" onclick="setRefundStageDirect(${idx}, 'Refund Initiated')">Initiated</button>
-                    <button type="button" class="btn" style="padding:2px 5px; font-size:10px; min-height:22px; background:${o.refundStage==='Refund Processing'?'#ea580c':'#94a3b8'};" onclick="setRefundStageDirect(${idx}, 'Refund Processing')">Processing</button>
-                    <button type="button" class="btn" style="padding:2px 5px; font-size:10px; min-height:22px; background:${o.refundStage==='Refund Credited'?'#16a34a':'#94a3b8'};" onclick="setRefundStageDirect(${idx}, 'Refund Credited')">Credited</button>
+                  <span style="font-weight:bold; color:#ea580c;">Refund Control Action</span>
+                  <div style="display:flex; gap:4px; flex-wrap:wrap; margin-top:6px;">
+                    <button type="button" class="btn" style="padding:3px 6px; font-size:11px; min-height:24px; background:${o.refundStage==='Refund Initiated'?'#ea580c':'#94a3b8'};" onclick="setRefundStageDirect(${idx}, 'Refund Initiated')">Initiated</button>
+                    <button type="button" class="btn" style="padding:3px 6px; font-size:11px; min-height:24px; background:${o.refundStage==='Refund Processing'?'#ea580c':'#94a3b8'};" onclick="setRefundStageDirect(${idx}, 'Refund Processing')">Processing</button>
+                    <button type="button" class="btn" style="padding:3px 6px; font-size:11px; min-height:24px; background:${o.refundStage==='Refund Credited'?'#16a34a':'#dc2626'}; font-weight:bold;" onclick="setRefundStageDirect(${idx}, 'Refund Credited')">💸 Credited (Deduct Cash)</button>
                   </div>
                 </div>
               ` : (isRejected ? `<span style="color:#dc2626; font-weight:bold; font-size:12px;">Rejected</span>` : `<span style="color:#d97706; font-weight:bold; font-size:12px;">Approve or Cancel to track</span>`))}
@@ -847,6 +867,7 @@ function populateAdminDashboardTables() {
                   <button class="btn" style="padding:4px 8px; min-height:auto; font-size:11px; background:var(--danger);" onclick="handleOrderReject(${idx})">2. Reject</button>
                   <button class="btn" style="padding:4px 8px; min-height:auto; font-size:11px; background:#ea580c;" onclick="handleOrderCancelRefund(${idx})">3. Cancel & Refund</button>
                 ` : `
+                  ${!isCancelled ? `<button class="btn" style="padding:3px 6px; min-height:auto; font-size:10px; background:#ea580c;" onclick="handleOrderCancelRefund(${idx})">Cancel Order</button>` : ''}
                   <button class="btn" style="padding:3px 6px; min-height:auto; font-size:10px; background:#0284c7;" onclick="adminEditOrderDetails(${idx})">✏️ Edit Order</button>
                 `}
               </div>
@@ -857,21 +878,26 @@ function populateAdminDashboardTables() {
     }
   }
 
-  // 2. Bookings Manager Metrics & Grid
+  // 2. Bookings Manager Metrics & Table
   const validBookings = bookingsRegistry.filter(b => b && b.name && b.bookingId);
-  const totalBookings = validBookings.length;
+  const totalStudents = validBookings.filter(b => b.type === "Student").length;
+  const totalFarmers = validBookings.filter(b => b.type === "Farmer").length;
   const totalBookingsFee = validBookings.filter(b => b.status === "Confirmed" || b.status === "Approved").reduce((sum, b) => sum + Number(b.fee || 0), 0);
+  const pendingBookings = validBookings.filter(b => b.status === "Pending Verification").length;
   const pendingCertificates = validBookings.filter(b => (b.status === "Confirmed" || b.status === "Approved") && !b.certIssued).length;
 
-  if (document.getElementById("adminTotalBookingsCount")) document.getElementById("adminTotalBookingsCount").textContent = totalBookings;
+  if (document.getElementById("adminTotalStudentsCount")) document.getElementById("adminTotalStudentsCount").textContent = totalStudents;
+  if (document.getElementById("adminTotalFarmersCount")) document.getElementById("adminTotalFarmersCount").textContent = totalFarmers;
   if (document.getElementById("adminTotalBookingsFee")) document.getElementById("adminTotalBookingsFee").textContent = `Rs ${totalBookingsFee.toFixed(2)}`;
+  if (document.getElementById("adminBookingsPendingCount")) document.getElementById("adminBookingsPendingCount").textContent = pendingBookings;
   if (document.getElementById("adminCertificatesPendingCount")) document.getElementById("adminCertificatesPendingCount").textContent = pendingCertificates;
 
   if (document.getElementById("adminBookingsTableBody")) {
     if (!validBookings.length) {
       document.getElementById("adminBookingsTableBody").innerHTML = `<tr><td colspan="10" style="text-align:center; color:var(--muted); padding:24px; font-weight:bold;">No student or farmer training registrations yet.</td></tr>`;
     } else {
-      document.getElementById("adminBookingsTableBody").innerHTML = validBookings.map((b, idx) => {
+      bookingsTbody = document.getElementById("adminBookingsTableBody");
+      bookingsTbody.innerHTML = validBookings.map((b, idx) => {
         const isStudent = b.type === "Student";
         const submittedDetails = isStudent ? `
           <div style="line-height:1.4;">
@@ -889,6 +915,7 @@ function populateAdminDashboardTables() {
         const mode = b.paymentMode || "UPI Gateway";
         const isConfirmed = b.status === "Confirmed" || b.status === "Approved";
         const certIssued = b.certIssued === true;
+        const bUpi = b.userUpiId || "N/A";
 
         return `
           <tr>
@@ -900,10 +927,14 @@ function populateAdminDashboardTables() {
               <small class="muted">${b.email || 'N/A'}</small>
             </td>
             <td><small>${submittedDetails}</small></td>
-            <td style="font-weight:bold; color:var(--accent); font-size:15px;">Rs ${b.fee || 0}</td>
+            <td style="font-weight:bold; color:var(--accent); font-size:14px;">Rs ${b.fee || 0}</td>
             <td>
-              <span class="badge" style="background:#eef2ff; color:#3730a3; margin-bottom:4px; font-weight:bold;">${mode}</span><br>
-              <code>${b.txnId || 'N/A'}</code>
+              <span class="badge" style="background:#eef2ff; color:#3730a3; margin-bottom:3px; font-weight:bold;">${mode}</span><br>
+              <small>Txn: <code>${b.txnId || 'N/A'}</code></small><br>
+              <div style="display:flex; align-items:center; gap:4px; margin-top:2px;">
+                <code style="background:#f1f5f9; padding:2px 4px; border-radius:4px; color:#0f172a; font-size:11px;">UPI: ${bUpi}</code>
+                ${bUpi !== 'N/A' ? `<button type="button" title="Copy UPI ID" style="padding:1px 5px; min-height:auto; font-size:10px; background:#0284c7;" onclick="copyToClipboard('${bUpi}')">📋</button>` : ''}
+              </div>
             </td>
             <td><small style="color:#0284c7; font-weight:bold;">${b.dateLogged || 'N/A'}</small></td>
             <td>
@@ -977,7 +1008,7 @@ function adminEditOrderDetails(idx) {
   const newAwb = prompt("Tracking Number / AWB Code:", o.trackingNumber || ("FMPC" + Date.now().toString().slice(-6)));
   if (newAwb !== null && newAwb.trim() !== "") o.trackingNumber = newAwb.trim();
 
-  const newEta = prompt("Estimated Delivery Date / Time:", o.deliveryDays || "2-4 Days");
+  const newEta = prompt("Estimated Delivery Date (YYYY-MM-DD):", o.deliveryDays || "");
   if (newEta !== null && newEta.trim() !== "") o.deliveryDays = newEta.trim();
 
   localStorage.setItem('pgf_orders', JSON.stringify(orderRegistry));
@@ -1017,14 +1048,14 @@ function handleOrderApprove(idx) {
   o.currentLocation = "Processing & Packing at Pure Grow Farm Hub";
   o.courierName = "Ekart Logistics";
   o.trackingNumber = "FMPC" + Math.floor(1000000000 + Math.random() * 9000000000);
-  o.deliveryDays = o.deliveryDays || "2-4 Days";
+  o.deliveryDays = o.deliveryDays || getTodayIsoString();
   o.paymentReceived = true;
   o.refundStage = "";
   
   localStorage.setItem('pgf_orders', JSON.stringify(orderRegistry));
-  pushNotification(o.email, '📦 Order Approved & Packed!', `Your Order #${o.orderId} is confirmed and packed. Expected delivery: ${o.deliveryDays}.`, 'order');
+  pushNotification(o.email, '📦 Order Approved & Packed!', `Your Order #${o.orderId} is confirmed and packed. Expected delivery date: ${o.deliveryDays}.`, 'order');
 
-  alert("✅ Order Approved! User ko notification aur live tracking mil gayi.");
+  alert("✅ Order Approved! Payment count ho gaya aur user ko live tracking mil gayi.");
   populateAdminDashboardTables();
   computeFinancialLedgerStatements();
 }
@@ -1042,24 +1073,28 @@ function handleOrderReject(idx) {
   localStorage.setItem('pgf_orders', JSON.stringify(orderRegistry));
   pushNotification(o.email, '❌ Order Rejected', `Your Order #${o.orderId} was rejected. Reason: ${reason}.`, 'order');
 
-  alert("❌ Order Reject ho gaya!");
+  alert("❌ Order Reject ho gaya! (Iska paisa accounting me count nahi hoga)");
   populateAdminDashboardTables();
+  computeFinancialLedgerStatements();
 }
 
 function handleOrderCancelRefund(idx) {
   const o = orderRegistry[idx];
-  let reason = prompt("Order Cancel karne ka reason likhein:", "Item Out of Stock / Customer Request");
+  let reason = prompt("Order Cancel karne ka reason likhein (User ko message jayega):", "Item Out of Stock / Unserviceable Pincode");
   if (reason === null) return;
 
   o.status = `Cancelled (Reason: ${reason})`;
-  o.paymentReceived = true;
+  o.trackingStage = "Cancelled";
   o.refundStage = "Refund Initiated";
 
   localStorage.setItem('pgf_orders', JSON.stringify(orderRegistry));
-  pushNotification(o.email, '🔄 Order Cancelled & Refund Initiated', `Your Order #${o.orderId} was cancelled. Rs ${o.total} refund initiated.`, 'order');
+  
+  // Mandatory push notification to User on cancel
+  pushNotification(o.email, '⚠️ Order Cancelled', `Aapka Order #${o.orderId} cancel kar diya gaya hai. Reason: ${reason}. Refund aapke UPI ID (${o.userUpiId || 'Bank'}) par process kiya ja raha hai.`, 'order');
 
-  alert("🔄 Order Cancelled & Refund initiated.");
+  alert("🔄 Order Cancel ho gaya aur User ko cancellation notification bhej di gayi hai.");
   populateAdminDashboardTables();
+  computeFinancialLedgerStatements();
 }
 
 function setOrderStageDirect(idx, newStage) {
@@ -1087,9 +1122,18 @@ function setOrderStageDirect(idx, newStage) {
 function setRefundStageDirect(idx, newRefStage) {
   const o = orderRegistry[idx];
   o.refundStage = newRefStage;
+  
   localStorage.setItem('pgf_orders', JSON.stringify(orderRegistry));
-  pushNotification(o.email, '💰 Refund Status Update', `Refund for Order #${o.orderId} status: ${newRefStage}.`, 'order');
+  
+  if (newRefStage === 'Refund Credited') {
+    pushNotification(o.email, '💰 Refund Completed', `₹${o.total} has been successfully credited back to your UPI ID: ${o.userUpiId || 'Bank Account'}.`, 'order');
+    alert(`💸 Refund of ₹${o.total} marked as Credited! Farm Cash Vault se paisa deduct ho gaya.`);
+  } else {
+    pushNotification(o.email, '💰 Refund Status Update', `Refund for Order #${o.orderId} status: ${newRefStage}.`, 'order');
+  }
+  
   populateAdminDashboardTables();
+  computeFinancialLedgerStatements();
 }
 
 function confirmBookingSlot(idx) {
@@ -1150,23 +1194,42 @@ function rejectTrainingBooking(idx) {
 }
 
 // =========================================================
-// FINANCIAL LEDGER & DAMAGE BALANCES
+// FINANCIAL LEDGER & EXACT FARM REVENUE RULES
 // =========================================================
 function computeFinancialLedgerStatements() {
-  const totalSales = salesRegistry.reduce((sum, s) => sum + Number(s.total || 0), 0);
+  // RULE 1: Only Approved/Delivered orders or Farm confirmed bookings count in Sales
+  const approvedOnlineOrdersRevenue = orderRegistry
+    .filter(o => o && (o.status === 'Approved' || o.status === 'Delivered'))
+    .reduce((sum, o) => sum + Number(o.total || 0), 0);
+
+  const directOfflineSales = salesRegistry.reduce((sum, s) => sum + Number(s.total || 0), 0);
+  const totalSales = approvedOnlineOrdersRevenue + directOfflineSales;
+
   const totalPurchases = purchasesRegistry.reduce((sum, p) => sum + Number(p.total || 0), 0);
   const totalExpenses = expensesRegistry.filter(e => e.category !== "Damage Received").reduce((sum, e) => sum + Number(e.amount || 0), 0);
   const totalDamages = expensesRegistry.filter(e => e.category === "Damage Received").reduce((sum, e) => sum + Number(e.amount || 0), 0);
 
-  const netProfit = totalSales - (totalPurchases + totalExpenses + totalDamages);
+  // RULE 2: Money cuts from Farm Account only if order refund is marked 'Refund Credited'
+  const totalCreditedRefunds = orderRegistry
+    .filter(o => o && o.status && o.status.startsWith('Cancelled') && o.refundStage === 'Refund Credited')
+    .reduce((sum, o) => sum + Number(o.total || 0), 0);
+
+  const netProfit = totalSales - (totalPurchases + totalExpenses + totalDamages + totalCreditedRefunds);
 
   if(document.getElementById("finTotalRevenue")) document.getElementById("finTotalRevenue").textContent = "Rs " + totalSales.toFixed(2);
   if(document.getElementById("finTotalPurchases")) document.getElementById("finTotalPurchases").textContent = "Rs " + totalPurchases.toFixed(2);
   if(document.getElementById("finTotalExpenses")) document.getElementById("finTotalExpenses").textContent = "Rs " + totalExpenses.toFixed(2);
+  if(document.getElementById("finTotalRefunds")) document.getElementById("finTotalRefunds").textContent = "Rs " + totalCreditedRefunds.toFixed(2);
   if(document.getElementById("finNetProfit")) document.getElementById("finNetProfit").textContent = "Rs " + netProfit.toFixed(2);
 
   let cashBalances = { Soham: 0, Jeet: 0, Farm: 0 };
   
+  // Farm account gets all approved online orders
+  cashBalances.Farm += approvedOnlineOrdersRevenue;
+  
+  // Deduct credited refunds strictly from Farm Account
+  cashBalances.Farm -= totalCreditedRefunds;
+
   salesRegistry.forEach(s => { 
     if(cashBalances[s.collector] !== undefined) cashBalances[s.collector] += Number(s.total || 0); 
   });
@@ -1508,10 +1571,11 @@ function openProductPayment() {
 
 function validateOrderForm() {
   const address = document.getElementById("address") ? document.getElementById("address").value.trim() : "";
+  const userUpi = document.getElementById("userUpiId") ? document.getElementById("userUpiId").value.trim() : "";
   const mode = document.getElementById("paymentMode") ? document.getElementById("paymentMode").value : "";
   const txnId = document.getElementById("paymentId") ? document.getElementById("paymentId").value.trim() : "";
   
-  const isValid = cart.size > 0 && address.length > 4 && mode !== "" && txnId.length >= 6;
+  const isValid = cart.size > 0 && address.length > 4 && userUpi.length >= 5 && userUpi.includes('@') && mode !== "" && txnId.length >= 6;
   if(document.getElementById("confirmOrderBtn")) document.getElementById("confirmOrderBtn").disabled = !isValid;
 }
 
@@ -1540,6 +1604,7 @@ function confirmOrder(e) {
     phone: currentUser.phone,
     email: currentUser.email,
     address: document.getElementById("address").value.trim(),
+    userUpiId: document.getElementById("userUpiId").value.trim(),
     products: [...cart.values()].map(i => `${i.name} [x${i.qty}]`).join(", "),
     subtotal: bill.subtotal,
     delivery: bill.delivery,
@@ -1547,7 +1612,7 @@ function confirmOrder(e) {
     paymentMode: document.getElementById("paymentMode").value,
     txnId: document.getElementById("paymentId").value.trim(),
     dateLogged: currentTimestamp,
-    deliveryDays: "Within 2-4 Days",
+    deliveryDays: "",
     status: "Pending Verification"
   };
 
@@ -1558,7 +1623,7 @@ function confirmOrder(e) {
   document.getElementById("invDate").textContent = new Date().toLocaleDateString('en-IN');
   document.getElementById("invClientName").textContent = data.name;
   document.getElementById("invClientEmail").textContent = "Email: " + data.email + " | Ph: " + data.phone;
-  document.getElementById("invClientAddr").textContent = "Address: " + data.address;
+  document.getElementById("invClientAddr").textContent = "Address: " + data.address + " | User UPI: " + data.userUpiId;
   
   document.getElementById("invoiceTableItemsBody").innerHTML = [...cart.values()].map(item => `
     <tr>
@@ -1575,7 +1640,7 @@ function confirmOrder(e) {
 
   pushNotification('ADMIN', '🛍️ New Order Placed!', `${data.name} placed order #${data.orderId} for Rs ${data.total}`, 'order');
   
-  const waMessage = `NEW GOODS ORDER VERIFICATION FLOW:\n----------------------------------------\nInvoice Ref Code: ${data.orderId}\nClient Legal Name: ${data.name}\nProducts Mapped: ${data.products}\nTotal Paid Amount: Rs ${data.total}\nPayment Method: ${data.paymentMode}\nTransaction Hash ID Code: ${data.txnId}\n----------------------------------------`;
+  const waMessage = `NEW GOODS ORDER VERIFICATION FLOW:\n----------------------------------------\nInvoice Ref Code: ${data.orderId}\nClient Legal Name: ${data.name}\nClient UPI ID: ${data.userUpiId}\nProducts Mapped: ${data.products}\nTotal Paid Amount: Rs ${data.total}\nPayment Method: ${data.paymentMode}\nTransaction Hash ID Code: ${data.txnId}\n----------------------------------------`;
   
   alert("Order submitted! Opening WhatsApp summary.");
   window.open(`https://wa.me/${farmWhatsapp}?text=${encodeURIComponent(waMessage)}`, '_blank');
@@ -1626,29 +1691,33 @@ function validateStudentForm() {
   const course = document.getElementById("scourse").value.trim();
   const start = document.getElementById("sstart").value;
   const end = document.getElementById("send").value;
+  const userUpi = document.getElementById("suserUpi") ? document.getElementById("suserUpi").value.trim() : "";
   const txn = document.getElementById("spayment").value.trim();
   const isDisabled = document.getElementById("spayment").disabled;
   
-  const isValid = !isDisabled && enroll !== "" && college !== "" && course !== "" && start !== "" && end !== "" && txn.length >= 6;
+  const isValid = !isDisabled && enroll !== "" && college !== "" && course !== "" && start !== "" && end !== "" && userUpi.length >= 5 && userUpi.includes('@') && txn.length >= 6;
   document.getElementById("studentSubmitBtn").disabled = !isValid;
 }
 
 function validateFarmerForm() {
   const date = document.getElementById("fdate").value;
+  const userUpi = document.getElementById("fuserUpi") ? document.getElementById("fuserUpi").value.trim() : "";
   const txn = document.getElementById("fpayment").value.trim();
   const isDisabled = document.getElementById("fpayment").disabled;
   
-  const isValid = !isDisabled && date !== "" && txn.length >= 6;
+  const isValid = !isDisabled && date !== "" && userUpi.length >= 5 && userUpi.includes('@') && txn.length >= 6;
   document.getElementById("farmerSubmitBtn").disabled = !isValid;
 }
 
 if(document.getElementById("studentForm")) {
-  ['senroll', 'scollege', 'scourse', 'sstart', 'send'].forEach(id => {
-    document.getElementById(id).addEventListener("input", validateStudentForm);
+  ['senroll', 'scollege', 'scourse', 'sstart', 'send', 'suserUpi'].forEach(id => {
+    if(document.getElementById(id)) document.getElementById(id).addEventListener("input", validateStudentForm);
   });
 }
 if(document.getElementById("farmerForm")) {
-  document.getElementById("fdate").addEventListener("input", validateFarmerForm);
+  ['fdate', 'fuserUpi'].forEach(id => {
+    if(document.getElementById(id)) document.getElementById(id).addEventListener("input", validateFarmerForm);
+  });
 }
 
 function submitStudentVisit(e) {
@@ -1665,6 +1734,7 @@ function submitStudentVisit(e) {
     course: document.getElementById("scourse").value.trim(),
     start: document.getElementById("sstart").value,
     end: document.getElementById("send").value,
+    userUpiId: document.getElementById("suserUpi").value.trim(),
     fee: 100,
     paymentMode: document.getElementById("spaymentMode").value,
     txnId: document.getElementById("spayment").value.trim(),
@@ -1677,7 +1747,7 @@ function submitStudentVisit(e) {
 
   pushNotification('ADMIN', '🎓 New Student Registration', `${data.name} applied for Internship (#${data.bookingId}).`, 'booking');
 
-  const waText = `NEW STUDENT INTERNSHIP REGISTRATION:\n----------------------------------------\nBooking Ref ID: ${data.bookingId}\nName: ${data.name}\nCollege: ${data.college}\nCourse: ${data.course}\nUTR Tracking Number: ${data.txnId}\n----------------------------------------`;
+  const waText = `NEW STUDENT INTERNSHIP REGISTRATION:\n----------------------------------------\nBooking Ref ID: ${data.bookingId}\nName: ${data.name}\nStudent UPI ID: ${data.userUpiId}\nCollege: ${data.college}\nCourse: ${data.course}\nUTR Tracking Number: ${data.txnId}\n----------------------------------------`;
   window.open(`https://wa.me/${farmWhatsapp}?text=${encodeURIComponent(waText)}`, '_blank');
   
   document.getElementById("studentForm").reset();
@@ -1695,6 +1765,7 @@ function submitFarmerVisit(e) {
     phone: currentUser.phone,
     email: currentUser.email,
     date: document.getElementById("fdate").value,
+    userUpiId: document.getElementById("fuserUpi").value.trim(),
     fee: 699,
     paymentMode: document.getElementById("fpaymentMode").value,
     txnId: document.getElementById("fpayment").value.trim(),
@@ -1707,7 +1778,7 @@ function submitFarmerVisit(e) {
 
   pushNotification('ADMIN', '👨‍🌾 New Farmer Training Booking', `${data.name} booked training (#${data.bookingId}) for ${data.date}.`, 'booking');
 
-  const waText = `NEW FARMER TRAINING BOOKING:\n----------------------------------------\nBooking Ref ID: ${data.bookingId}\nName: ${data.name}\nTraining Date: ${data.date}\nUTR Tracking Number: ${data.txnId}\n----------------------------------------`;
+  const waText = `NEW FARMER TRAINING BOOKING:\n----------------------------------------\nBooking Ref ID: ${data.bookingId}\nName: ${data.name}\nFarmer UPI ID: ${data.userUpiId}\nTraining Date: ${data.date}\nUTR Tracking Number: ${data.txnId}\n----------------------------------------`;
   window.open(`https://wa.me/${farmWhatsapp}?text=${encodeURIComponent(waText)}`, '_blank');
   
   document.getElementById("farmerForm").reset();

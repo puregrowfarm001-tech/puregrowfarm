@@ -527,7 +527,7 @@ function loadUserPanelData() {
               <div style="margin-top:4px;"><strong>Payment Mode:</strong> <span class="badge" style="background:#eef2ff; color:#3730a3;">${o.paymentMode || 'UPI'}</span> | <strong>Txn ID:</strong> <code>${o.txnId || 'N/A'}</code> | <strong>Your UPI:</strong> <code style="color:var(--accent); font-weight:bold;">${o.userUpiId || 'N/A'}</code></div>
               
               ${isApproved && !isCancelled && !isRejected ? `
-                <div style="margin-top:8px; background:#f0fdf4; padding:10px 12px; border-radius:6px; border:1px solid #bbf7d0; color:#15803d; font-size:13px; line-height:1.5;">
+                <div style="margin-top:8px; background:#f0fdf4; padding:10px 12px; border-radius:8px; border:1px solid #bbf7d0; color:#15803d; font-size:13px; line-height:1.5;">
                   <strong>🚚 Target Delivery Date (Kab Pahuchega):</strong> <span style="font-weight:800; font-size:14px; text-decoration:underline;">${arrivalDeliveryDate}</span><br>
                   <strong>📦 Dispatched Courier:</strong> <span>${courier}</span> (AWB Tracking Code: <code>${awb}</code>)
                 </div>
@@ -1046,7 +1046,7 @@ function openOrderActionsMenu(idx) {
     `1. Approve Order (Sets Delivery Date & Courier)\n` +
     `2. Reject Order\n` +
     `3. Cancel & Refund\n` +
-    `4. Edit Details (Phone, Address & Txn ID)\n\n` +
+    `4. Edit Details (Phone, Address, Payment Mode, Txn ID & UPI ID)\n\n` +
     `Enter option number (1, 2, 3 or 4):`,
     "1"
   );
@@ -1088,29 +1088,44 @@ function updateOrderRefundDate(idx, newDate) {
   localStorage.setItem('pgf_orders', JSON.stringify(orderRegistry));
 }
 
-// STRICT EDIT DETAILS: Only Phone Number, Shipping Address, and Online Txn ID
+// STRICT EDIT DETAILS: Phone, Address, Payment Mode, Txn ID & User UPI ID
 function adminEditOrderDetails(idx) {
   const o = orderRegistry[idx];
 
-  const newPhone = prompt("Customer Phone Number edit karein:", o.phone || "");
+  // 1. Phone Number Edit
+  const newPhone = prompt("1. Customer Phone Number edit karein:", o.phone || "");
   if (newPhone !== null && newPhone.trim() !== "") {
     o.phone = newPhone.trim();
   }
 
-  const newAddress = prompt("Customer Shipping Address edit karein:", o.address || "");
+  // 2. Shipping Address Edit
+  const newAddress = prompt("2. Customer Shipping Address edit karein:", o.address || "");
   if (newAddress !== null && newAddress.trim() !== "") {
     o.address = newAddress.trim();
   }
 
-  const newTxnId = prompt("Online Payment Transaction ID (UTR) edit karein:", o.txnId || "");
+  // 3. Payment Mode Edit
+  const newMode = prompt("3. Payment Mode edit karein (e.g. GPay, PhonePe, Paytm, UPI, Cash):", o.paymentMode || "Online UPI");
+  if (newMode !== null && newMode.trim() !== "") {
+    o.paymentMode = newMode.trim();
+  }
+
+  // 4. Online Txn ID (UTR) Edit
+  const newTxnId = prompt("4. Online Payment Transaction ID (UTR) edit karein:", o.txnId || "");
   if (newTxnId !== null && newTxnId.trim() !== "") {
     o.txnId = newTxnId.trim();
   }
 
+  // 5. User UPI ID Edit
+  const newUpi = prompt("5. Customer UPI ID edit karein (e.g. name@okhdfcbank):", o.userUpiId || "");
+  if (newUpi !== null && newUpi.trim() !== "") {
+    o.userUpiId = newUpi.trim();
+  }
+
   localStorage.setItem('pgf_orders', JSON.stringify(orderRegistry));
-  pushNotification(o.email, '🚚 Order Details Updated', `Your Order #${o.orderId} contact and delivery details have been updated by Admin.`, 'order');
+  pushNotification(o.email, '🚚 Order Details Updated', `Your Order #${o.orderId} contact, address, and payment details have been updated by Admin.`, 'order');
   populateAdminDashboardTables();
-  alert("✅ Order Details (Phone, Address, Txn ID) updated successfully!");
+  alert("✅ Order Details (Phone, Address, Payment Mode, Txn ID, UPI ID) updated successfully!");
 }
 
 function adminEditCertificateData(idx) {

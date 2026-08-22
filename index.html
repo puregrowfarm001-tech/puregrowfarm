@@ -679,7 +679,7 @@
           </div>
         </div>
 
-        <!-- Sub Tab 1: Expense Page -->
+        <!-- Sub Tab 1: Expense Page (With Notes, Edit & Delete) -->
         <div id="subTabExpense" class="sub-accounting-section" style="display:none;">
           <h4>1. Log Operational Outflow & Records</h4>
           <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap:16px;">
@@ -730,7 +730,7 @@
           </div>
         </div>
 
-        <!-- Sub Tab 2: Sell Page -->
+        <!-- Sub Tab 2: Sell Page (With Received Payment, Notes, Edit & Delete) -->
         <div id="subTabSell" class="sub-accounting-section" style="display:none;">
           <h4>2. Log Manual Wholesale Production Sale (Direct Offline Inflow)</h4>
           <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap:16px;">
@@ -759,8 +759,8 @@
                 <input type="number" step="0.01" id="saleQty" placeholder="Dispatched Weight Lots (kg/Packs)" required>
                 <input type="number" id="saleRate" placeholder="Agreed Unit Spot Cost (Rs)" required>
                 <input type="number" id="saleDelivery" placeholder="Delivery Logistics Charge (Rs) [0 for Free]" value="0" min="0">
-                <input type="number" id="salePaidAmount" placeholder="Received Payment Amount (Rs)" required>
-                <input type="text" id="saleNotes" placeholder="Client Notes / Remarks (e.g. Paid via GPay, 100 pending)">
+                <input type="number" id="salePaidAmount" placeholder="Received Payment Amount (Rs) [Kitna Pesa Aaya]" required>
+                <input type="text" id="saleNotes" placeholder="Client Notes / Remarks (e.g. Received in cash, remaining balance)">
                 <button type="submit">Log Operational Sales Inflow</button>
               </form>
             </div>
@@ -784,7 +784,7 @@
           </div>
         </div>
 
-        <!-- Sub Tab 3: Buy Page -->
+        <!-- Sub Tab 3: Buy Page (With Payable vs Paid Amount, Notes, Edit & Delete) -->
         <div id="subTabBuy" class="sub-accounting-section" style="display:none;">
           <h4>3. Log Raw Inventory Material Bulk Buy Outflow</h4>
           <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap:16px;">
@@ -808,8 +808,9 @@
                 </label>
                 <input type="text" id="purVendor" placeholder="Vendor Farmer Source Entity Name" required>
                 <input type="number" step="0.01" id="purQty" placeholder="InwardLot Weight Volume Units" required>
-                <input type="number" id="purRate" placeholder="Purchase Valuation Factor (Rs)" required>
-                <input type="text" id="purNotes" placeholder="Vendor Notes / Batch Memo (Optional)">
+                <input type="number" id="purRate" placeholder="Purchase Valuation Rate (Rs)" required>
+                <input type="number" id="purPaidAmount" placeholder="Paid Amount (Rs) [Kitna Pesa Diya Hai]" required>
+                <input type="text" id="purNotes" placeholder="Vendor Notes / Batch Memo (e.g. 500 advance, balance on next week)">
                 <button type="submit">Execute Inventory Buy Inflow</button>
               </form>
             </div>
@@ -821,7 +822,8 @@
                     <th>Resource</th>
                     <th>Vendor</th>
                     <th>Qty</th>
-                    <th>Total</th>
+                    <th>Total Payable</th>
+                    <th>Paid / Due to Vendor</th>
                     <th>Notes</th>
                     <th>Action</th>
                   </tr>
@@ -832,7 +834,7 @@
           </div>
         </div>
 
-        <!-- Sub Tab 4: Damage Page -->
+        <!-- Sub Tab 4: Damage Page (With Notes, Edit & Delete) -->
         <div id="subTabDamage" class="sub-accounting-section" style="display:none;">
           <h4>4. Log Damages Inward & Loss Factor Records</h4>
           <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap:16px;">
@@ -848,7 +850,7 @@
                 </label>
                 <input type="text" id="dmgDesc" placeholder="Damage Reason Context" required>
                 <input type="number" id="dmgAmount" placeholder="Financial Value Factor (Rs)" required>
-                <input type="text" id="dmgNotes" placeholder="Damage Audit Notes / Memo (Optional)">
+                <input type="text" id="dmgNotes" placeholder="Damage Audit Notes / Remarks (Optional)">
                 <button type="submit" style="background:var(--danger);">Log Damage Record</button>
               </form>
             </div>

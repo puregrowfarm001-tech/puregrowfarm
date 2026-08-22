@@ -8,12 +8,13 @@ const farmName = "Pure Grow Farm";
 
 const ADMIN_CREDENTIALS = { user: "admin", pass: "PureGrow@2026" };
 
+// Default Initial Products (Stock starts at 0, adds strictly via Buy/Daily log)
 const BASE_PRODUCTS = [
-  { id: 1, name: "Fresh Green Oyster Mushroom", price: 180, unit: "1kg", image: "mushroom/Screenshot 2025-10-24 154001.png", detail: "Picked fresh, chilled and delivered within 24-48 hours.", type: "green", stock: 25 },
-  { id: 2, name: "Dried Oyster Mushroom", price: 800, unit: "1kg pack", image: "mushroom/oyst dry.webp", detail: "Slow-dried to preserve flavor and nutrients.", type: "dry", stock: 15 },
-  { id: 3, name: "Oyster Mushroom Powder", price: 130, unit: "100gm pack", image: "mushroom/oyster powder.png", detail: "Mushroom powder for soup, 1kg pack curry, health mix and snacks.", type: "powder", stock: 40 },
-  { id: 4, name: "Methi Mushroom Khakhra", price: 70, unit: "200gm pack", image: "mushroom/Methi khakhra 2.png", detail: "Crispy khakhra prepared with oyster mushroom powder.", type: "khakhra", stock: 50 },
-  { id: 5, name: "Adad Mushroom Papad", price: 120, unit: "1 pack", image: "mushroom/bulk.png", detail: "Papad enriched with mushroom nutrition.", type: "papad", stock: 35 },
+  { id: 1, name: "Fresh Green Oyster Mushroom", price: 180, unit: "1kg", image: "mushroom/Screenshot 2025-10-24 154001.png", detail: "Picked fresh, chilled and delivered within 24-48 hours.", type: "green", stock: 0 },
+  { id: 2, name: "Dried Oyster Mushroom", price: 800, unit: "1kg pack", image: "mushroom/oyst dry.webp", detail: "Slow-dried to preserve flavor and nutrients.", type: "dry", stock: 0 },
+  { id: 3, name: "Oyster Mushroom Powder", price: 130, unit: "100gm pack", image: "mushroom/oyster powder.png", detail: "Mushroom powder for soup, 1kg pack curry, health mix and snacks.", type: "powder", stock: 0 },
+  { id: 4, name: "Methi Mushroom Khakhra", price: 70, unit: "200gm pack", image: "mushroom/Methi khakhra 2.png", detail: "Crispy khakhra prepared with oyster mushroom powder.", type: "khakhra", stock: 0 },
+  { id: 5, name: "Adad Mushroom Papad", price: 120, unit: "1 pack", image: "mushroom/bulk.png", detail: "Papad enriched with mushroom nutrition.", type: "papad", stock: 0 },
   { id: 6, name: "Bulk and Wholesale Supply", price: 0, unit: "Custom", bulk: true, image: "mushroom/bulk.png", detail: "Supply for restaurants, retailers and local markets.", stock: 99999 }
 ];
 
@@ -555,6 +556,7 @@ function loadUserPanelData() {
     `;
   }).join("") : "No active orders mapped for this profile.";
 
+  // Farm Bookings & Certificates Renderer
   bList.innerHTML = myBookings.length ? myBookings.map(b => {
     const isConfirmed = b.status === 'Confirmed' || b.status === 'Approved';
     let statusColor = isConfirmed ? 'var(--accent)' : (b.status && b.status.startsWith('Rejected') ? 'var(--danger)' : 'var(--warn)');
@@ -637,21 +639,21 @@ function renderAdminLiveStockSummary() {
     <div style="background: #fefce8; border: 1px solid #fef08a; padding: 14px; border-radius: 10px;">
       <div style="font-size: 13px; color: #854d0e; font-weight: bold;">🌾 Dry Mushroom Available Stock</div>
       <div style="font-size: 24px; font-weight: 900; color: #a16207; margin: 6px 0;">${dryProd.stock} kg</div>
-      <button class="btn" style="padding: 4px 10px; font-size: 11px; min-height: 24px; background: #ca8a04;" onclick="updateProductStockDirect(2)">✏️ Edit Dry Stock</button>
+      <small style="color:#64748b; font-size:11px;">(Controlled via Buy / Daily Drying Log)</small>
     </div>
 
     <!-- Methi Khakhra Stock -->
     <div style="background: #fff7ed; border: 1px solid #ffedd5; padding: 14px; border-radius: 10px;">
       <div style="font-size: 13px; color: #9a3412; font-weight: bold;">🧇 Methi Khakhra Available Stock</div>
       <div style="font-size: 24px; font-weight: 900; color: #ea580c; margin: 6px 0;">${khakhraProd.stock} packs</div>
-      <button class="btn" style="padding: 4px 10px; font-size: 11px; min-height: 24px; background: #ea580c;" onclick="updateProductStockDirect(4)">✏️ Edit Khakhra Stock</button>
+      <small style="color:#64748b; font-size:11px;">(Controlled via Buy Page)</small>
     </div>
 
     <!-- Adad Papad Stock -->
     <div style="background: #f0fdf4; border: 1px solid #bbf7d0; padding: 14px; border-radius: 10px;">
       <div style="font-size: 13px; color: #166534; font-weight: bold;">🫓 Adad Papad Available Stock</div>
       <div style="font-size: 24px; font-weight: 900; color: #15803d; margin: 6px 0;">${papadProd.stock} packs</div>
-      <button class="btn" style="padding: 4px 10px; font-size: 11px; min-height: 24px; background: #16a34a;" onclick="updateProductStockDirect(5)">✏️ Edit Papad Stock</button>
+      <small style="color:#64748b; font-size:11px;">(Controlled via Buy Page)</small>
     </div>
   `;
 }
@@ -975,20 +977,6 @@ function adminEditCertificateData(idx) {
   alert("✅ Certificate records successfully updated!");
 }
 
-function updateProductStockDirect(productId) {
-  const target = products.find(p => p.id === productId);
-  if (!target) return;
-  const newQty = prompt(`Naya available stock enter karein (${target.name}):`, target.stock);
-  if (newQty !== null && !isNaN(parseInt(newQty))) {
-    target.stock = Math.max(0, parseInt(newQty));
-    saveProductsToStorage();
-    renderProducts();
-    populateAdminDashboardTables();
-    computeFinancialLedgerStatements();
-    alert(`Stock updated for ${target.name}: ${target.stock} units.`);
-  }
-}
-
 function handleOrderApprove(idx) {
   const o = orderRegistry[idx];
   o.status = "Approved";
@@ -1120,6 +1108,9 @@ function rejectTrainingBooking(idx) {
   populateAdminDashboardTables();
 }
 
+// =========================================================
+// FINANCIAL LEDGER & DAMAGE BALANCES
+// =========================================================
 function computeFinancialLedgerStatements() {
   const totalSales = salesRegistry.reduce((sum, s) => sum + Number(s.total || 0), 0);
   const totalPurchases = purchasesRegistry.reduce((sum, p) => sum + Number(p.total || 0), 0);
@@ -1134,9 +1125,35 @@ function computeFinancialLedgerStatements() {
   if(document.getElementById("finNetProfit")) document.getElementById("finNetProfit").textContent = "Rs " + netProfit.toFixed(2);
 
   let cashBalances = { Soham: 0, Jeet: 0, Farm: 0 };
-  salesRegistry.forEach(s => { if(cashBalances[s.collector] !== undefined) cashBalances[s.collector] += Number(s.total || 0); });
-  expensesRegistry.forEach(e => { if(cashBalances[e.payer] !== undefined) cashBalances[e.payer] -= Number(e.amount || 0); });
-  purchasesRegistry.forEach(p => { if(cashBalances[p.funder] !== undefined) cashBalances[p.funder] -= Number(p.total || 0); });
+  
+  // 1. Sales Inflow
+  salesRegistry.forEach(s => { 
+    if(cashBalances[s.collector] !== undefined) cashBalances[s.collector] += Number(s.total || 0); 
+  });
+  
+  // 2. Expenses Outflow
+  expensesRegistry.filter(e => e.category !== "Damage Received").forEach(e => { 
+    if(cashBalances[e.payer] !== undefined) cashBalances[e.payer] -= Number(e.amount || 0); 
+  });
+  
+  // 3. Purchases Outflow
+  purchasesRegistry.forEach(p => { 
+    if(cashBalances[p.funder] !== undefined) cashBalances[p.funder] -= Number(p.total || 0); 
+  });
+
+  // 4. Damage Handling Rule:
+  // - If Soham or Jeet received damage: deducted from their account (-).
+  // - If Farm received damage: added into Farm vault (+).
+  expensesRegistry.filter(e => e.category === "Damage Received").forEach(d => {
+    const amt = Number(d.amount || 0);
+    if (d.payer === "Farm") {
+      cashBalances.Farm += amt;
+    } else if (d.payer === "Soham") {
+      cashBalances.Soham -= amt;
+    } else if (d.payer === "Jeet") {
+      cashBalances.Jeet -= amt;
+    }
+  });
 
   if(document.getElementById("cashSoham")) document.getElementById("cashSoham").textContent = "Rs " + cashBalances.Soham.toFixed(2);
   if(document.getElementById("cashJeet")) document.getElementById("cashJeet").textContent = "Rs " + cashBalances.Jeet.toFixed(2);
@@ -1172,7 +1189,7 @@ function computeFinancialLedgerStatements() {
   const dmgRows = expensesRegistry.filter(e => e.category === "Damage Received");
   if(document.getElementById("subDamageTableBody")) {
     document.getElementById("subDamageTableBody").innerHTML = dmgRows.map(d => `
-      <tr><td>${d.date}</td><td>${d.desc}</td><td>${d.payer}</td><td style="color:var(--danger); font-weight:bold;">Rs ${d.amount}</td></tr>
+      <tr><td>${d.date}</td><td>${d.desc}</td><td>${d.payer}</td><td style="color:${d.payer === 'Farm' ? 'var(--accent)' : 'var(--danger)'}; font-weight:bold;">${d.payer === 'Farm' ? '+' : '-'} Rs ${d.amount}</td></tr>
     `).join("");
   }
 }
@@ -1273,20 +1290,25 @@ function saveAdminPurchase(e) {
 function saveAdminDamage(e) {
   e.preventDefault();
   const rawDate = document.getElementById("dmgLogDate").value;
+  const payerType = document.getElementById("dmgPayer").value;
+  const amountVal = parseFloat(document.getElementById("dmgAmount").value);
+
   const data = {
     expId: "DMG-" + Date.now().toString().slice(-4),
     date: rawDate ? new Date(rawDate).toLocaleDateString('en-IN') : new Date().toLocaleDateString('en-IN'),
     category: "Damage Received",
-    payer: document.getElementById("dmgPayer").value,
+    payer: payerType,
     mode: "Internal Allocation",
     desc: document.getElementById("dmgDesc").value.trim(),
-    amount: parseFloat(document.getElementById("dmgAmount").value)
+    amount: amountVal
   };
+
   expensesRegistry.push(data);
   localStorage.setItem('pgf_expenses', JSON.stringify(expensesRegistry));
   e.target.reset();
   initDefaultDatePickers();
   computeFinancialLedgerStatements();
+  alert(`✅ Damage recorded: ${payerType === 'Farm' ? '+Rs ' + amountVal + ' added to Farm Vault' : '-Rs ' + amountVal + ' deducted from ' + payerType + ' expenses'}`);
 }
 
 function downloadOfflineSaleInvoice(saleId) {

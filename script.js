@@ -434,6 +434,7 @@ function toggleOrderDetailsView(orderId) {
   }
 }
 
+// USER PANEL: Displays exact Placed Date and Expected / Delivered Date
 function loadUserPanelData() {
   if (!currentUser) return;
   const oList = document.getElementById("userOrdersList");
@@ -527,7 +528,7 @@ function loadUserPanelData() {
               
               ${isApproved && !isCancelled && !isRejected ? `
                 <div style="margin-top:8px; background:#f0fdf4; padding:10px 12px; border-radius:6px; border:1px solid #bbf7d0; color:#15803d; font-size:13px; line-height:1.5;">
-                  <strong>🚚 Target Delivery Date:</strong> <span style="font-weight:800; font-size:14px; text-decoration:underline;">${arrivalDeliveryDate}</span><br>
+                  <strong>🚚 Target Delivery Date (Kab Pahuchega):</strong> <span style="font-weight:800; font-size:14px; text-decoration:underline;">${arrivalDeliveryDate}</span><br>
                   <strong>📦 Dispatched Courier:</strong> <span>${courier}</span> (AWB Tracking Code: <code>${awb}</code>)
                 </div>
               ` : ''}
@@ -877,14 +878,11 @@ function populateAdminDashboardTables() {
             <td style="min-width: 280px;">
               ${isApproved && !isCancelled && !isRejected ? `
                 <div style="background:#f8fafc; padding:8px; border-radius:8px; border:1px solid #e2e8f0; font-size:12px;">
-                  
-                  <!-- Delivery Date Picker -->
                   <div style="margin-bottom:6px; display:flex; align-items:center; gap:4px; background:#fff; padding:4px 6px; border-radius:6px; border:1px solid #cbd5e1;">
                     <label style="font-size:11px; font-weight:bold; color:#0f172a; white-space:nowrap;">📅 Delivery Date:</label>
                     <input type="date" value="${eta}" style="padding:2px 4px; font-size:11px; width:100%; border:1px solid #94a3b8; border-radius:4px;" onchange="updateExpectedDeliveryDate(${idx}, this.value)">
                   </div>
 
-                  <!-- Direct Inline Editable Courier Name Input -->
                   <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px; gap:4px;">
                     <span style="font-weight:bold; color:#0284c7; white-space:nowrap;">Stage: ${stage}</span>
                     <input type="text" value="${courier}" placeholder="Courier Name (e.g. Ekart)" style="padding:2px 6px; font-size:11px; font-weight:bold; color:#334155; border:1px solid #94a3b8; border-radius:4px; width:140px; text-align:right;" onchange="updateOrderCourierDirect(${idx}, this.value)">
@@ -1315,34 +1313,34 @@ function rejectTrainingBooking(idx) {
 }
 
 // =========================================================
-// ACCOUNTING EDIT & DELETE CONTROLLERS (ALL FIELDS EDITABLE)
+// ACCOUNTING EDIT & DELETE CONTROLLERS (PAGES 1, 2, 3, 4)
 // =========================================================
 
-// 1. Expense Edit & Delete (All 6 Fields: Date, Category, Payer, Context, Amount, Notes)
+// 1. Expense Edit (Date, Category, Payer, Context, Amount, Notes) & Delete
 function adminEditExpense(idx) {
   const exp = expensesRegistry[idx];
-  
-  const newDate = prompt("Expense Date edit karein (DD/MM/YYYY ya YYYY-MM-DD):", exp.date || "");
+
+  const newDate = prompt("1. Operation Date (YYYY-MM-DD / DD/MM/YYYY):", exp.date || getTodayIsoString());
   if (newDate !== null && newDate.trim() !== "") exp.date = newDate.trim();
 
-  const newCat = prompt("Category edit karein (Farm / Mushroom / Damage Received):", exp.category || "Farm");
-  if (newCat !== null && newCat.trim() !== "") exp.category = newCat.trim();
+  const newCategory = prompt("2. Category (Farm / Mushroom / Damage Received):", exp.category || "Farm");
+  if (newCategory !== null && newCategory.trim() !== "") exp.category = newCategory.trim();
 
-  const newPayer = prompt("Assigned Resource Party / Payer edit karein (Soham / Jeet / Farm):", exp.payer || "Farm");
+  const newPayer = prompt("3. Payer Party (Soham / Jeet / Farm):", exp.payer || "Farm");
   if (newPayer !== null && newPayer.trim() !== "") exp.payer = newPayer.trim();
 
-  const newDesc = prompt("Expense Context / Description edit karein:", exp.desc || "");
+  const newDesc = prompt("4. Context / Item Summary:", exp.desc || "");
   if (newDesc !== null && newDesc.trim() !== "") exp.desc = newDesc.trim();
 
-  const newAmt = prompt("Expense Amount edit karein (Rs):", exp.amount);
+  const newAmt = prompt("5. Amount (Rs):", exp.amount);
   if (newAmt !== null && !isNaN(parseFloat(newAmt))) exp.amount = parseFloat(newAmt);
 
-  const newNotes = prompt("Notes / Remarks edit karein:", exp.notes || "");
+  const newNotes = prompt("6. Additional Notes / Memo:", exp.notes || "");
   if (newNotes !== null) exp.notes = newNotes.trim();
 
   localStorage.setItem('pgf_expenses', JSON.stringify(expensesRegistry));
   computeFinancialLedgerStatements();
-  alert("✅ Expense row updated successfully!");
+  alert("✅ Expense details updated successfully!");
 }
 
 function adminDeleteExpense(idx) {
@@ -1353,35 +1351,38 @@ function adminDeleteExpense(idx) {
   }
 }
 
-// 2. Sell Edit & Delete
+// 2. Sell Edit & Delete (With Received / Pending tracking)
 function adminEditSale(idx) {
   const s = salesRegistry[idx];
   
-  const newDate = prompt("Sale Date edit karein:", s.date || "");
+  const newDate = prompt("1. Sale Date (YYYY-MM-DD / DD/MM/YYYY):", s.date || getTodayIsoString());
   if (newDate !== null && newDate.trim() !== "") s.date = newDate.trim();
 
-  const newBuyer = prompt("Buyer Name edit karein:", s.buyer || "");
+  const newProduct = prompt("2. Product Catalog Variant (Dry / Khakhra / Papad / Green / Powder):", s.product || "Dry");
+  if (newProduct !== null && newProduct.trim() !== "") s.product = newProduct.trim();
+
+  const newBuyer = prompt("3. Buyer Name:", s.buyer || "");
   if (newBuyer !== null && newBuyer.trim() !== "") s.buyer = newBuyer.trim();
 
-  const newPhone = prompt("Buyer Phone edit karein:", s.phone || "");
+  const newPhone = prompt("4. Buyer Phone Number:", s.phone || "");
   if (newPhone !== null && newPhone.trim() !== "") s.phone = newPhone.trim();
 
-  const newQty = prompt("Qty Lots edit karein:", s.qty);
+  const newQty = prompt("5. Qty Lots (kg/packs):", s.qty);
   if (newQty !== null && !isNaN(parseFloat(newQty))) s.qty = parseFloat(newQty);
 
-  const newRate = prompt("Unit Spot Rate (Rs) edit karein:", s.rate);
+  const newRate = prompt("6. Agreed Unit Rate (Rs):", s.rate);
   if (newRate !== null && !isNaN(parseFloat(newRate))) s.rate = parseFloat(newRate);
 
-  const newDel = prompt("Delivery Charge (Rs) edit karein:", s.delivery || 0);
+  const newDel = prompt("7. Delivery Charge (Rs):", s.delivery || 0);
   if (newDel !== null && !isNaN(parseFloat(newDel))) s.delivery = parseFloat(newDel);
 
   s.subtotal = s.qty * s.rate;
   s.total = s.subtotal + s.delivery;
 
-  const newPaid = prompt(`Received Payment Amount edit karein (Total Rs ${s.total}):`, s.paidAmount !== undefined ? s.paidAmount : s.total);
+  const newPaid = prompt(`8. Received Payment Amount (Total Rs ${s.total}):`, s.paidAmount !== undefined ? s.paidAmount : s.total);
   if (newPaid !== null && !isNaN(parseFloat(newPaid))) s.paidAmount = parseFloat(newPaid);
 
-  const newNotes = prompt("Sale Notes / Remarks edit karein:", s.notes || "");
+  const newNotes = prompt("9. Sale Notes / Remarks:", s.notes || "");
   if (newNotes !== null) s.notes = newNotes.trim();
 
   localStorage.setItem('pgf_sales', JSON.stringify(salesRegistry));
@@ -1400,25 +1401,28 @@ function adminDeleteSale(idx) {
 // 3. Buy Edit & Delete (With Paid vs Pending to Vendor)
 function adminEditPurchase(idx) {
   const p = purchasesRegistry[idx];
-
-  const newDate = prompt("Purchase Date edit karein:", p.date || "");
-  if (newDate !== null && newDate.trim() !== "") p.date = newDate.trim();
   
-  const newVendor = prompt("Vendor Name edit karein:", p.vendor || "");
+  const newDate = prompt("1. Purchase Date (YYYY-MM-DD / DD/MM/YYYY):", p.date || getTodayIsoString());
+  if (newDate !== null && newDate.trim() !== "") p.date = newDate.trim();
+
+  const newProduct = prompt("2. Resource Product:", p.product || "");
+  if (newProduct !== null && newProduct.trim() !== "") p.product = newProduct.trim();
+
+  const newVendor = prompt("3. Vendor Farmer / Entity Name:", p.vendor || "");
   if (newVendor !== null && newVendor.trim() !== "") p.vendor = newVendor.trim();
 
-  const newQty = prompt("Weight / Qty Units edit karein:", p.qty);
+  const newQty = prompt("4. Weight / Qty Units:", p.qty);
   if (newQty !== null && !isNaN(parseFloat(newQty))) p.qty = parseFloat(newQty);
 
-  const newRate = prompt("Purchase Rate (Rs) edit karein:", p.rate);
+  const newRate = prompt("5. Purchase Rate (Rs):", p.rate);
   if (newRate !== null && !isNaN(parseFloat(newRate))) p.rate = parseFloat(newRate);
 
   p.total = p.qty * p.rate;
 
-  const newPaid = prompt(`Vendor ko Kitna Paisa Diya Hai? (Total Rs ${p.total}):`, p.paidAmount !== undefined ? p.paidAmount : p.total);
+  const newPaid = prompt(`6. Vendor ko Kitna Paisa Diya Hai? (Total Rs ${p.total}):`, p.paidAmount !== undefined ? p.paidAmount : p.total);
   if (newPaid !== null && !isNaN(parseFloat(newPaid))) p.paidAmount = parseFloat(newPaid);
 
-  const newNotes = prompt("Vendor Notes / Memo edit karein:", p.notes || "");
+  const newNotes = prompt("7. Vendor Notes / Memo:", p.notes || "");
   if (newNotes !== null) p.notes = newNotes.trim();
 
   localStorage.setItem('pgf_purchases', JSON.stringify(purchasesRegistry));
@@ -1438,19 +1442,19 @@ function adminDeletePurchase(idx) {
 function adminEditDamage(idx) {
   const dmg = expensesRegistry[idx];
   
-  const newDate = prompt("Damage Date edit karein:", dmg.date || "");
+  const newDate = prompt("1. Damage Log Date (YYYY-MM-DD / DD/MM/YYYY):", dmg.date || getTodayIsoString());
   if (newDate !== null && newDate.trim() !== "") dmg.date = newDate.trim();
 
-  const newDesc = prompt("Damage Reason Context edit karein:", dmg.desc || "");
-  if (newDesc !== null && newDesc.trim() !== "") dmg.desc = newDesc.trim();
-
-  const newPayer = prompt("Partner Party edit karein (Farm / Soham / Jeet):", dmg.payer || "Farm");
+  const newPayer = prompt("2. Partner / Vault Location (Farm / Soham / Jeet):", dmg.payer || "Farm");
   if (newPayer !== null && newPayer.trim() !== "") dmg.payer = newPayer.trim();
 
-  const newAmt = prompt("Damage Amount edit karein (Rs):", dmg.amount);
+  const newDesc = prompt("3. Damage Reason Context:", dmg.desc || "");
+  if (newDesc !== null && newDesc.trim() !== "") dmg.desc = newDesc.trim();
+
+  const newAmt = prompt("4. Damage Amount (Rs):", dmg.amount);
   if (newAmt !== null && !isNaN(parseFloat(newAmt))) dmg.amount = parseFloat(newAmt);
 
-  const newNotes = prompt("Damage Audit Notes edit karein:", dmg.notes || "");
+  const newNotes = prompt("5. Damage Audit Notes:", dmg.notes || "");
   if (newNotes !== null) dmg.notes = newNotes.trim();
 
   localStorage.setItem('pgf_expenses', JSON.stringify(expensesRegistry));
@@ -1467,300 +1471,8 @@ function adminDeleteDamage(idx) {
 }
 
 // =========================================================
-// FINANCIAL LEDGER & EXACT FARM REVENUE RULES
+// OFFLINE SELL INVOICE WITH DOWNLOAD & DYNAMIC WHATSAPP
 // =========================================================
-function computeFinancialLedgerStatements() {
-  const approvedOnlineOrdersRevenue = orderRegistry
-    .filter(o => o && (o.status === 'Approved' || o.status === 'Delivered'))
-    .reduce((sum, o) => sum + Number(o.total || 0), 0);
-
-  // Direct offline sales count exact Received Payment Amount
-  const directOfflineSales = salesRegistry.reduce((sum, s) => sum + Number(s.paidAmount !== undefined ? s.paidAmount : s.total || 0), 0);
-  const totalSales = approvedOnlineOrdersRevenue + directOfflineSales;
-
-  // Actual purchase outflow is what was actually paid out
-  const totalPurchases = purchasesRegistry.reduce((sum, p) => sum + Number(p.paidAmount !== undefined ? p.paidAmount : p.total || 0), 0);
-  const totalExpenses = expensesRegistry.filter(e => e.category !== "Damage Received").reduce((sum, e) => sum + Number(e.amount || 0), 0);
-  const totalDamages = expensesRegistry.filter(e => e.category === "Damage Received").reduce((sum, e) => sum + Number(e.amount || 0), 0);
-
-  const totalCreditedRefunds = orderRegistry
-    .filter(o => o && o.status && o.status.startsWith('Cancelled') && o.refundStage === 'Refund Credited')
-    .reduce((sum, o) => sum + Number(o.total || 0), 0);
-
-  const netProfit = totalSales - (totalPurchases + totalExpenses + totalDamages + totalCreditedRefunds);
-
-  if(document.getElementById("finTotalRevenue")) document.getElementById("finTotalRevenue").textContent = "Rs " + totalSales.toFixed(2);
-  if(document.getElementById("finTotalPurchases")) document.getElementById("finTotalPurchases").textContent = "Rs " + totalPurchases.toFixed(2);
-  if(document.getElementById("finTotalExpenses")) document.getElementById("finTotalExpenses").textContent = "Rs " + totalExpenses.toFixed(2);
-  if(document.getElementById("finTotalRefunds")) document.getElementById("finTotalRefunds").textContent = "Rs " + totalCreditedRefunds.toFixed(2);
-  if(document.getElementById("finNetProfit")) document.getElementById("finNetProfit").textContent = "Rs " + netProfit.toFixed(2);
-
-  let cashBalances = { Soham: 0, Jeet: 0, Farm: 0 };
-  
-  cashBalances.Farm += approvedOnlineOrdersRevenue;
-  cashBalances.Farm -= totalCreditedRefunds;
-
-  salesRegistry.forEach(s => { 
-    if(cashBalances[s.collector] !== undefined) cashBalances[s.collector] += Number(s.paidAmount !== undefined ? s.paidAmount : s.total || 0); 
-  });
-  
-  expensesRegistry.filter(e => e.category !== "Damage Received").forEach(e => { 
-    if(cashBalances[e.payer] !== undefined) cashBalances[e.payer] -= Number(e.amount || 0); 
-  });
-  
-  purchasesRegistry.forEach(p => { 
-    if(cashBalances[p.funder] !== undefined) cashBalances[p.funder] -= Number(p.paidAmount !== undefined ? p.paidAmount : p.total || 0); 
-  });
-
-  expensesRegistry.filter(e => e.category === "Damage Received").forEach(d => {
-    const amt = Number(d.amount || 0);
-    if (d.payer === "Farm") {
-      cashBalances.Farm += amt;
-    } else if (d.payer === "Soham") {
-      cashBalances.Soham -= amt;
-    } else if (d.payer === "Jeet") {
-      cashBalances.Jeet -= amt;
-    }
-  });
-
-  if(document.getElementById("cashSoham")) document.getElementById("cashSoham").textContent = "Rs " + cashBalances.Soham.toFixed(2);
-  if(document.getElementById("cashJeet")) document.getElementById("cashJeet").textContent = "Rs " + cashBalances.Jeet.toFixed(2);
-  if(document.getElementById("cashFarm")) document.getElementById("cashFarm").textContent = "Rs " + cashBalances.Farm.toFixed(2);
-
-  const expRows = expensesRegistry.filter(e => e.category !== "Damage Received");
-  if(document.getElementById("subExpenseTableBody")) {
-    document.getElementById("subExpenseTableBody").innerHTML = expRows.map((e, idx) => `
-      <tr>
-        <td>${e.date}</td>
-        <td>${e.category}</td>
-        <td>${e.payer}</td>
-        <td>${e.desc}</td>
-        <td style="color:var(--warn); font-weight:bold;">Rs ${e.amount}</td>
-        <td><small>${e.notes || '-'}</small></td>
-        <td>
-          <button type="button" class="btn" style="padding:2px 5px; font-size:10px; min-height:auto; background:#0284c7;" onclick="adminEditExpense(${idx})">✏️</button>
-          <button type="button" class="btn" style="padding:2px 5px; font-size:10px; min-height:auto; background:var(--danger);" onclick="adminDeleteExpense(${idx})">🗑️</button>
-        </td>
-      </tr>
-    `).join("");
-  }
-
-  if(document.getElementById("subSellTableBody")) {
-    document.getElementById("subSellTableBody").innerHTML = salesRegistry.map((s, idx) => {
-      const sub = Number(s.subtotal || (s.qty * s.rate) || s.total);
-      const del = Number(s.delivery || 0);
-      const grandTotal = Number(s.total || (sub + del));
-      const paid = Number(s.paidAmount !== undefined ? s.paidAmount : grandTotal);
-      const pending = Math.max(0, grandTotal - paid);
-
-      return `
-        <tr>
-          <td>${s.date}</td>
-          <td>${s.product}</td>
-          <td><strong>${s.buyer}</strong><br><small>${s.phone || ''}</small></td>
-          <td>${s.qty}</td>
-          <td style="color:var(--accent); font-weight:bold;">Rs ${grandTotal.toFixed(2)}</td>
-          <td>
-            <span style="color:#16a34a; font-weight:bold;">Rs ${paid.toFixed(2)}</span>
-            ${pending > 0 ? `<br><small style="color:#dc2626; font-weight:bold;">Due: Rs ${pending.toFixed(2)}</small>` : '<br><small style="color:#16a34a;">(Fully Paid)</small>'}
-          </td>
-          <td><small>${s.notes || '-'}</small></td>
-          <td>
-            <div style="display:flex; gap:3px;">
-              <button type="button" class="btn" style="padding:2px 5px; font-size:10px; min-height:auto;" onclick="downloadOfflineSaleInvoice('${s.saleId}')">📄</button>
-              <button type="button" class="btn" style="padding:2px 5px; font-size:10px; min-height:auto; background:#0284c7;" onclick="adminEditSale(${idx})">✏️</button>
-              <button type="button" class="btn" style="padding:2px 5px; font-size:10px; min-height:auto; background:var(--danger);" onclick="adminDeleteSale(${idx})">🗑️</button>
-            </div>
-          </td>
-        </tr>
-      `;
-    }).join("");
-  }
-
-  if(document.getElementById("subBuyTableBody")) {
-    document.getElementById("subBuyTableBody").innerHTML = purchasesRegistry.map((p, idx) => {
-      const totalPayable = Number(p.total || (p.qty * p.rate));
-      const paid = Number(p.paidAmount !== undefined ? p.paidAmount : totalPayable);
-      const pendingToVendor = Math.max(0, totalPayable - paid);
-
-      return `
-        <tr>
-          <td>${p.date}</td>
-          <td>${p.product}</td>
-          <td><strong>${p.vendor}</strong></td>
-          <td>${p.qty}</td>
-          <td style="color:var(--danger); font-weight:bold;">Rs ${totalPayable.toFixed(2)}</td>
-          <td>
-            <span style="color:#16a34a; font-weight:bold;">Paid: Rs ${paid.toFixed(2)}</span>
-            ${pendingToVendor > 0 ? `<br><small style="color:#ea580c; font-weight:bold;">Pending: Rs ${pendingToVendor.toFixed(2)}</small>` : '<br><small style="color:#16a34a;">(Clear)</small>'}
-          </td>
-          <td><small>${p.notes || '-'}</small></td>
-          <td>
-            <button type="button" class="btn" style="padding:2px 5px; font-size:10px; min-height:auto; background:#0284c7;" onclick="adminEditPurchase(${idx})">✏️</button>
-            <button type="button" class="btn" style="padding:2px 5px; font-size:10px; min-height:auto; background:var(--danger);" onclick="adminDeletePurchase(${idx})">🗑️</button>
-          </td>
-        </tr>
-      `;
-    }).join("");
-  }
-
-  const dmgRows = expensesRegistry.filter(e => e.category === "Damage Received");
-  if(document.getElementById("subDamageTableBody")) {
-    document.getElementById("subDamageTableBody").innerHTML = dmgRows.map((d, idx) => `
-      <tr>
-        <td>${d.date}</td>
-        <td>${d.desc}</td>
-        <td>${d.payer}</td>
-        <td style="color:${d.payer === 'Farm' ? 'var(--accent)' : 'var(--danger)'}; font-weight:bold;">${d.payer === 'Farm' ? '+' : '-'} Rs ${d.amount}</td>
-        <td><small>${d.notes || '-'}</small></td>
-        <td>
-          <button type="button" class="btn" style="padding:2px 5px; font-size:10px; min-height:auto; background:#0284c7;" onclick="adminEditDamage(${idx})">✏️</button>
-          <button type="button" class="btn" style="padding:2px 5px; font-size:10px; min-height:auto; background:var(--danger);" onclick="adminDeleteDamage(${idx})">🗑️</button>
-        </td>
-      </tr>
-    `).join("");
-  }
-}
-
-function saveAdminExpense(e) {
-  e.preventDefault();
-  const rawDate = document.getElementById("expLogDate").value;
-  const data = {
-    expId: "EXP-" + Date.now().toString().slice(-4),
-    date: rawDate ? new Date(rawDate).toLocaleDateString('en-IN') : new Date().toLocaleDateString('en-IN'),
-    category: document.getElementById("expCategory").value,
-    payer: document.getElementById("expPayer").value,
-    mode: document.getElementById("expMode").value,
-    desc: document.getElementById("expDesc").value.trim(),
-    amount: parseFloat(document.getElementById("expAmount").value),
-    notes: document.getElementById("expNotes") ? document.getElementById("expNotes").value.trim() : ""
-  };
-  expensesRegistry.push(data);
-  localStorage.setItem('pgf_expenses', JSON.stringify(expensesRegistry));
-  e.target.reset();
-  initDefaultDatePickers();
-  computeFinancialLedgerStatements();
-}
-
-function saveAdminSale(e) {
-  e.preventDefault();
-  const rawDate = document.getElementById("saleLogDate").value;
-  const qty = parseFloat(document.getElementById("saleQty").value);
-  const rate = parseFloat(document.getElementById("saleRate").value);
-  const delivery = parseFloat(document.getElementById("saleDelivery").value) || 0;
-  const paid = parseFloat(document.getElementById("salePaidAmount").value) || 0;
-  const notes = document.getElementById("saleNotes") ? document.getElementById("saleNotes").value.trim() : "";
-  const prodType = document.getElementById("saleProduct").value;
-
-  const targetProd = products.find(p => p.type === prodType || p.name.toLowerCase().includes(prodType.toLowerCase()));
-  if (targetProd && !targetProd.bulk) {
-    targetProd.stock = Math.max(0, targetProd.stock - qty);
-    saveProductsToStorage();
-    renderProducts();
-  }
-
-  const subtotal = qty * rate;
-  const grandTotal = subtotal + delivery;
-
-  const data = {
-    saleId: "SALE-" + Date.now().toString().slice(-4),
-    date: rawDate ? new Date(rawDate).toLocaleDateString('en-IN') : new Date().toLocaleDateString('en-IN'),
-    product: prodType,
-    collector: document.getElementById("saleCollector").value,
-    buyer: document.getElementById("saleBuyer").value.trim(),
-    phone: document.getElementById("salePhone").value.trim(),
-    address: document.getElementById("saleAddress").value.trim(),
-    qty: qty,
-    rate: rate,
-    subtotal: subtotal,
-    delivery: delivery,
-    total: grandTotal,
-    paidAmount: paid,
-    notes: notes
-  };
-
-  salesRegistry.push(data);
-  localStorage.setItem('pgf_sales', JSON.stringify(salesRegistry));
-  e.target.reset();
-  if (document.getElementById("saleDelivery")) document.getElementById("saleDelivery").value = "0";
-  initDefaultDatePickers();
-  computeFinancialLedgerStatements();
-  renderAdminLiveStockSummary();
-  
-  // Auto open created invoice dialog
-  downloadOfflineSaleInvoice(data.saleId);
-}
-
-function saveAdminPurchase(e) {
-  e.preventDefault();
-  const rawDate = document.getElementById("purLogDate").value;
-  const qty = parseFloat(document.getElementById("purQty").value);
-  const rate = parseFloat(document.getElementById("purRate").value);
-  const paid = parseFloat(document.getElementById("purPaidAmount").value) || (qty * rate);
-  const purType = document.getElementById("purProduct").value;
-  const notes = document.getElementById("purNotes") ? document.getElementById("purNotes").value.trim() : "";
-  
-  let matchedProd = null;
-  if (purType.includes("Dry")) matchedProd = products.find(p => p.type === "dry");
-  else if (purType.includes("Khakhra")) matchedProd = products.find(p => p.type === "khakhra");
-  else if (purType.includes("Papad")) matchedProd = products.find(p => p.type === "papad");
-  else if (purType.includes("Green")) matchedProd = products.find(p => p.type === "green");
-
-  if (matchedProd) {
-    matchedProd.stock = (matchedProd.stock || 0) + qty;
-    saveProductsToStorage();
-    renderProducts();
-  }
-
-  const data = {
-    purId: "PUR-" + Date.now().toString().slice(-4),
-    date: rawDate ? new Date(rawDate).toLocaleDateString('en-IN') : new Date().toLocaleDateString('en-IN'),
-    product: purType,
-    funder: document.getElementById("purFunder").value,
-    vendor: document.getElementById("purVendor").value.trim(),
-    qty: qty,
-    rate: rate,
-    total: qty * rate,
-    paidAmount: paid,
-    notes: notes
-  };
-
-  purchasesRegistry.push(data);
-  localStorage.setItem('pgf_purchases', JSON.stringify(purchasesRegistry));
-  e.target.reset();
-  initDefaultDatePickers();
-  computeFinancialLedgerStatements();
-  renderAdminLiveStockSummary();
-  alert(`✅ Inventory Buy recorded! Total: Rs ${qty * rate}, Paid to Vendor: Rs ${paid}`);
-}
-
-function saveAdminDamage(e) {
-  e.preventDefault();
-  const rawDate = document.getElementById("dmgLogDate").value;
-  const payerType = document.getElementById("dmgPayer").value;
-  const amountVal = parseFloat(document.getElementById("dmgAmount").value);
-  const notes = document.getElementById("dmgNotes") ? document.getElementById("dmgNotes").value.trim() : "";
-
-  const data = {
-    expId: "DMG-" + Date.now().toString().slice(-4),
-    date: rawDate ? new Date(rawDate).toLocaleDateString('en-IN') : new Date().toLocaleDateString('en-IN'),
-    category: "Damage Received",
-    payer: payerType,
-    mode: "Internal Allocation",
-    desc: document.getElementById("dmgDesc").value.trim(),
-    amount: amountVal,
-    notes: notes
-  };
-
-  expensesRegistry.push(data);
-  localStorage.setItem('pgf_expenses', JSON.stringify(expensesRegistry));
-  e.target.reset();
-  initDefaultDatePickers();
-  computeFinancialLedgerStatements();
-  alert(`✅ Damage recorded: ${payerType === 'Farm' ? '+Rs ' + amountVal + ' added to Farm Vault' : '-Rs ' + amountVal + ' deducted from ' + payerType + ' expenses'}`);
-}
-
-// Generates Invoice, PDF Download & Custom WhatsApp Link for Sell Entry
 function downloadOfflineSaleInvoice(saleId) {
   const targetSale = salesRegistry.find(s => s.saleId === saleId);
   if(!targetSale) return alert("Invoice not found.");
@@ -1809,12 +1521,32 @@ function downloadOfflineSaleInvoice(saleId) {
     document.getElementById("invDue").textContent = `Rs ${due.toFixed(2)}`;
   }
 
-  // Set WhatsApp button dynamically
+  // Dynamic WhatsApp Link configuration for the Sell Receipt
+  const waTargetPhone = (targetSale.phone && targetSale.phone.replace(/[^0-9]/g, '')) || farmWhatsapp;
+  const cleanPhone = waTargetPhone.length === 10 ? "91" + waTargetPhone : waTargetPhone;
+
+  const waInvoiceText = 
+`*PURE GROW FARM - SALES INVOICE RECEIPT*
+----------------------------------------
+📄 *Invoice Ref:* ${targetSale.saleId}
+📅 *Date:* ${targetSale.date}
+👤 *Customer:* ${targetSale.buyer}
+📞 *Phone:* ${targetSale.phone || 'N/A'}
+📍 *Address:* ${targetSale.address || 'Direct Spot Delivery'}
+🍄 *Product:* ${targetSale.product} (${targetSale.qty} Units @ Rs ${targetSale.rate}/unit)
+----------------------------------------
+💰 *Subtotal:* Rs ${sub.toFixed(2)}
+🚚 *Delivery:* Rs ${del.toFixed(2)}
+💵 *Grand Total:* Rs ${grandTotal.toFixed(2)}
+✅ *Paid Amount:* Rs ${paid.toFixed(2)}
+${due > 0 ? `⚠️ *Pending Balance:* Rs ${due.toFixed(2)}\n` : `🎉 *Status:* Fully Paid\n`}${targetSale.notes ? `📝 *Note:* ${targetSale.notes}\n` : ''}----------------------------------------
+*Thank you for your business!*
+Pure Grow Farm, Makhiyala, Gujarat
+📞 +91 9067891039 | +91 8200145732`;
+
   const waBtn = document.getElementById("whatsappInvoice");
   if (waBtn) {
-    const waText = `*PURE GROW FARM - WHOLESALE INVOICE*\n----------------------------------------\nInvoice Ref: ${targetSale.saleId}\nClient: ${targetSale.buyer}\nProduct: ${targetSale.product}\nQty: ${targetSale.qty}\nSubtotal: Rs ${sub.toFixed(2)}\nDelivery Charge: Rs ${del.toFixed(2)}\n*Grand Total: Rs ${grandTotal.toFixed(2)}*\nPaid Amount: Rs ${paid.toFixed(2)}\nBalance Due: Rs ${due.toFixed(2)}\n----------------------------------------\nThank you for choosing Pure Grow Farm!`;
-    const targetPhone = targetSale.phone && targetSale.phone.length >= 10 ? `91${targetSale.phone.replace(/[^0-9]/g, '').slice(-10)}` : farmWhatsapp;
-    waBtn.href = `https://wa.me/${targetPhone}?text=${encodeURIComponent(waText)}`;
+    waBtn.href = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(waInvoiceText)}`;
   }
   
   document.getElementById("invoiceDialog").showModal();
@@ -2024,6 +1756,13 @@ function confirmOrder(e) {
   document.getElementById("invSub").textContent = "Rs " + bill.subtotal;
   document.getElementById("invDelivery").textContent = "Rs " + bill.delivery;
   document.getElementById("invTotal").textContent = "Rs " + bill.total;
+
+  const paidRow = document.getElementById("invPaidRow");
+  const dueRow = document.getElementById("invDueRow");
+  const notesSec = document.getElementById("invNotesSection");
+  if (paidRow) paidRow.style.display = "none";
+  if (dueRow) dueRow.style.display = "none";
+  if (notesSec) notesSec.style.display = "none";
 
   pushNotification('ADMIN', '🛍️ New Order Placed!', `${data.name} placed order #${data.orderId} for Rs ${data.total}`, 'order');
   

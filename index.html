@@ -725,6 +725,7 @@
           </div>
         </div>
 
+        <!-- Sub Tab 2: Sell (With Delivery Logistics Charge) -->
         <div id="subTabSell" class="sub-accounting-section" style="display:none;">
           <h4>2. Log Manual Wholesale Production Sale (Direct Offline Inflow)</h4>
           <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap:16px;">
@@ -752,6 +753,9 @@
                 <input type="text" id="saleAddress" placeholder="Client Shipping Address" required>
                 <input type="number" step="0.01" id="saleQty" placeholder="Dispatched Weight Lots (kg/Packs)" required>
                 <input type="number" id="saleRate" placeholder="Agreed Unit Spot Cost (Rs)" required>
+                
+                <input type="number" id="saleDelivery" placeholder="Delivery Logistics Charge (Rs) [0 for Free]" value="0" min="0">
+                
                 <button type="submit">Log Operational Sales Inflow</button>
               </form>
             </div>
@@ -764,6 +768,7 @@
                     <th>Buyer</th>
                     <th>Phone</th>
                     <th>Qty</th>
+                    <th>Delivery</th>
                     <th>Total</th>
                     <th>Action</th>
                   </tr>

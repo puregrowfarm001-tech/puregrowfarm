@@ -28,7 +28,7 @@ function getCleanData(key) {
   try {
     const raw = JSON.parse(localStorage.getItem(key)) || [];
     if (!Array.isArray(raw)) return [];
-    return raw.filter(item => item && (item.name || item.orderId || item.bookingId || item.saleId || item.expId || item.dryId || item.id));
+    return raw.filter(item => item && (item.name || item.orderId || item.bookingId || item.saleId || item.expId || item.dryId || item.purId || item.id));
   } catch (e) {
     return [];
   }
@@ -527,7 +527,7 @@ function loadUserPanelData() {
               <div style="margin-top:4px;"><strong>Payment Mode:</strong> <span class="badge" style="background:#eef2ff; color:#3730a3;">${o.paymentMode || 'UPI'}</span> | <strong>Txn ID:</strong> <code>${o.txnId || 'N/A'}</code> | <strong>Your UPI:</strong> <code style="color:var(--accent); font-weight:bold;">${o.userUpiId || 'N/A'}</code></div>
               
               ${isApproved && !isCancelled && !isRejected ? `
-                <div style="margin-top:8px; background:#f0fdf4; padding:10px 12px; border-radius:8px; border:1px solid #bbf7d0; color:#15803d; font-size:13px; line-height:1.5;">
+                <div style="margin-top:8px; background:#f0fdf4; padding:10px 12px; border-radius:6px; border:1px solid #bbf7d0; color:#15803d; font-size:13px; line-height:1.5;">
                   <strong>🚚 Target Delivery Date (Kab Pahuchega):</strong> <span style="font-weight:800; font-size:14px; text-decoration:underline;">${arrivalDeliveryDate}</span><br>
                   <strong>📦 Dispatched Courier:</strong> <span>${courier}</span> (AWB Tracking Code: <code>${awb}</code>)
                 </div>
@@ -1092,40 +1092,25 @@ function updateOrderRefundDate(idx, newDate) {
 function adminEditOrderDetails(idx) {
   const o = orderRegistry[idx];
 
-  // 1. Phone Number Edit
   const newPhone = prompt("1. Customer Phone Number edit karein:", o.phone || "");
-  if (newPhone !== null && newPhone.trim() !== "") {
-    o.phone = newPhone.trim();
-  }
+  if (newPhone !== null && newPhone.trim() !== "") o.phone = newPhone.trim();
 
-  // 2. Shipping Address Edit
   const newAddress = prompt("2. Customer Shipping Address edit karein:", o.address || "");
-  if (newAddress !== null && newAddress.trim() !== "") {
-    o.address = newAddress.trim();
-  }
+  if (newAddress !== null && newAddress.trim() !== "") o.address = newAddress.trim();
 
-  // 3. Payment Mode Edit
   const newMode = prompt("3. Payment Mode edit karein (e.g. GPay, PhonePe, Paytm, UPI, Cash):", o.paymentMode || "Online UPI");
-  if (newMode !== null && newMode.trim() !== "") {
-    o.paymentMode = newMode.trim();
-  }
+  if (newMode !== null && newMode.trim() !== "") o.paymentMode = newMode.trim();
 
-  // 4. Online Txn ID (UTR) Edit
   const newTxnId = prompt("4. Online Payment Transaction ID (UTR) edit karein:", o.txnId || "");
-  if (newTxnId !== null && newTxnId.trim() !== "") {
-    o.txnId = newTxnId.trim();
-  }
+  if (newTxnId !== null && newTxnId.trim() !== "") o.txnId = newTxnId.trim();
 
-  // 5. User UPI ID Edit
   const newUpi = prompt("5. Customer UPI ID edit karein (e.g. name@okhdfcbank):", o.userUpiId || "");
-  if (newUpi !== null && newUpi.trim() !== "") {
-    o.userUpiId = newUpi.trim();
-  }
+  if (newUpi !== null && newUpi.trim() !== "") o.userUpiId = newUpi.trim();
 
   localStorage.setItem('pgf_orders', JSON.stringify(orderRegistry));
-  pushNotification(o.email, '🚚 Order Details Updated', `Your Order #${o.orderId} contact, address, and payment details have been updated by Admin.`, 'order');
+  pushNotification(o.email, '🚚 Order Details Updated', `Your Order #${o.orderId} details have been updated by Admin.`, 'order');
   populateAdminDashboardTables();
-  alert("✅ Order Details (Phone, Address, Payment Mode, Txn ID, UPI ID) updated successfully!");
+  alert("✅ Order Details updated successfully!");
 }
 
 function adminEditCertificateData(idx) {
@@ -1184,7 +1169,7 @@ function handleOrderApprove(idx) {
     'order'
   );
 
-  alert(`✅ Order Approved Successfully!\n\n• Delivery Date: ${finalDeliveryDate}\n• Courier Partner: ${finalCourier}\n\nUser ke dashboard par exact order date aur arrival date dono activate ho gayi hain.`);
+  alert(`✅ Order Approved Successfully!\n\n• Delivery Date: ${finalDeliveryDate}\n• Courier Partner: ${finalCourier}`);
   populateAdminDashboardTables();
   computeFinancialLedgerStatements();
 }
@@ -1286,6 +1271,10 @@ function confirmBookingSlot(idx) {
     address: "Pure Grow Farm Campus",
     qty: 1, 
     rate: target.fee, 
+    subtotal: target.fee,
+    delivery: 0,
+    paidAmount: target.fee,
+    notes: `Farm Course Booking [Ref: ${target.bookingId}]`,
     total: target.fee, 
     date: new Date().toLocaleDateString('en-IN') 
   };
@@ -1327,6 +1316,136 @@ function rejectTrainingBooking(idx) {
 }
 
 // =========================================================
+// ACCOUNTING EDIT & DELETE CONTROLLERS (PAGES 1, 2, 3, 4)
+// =========================================================
+
+// 1. Expense Edit & Delete
+function adminEditExpense(idx) {
+  const exp = expensesRegistry[idx];
+  const newAmt = prompt("Expense Amount edit karein (Rs):", exp.amount);
+  if (newAmt !== null && !isNaN(parseFloat(newAmt))) exp.amount = parseFloat(newAmt);
+
+  const newDesc = prompt("Expense Context / Item edit karein:", exp.desc || "");
+  if (newDesc !== null && newDesc.trim() !== "") exp.desc = newDesc.trim();
+
+  const newNotes = prompt("Notes / Remarks edit karein:", exp.notes || "");
+  if (newNotes !== null) exp.notes = newNotes.trim();
+
+  localStorage.setItem('pgf_expenses', JSON.stringify(expensesRegistry));
+  computeFinancialLedgerStatements();
+  alert("✅ Expense row updated!");
+}
+
+function adminDeleteExpense(idx) {
+  if (confirm("Kya aap sach me ye Expense entry delete karna chahte hain?")) {
+    expensesRegistry.splice(idx, 1);
+    localStorage.setItem('pgf_expenses', JSON.stringify(expensesRegistry));
+    computeFinancialLedgerStatements();
+  }
+}
+
+// 2. Sell Edit & Delete (With Received / Pending tracking)
+function adminEditSale(idx) {
+  const s = salesRegistry[idx];
+  
+  const newBuyer = prompt("Buyer Name edit karein:", s.buyer || "");
+  if (newBuyer !== null && newBuyer.trim() !== "") s.buyer = newBuyer.trim();
+
+  const newPhone = prompt("Buyer Phone edit karein:", s.phone || "");
+  if (newPhone !== null && newPhone.trim() !== "") s.phone = newPhone.trim();
+
+  const newQty = prompt("Qty Lots edit karein:", s.qty);
+  if (newQty !== null && !isNaN(parseFloat(newQty))) s.qty = parseFloat(newQty);
+
+  const newRate = prompt("Unit Spot Rate (Rs) edit karein:", s.rate);
+  if (newRate !== null && !isNaN(parseFloat(newRate))) s.rate = parseFloat(newRate);
+
+  const newDel = prompt("Delivery Charge (Rs) edit karein:", s.delivery || 0);
+  if (newDel !== null && !isNaN(parseFloat(newDel))) s.delivery = parseFloat(newDel);
+
+  s.subtotal = s.qty * s.rate;
+  s.total = s.subtotal + s.delivery;
+
+  const newPaid = prompt(`Received Payment Amount edit karein (Total Rs ${s.total}):`, s.paidAmount !== undefined ? s.paidAmount : s.total);
+  if (newPaid !== null && !isNaN(parseFloat(newPaid))) s.paidAmount = parseFloat(newPaid);
+
+  const newNotes = prompt("Sale Notes / Remarks edit karein:", s.notes || "");
+  if (newNotes !== null) s.notes = newNotes.trim();
+
+  localStorage.setItem('pgf_sales', JSON.stringify(salesRegistry));
+  computeFinancialLedgerStatements();
+  alert("✅ Sell Entry successfully updated!");
+}
+
+function adminDeleteSale(idx) {
+  if (confirm("Kya aap sach me ye Sell entry delete karna chahte hain?")) {
+    salesRegistry.splice(idx, 1);
+    localStorage.setItem('pgf_sales', JSON.stringify(salesRegistry));
+    computeFinancialLedgerStatements();
+  }
+}
+
+// 3. Buy Edit & Delete (With Paid vs Pending to Vendor)
+function adminEditPurchase(idx) {
+  const p = purchasesRegistry[idx];
+  
+  const newVendor = prompt("Vendor Name edit karein:", p.vendor || "");
+  if (newVendor !== null && newVendor.trim() !== "") p.vendor = newVendor.trim();
+
+  const newQty = prompt("Weight / Qty Units edit karein:", p.qty);
+  if (newQty !== null && !isNaN(parseFloat(newQty))) p.qty = parseFloat(newQty);
+
+  const newRate = prompt("Purchase Rate (Rs) edit karein:", p.rate);
+  if (newRate !== null && !isNaN(parseFloat(newRate))) p.rate = parseFloat(newRate);
+
+  p.total = p.qty * p.rate;
+
+  const newPaid = prompt(`Vendor ko Kitna Paisa Diya Hai? (Total Rs ${p.total}):`, p.paidAmount !== undefined ? p.paidAmount : p.total);
+  if (newPaid !== null && !isNaN(parseFloat(newPaid))) p.paidAmount = parseFloat(newPaid);
+
+  const newNotes = prompt("Vendor Notes / Memo edit karein:", p.notes || "");
+  if (newNotes !== null) p.notes = newNotes.trim();
+
+  localStorage.setItem('pgf_purchases', JSON.stringify(purchasesRegistry));
+  computeFinancialLedgerStatements();
+  alert("✅ Buy Purchase record updated!");
+}
+
+function adminDeletePurchase(idx) {
+  if (confirm("Kya aap sach me ye Buy record delete karna chahte hain?")) {
+    purchasesRegistry.splice(idx, 1);
+    localStorage.setItem('pgf_purchases', JSON.stringify(purchasesRegistry));
+    computeFinancialLedgerStatements();
+  }
+}
+
+// 4. Damage Edit & Delete
+function adminEditDamage(idx) {
+  const dmg = expensesRegistry[idx];
+  
+  const newAmt = prompt("Damage Amount edit karein (Rs):", dmg.amount);
+  if (newAmt !== null && !isNaN(parseFloat(newAmt))) dmg.amount = parseFloat(newAmt);
+
+  const newDesc = prompt("Damage Reason edit karein:", dmg.desc || "");
+  if (newDesc !== null && newDesc.trim() !== "") dmg.desc = newDesc.trim();
+
+  const newNotes = prompt("Damage Audit Notes edit karein:", dmg.notes || "");
+  if (newNotes !== null) dmg.notes = newNotes.trim();
+
+  localStorage.setItem('pgf_expenses', JSON.stringify(expensesRegistry));
+  computeFinancialLedgerStatements();
+  alert("✅ Damage log updated!");
+}
+
+function adminDeleteDamage(idx) {
+  if (confirm("Kya aap sach me ye Damage entry delete karna chahte hain?")) {
+    expensesRegistry.splice(idx, 1);
+    localStorage.setItem('pgf_expenses', JSON.stringify(expensesRegistry));
+    computeFinancialLedgerStatements();
+  }
+}
+
+// =========================================================
 // FINANCIAL LEDGER & EXACT FARM REVENUE RULES
 // =========================================================
 function computeFinancialLedgerStatements() {
@@ -1334,10 +1453,12 @@ function computeFinancialLedgerStatements() {
     .filter(o => o && (o.status === 'Approved' || o.status === 'Delivered'))
     .reduce((sum, o) => sum + Number(o.total || 0), 0);
 
-  const directOfflineSales = salesRegistry.reduce((sum, s) => sum + Number(s.total || 0), 0);
+  // Direct offline sales count exact Received Payment Amount
+  const directOfflineSales = salesRegistry.reduce((sum, s) => sum + Number(s.paidAmount !== undefined ? s.paidAmount : s.total || 0), 0);
   const totalSales = approvedOnlineOrdersRevenue + directOfflineSales;
 
-  const totalPurchases = purchasesRegistry.reduce((sum, p) => sum + Number(p.total || 0), 0);
+  // Actual purchase outflow is what was actually paid out
+  const totalPurchases = purchasesRegistry.reduce((sum, p) => sum + Number(p.paidAmount !== undefined ? p.paidAmount : p.total || 0), 0);
   const totalExpenses = expensesRegistry.filter(e => e.category !== "Damage Received").reduce((sum, e) => sum + Number(e.amount || 0), 0);
   const totalDamages = expensesRegistry.filter(e => e.category === "Damage Received").reduce((sum, e) => sum + Number(e.amount || 0), 0);
 
@@ -1359,7 +1480,7 @@ function computeFinancialLedgerStatements() {
   cashBalances.Farm -= totalCreditedRefunds;
 
   salesRegistry.forEach(s => { 
-    if(cashBalances[s.collector] !== undefined) cashBalances[s.collector] += Number(s.total || 0); 
+    if(cashBalances[s.collector] !== undefined) cashBalances[s.collector] += Number(s.paidAmount !== undefined ? s.paidAmount : s.total || 0); 
   });
   
   expensesRegistry.filter(e => e.category !== "Damage Received").forEach(e => { 
@@ -1367,7 +1488,7 @@ function computeFinancialLedgerStatements() {
   });
   
   purchasesRegistry.forEach(p => { 
-    if(cashBalances[p.funder] !== undefined) cashBalances[p.funder] -= Number(p.total || 0); 
+    if(cashBalances[p.funder] !== undefined) cashBalances[p.funder] -= Number(p.paidAmount !== undefined ? p.paidAmount : p.total || 0); 
   });
 
   expensesRegistry.filter(e => e.category === "Damage Received").forEach(d => {
@@ -1387,35 +1508,95 @@ function computeFinancialLedgerStatements() {
 
   const expRows = expensesRegistry.filter(e => e.category !== "Damage Received");
   if(document.getElementById("subExpenseTableBody")) {
-    document.getElementById("subExpenseTableBody").innerHTML = expRows.map(e => `
-      <tr><td>${e.date}</td><td>${e.category}</td><td>${e.payer}</td><td>${e.desc}</td><td style="color:var(--warn); font-weight:bold;">Rs ${e.amount}</td></tr>
-    `).join("");
-  }
-
-  if(document.getElementById("subSellTableBody")) {
-    document.getElementById("subSellTableBody").innerHTML = salesRegistry.map(s => `
+    document.getElementById("subExpenseTableBody").innerHTML = expRows.map((e, idx) => `
       <tr>
-        <td>${s.date}</td>
-        <td>${s.product}</td>
-        <td>${s.buyer}</td>
-        <td>${s.phone || 'N/A'}</td>
-        <td>${s.qty}</td>
-        <td style="color:var(--accent); font-weight:bold;">Rs ${s.total}</td>
-        <td><button type="button" class="btn" style="padding:2px 6px; min-height:auto; font-size:11px;" onclick="downloadOfflineSaleInvoice('${s.saleId}')">Receipt</button></td>
+        <td>${e.date}</td>
+        <td>${e.category}</td>
+        <td>${e.payer}</td>
+        <td>${e.desc}</td>
+        <td style="color:var(--warn); font-weight:bold;">Rs ${e.amount}</td>
+        <td><small>${e.notes || '-'}</small></td>
+        <td>
+          <button type="button" class="btn" style="padding:2px 5px; font-size:10px; min-height:auto; background:#0284c7;" onclick="adminEditExpense(${idx})">✏️</button>
+          <button type="button" class="btn" style="padding:2px 5px; font-size:10px; min-height:auto; background:var(--danger);" onclick="adminDeleteExpense(${idx})">🗑️</button>
+        </td>
       </tr>
     `).join("");
   }
 
+  if(document.getElementById("subSellTableBody")) {
+    document.getElementById("subSellTableBody").innerHTML = salesRegistry.map((s, idx) => {
+      const sub = Number(s.subtotal || (s.qty * s.rate) || s.total);
+      const del = Number(s.delivery || 0);
+      const grandTotal = Number(s.total || (sub + del));
+      const paid = Number(s.paidAmount !== undefined ? s.paidAmount : grandTotal);
+      const pending = Math.max(0, grandTotal - paid);
+
+      return `
+        <tr>
+          <td>${s.date}</td>
+          <td>${s.product}</td>
+          <td><strong>${s.buyer}</strong><br><small>${s.phone || ''}</small></td>
+          <td>${s.qty}</td>
+          <td style="color:var(--accent); font-weight:bold;">Rs ${grandTotal.toFixed(2)}</td>
+          <td>
+            <span style="color:#16a34a; font-weight:bold;">Rs ${paid.toFixed(2)}</span>
+            ${pending > 0 ? `<br><small style="color:#dc2626; font-weight:bold;">Due: Rs ${pending.toFixed(2)}</small>` : '<br><small style="color:#16a34a;">(Fully Paid)</small>'}
+          </td>
+          <td><small>${s.notes || '-'}</small></td>
+          <td>
+            <div style="display:flex; gap:3px;">
+              <button type="button" class="btn" style="padding:2px 5px; font-size:10px; min-height:auto;" onclick="downloadOfflineSaleInvoice('${s.saleId}')">📄</button>
+              <button type="button" class="btn" style="padding:2px 5px; font-size:10px; min-height:auto; background:#0284c7;" onclick="adminEditSale(${idx})">✏️</button>
+              <button type="button" class="btn" style="padding:2px 5px; font-size:10px; min-height:auto; background:var(--danger);" onclick="adminDeleteSale(${idx})">🗑️</button>
+            </div>
+          </td>
+        </tr>
+      `;
+    }).join("");
+  }
+
   if(document.getElementById("subBuyTableBody")) {
-    document.getElementById("subBuyTableBody").innerHTML = purchasesRegistry.map(p => `
-      <tr><td>${p.date}</td><td>${p.product}</td><td>${p.vendor}</td><td>${p.qty}</td><td style="color:var(--danger); font-weight:bold;">Rs ${p.total}</td></tr>
-    `).join("");
+    document.getElementById("subBuyTableBody").innerHTML = purchasesRegistry.map((p, idx) => {
+      const totalPayable = Number(p.total || (p.qty * p.rate));
+      const paid = Number(p.paidAmount !== undefined ? p.paidAmount : totalPayable);
+      const pendingToVendor = Math.max(0, totalPayable - paid);
+
+      return `
+        <tr>
+          <td>${p.date}</td>
+          <td>${p.product}</td>
+          <td><strong>${p.vendor}</strong></td>
+          <td>${p.qty}</td>
+          <td style="color:var(--danger); font-weight:bold;">Rs ${totalPayable.toFixed(2)}</td>
+          <td>
+            <span style="color:#16a34a; font-weight:bold;">Paid: Rs ${paid.toFixed(2)}</span>
+            ${pendingToVendor > 0 ? `<br><small style="color:#ea580c; font-weight:bold;">Pending: Rs ${pendingToVendor.toFixed(2)}</small>` : '<br><small style="color:#16a34a;">(Clear)</small>'}
+          </td>
+          <td><small>${p.notes || '-'}</small></td>
+          <td>
+            <button type="button" class="btn" style="padding:2px 5px; font-size:10px; min-height:auto; background:#0284c7;" onclick="adminEditPurchase(${idx})">✏️</button>
+            <button type="button" class="btn" style="padding:2px 5px; font-size:10px; min-height:auto; background:var(--danger);" onclick="adminDeletePurchase(${idx})">🗑️</button>
+          </td>
+        </tr>
+      `;
+    }).join("");
   }
 
   const dmgRows = expensesRegistry.filter(e => e.category === "Damage Received");
   if(document.getElementById("subDamageTableBody")) {
-    document.getElementById("subDamageTableBody").innerHTML = dmgRows.map(d => `
-      <tr><td>${d.date}</td><td>${d.desc}</td><td>${d.payer}</td><td style="color:${d.payer === 'Farm' ? 'var(--accent)' : 'var(--danger)'}; font-weight:bold;">${d.payer === 'Farm' ? '+' : '-'} Rs ${d.amount}</td></tr>
+    document.getElementById("subDamageTableBody").innerHTML = dmgRows.map((d, idx) => `
+      <tr>
+        <td>${d.date}</td>
+        <td>${d.desc}</td>
+        <td>${d.payer}</td>
+        <td style="color:${d.payer === 'Farm' ? 'var(--accent)' : 'var(--danger)'}; font-weight:bold;">${d.payer === 'Farm' ? '+' : '-'} Rs ${d.amount}</td>
+        <td><small>${d.notes || '-'}</small></td>
+        <td>
+          <button type="button" class="btn" style="padding:2px 5px; font-size:10px; min-height:auto; background:#0284c7;" onclick="adminEditDamage(${idx})">✏️</button>
+          <button type="button" class="btn" style="padding:2px 5px; font-size:10px; min-height:auto; background:var(--danger);" onclick="adminDeleteDamage(${idx})">🗑️</button>
+        </td>
+      </tr>
     `).join("");
   }
 }
@@ -1430,7 +1611,8 @@ function saveAdminExpense(e) {
     payer: document.getElementById("expPayer").value,
     mode: document.getElementById("expMode").value,
     desc: document.getElementById("expDesc").value.trim(),
-    amount: parseFloat(document.getElementById("expAmount").value)
+    amount: parseFloat(document.getElementById("expAmount").value),
+    notes: document.getElementById("expNotes") ? document.getElementById("expNotes").value.trim() : ""
   };
   expensesRegistry.push(data);
   localStorage.setItem('pgf_expenses', JSON.stringify(expensesRegistry));
@@ -1444,6 +1626,9 @@ function saveAdminSale(e) {
   const rawDate = document.getElementById("saleLogDate").value;
   const qty = parseFloat(document.getElementById("saleQty").value);
   const rate = parseFloat(document.getElementById("saleRate").value);
+  const delivery = parseFloat(document.getElementById("saleDelivery").value) || 0;
+  const paid = parseFloat(document.getElementById("salePaidAmount").value) || 0;
+  const notes = document.getElementById("saleNotes") ? document.getElementById("saleNotes").value.trim() : "";
   const prodType = document.getElementById("saleProduct").value;
 
   const targetProd = products.find(p => p.type === prodType || p.name.toLowerCase().includes(prodType.toLowerCase()));
@@ -1452,6 +1637,9 @@ function saveAdminSale(e) {
     saveProductsToStorage();
     renderProducts();
   }
+
+  const subtotal = qty * rate;
+  const grandTotal = subtotal + delivery;
 
   const data = {
     saleId: "SALE-" + Date.now().toString().slice(-4),
@@ -1463,15 +1651,21 @@ function saveAdminSale(e) {
     address: document.getElementById("saleAddress").value.trim(),
     qty: qty,
     rate: rate,
-    total: qty * rate
+    subtotal: subtotal,
+    delivery: delivery,
+    total: grandTotal,
+    paidAmount: paid,
+    notes: notes
   };
 
   salesRegistry.push(data);
   localStorage.setItem('pgf_sales', JSON.stringify(salesRegistry));
   e.target.reset();
+  if (document.getElementById("saleDelivery")) document.getElementById("saleDelivery").value = "0";
   initDefaultDatePickers();
   computeFinancialLedgerStatements();
   renderAdminLiveStockSummary();
+  alert(`✅ Wholesale Sale Entry saved! Total: Rs ${grandTotal}, Received: Rs ${paid}`);
 }
 
 function saveAdminPurchase(e) {
@@ -1479,7 +1673,9 @@ function saveAdminPurchase(e) {
   const rawDate = document.getElementById("purLogDate").value;
   const qty = parseFloat(document.getElementById("purQty").value);
   const rate = parseFloat(document.getElementById("purRate").value);
+  const paid = parseFloat(document.getElementById("purPaidAmount").value) || (qty * rate);
   const purType = document.getElementById("purProduct").value;
+  const notes = document.getElementById("purNotes") ? document.getElementById("purNotes").value.trim() : "";
   
   let matchedProd = null;
   if (purType.includes("Dry")) matchedProd = products.find(p => p.type === "dry");
@@ -1501,7 +1697,9 @@ function saveAdminPurchase(e) {
     vendor: document.getElementById("purVendor").value.trim(),
     qty: qty,
     rate: rate,
-    total: qty * rate
+    total: qty * rate,
+    paidAmount: paid,
+    notes: notes
   };
 
   purchasesRegistry.push(data);
@@ -1510,7 +1708,7 @@ function saveAdminPurchase(e) {
   initDefaultDatePickers();
   computeFinancialLedgerStatements();
   renderAdminLiveStockSummary();
-  alert(`✅ Inventory stock updated! Added ${qty} units.`);
+  alert(`✅ Inventory Buy recorded! Total: Rs ${qty * rate}, Paid to Vendor: Rs ${paid}`);
 }
 
 function saveAdminDamage(e) {
@@ -1518,6 +1716,7 @@ function saveAdminDamage(e) {
   const rawDate = document.getElementById("dmgLogDate").value;
   const payerType = document.getElementById("dmgPayer").value;
   const amountVal = parseFloat(document.getElementById("dmgAmount").value);
+  const notes = document.getElementById("dmgNotes") ? document.getElementById("dmgNotes").value.trim() : "";
 
   const data = {
     expId: "DMG-" + Date.now().toString().slice(-4),
@@ -1526,7 +1725,8 @@ function saveAdminDamage(e) {
     payer: payerType,
     mode: "Internal Allocation",
     desc: document.getElementById("dmgDesc").value.trim(),
-    amount: amountVal
+    amount: amountVal,
+    notes: notes
   };
 
   expensesRegistry.push(data);
@@ -1541,6 +1741,12 @@ function downloadOfflineSaleInvoice(saleId) {
   const targetSale = salesRegistry.find(s => s.saleId === saleId);
   if(!targetSale) return alert("Invoice not found.");
   
+  const sub = Number(targetSale.subtotal || (targetSale.qty * targetSale.rate) || targetSale.total);
+  const del = Number(targetSale.delivery || 0);
+  const grandTotal = Number(targetSale.total || (sub + del));
+  const paid = Number(targetSale.paidAmount !== undefined ? targetSale.paidAmount : grandTotal);
+  const due = Math.max(0, grandTotal - paid);
+
   document.getElementById("invNum").textContent = targetSale.saleId;
   document.getElementById("invDate").textContent = targetSale.date;
   document.getElementById("invClientName").textContent = targetSale.buyer;
@@ -1552,13 +1758,32 @@ function downloadOfflineSaleInvoice(saleId) {
       <td style="padding:12px 14px; border-bottom:1px solid #e6e9ec; font-weight: 600;">${targetSale.product} Lot Log Entry</td>
       <td style="padding:12px 14px; border-bottom:1px solid #e6e9ec; text-align:right;">Rs ${Number(targetSale.rate).toFixed(2)}</td>
       <td style="padding:12px 14px; border-bottom:1px solid #e6e9ec; text-align:center;">${targetSale.qty}</td>
-      <td style="padding:12px 14px; border-bottom:1px solid #e6e9ec; text-align:right; font-weight:600; color:var(--accent);">Rs ${Number(targetSale.total).toFixed(2)}</td>
+      <td style="padding:12px 14px; border-bottom:1px solid #e6e9ec; text-align:right; font-weight:600; color:var(--accent);">Rs ${sub.toFixed(2)}</td>
     </tr>
   `;
   
-  document.getElementById("invSub").textContent = "Rs " + Number(targetSale.total).toFixed(2);
-  document.getElementById("invDelivery").textContent = "Rs 0";
-  document.getElementById("invTotal").textContent = "Rs " + Number(targetSale.total).toFixed(2);
+  document.getElementById("invSub").textContent = `Rs ${sub.toFixed(2)}`;
+  document.getElementById("invDelivery").textContent = `Rs ${del.toFixed(2)}`;
+  document.getElementById("invTotal").textContent = `Rs ${grandTotal.toFixed(2)}`;
+
+  const notesSec = document.getElementById("invNotesSection");
+  if (notesSec) {
+    if (targetSale.notes) {
+      notesSec.style.display = "block";
+      notesSec.innerHTML = `<strong>Memo / Note:</strong> ${targetSale.notes}`;
+    } else {
+      notesSec.style.display = "none";
+    }
+  }
+
+  const paidRow = document.getElementById("invPaidRow");
+  const dueRow = document.getElementById("invDueRow");
+  if (paidRow && dueRow) {
+    paidRow.style.display = "flex";
+    dueRow.style.display = "flex";
+    document.getElementById("invPaid").textContent = `Rs ${paid.toFixed(2)}`;
+    document.getElementById("invDue").textContent = `Rs ${due.toFixed(2)}`;
+  }
   
   document.getElementById("invoiceDialog").showModal();
 }

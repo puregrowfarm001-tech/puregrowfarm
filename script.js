@@ -8,19 +8,16 @@ const farmName = "Pure Grow Farm";
 
 const ADMIN_CREDENTIALS = { user: "admin", pass: "PureGrow@2026" };
 
-// Default products catalog (Initial stock set to 0)
 const BASE_PRODUCTS = [
-  { id: 1, name: "Fresh Green Oyster Mushroom", price: 180, unit: "1kg", image: "mushroom/Screenshot 2025-10-24 154001.png", detail: "Picked fresh, chilled and delivered within 24-48 hours.", type: "green", stock: 0 },
-  { id: 2, name: "Dried Oyster Mushroom", price: 800, unit: "1kg pack", image: "mushroom/oyst dry.webp", detail: "Slow-dried to preserve flavor and nutrients.", type: "dry", stock: 0 },
-  { id: 3, name: "Oyster Mushroom Powder", price: 130, unit: "100gm pack", image: "mushroom/oyster powder.png", detail: "Mushroom powder for soup, 1kg pack curry, health mix and snacks.", type: "powder", stock: 0 },
-  { id: 4, name: "Methi Mushroom Khakhra", price: 70, unit: "200gm pack", image: "mushroom/Methi khakhra 2.png", detail: "Crispy khakhra prepared with oyster mushroom powder.", type: "khakhra", stock: 0 },
-  { id: 5, name: "Adad Mushroom Papad", price: 120, unit: "1 pack", image: "mushroom/bulk.png", detail: "Papad enriched with mushroom nutrition.", type: "papad", stock: 0 },
+  { id: 1, name: "Fresh Green Oyster Mushroom", price: 180, unit: "1kg", image: "mushroom/Screenshot 2025-10-24 154001.png", detail: "Picked fresh, chilled and delivered within 24-48 hours.", type: "green", stock: 25 },
+  { id: 2, name: "Dried Oyster Mushroom", price: 800, unit: "1kg pack", image: "mushroom/oyst dry.webp", detail: "Slow-dried to preserve flavor and nutrients.", type: "dry", stock: 15 },
+  { id: 3, name: "Oyster Mushroom Powder", price: 130, unit: "100gm pack", image: "mushroom/oyster powder.png", detail: "Mushroom powder for soup, 1kg pack curry, health mix and snacks.", type: "powder", stock: 40 },
+  { id: 4, name: "Methi Mushroom Khakhra", price: 70, unit: "200gm pack", image: "mushroom/Methi khakhra 2.png", detail: "Crispy khakhra prepared with oyster mushroom powder.", type: "khakhra", stock: 50 },
+  { id: 5, name: "Adad Mushroom Papad", price: 120, unit: "1 pack", image: "mushroom/bulk.png", detail: "Papad enriched with mushroom nutrition.", type: "papad", stock: 35 },
   { id: 6, name: "Bulk and Wholesale Supply", price: 0, unit: "Custom", bulk: true, image: "mushroom/bulk.png", detail: "Supply for restaurants, retailers and local markets.", stock: 99999 }
 ];
 
-// Persistent stock mapping
 let products = JSON.parse(localStorage.getItem('pgf_live_products')) || BASE_PRODUCTS;
-
 const cart = new Map();
 
 function saveProductsToStorage() {
@@ -37,7 +34,6 @@ function getCleanData(key) {
   }
 }
 
-let currentInventoryStock = JSON.parse(localStorage.getItem('pgf_stock_counters')) || { dry: 0, khakhra: 0, papad: 0 };
 let usersDatabase = getCleanData('pgf_user_db');
 let orderRegistry = getCleanData('pgf_orders');
 let bookingsRegistry = getCleanData('pgf_bookings');
@@ -49,7 +45,47 @@ let notificationsRegistry = getCleanData('pgf_notifications');
 let currentUser = JSON.parse(localStorage.getItem('pgf_session')) || null;
 
 // =========================================================
-// TWO-WAY NOTIFICATION ENGINE (USER <---> ADMIN)
+// PASSWORD STRENGTH CHECKER & EYE TOGGLE
+// =========================================================
+function togglePasswordVisibility(inputId, btn) {
+  const input = document.getElementById(inputId);
+  if (!input) return;
+  if (input.type === "password") {
+    input.type = "text";
+    btn.textContent = "🙈";
+  } else {
+    input.type = "password";
+    btn.textContent = "👁️";
+  }
+}
+
+function isPasswordStrong(pwd) {
+  // Min 8 chars, 1 uppercase, 1 lowercase, 1 number, 1 special character
+  const regex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+  return regex.test(pwd);
+}
+
+function checkPasswordStrength(pwd) {
+  const feedback = document.getElementById("passwordStrengthFeedback");
+  if (!feedback) return;
+
+  if (pwd.length === 0) {
+    feedback.style.color = "#94a3b8";
+    feedback.textContent = "Password must have 8+ chars, 1 uppercase, 1 number & 1 special character (@$!%*?&).";
+    return;
+  }
+
+  if (isPasswordStrong(pwd)) {
+    feedback.style.color = "#16a34a";
+    feedback.textContent = "✅ Strong password!";
+  } else {
+    feedback.style.color = "#ef4444";
+    feedback.textContent = "❌ Weak password! Ensure 8+ chars, 1 uppercase (A-Z), 1 number (0-9), and 1 symbol (@$!%*?&).";
+  }
+}
+
+// =========================================================
+// NOTIFICATIONS ENGINE
 // =========================================================
 function pushNotification(targetRecipient, title, message, type = 'info') {
   const newNotif = {
@@ -80,7 +116,7 @@ function renderNotificationBadge() {
     return;
   }
 
-  const myNotifs = notificationsRegistry.filter(n => n.recipient === currentRecipient);
+  const myNotifs = notificationsRegistry.filter(n => n.recipient === currentRecipient || (currentUser.isAdmin && n.recipient === 'ADMIN'));
   const unreadCount = myNotifs.filter(n => !n.isRead).length;
 
   if (unreadCount > 0) {
@@ -113,7 +149,7 @@ function toggleNotificationDropdown() {
     const currentRecipient = currentUser ? (currentUser.isAdmin ? 'ADMIN' : currentUser.email) : null;
     if (currentRecipient) {
       notificationsRegistry.forEach(n => {
-        if (n.recipient === currentRecipient) n.isRead = true;
+        if (n.recipient === currentRecipient || (currentUser.isAdmin && n.recipient === 'ADMIN')) n.isRead = true;
       });
       localStorage.setItem('pgf_notifications', JSON.stringify(notificationsRegistry));
       renderNotificationBadge();
@@ -127,7 +163,7 @@ function clearAllNotifications() {
   const currentRecipient = currentUser ? (currentUser.isAdmin ? 'ADMIN' : currentUser.email) : null;
   if (!currentRecipient) return;
 
-  notificationsRegistry = notificationsRegistry.filter(n => n.recipient !== currentRecipient);
+  notificationsRegistry = notificationsRegistry.filter(n => n.recipient !== currentRecipient && !(currentUser.isAdmin && n.recipient === 'ADMIN'));
   localStorage.setItem('pgf_notifications', JSON.stringify(notificationsRegistry));
   renderNotificationBadge();
 }
@@ -139,6 +175,15 @@ document.addEventListener('click', function(e) {
     panel.style.display = "none";
   }
 });
+
+function scrollToCartSection() {
+  const target = document.getElementById("cartBasketSidebar");
+  if (target) {
+    target.scrollIntoView({ behavior: 'smooth' });
+    target.style.boxShadow = "0 0 15px rgba(22, 163, 74, 0.5)";
+    setTimeout(() => { target.style.boxShadow = ""; }, 1500);
+  }
+}
 
 function getTodayIsoString() {
   const d = new Date();
@@ -152,10 +197,6 @@ function initDefaultDatePickers() {
   if(document.getElementById("saleLogDate")) document.getElementById("saleLogDate").value = today;
   if(document.getElementById("purLogDate")) document.getElementById("purLogDate").value = today;
   if(document.getElementById("dmgLogDate")) document.getElementById("dmgLogDate").value = today;
-}
-
-function updateStockDisplayCounters() {
-  localStorage.setItem('pgf_stock_counters', JSON.stringify(currentInventoryStock));
 }
 
 function openHistoryModal() { document.getElementById("userHistoryModal").classList.add("active-modal"); }
@@ -176,13 +217,13 @@ function triggerAdminView() {
   populateAdminDashboardTables();
   computeFinancialLedgerStatements();
   renderNotificationBadge();
+  renderAdminLiveStockSummary();
   switchSubAccountingTab('subTabExpense');
 }
 
 function exitAdminPanel() { handleLogout(); }
 
 function checkUserSession() {
-  updateStockDisplayCounters();
   renderNotificationBadge();
 
   if (currentUser) {
@@ -257,6 +298,11 @@ function handleRegister(e) {
   const email = document.getElementById("regEmail").value.trim();
   const password = document.getElementById("regPassword").value;
 
+  if (!isPasswordStrong(password)) {
+    alert("⚠️ Kripya Strong Password dalein!\n\nRules:\n• Minimum 8 characters\n• Kam se kam 1 Capital letter (A-Z)\n• Kam se kam 1 Number (0-9)\n• Kam se kam 1 Special character (@$!%*?&)");
+    return;
+  }
+
   const existing = usersDatabase.find(u => u && u.email && u.email.toLowerCase() === email.toLowerCase());
   if(existing) {
     alert("Is Email ID se account pehle se bana hua hai!");
@@ -274,7 +320,7 @@ function handleRegister(e) {
 
   currentUser = { name, email, phone, isAdmin: false };
   localStorage.setItem('pgf_session', JSON.stringify(currentUser));
-  alert("Account Registered Successfully!");
+  alert("✅ Account Successfully Created!");
   checkUserSession();
 }
 
@@ -291,7 +337,7 @@ function handleLogout() {
 }
 
 // =========================================================
-// USER DASHBOARD
+// USER DASHBOARD - VERTICAL LIVE TIMELINE TRACKER
 // =========================================================
 function loadUserPanelData() {
   const oList = document.getElementById("userOrdersList");
@@ -308,127 +354,102 @@ function loadUserPanelData() {
     const isRejected = o.status && o.status.startsWith('Rejected');
     const isPending = o.status === 'Pending Verification';
 
-    const stage = o.trackingStage || 'Packed';
-    const loc = o.currentLocation || (isCancelled ? 'Refund in Progress' : 'Packed at Farm Yard');
-    const eta = o.deliveryDays ? ` (Estimated Delivery: ${o.deliveryDays})` : '';
+    const stage = o.trackingStage || (isApproved ? 'Packed' : 'Placed');
+    const orderDate = o.dateLogged || new Date().toLocaleDateString('en-IN');
+    const courier = o.courierName || "Ekart Logistics";
+    const awb = o.trackingNumber || ("FMPC" + Math.floor(1000000000 + Math.random() * 9000000000));
+    const loc = o.currentLocation || "Farm Facility";
+    const etaDate = o.deliveryDays || "Within 2-4 Business Days";
 
-    const stageLevels = { 'Placed': 1, 'Packed': 2, 'Shipped': 3, 'OutForDelivery': 4, 'Delivered': 5 };
-    const currentLvl = stageLevels[stage] || 2;
-    const progressWidths = { 1: '0%', 2: '25%', 3: '50%', 4: '75%', 5: '100%' };
-    const activeWidth = progressWidths[currentLvl] || '25%';
-
-    const refundStage = o.refundStage || 'Refund Initiated';
-    const refLevels = { 'Refund Initiated': 1, 'Refund Processing': 2, 'Refund Credited': 3 };
-    const curRefLvl = refLevels[refundStage] || 1;
-    const refWidths = { 1: '0%', 2: '50%', 3: '100%' };
-    const activeRefWidth = refWidths[curRefLvl] || '0%';
+    const stageMap = { 'Placed': 1, 'Packed': 2, 'Shipped': 3, 'OutForDelivery': 4, 'Delivered': 5 };
+    const curLevel = stageMap[stage] || (isApproved ? 2 : 1);
 
     return `
       <div class="data-item-card" style="border: 1px solid ${isCancelled ? '#fdba74' : (isRejected ? '#fca5a5' : (isApproved ? '#86efac' : '#cbd5e1'))}; border-radius: 12px; padding: 14px; margin-bottom: 15px; background:#fff;">
         <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; border-bottom:1px solid #f1f5f9; padding-bottom:8px;">
           <strong>Order ID: <span style="color:var(--accent);">${o.orderId}</span></strong>
-          <span style="font-size:12px; color:var(--muted); font-weight:600;">📅 ${o.dateLogged}</span>
+          <span style="font-size:12px; color:var(--muted); font-weight:600;">📅 ${orderDate}</span>
         </div>
         <div style="margin: 8px 0; font-size:13px;">
           <span>Items: <strong>${o.products}</strong></span><br>
-          <span>Grand Total: <strong>Rs ${o.total}</strong> [Payment: <strong>${o.paymentMode || 'UPI'}</strong> | Txn: <code>${o.txnId || 'N/A'}</code>]</span>
+          <span>Grand Total: <strong>Rs ${o.total}</strong> [Mode: <strong>${o.paymentMode || 'UPI'}</strong> | Txn: <code>${o.txnId || 'N/A'}</code>]</span>
         </div>
 
         ${isPending ? `
           <div style="background: #fffbeb; border: 1px solid #fcd34d; border-radius: 8px; padding: 10px; margin-top: 8px; font-size: 13px; color: #92400e;">
             ⏳ <strong>Status: Verification Pending</strong><br>
-            <span style="font-size:12px;">Admin jaise hi order approve karega, Live Shipment Tracker yahan start ho jayega.</span>
+            <span style="font-size:12px;">Admin jaise hi order verify karega, live status update hona shuru ho jayega.</span>
           </div>
         ` : ''}
 
-        ${isApproved ? `
-          <div style="margin-top: 12px; background: #f8fafc; padding: 12px; border-radius: 8px; border: 1px solid #e2e8f0;">
-            <div style="font-weight:bold; font-size:13px; color:#1e293b; margin-bottom:8px;">
-              🚚 Live Shipment Tracker${eta}
-            </div>
-            
-            <div style="position: relative; margin: 20px 10px 10px 10px;">
-              <div style="position: absolute; top: 12px; left: 0; width: 100%; height: 4px; background: #e2e8f0; z-index: 1;"></div>
-              <div style="position: absolute; top: 12px; left: 0; width: ${activeWidth}; height: 4px; background: #2b8a3e; z-index: 1; transition: width 0.3s ease;"></div>
+        ${(isApproved || stage === 'Placed') && !isCancelled && !isRejected ? `
+          <div style="margin-top: 12px; background: #ffffff; padding: 14px; border-radius: 8px; border: 1px solid #e2e8f0;">
+            <div class="vertical-timeline">
               
-              <div style="display: flex; justify-content: space-between; align-items: center; position: relative; z-index: 2;">
-                <div style="text-align: center;">
-                  <div style="width: 26px; height: 26px; border-radius: 50%; background: ${currentLvl >= 1 ? '#2b8a3e' : '#cbd5e1'}; color: #fff; font-size: 11px; line-height: 26px; margin: 0 auto; font-weight:bold;">✓</div>
-                  <span style="font-size: 11px; font-weight: ${currentLvl >= 1 ? 'bold' : 'normal'}; display: block; margin-top: 4px; color:${currentLvl >= 1 ? '#1e293b' : '#94a3b8'};">Placed</span>
-                </div>
-
-                <div style="text-align: center;">
-                  <div style="width: 26px; height: 26px; border-radius: 50%; background: ${currentLvl >= 2 ? '#2b8a3e' : '#cbd5e1'}; color: #fff; font-size: 11px; line-height: 26px; margin: 0 auto; font-weight:bold;">${currentLvl >= 2 ? '✓' : '2'}</div>
-                  <span style="font-size: 11px; font-weight: ${currentLvl >= 2 ? 'bold' : 'normal'}; display: block; margin-top: 4px; color:${currentLvl >= 2 ? '#1e293b' : '#94a3b8'};">Packed</span>
-                </div>
-
-                <div style="text-align: center;">
-                  <div style="width: 26px; height: 26px; border-radius: 50%; background: ${currentLvl >= 3 ? '#2b8a3e' : '#cbd5e1'}; color: #fff; font-size: 11px; line-height: 26px; margin: 0 auto; font-weight:bold;">${currentLvl >= 3 ? '✓' : '3'}</div>
-                  <span style="font-size: 11px; font-weight: ${currentLvl >= 3 ? 'bold' : 'normal'}; display: block; margin-top: 4px; color:${currentLvl >= 3 ? '#1e293b' : '#94a3b8'};">Shipped</span>
-                </div>
-
-                <div style="text-align: center;">
-                  <div style="width: 26px; height: 26px; border-radius: 50%; background: ${currentLvl >= 4 ? '#2b8a3e' : '#cbd5e1'}; color: #fff; font-size: 11px; line-height: 26px; margin: 0 auto; font-weight:bold;">${currentLvl >= 4 ? '✓' : '4'}</div>
-                  <span style="font-size: 11px; font-weight: ${currentLvl >= 4 ? 'bold' : 'normal'}; display: block; margin-top: 4px; color:${currentLvl >= 4 ? '#1e293b' : '#94a3b8'};">Out For Delivery</span>
-                </div>
-
-                <div style="text-align: center;">
-                  <div style="width: 26px; height: 26px; border-radius: 50%; background: ${currentLvl >= 5 ? '#2b8a3e' : '#cbd5e1'}; color: #fff; font-size: 11px; line-height: 26px; margin: 0 auto; font-weight:bold;">${currentLvl >= 5 ? '✓' : '5'}</div>
-                  <span style="font-size: 11px; font-weight: ${currentLvl >= 5 ? 'bold' : 'normal'}; display: block; margin-top: 4px; color:${currentLvl >= 5 ? '#1e293b' : '#94a3b8'};">Delivered</span>
-                </div>
+              <!-- 1. Order Confirmed / Placed -->
+              <div class="timeline-step ${curLevel >= 1 ? 'completed' : ''}">
+                <div class="timeline-dot"></div>
+                <div class="timeline-title">Order Confirmed <span>${orderDate}</span></div>
+                <div class="timeline-desc">Your Order has been placed.</div>
+                <div class="timeline-time">${orderDate}</div>
               </div>
-            </div>
 
-            <div style="font-size: 12px; color: #334155; margin-top: 14px; background: #ffffff; padding: 8px 12px; border-radius: 6px; border-left: 4px solid var(--accent); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px;">
-              <span>📍 Location: <strong>${loc}</strong></span>
-              <span style="font-weight:bold; color:var(--accent);">Current Stage: ${stage}</span>
+              <!-- 2. Processing & Packed -->
+              <div class="timeline-step ${curLevel >= 2 ? 'completed' : ''}">
+                <div class="timeline-dot"></div>
+                <div class="timeline-title">Seller Processed & Packed</div>
+                <div class="timeline-desc">Seller has processed and packed your mushroom order at Farm Hub.</div>
+                <div class="timeline-desc" style="color:#0284c7; font-size:12px;">Your item has been picked up by delivery partner.</div>
+              </div>
+
+              <!-- 3. Shipped -->
+              <div class="timeline-step ${curLevel >= 3 ? 'completed' : ''}">
+                <div class="timeline-dot"></div>
+                <div class="timeline-title">Shipped</div>
+                <div class="timeline-desc"><strong>${courier} - ${awb}</strong></div>
+                <div class="timeline-desc">Your item has been shipped. (📍 Hub: ${loc})</div>
+              </div>
+
+              <!-- 4. Out For Delivery -->
+              <div class="timeline-step ${curLevel >= 4 ? 'completed' : ''}">
+                <div class="timeline-dot"></div>
+                <div class="timeline-title">Out For Delivery</div>
+                <div class="timeline-desc">Your item is out for delivery with executive.</div>
+              </div>
+
+              <!-- 5. Delivered -->
+              <div class="timeline-step ${curLevel >= 5 ? 'completed' : ''}">
+                <div class="timeline-dot"></div>
+                <div class="timeline-title">Delivered <span>(Expected: ${etaDate})</span></div>
+                <div class="timeline-desc">Item safely delivered to your doorstep.</div>
+              </div>
+
             </div>
           </div>
         ` : ''}
 
         ${isCancelled ? `
-          <div style="margin-top: 12px; background: #fffaf5; padding: 12px; border-radius: 8px; border: 1px solid #fdba74;">
-            <div style="font-weight:bold; font-size:13px; color:#c2410c; margin-bottom:4px;">
-              🔄 Order Cancelled & Live Payment Refund Tracker
-            </div>
-            <p style="margin: 2px 0 10px 0; font-size: 12px; color: #9a3412;"><strong>Reason:</strong> ${o.status.replace('Cancelled (Reason: ', '').replace(')', '')}</p>
-            
-            <div style="position: relative; margin: 20px 20px 10px 20px;">
-              <div style="position: absolute; top: 12px; left: 0; width: 100%; height: 4px; background: #fed7aa; z-index: 1;"></div>
-              <div style="position: absolute; top: 12px; left: 0; width: ${activeRefWidth}; height: 4px; background: #ea580c; z-index: 1; transition: width 0.3s ease;"></div>
-              
-              <div style="display: flex; justify-content: space-between; align-items: center; position: relative; z-index: 2;">
-                <div style="text-align: center;">
-                  <div style="width: 26px; height: 26px; border-radius: 50%; background: ${curRefLvl >= 1 ? '#ea580c' : '#fdba74'}; color: #fff; font-size: 11px; line-height: 26px; margin: 0 auto; font-weight:bold;">✓</div>
-                  <span style="font-size: 11px; font-weight: ${curRefLvl >= 1 ? 'bold' : 'normal'}; display: block; margin-top: 4px; color:${curRefLvl >= 1 ? '#9a3412' : '#94a3b8'};">Refund Initiated</span>
-                </div>
-
-                <div style="text-align: center;">
-                  <div style="width: 26px; height: 26px; border-radius: 50%; background: ${curRefLvl >= 2 ? '#ea580c' : '#fdba74'}; color: #fff; font-size: 11px; line-height: 26px; margin: 0 auto; font-weight:bold;">${curRefLvl >= 2 ? '✓' : '2'}</div>
-                  <span style="font-size: 11px; font-weight: ${curRefLvl >= 2 ? 'bold' : 'normal'}; display: block; margin-top: 4px; color:${curRefLvl >= 2 ? '#9a3412' : '#94a3b8'};">Processing (Bank)</span>
-                </div>
-
-                <div style="text-align: center;">
-                  <div style="width: 26px; height: 26px; border-radius: 50%; background: ${curRefLvl >= 3 ? '#16a34a' : '#fdba74'}; color: #fff; font-size: 11px; line-height: 26px; margin: 0 auto; font-weight:bold;">${curRefLvl >= 3 ? '✓' : '3'}</div>
-                  <span style="font-size: 11px; font-weight: ${curRefLvl >= 3 ? 'bold' : 'normal'}; display: block; margin-top: 4px; color:${curRefLvl >= 3 ? '#166534' : '#94a3b8'};">Refund Credited</span>
-                </div>
+          <div style="margin-top: 12px; background: #ffffff; padding: 14px; border-radius: 8px; border: 1px solid #fed7aa;">
+            <div class="vertical-timeline">
+              <div class="timeline-step completed cancelled-line">
+                <div class="timeline-dot"></div>
+                <div class="timeline-title">Order Confirmed <span>${orderDate}</span></div>
+                <div class="timeline-desc">Your Order was placed.</div>
               </div>
-            </div>
-
-            <div style="font-size: 12px; color: #7c2d12; margin-top: 14px; background: #ffffff; padding: 8px 12px; border-radius: 6px; border-left: 4px solid #ea580c; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap;">
-              <span>💰 Original Payment: <strong>Rs ${o.total} Received</strong></span>
-              <span style="font-weight:bold; color:#ea580c;">Status: ${refundStage}</span>
+              <div class="timeline-step cancelled">
+                <div class="timeline-dot"></div>
+                <div class="timeline-title" style="color:#ef4444;">Cancelled</div>
+                <div class="timeline-desc">Your order was cancelled. Reason: <em>${o.status.replace('Cancelled (Reason: ', '').replace(')', '')}</em></div>
+                <div class="timeline-desc" style="color:#c2410c; font-weight:bold; margin-top:4px;">Refund Stage: ${o.refundStage || 'Refund Initiated'} (Rs ${o.total})</div>
+              </div>
             </div>
           </div>
         ` : ''}
 
         ${isRejected ? `
           <div style="background: #fef2f2; border: 1px solid #f87171; border-radius: 8px; padding: 12px; margin-top: 10px;">
-            <strong style="color: #991b1b; font-size: 14px;">❌ Order Rejected (Payment Not Verified)</strong>
+            <strong style="color: #991b1b; font-size: 14px;">❌ Order Rejected</strong>
             <p style="margin: 4px 0 0 0; font-size: 12px; color: #7f1d1d;"><strong>Reason:</strong> ${o.status.replace('Rejected (Reason: ', '').replace(')', '')}</p>
-            <div style="margin-top: 6px; font-size: 12px; color: #991b1b;">
-              ⚠️ Payment receive nahi hua tha / UTR invalid hone ke kaaran order reject kar diya gaya hai. Koi refund ya live tracking nahi hai.
-            </div>
           </div>
         ` : ''}
       </div>
@@ -438,7 +459,7 @@ function loadUserPanelData() {
   bList.innerHTML = myBookings.length ? myBookings.map(b => {
     const isConfirmed = b.status === 'Confirmed' || b.status === 'Approved';
     let statusColor = isConfirmed ? 'var(--accent)' : (b.status && b.status.startsWith('Rejected') ? 'var(--danger)' : 'var(--warn)');
-    const certNote = b.certIssued ? `<br><span style="color:var(--accent); font-weight:bold;">📜 Certificate Approved & Ready to Download below!</span>` : (isConfirmed ? `<br><span style="color:#d97706; font-size:12px;">⏳ Step 1: Farm Booking Confirmed. Step 2: Certificate will be approved upon training completion.</span>` : '');
+    const certNote = b.certIssued ? `<br><span style="color:var(--accent); font-weight:bold;">📜 Certificate Approved & Ready to Download below!</span>` : (isConfirmed ? `<br><span style="color:#d97706; font-size:12px;">⏳ Step 1: Farm Booking Confirmed. Step 2: Certificate will unlock after training.</span>` : '');
     
     return `
       <div class="data-item-card" style="border: 1px solid #cbd5e1; border-radius: 10px; padding: 12px; margin-bottom: 10px; background:#fff;">
@@ -462,7 +483,7 @@ function loadUserPanelData() {
             <span style="font-weight: bold; font-size:13px; color: var(--accent);">${titleText}</span><br>
             <small class="muted">Ref ID: ${b.bookingId}</small>
           </div>
-          <button type="button" class="btn" style="min-height:30px; padding: 4px 10px; font-size:12px;" onclick="downloadCertificatePDF('${b.bookingId}')">📥 Download PDF</button>
+          <button type="button" class="btn" style="min-height:30px; padding: 4px 10px; font-size:12px;" onclick="downloadCertificatePDF('${b.bookingId}')">📥 Download A4 PDF</button>
         </div>
       `;
     });
@@ -502,9 +523,50 @@ function deleteUserAccount(idx) {
 }
 
 // =========================================================
-// ADMIN POPULATE TABLES & STOCK MANAGER IN ERP
+// LIVE STOCK MANAGER & DAILY GREEN / DRY COUNTER (ERP)
+// =========================================================
+function renderAdminLiveStockSummary() {
+  const container = document.getElementById("adminLiveStockCardsContainer");
+  if (!container) return;
+
+  const greenProd = products.find(p => p.type === "green") || { stock: 0 };
+  const dryProd = products.find(p => p.type === "dry") || { stock: 0 };
+  const powderProd = products.find(p => p.type === "powder") || { stock: 0 };
+
+  container.innerHTML = `
+    <div style="background: #f0fdf4; border: 1px solid #bbf7d0; padding: 12px; border-radius: 8px;">
+      <span style="font-size: 12px; color: #166534; font-weight: bold;">🟢 Fresh Green Stock</span>
+      <div style="font-size: 20px; font-weight: 900; color: #15803d; margin: 4px 0;">${greenProd.stock} kg</div>
+      <button class="btn" style="padding: 2px 8px; font-size: 11px; min-height: 24px; background: #16a34a;" onclick="updateProductStockDirect(1)">✏️ Edit Stock</button>
+    </div>
+
+    <div style="background: #fefce8; border: 1px solid #fef08a; padding: 12px; border-radius: 8px;">
+      <span style="font-size: 12px; color: #854d0e; font-weight: bold;">🌾 Dry Mushroom Stock</span>
+      <div style="font-size: 20px; font-weight: 900; color: #a16207; margin: 4px 0;">${dryProd.stock} kg</div>
+      <button class="btn" style="padding: 2px 8px; font-size: 11px; min-height: 24px; background: #ca8a04;" onclick="updateProductStockDirect(2)">✏️ Edit Stock</button>
+    </div>
+
+    <div style="background: #faf5ff; border: 1px solid #e9d5ff; padding: 12px; border-radius: 8px;">
+      <span style="font-size: 12px; color: #6b21a8; font-weight: bold;">✨ Mushroom Powder Stock</span>
+      <div style="font-size: 20px; font-weight: 900; color: #7e22ce; margin: 4px 0;">${powderProd.stock} packs</div>
+      <button class="btn" style="padding: 2px 8px; font-size: 11px; min-height: 24px; background: #9333ea;" onclick="updateProductStockDirect(3)">✏️ Edit Stock</button>
+    </div>
+
+    <div style="background: #eff6ff; border: 1px solid #bfdbfe; padding: 12px; border-radius: 8px;">
+      <span style="font-size: 12px; color: #1e40af; font-weight: bold;">⚖️ Combined Total Farm Stock</span>
+      <div style="font-size: 20px; font-weight: 900; color: #1d4ed8; margin: 4px 0;">${(Number(greenProd.stock) + Number(dryProd.stock)).toFixed(2)} kg</div>
+      <small style="color: #64748b; font-size: 11px;">(Daily Green + Dry Harvest Total)</small>
+    </div>
+  `;
+}
+
+// =========================================================
+// ADMIN ERP POPULATION & EDIT CONTROLS
 // =========================================================
 function populateAdminDashboardTables() {
+  renderAdminLiveStockSummary();
+
+  // 1. Orders Manager
   if (document.getElementById("adminOrdersTableBody")) {
     const validOrders = orderRegistry.filter(o => o && o.name && o.orderId);
     if (!validOrders.length) {
@@ -521,9 +583,9 @@ function populateAdminDashboardTables() {
         const isRejected = status.startsWith('Rejected');
         
         const stage = o.trackingStage || (isApproved ? 'Packed' : 'Placed');
-        const loc = o.currentLocation || 'Order Received at Farm Yard';
-        const eta = o.deliveryDays || '2-3 Days';
-        const displayDateTime = o.dateLogged ? o.dateLogged : (new Date().toLocaleDateString('en-IN') + " 10:00 AM");
+        const loc = o.currentLocation || 'Farm Facility';
+        const eta = o.deliveryDays || '2-4 Days';
+        const displayDateTime = o.dateLogged || new Date().toLocaleDateString('en-IN');
 
         return `
           <tr>
@@ -554,7 +616,7 @@ function populateAdminDashboardTables() {
               ${isCancelled ? `<br><small style="color:#ea580c; font-weight:bold;">Refund: ${o.refundStage || 'Initiated'}</small>` : ''}
             </td>
             
-            <td style="min-width: 230px;">
+            <td style="min-width: 240px;">
               ${isApproved ? `
                 <div style="background:#f8fafc; padding:8px; border-radius:8px; border:1px solid #e2e8f0; font-size:12px;">
                   <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
@@ -563,38 +625,34 @@ function populateAdminDashboardTables() {
                   </div>
                   <div style="color:#334155; margin-bottom:6px;">📍 ${loc}</div>
 
-                  <!-- 1-Click Shipment Stage Buttons -->
                   <div style="display:flex; gap:3px; flex-wrap:wrap;">
                     <button type="button" class="btn" style="padding:2px 5px; font-size:10px; min-height:22px; background:${stage==='Placed'?'#2b8a3e':'#94a3b8'};" onclick="setOrderStageDirect(${idx}, 'Placed')">Placed</button>
                     <button type="button" class="btn" style="padding:2px 5px; font-size:10px; min-height:22px; background:${stage==='Packed'?'#2b8a3e':'#94a3b8'};" onclick="setOrderStageDirect(${idx}, 'Packed')">Packed</button>
                     <button type="button" class="btn" style="padding:2px 5px; font-size:10px; min-height:22px; background:${stage==='Shipped'?'#2b8a3e':'#94a3b8'};" onclick="setOrderStageDirect(${idx}, 'Shipped')">Shipped</button>
-                    <button type="button" class="btn" style="padding:2px 5px; font-size:10px; min-height:22px; background:${stage==='OutForDelivery'?'#2b8a3e':'#94a3b8'};" onclick="setOrderStageDirect(${idx}, 'Out Delivery')">Out Delivery</button>
+                    <button type="button" class="btn" style="padding:2px 5px; font-size:10px; min-height:22px; background:${stage==='OutForDelivery'?'#2b8a3e':'#94a3b8'};" onclick="setOrderStageDirect(${idx}, 'OutForDelivery')">Out Delivery</button>
                     <button type="button" class="btn" style="padding:2px 5px; font-size:10px; min-height:22px; background:${stage==='Delivered'?'#2b8a3e':'#94a3b8'};" onclick="setOrderStageDirect(${idx}, 'Delivered')">Delivered</button>
                   </div>
                 </div>
               ` : (isCancelled ? `
                 <div style="background:#fffaf5; padding:8px; border-radius:8px; border:1px solid #fdba74; font-size:12px;">
-                  <span style="font-weight:bold; color:#ea580c;">Refund Tracker Control</span>
+                  <span style="font-weight:bold; color:#ea580c;">Refund Control</span>
                   <div style="display:flex; gap:3px; flex-wrap:wrap; margin-top:4px;">
-                    <button type="button" class="btn" style="padding:2px 5px; font-size:10px; min-height:22px; background:${o.refundStage==='Refund Initiated'?'#ea580c':'#94a3b8'};" onclick="setRefundStageDirect(${idx}, 'Refund Initiated')">1. Initiated</button>
-                    <button type="button" class="btn" style="padding:2px 5px; font-size:10px; min-height:22px; background:${o.refundStage==='Refund Processing'?'#ea580c':'#94a3b8'};" onclick="setRefundStageDirect(${idx}, 'Refund Processing')">2. Processing</button>
-                    <button type="button" class="btn" style="padding:2px 5px; font-size:10px; min-height:22px; background:${o.refundStage==='Refund Credited'?'#16a34a':'#94a3b8'};" onclick="setRefundStageDirect(${idx}, 'Refund Credited')">3. Credited</button>
+                    <button type="button" class="btn" style="padding:2px 5px; font-size:10px; min-height:22px; background:${o.refundStage==='Refund Initiated'?'#ea580c':'#94a3b8'};" onclick="setRefundStageDirect(${idx}, 'Refund Initiated')">Initiated</button>
+                    <button type="button" class="btn" style="padding:2px 5px; font-size:10px; min-height:22px; background:${o.refundStage==='Refund Processing'?'#ea580c':'#94a3b8'};" onclick="setRefundStageDirect(${idx}, 'Refund Processing')">Processing</button>
+                    <button type="button" class="btn" style="padding:2px 5px; font-size:10px; min-height:22px; background:${o.refundStage==='Refund Credited'?'#16a34a':'#94a3b8'};" onclick="setRefundStageDirect(${idx}, 'Refund Credited')">Credited</button>
                   </div>
                 </div>
-              ` : (isRejected ? `<span style="color:#dc2626; font-weight:bold; font-size:12px;">Rejected (No Payment / No Track)</span>` : `<span style="color:#d97706; font-weight:bold; font-size:12px;">Approve or Cancel to track</span>`))}
+              ` : (isRejected ? `<span style="color:#dc2626; font-weight:bold; font-size:12px;">Rejected</span>` : `<span style="color:#d97706; font-weight:bold; font-size:12px;">Approve or Cancel to track</span>`))}
             </td>
 
             <td>
               <div style="display:flex; flex-direction:column; gap:4px;">
                 ${!isApproved && !isCancelled && !isRejected ? `
-                  <button class="btn" style="padding:4px 8px; min-height:auto; font-size:11px; background:var(--accent);" onclick="handleOrderApprove(${idx})">1. Approve (Live Track)</button>
-                  <button class="btn" style="padding:4px 8px; min-height:auto; font-size:11px; background:var(--danger);" onclick="handleOrderReject(${idx})">2. Reject (No Payment)</button>
-                  <button class="btn" style="padding:4px 8px; min-height:auto; font-size:11px; background:#ea580c;" onclick="handleOrderCancelRefund(${idx})">3. Cancel (Refund Track)</button>
+                  <button class="btn" style="padding:4px 8px; min-height:auto; font-size:11px; background:var(--accent);" onclick="handleOrderApprove(${idx})">1. Approve</button>
+                  <button class="btn" style="padding:4px 8px; min-height:auto; font-size:11px; background:var(--danger);" onclick="handleOrderReject(${idx})">2. Reject</button>
+                  <button class="btn" style="padding:4px 8px; min-height:auto; font-size:11px; background:#ea580c;" onclick="handleOrderCancelRefund(${idx})">3. Cancel & Refund</button>
                 ` : `
-                  ${isApproved ? `
-                    <button class="btn" style="padding:3px 6px; min-height:auto; font-size:10px; background:#0284c7;" onclick="updateOrderLocationDetails(${idx})">📍 Edit Location</button>
-                    <button class="btn" style="padding:3px 6px; min-height:auto; font-size:10px; background:#ea580c;" onclick="handleOrderCancelRefund(${idx})">Cancel & Refund</button>
-                  ` : `<span style="font-weight:bold; color:var(--muted); font-size:12px;">Order Resolved</span>`}
+                  <button class="btn" style="padding:3px 6px; min-height:auto; font-size:10px; background:#0284c7;" onclick="adminEditOrderDetails(${idx})">✏️ Edit Order</button>
                 `}
               </div>
             </td>
@@ -604,7 +662,7 @@ function populateAdminDashboardTables() {
     }
   }
 
-  // 2. Bookings Table
+  // 2. Bookings Manager with Certificate Edit
   if (document.getElementById("adminBookingsTableBody")) {
     const validBookings = bookingsRegistry.filter(b => b && b.name && b.bookingId);
     if (!validBookings.length) {
@@ -646,10 +704,10 @@ function populateAdminDashboardTables() {
             </td>
             <td><small style="color:#0284c7; font-weight:bold;">${b.dateLogged || 'N/A'}</small></td>
             <td>
-              <span class="badge ${isConfirmed ? 'badge-confirmed' : 'badge-pending'}">${isConfirmed ? '1. Booking Confirmed' : 'Pending Verification'}</span>
+              <span class="badge ${isConfirmed ? 'badge-confirmed' : 'badge-pending'}">${isConfirmed ? '1. Confirmed' : 'Pending'}</span>
             </td>
             <td>
-              <span class="badge ${certIssued ? 'badge-confirmed' : 'badge-pending'}">${certIssued ? '2. Certificate Approved' : 'Locked'}</span>
+              <span class="badge ${certIssued ? 'badge-confirmed' : 'badge-pending'}">${certIssued ? '2. Approved' : 'Locked'}</span>
             </td>
             <td>
               <div style="display:flex; flex-direction:column; gap:4px;">
@@ -660,9 +718,11 @@ function populateAdminDashboardTables() {
                   ${!certIssued ? `
                     <button class="btn" style="padding:4px 8px; min-height:auto; font-size:11px; background:#0284c7;" onclick="issueUserCertificate(${idx})">2. Approve Certificate</button>
                   ` : `
-                    <button type="button" class="btn" style="padding:3px 6px; min-height:auto; font-size:11px; background:var(--accent);" onclick="downloadCertificatePDF('${b.bookingId}')">📜 Download PDF</button>
+                    <button type="button" class="btn" style="padding:3px 6px; min-height:auto; font-size:11px; background:var(--accent);" onclick="downloadCertificatePDF('${b.bookingId}')">📜 Download A4</button>
                   `}
                 `}
+                <!-- Certificate details edit button -->
+                <button type="button" class="btn" style="padding:3px 6px; min-height:auto; font-size:10px; background:#4b5563;" onclick="adminEditCertificateData(${idx})">✏️ Edit Certificate</button>
               </div>
             </td>
           </tr>
@@ -671,7 +731,7 @@ function populateAdminDashboardTables() {
     }
   }
 
-  // 3. Users Directory Table
+  // 3. Registered Users Directory
   if (document.getElementById("adminUsersTableBody")) {
     const validUsers = usersDatabase.filter(u => u && u.name && u.email);
     if (!validUsers.length) {
@@ -693,7 +753,55 @@ function populateAdminDashboardTables() {
   }
 }
 
-// Quick Admin Direct Stock Modifier
+// Edit Order details
+function adminEditOrderDetails(idx) {
+  const o = orderRegistry[idx];
+  const newName = prompt("Customer Name edit karein:", o.name);
+  if (newName !== null && newName.trim() !== "") o.name = newName.trim();
+
+  const newLoc = prompt("Current Live Tracking Location:", o.currentLocation || "In Transit");
+  if (newLoc !== null && newLoc.trim() !== "") o.currentLocation = newLoc.trim();
+
+  const newCourier = prompt("Courier Name:", o.courierName || "Ekart Logistics");
+  if (newCourier !== null && newCourier.trim() !== "") o.courierName = newCourier.trim();
+
+  const newAwb = prompt("Tracking Number / AWB Code:", o.trackingNumber || ("FMPC" + Date.now().toString().slice(-6)));
+  if (newAwb !== null && newAwb.trim() !== "") o.trackingNumber = newAwb.trim();
+
+  const newEta = prompt("Estimated Delivery Date / Time:", o.deliveryDays || "2-4 Days");
+  if (newEta !== null && newEta.trim() !== "") o.deliveryDays = newEta.trim();
+
+  localStorage.setItem('pgf_orders', JSON.stringify(orderRegistry));
+  pushNotification(o.email, '🚚 Order Update', `Your Order #${o.orderId} shipment details updated by Admin.`);
+  populateAdminDashboardTables();
+  alert("✅ Order details updated successfully!");
+}
+
+// Edit Certificate details
+function adminEditCertificateData(idx) {
+  const b = bookingsRegistry[idx];
+  const newName = prompt("Candidate Name for Certificate:", b.name);
+  if (newName !== null && newName.trim() !== "") b.name = newName.trim();
+
+  if (b.type === "Student") {
+    const newCollege = prompt("College Name:", b.college || "");
+    if (newCollege !== null && newCollege.trim() !== "") b.college = newCollege.trim();
+
+    const newStart = prompt("Internship Start Date (YYYY-MM-DD):", b.start || "");
+    if (newStart !== null && newStart.trim() !== "") b.start = newStart.trim();
+
+    const newEnd = prompt("Internship End Date (YYYY-MM-DD):", b.end || "");
+    if (newEnd !== null && newEnd.trim() !== "") b.end = newEnd.trim();
+  } else {
+    const newDate = prompt("Training Session Date:", b.date || "");
+    if (newDate !== null && newDate.trim() !== "") b.date = newDate.trim();
+  }
+
+  localStorage.setItem('pgf_bookings', JSON.stringify(bookingsRegistry));
+  populateAdminDashboardTables();
+  alert("✅ Certificate records successfully updated!");
+}
+
 function updateProductStockDirect(productId) {
   const target = products.find(p => p.id === productId);
   if (!target) return;
@@ -702,25 +810,26 @@ function updateProductStockDirect(productId) {
     target.stock = Math.max(0, parseInt(newQty));
     saveProductsToStorage();
     renderProducts();
+    populateAdminDashboardTables();
     computeFinancialLedgerStatements();
     alert(`Stock updated for ${target.name}: ${target.stock} units.`);
   }
 }
 
-// =========================================================
-// 3 CORE ORDER ACTIONS: APPROVE / REJECT / CANCEL & REFUND
-// =========================================================
+// Order status actions
 function handleOrderApprove(idx) {
   const o = orderRegistry[idx];
   o.status = "Approved";
   o.trackingStage = "Packed";
   o.currentLocation = "Processing & Packing at Pure Grow Farm Hub";
-  o.deliveryDays = "2-3 Days";
+  o.courierName = "Ekart Logistics";
+  o.trackingNumber = "FMPC" + Math.floor(1000000000 + Math.random() * 9000000000);
+  o.deliveryDays = "2-4 Days";
   o.paymentReceived = true;
   o.refundStage = "";
   
   localStorage.setItem('pgf_orders', JSON.stringify(orderRegistry));
-  pushNotification(o.email, '📦 Order Approved & Packed!', `Your Order #${o.orderId} is confirmed and packed. Expected delivery: 2-3 Days.`);
+  pushNotification(o.email, '📦 Order Approved & Packed!', `Your Order #${o.orderId} is confirmed and packed. Expected delivery: 2-4 Days.`);
 
   alert("✅ Order Approved! User ko notification aur live tracking mil gayi.");
   populateAdminDashboardTables();
@@ -736,42 +845,38 @@ function handleOrderReject(idx) {
   o.paymentReceived = false;
   o.trackingStage = "";
   o.refundStage = "";
-  o.currentLocation = "Order Rejected due to payment failure";
 
   localStorage.setItem('pgf_orders', JSON.stringify(orderRegistry));
   pushNotification(o.email, '❌ Order Rejected', `Your Order #${o.orderId} was rejected. Reason: ${reason}.`);
 
-  alert("❌ Order Reject ho gaya! User ko rejection notification chali gayi.");
+  alert("❌ Order Reject ho gaya!");
   populateAdminDashboardTables();
-  computeFinancialLedgerStatements();
 }
 
 function handleOrderCancelRefund(idx) {
   const o = orderRegistry[idx];
-  let reason = prompt("Order Cancel karne ka reason likhein (e.g. Out of Stock / Location Undeliverable):", "Item Out of Stock / Undeliverable Location");
+  let reason = prompt("Order Cancel karne ka reason likhein:", "Item Out of Stock / Customer Request");
   if (reason === null) return;
 
   o.status = `Cancelled (Reason: ${reason})`;
   o.paymentReceived = true;
   o.refundStage = "Refund Initiated";
-  o.currentLocation = "Order Cancelled & Payment Refund Flow Initiated";
 
   localStorage.setItem('pgf_orders', JSON.stringify(orderRegistry));
-  pushNotification(o.email, '🔄 Order Cancelled & Refund Initiated', `Your Order #${o.orderId} was cancelled. Rs ${o.total} refund has been initiated to your account.`);
+  pushNotification(o.email, '🔄 Order Cancelled & Refund Initiated', `Your Order #${o.orderId} was cancelled. Rs ${o.total} refund initiated.`);
 
-  alert("🔄 Order Cancelled! User dashboard me Live Payment Refund tracker chalu ho gaya.");
+  alert("🔄 Order Cancelled & Refund initiated.");
   populateAdminDashboardTables();
-  computeFinancialLedgerStatements();
 }
 
 function setOrderStageDirect(idx, newStage) {
   const o = orderRegistry[idx];
   o.trackingStage = newStage;
-  if (newStage === 'Placed') o.currentLocation = "Order Placed & Verified at Farm Desk";
-  else if (newStage === 'Packed') o.currentLocation = "Packed & Ready at Pure Grow Farm Hub";
-  else if (newStage === 'Shipped') o.currentLocation = "In Transit / Dispatched from Central Facility";
-  else if (newStage === 'OutForDelivery') o.currentLocation = "Out For Delivery with Courier Partner";
-  else if (newStage === 'Delivered') o.currentLocation = "Order Delivered to Customer Address";
+  if (newStage === 'Placed') o.currentLocation = "Farm Order Desk";
+  else if (newStage === 'Packed') o.currentLocation = "Pure Grow Farm Central Hub";
+  else if (newStage === 'Shipped') o.currentLocation = "In Transit - Ekart Hub";
+  else if (newStage === 'OutForDelivery') o.currentLocation = "Out for Delivery with Delivery Partner";
+  else if (newStage === 'Delivered') o.currentLocation = "Delivered to Customer Doorstep";
 
   localStorage.setItem('pgf_orders', JSON.stringify(orderRegistry));
   pushNotification(o.email, '🚚 Order Shipment Update', `Order #${o.orderId} stage updated to: ${newStage}. (${o.currentLocation})`);
@@ -784,25 +889,9 @@ function setRefundStageDirect(idx, newRefStage) {
   localStorage.setItem('pgf_orders', JSON.stringify(orderRegistry));
   pushNotification(o.email, '💰 Refund Status Update', `Refund for Order #${o.orderId} status: ${newRefStage}.`);
   populateAdminDashboardTables();
-  alert(`Refund stage updated to: ${newRefStage}`);
 }
 
-function updateOrderLocationDetails(idx) {
-  const o = orderRegistry[idx];
-  const loc = prompt("Current Location enter karein:", o.currentLocation || "In Transit");
-  if (loc !== null && loc.trim() !== "") o.currentLocation = loc.trim();
-
-  const eta = prompt("Estimated Delivery Days / Time:", o.deliveryDays || "2-3 Days");
-  if (eta !== null && eta.trim() !== "") o.deliveryDays = eta.trim();
-
-  localStorage.setItem('pgf_orders', JSON.stringify(orderRegistry));
-  pushNotification(o.email, '📍 Location Update', `Order #${o.orderId} current location: ${o.currentLocation}. ETA: ${o.deliveryDays}`);
-  populateAdminDashboardTables();
-}
-
-// =========================================================
-// 2-STEP FARM BOOKING & CERTIFICATE APPROVAL
-// =========================================================
+// Bookings actions
 function confirmBookingSlot(idx) {
   bookingsRegistry[idx].status = "Confirmed";
   bookingsRegistry[idx].approvedDate = new Date().toLocaleDateString('en-IN');
@@ -828,39 +917,36 @@ function confirmBookingSlot(idx) {
 
   pushNotification(target.email, '🎓 Farm Booking Confirmed!', `Your ${target.type} program booking #${target.bookingId} has been confirmed.`);
 
-  alert(`✅ 1. Farm Book Approved for ${target.name}!\nTraining complete hone par '2. Approve Certificate' dabayein.`);
+  alert(`✅ 1. Farm Booking Approved for ${target.name}!`);
   populateAdminDashboardTables();
   computeFinancialLedgerStatements();
 }
 
 function issueUserCertificate(idx) {
   const target = bookingsRegistry[idx];
-  if (confirm(`Kya aap ${target.name} ke liye certificate approve karna chahte hain? Iske baad user download kar sakega.`)) {
+  if (confirm(`Kya aap ${target.name} ke liye certificate approve karna chahte hain?`)) {
     target.certIssued = true;
     target.certIssueDate = new Date().toLocaleDateString('en-IN');
     localStorage.setItem('pgf_bookings', JSON.stringify(bookingsRegistry));
 
-    pushNotification(target.email, '📜 Certificate Issued & Ready!', `Congratulations! Your certificate for ${target.type} program (#${target.bookingId}) is ready to download.`);
+    pushNotification(target.email, '📜 Certificate Issued & Ready!', `Your certificate for ${target.type} program (#${target.bookingId}) is ready to download.`);
 
-    alert("✅ 2. Certificate Approved ho gaya aur user ke dashboard me download unlock ho gaya!");
+    alert("✅ 2. Certificate Approved ho gaya!");
     populateAdminDashboardTables();
   }
 }
 
 function rejectTrainingBooking(idx) {
   const target = bookingsRegistry[idx];
-  let reason = prompt("Reject karne ka reason likhein:");
+  let reason = prompt("Reject karne ka reason likhein:", "Payment unverified");
   if(reason === null) return;
-  if(reason.trim() === "") reason = "Not specified by farm admin";
   
   target.status = `Rejected (Reason: ${reason})`;
   target.certIssued = false;
   localStorage.setItem('pgf_bookings', JSON.stringify(bookingsRegistry));
 
   pushNotification(target.email, '❌ Farm Booking Rejected', `Your booking #${target.bookingId} was rejected. Reason: ${reason}.`);
-
   populateAdminDashboardTables();
-  computeFinancialLedgerStatements();
 }
 
 function computeFinancialLedgerStatements() {
@@ -946,7 +1032,6 @@ function saveAdminSale(e) {
   const rate = parseFloat(document.getElementById("saleRate").value);
   const prodType = document.getElementById("saleProduct").value;
 
-  // Offline Sale hone par bhi catalog stock minus hona chahiye
   const targetProd = products.find(p => p.type === prodType || p.name.toLowerCase().includes(prodType.toLowerCase()));
   if (targetProd && !targetProd.bulk) {
     targetProd.stock = Math.max(0, targetProd.stock - qty);
@@ -972,9 +1057,9 @@ function saveAdminSale(e) {
   e.target.reset();
   initDefaultDatePickers();
   computeFinancialLedgerStatements();
+  renderAdminLiveStockSummary();
 }
 
-// Bulk Buy / Harvesting hone par automatic stock increase karein
 function saveAdminPurchase(e) {
   e.preventDefault();
   const rawDate = document.getElementById("purLogDate").value;
@@ -982,7 +1067,6 @@ function saveAdminPurchase(e) {
   const rate = parseFloat(document.getElementById("purRate").value);
   const purType = document.getElementById("purProduct").value;
   
-  // Buy ya Harvest karne par catalog ka available stock automatic badh jayega
   let matchedProd = null;
   if (purType.includes("Green")) matchedProd = products.find(p => p.type === "green");
   else if (purType.includes("Dry")) matchedProd = products.find(p => p.type === "dry");
@@ -1011,7 +1095,8 @@ function saveAdminPurchase(e) {
   e.target.reset();
   initDefaultDatePickers();
   computeFinancialLedgerStatements();
-  alert(`✅ Inventory stock successfully added! (Updated ${matchedProd ? matchedProd.name : 'Stock'})`);
+  renderAdminLiveStockSummary();
+  alert(`✅ Inventory stock updated! Added ${qty} units.`);
 }
 
 function saveAdminDamage(e) {
@@ -1060,7 +1145,7 @@ function downloadOfflineSaleInvoice(saleId) {
 }
 
 // =========================================================
-// PRODUCTS CATALOG RENDERING & AUTOMATIC STOCK MONITORING
+// PRODUCTS CATALOG & CART
 // =========================================================
 function renderProducts(list = products) {
   if(!document.getElementById("productsList")) return;
@@ -1073,7 +1158,6 @@ function renderProducts(list = products) {
         <h3>${product.name}</h3>
         <p class="muted">${product.detail}</p>
         
-        <!-- Automatic Stock Status Badge -->
         <div style="margin-bottom: 8px;">
           ${product.bulk ? 
             `<span class="badge" style="background: #e0f2fe; color: #0369a1; font-size:11px;">📦 Custom Supply</span>` : 
@@ -1100,6 +1184,13 @@ function renderProducts(list = products) {
   }).join("");
 }
 
+function updateHeaderCartCounter() {
+  const badge = document.getElementById("headerCartCount");
+  if (!badge) return;
+  const totalCount = [...cart.values()].reduce((sum, item) => sum + item.qty, 0);
+  badge.textContent = totalCount;
+}
+
 function addToCart(id) {
   const product = products.find(item => item.id === id);
   if (!product || product.stock <= 0) {
@@ -1111,12 +1202,13 @@ function addToCart(id) {
   const currentQty = current ? current.qty : 0;
 
   if (currentQty + 1 > product.stock) {
-    alert(`⚠️ Aap sirf ${product.stock} items hi cart me jod sakte hain kyunki itna hi stock bacha hai!`);
+    alert(`⚠️ Stock me sirf ${product.stock} items hi uplabdh hain!`);
     return;
   }
 
   cart.set(id, { ...product, qty: currentQty + 1 });
   renderCart();
+  updateHeaderCartCounter();
 }
 
 function minusCart(id) {
@@ -1125,6 +1217,7 @@ function minusCart(id) {
   if (item.qty === 1) cart.delete(id);
   else cart.set(id, { ...item, qty: item.qty - 1 });
   renderCart();
+  updateHeaderCartCounter();
 }
 
 function getTotals() {
@@ -1138,6 +1231,8 @@ function renderCart() {
   if(document.getElementById("subtotal")) document.getElementById("subtotal").textContent = `Rs ${bill.subtotal}`;
   if(document.getElementById("delivery")) document.getElementById("delivery").textContent = `Rs ${bill.delivery}`;
   if(document.getElementById("total")) document.getElementById("total").textContent = `Rs ${bill.total}`;
+
+  updateHeaderCartCounter();
 
   if (!cart.size) { 
     if(document.getElementById("cartItems")) document.getElementById("cartItems").innerHTML = `<p class="muted">Cart selection is empty.</p>`; 
@@ -1202,7 +1297,6 @@ function confirmOrder(e) {
   const currentTimestamp = new Date().toLocaleDateString('en-IN') + " " + new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
   const generatedOrderId = "PGF-INV-" + Date.now().toString().slice(-5);
 
-  // Automatic Stock Deduction on successful order placement
   cart.forEach((item, prodId) => {
     const prod = products.find(p => p.id === prodId);
     if (prod && !prod.bulk) {
@@ -1404,7 +1498,7 @@ if (document.getElementById("productSearch")) {
 }
 
 // =========================================================
-// CERTIFICATE PDF ENGINE
+// A4 SIZE CERTIFICATE PDF ENGINE
 // =========================================================
 function downloadCertificatePDF(bookingId) {
   const targetBooking = bookingsRegistry.find(b => b && b.bookingId === bookingId);
@@ -1422,7 +1516,7 @@ function downloadCertificatePDF(bookingId) {
 
   const actualApprovedDate = targetBooking.certIssueDate ? targetBooking.certIssueDate : (targetBooking.dateLogged ? targetBooking.dateLogged.split(" ")[0] : new Date().toLocaleDateString('en-IN'));
 
-  const basePath = window.location.href.substring(0, window.location.href.lastIndexOf('/') + 1);
+  const basePath = window.location.origin + window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/') + 1);
   const logoUrl = basePath + "mushroom/pgf logo.png";
   const sohamSignUrl = basePath + "mushroom/soham sign.png";
   const jeetSignUrl = basePath + "mushroom/jeet sign.png";
@@ -1431,20 +1525,22 @@ function downloadCertificatePDF(bookingId) {
 <html>
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${titleText} - ${targetBooking.name}</title>
   <style>
-    @page { size: A4 landscape; margin: 6mm; }
+    @page { 
+      size: A4 portrait; 
+      margin: 8mm; 
+    }
     * { box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-    body { margin: 0; padding: 12px; font-family: Arial, sans-serif; background: #fff; text-align: center; }
-    .certificate-frame { width: 100%; max-width: 960px; background: #fff; border: 8px solid #1e4620; padding: 20px; box-sizing: border-box; margin: 0 auto; }
-    .inner-border { border: 2px solid #d97706; padding: 20px; background: #ffffff; }
+    body { margin: 0; padding: 10px; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #fff; text-align: center; }
+    .certificate-frame { width: 100%; max-width: 780px; min-height: 980px; background: #fff; border: 8px solid #1e4620; padding: 20px; box-sizing: border-box; margin: 0 auto; display: flex; flex-direction: column; justify-content: space-between; }
+    .inner-border { border: 2px solid #d97706; padding: 25px 20px; background: #ffffff; height: 100%; display: flex; flex-direction: column; justify-content: space-between; }
     .cert-header-top { display: flex; justify-content: center; align-items: center; gap: 15px; }
-    .cert-title { font-size: 28px; font-weight: bold; color: #1e4620; text-transform: uppercase; letter-spacing: 1px; font-family: 'Times New Roman', Times, serif; margin: 12px 0 6px 0; }
-    .cert-name { font-size: 24px; font-weight: bold; color: #2b8a3e; border-bottom: 2px solid #d97706; display: inline-block; padding: 0 20px; margin: 6px auto; font-family: 'Times New Roman', Times, serif; }
-    .cert-desc { font-size: 14px; line-height: 1.6; text-align: justify; margin: 12px auto; max-width: 820px; color: #222; }
-    .cert-footer-grid { display: flex; justify-content: space-between; align-items: flex-end; margin-top: 25px; padding: 0 10px; }
-    .sign-img { width: 120px; height: 48px; object-fit: contain; display: block; margin: 0 auto -8px auto; mix-blend-mode: multiply; }
+    .cert-title { font-size: 26px; font-weight: bold; color: #1e4620; text-transform: uppercase; letter-spacing: 1px; font-family: 'Times New Roman', Times, serif; margin: 20px 0 10px 0; }
+    .cert-name { font-size: 24px; font-weight: bold; color: #2b8a3e; border-bottom: 2px solid #d97706; display: inline-block; padding: 0 25px; margin: 15px auto; font-family: 'Times New Roman', Times, serif; }
+    .cert-desc { font-size: 14.5px; line-height: 1.8; text-align: justify; margin: 20px auto; max-width: 650px; color: #222; }
+    .cert-footer-grid { display: flex; justify-content: space-between; align-items: flex-end; margin-top: 40px; padding: 0 15px; }
+    .sign-img { width: 130px; height: 50px; object-fit: contain; display: block; margin: 0 auto -6px auto; mix-blend-mode: multiply; }
     .no-print-bar { margin-bottom: 12px; background: #f0fdf4; border: 1px solid #bbf7d0; padding: 10px; border-radius: 8px; }
     .no-print-btn { background: #2b8a3e; color: #fff; border: 0; padding: 8px 18px; font-weight: bold; border-radius: 6px; font-size: 14px; cursor: pointer; }
     @media print { .no-print-bar { display: none !important; } body { padding: 0; } }
@@ -1452,27 +1548,29 @@ function downloadCertificatePDF(bookingId) {
 </head>
 <body>
   <div class="no-print-bar">
-    <button class="no-print-btn" onclick="window.print()">📥 Click Here to Save / Download PDF</button>
+    <button class="no-print-btn" onclick="window.print()">📥 Click Here to Download A4 PDF</button>
   </div>
 
   <div class="certificate-frame">
     <div class="inner-border">
-      <div class="cert-header-top">
-        <img src="${logoUrl}" alt="Logo" style="width: 60px; height: auto;">
-        <div style="text-align:left;">
-          <h2 style="color: #1e4620; margin: 0; font-size: 20px; font-weight: 800;">PURE GROW FARM</h2>
-          <p style="margin: 2px 0 0 0; font-size: 11px; color:#6b7280;">Makhiyala, Gujarat, 362011 | puregrowfarm001@gmail.com</p>
+      <div>
+        <div class="cert-header-top">
+          <img src="${logoUrl}" alt="Logo" style="width: 70px; height: auto;">
+          <div style="text-align:left;">
+            <h2 style="color: #1e4620; margin: 0; font-size: 22px; font-weight: 800;">PURE GROW FARM</h2>
+            <p style="margin: 2px 0 0 0; font-size: 12px; color:#6b7280;">Makhiyala, Gujarat, 362011 | puregrowfarm001@gmail.com</p>
+          </div>
         </div>
+        <hr style="border:0; border-top: 2px solid #2b8a3e; margin: 15px 0;">
+        <div class="cert-title">${titleText}</div>
+        <p style="font-style: italic; margin: 8px 0; color: #555; font-size: 14px;">This is to certify that</p>
+        <div class="cert-name">${targetBooking.name.toUpperCase()}</div>
+        <p style="font-style: italic; margin: 8px 0; color: #555; font-size: 14px;">${descText}</p>
+        <p class="cert-desc">
+          The program execution guidelines were conducted ${durationContent}. 
+          During this framework index period, the candidate gained foundational knowledge in mushroom biology, substrate preparation, spawn inoculation, and scientific crop management, demonstrating an exceptional work ethic.
+        </p>
       </div>
-      <hr style="border:0; border-top: 2px solid #2b8a3e; margin: 10px 0;">
-      <div class="cert-title">${titleText}</div>
-      <p style="font-style: italic; margin: 3px 0; color: #555; font-size: 13px;">This is to certify that</p>
-      <div class="cert-name">${targetBooking.name.toUpperCase()}</div>
-      <p style="font-style: italic; margin: 5px 0; color: #555; font-size: 13px;">${descText}</p>
-      <p class="cert-desc">
-        The program execution guidelines were conducted ${durationContent}. 
-        During this framework index period, the candidate gained foundational knowledge in mushroom biology, substrate preparation, spawn inoculation, and scientific crop management, demonstrating an exceptional work ethic.
-      </p>
       
       <div class="cert-footer-grid">
         <div style="text-align: center; width: 34%;">
@@ -1485,8 +1583,8 @@ function downloadCertificatePDF(bookingId) {
         </div>
 
         <div style="text-align: center; width: 28%;">
-          <img src="${logoUrl}" alt="Stamp" style="width: 55px; height: auto; opacity: 0.95;">
-          <div style="font-size: 9px; font-weight: 800; color: #1e4620; margin-top: 2px; letter-spacing: 0.5px;">PURE GROW FARM</div>
+          <img src="${logoUrl}" alt="Stamp" style="width: 60px; height: auto; opacity: 0.95;">
+          <div style="font-size: 10px; font-weight: 800; color: #1e4620; margin-top: 2px; letter-spacing: 0.5px;">PURE GROW FARM</div>
           <div style="font-size: 11px; color: #334155; margin-top: 3px;">
             <strong>Approved Date:</strong> ${actualApprovedDate}
           </div>
@@ -1506,9 +1604,7 @@ function downloadCertificatePDF(bookingId) {
 
   <script>
     window.addEventListener('load', function() {
-      setTimeout(function() {
-        window.print();
-      }, 500);
+      setTimeout(function() { window.print(); }, 500);
     });
   <\/script>
 </body>
@@ -1517,29 +1613,37 @@ function downloadCertificatePDF(bookingId) {
   const blob = new Blob([certificateHTML], { type: 'text/html;charset=utf-8' });
   const blobUrl = URL.createObjectURL(blob);
   const printWindow = window.open(blobUrl, '_blank');
-
-  if (!printWindow) {
-    window.location.href = blobUrl;
-  }
+  if (!printWindow) window.location.href = blobUrl;
 }
 
+// =========================================================
+// INVOICE PRINT & PDF ENGINE WITH LOGO FIX
+// =========================================================
 function printDivInvoice() {
-  const printContents = document.getElementById('invoiceCaptureFrame').innerHTML;
-  
+  const basePath = window.location.origin + window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/') + 1);
+  const absoluteLogoUrl = basePath + "mushroom/pgf logo.png";
+
+  const containerClone = document.getElementById('invoiceCaptureFrame').cloneNode(true);
+  const logoImg = containerClone.querySelector('#invoiceBrandLogo');
+  if (logoImg) {
+    logoImg.src = absoluteLogoUrl;
+  }
+
   const invoiceHTML = `
     <!DOCTYPE html>
     <html>
       <head>
         <title>Pure Grow Farm - Invoice</title>
         <style>
-          body { font-family: sans-serif; padding: 20px; background: #fff; }
+          @page { size: A4; margin: 10mm; }
+          body { font-family: sans-serif; padding: 20px; background: #fff; color: #222; }
           table { width: 100%; border-collapse: collapse; margin-bottom: 25px; font-size: 14px; }
           th, td { border: 1px solid #e6e9ec; padding: 12px 14px; text-align: left; }
           th { background: #2b8a3e !important; color: white !important; -webkit-print-color-adjust: exact; font-weight: bold; }
         </style>
       </head>
       <body>
-        ${printContents}
+        ${containerClone.innerHTML}
         <script>
           window.onload = function() {
             setTimeout(function() { window.print(); }, 400);
@@ -1552,9 +1656,7 @@ function printDivInvoice() {
   const blob = new Blob([invoiceHTML], { type: 'text/html;charset=utf-8' });
   const blobUrl = URL.createObjectURL(blob);
   const printWin = window.open(blobUrl, '_blank');
-  if (!printWin) {
-    window.location.href = blobUrl;
-  }
+  if (!printWin) window.location.href = blobUrl;
 }
 
 // Initial Booting

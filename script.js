@@ -1036,9 +1036,9 @@ function populateAdminDashboardTables() {
 }
 
 // =========================================================
-// ADMIN FILTER MODAL POPUP FOR LISTS & PENDING ITEMS
+// ADMIN FILTER MODAL POPUP FOR LISTS & SPECIFIC PERSON FILTERING
 // =========================================================
-function openAdminFilterModal(type, filterPayer = null) {
+function openAdminFilterModal(type) {
   const modal = document.getElementById("adminFilterPopupModal");
   const titleEl = document.getElementById("adminFilterModalTitle");
   const listEl = document.getElementById("adminFilterModalContentList");
@@ -1160,51 +1160,94 @@ function openAdminFilterModal(type, filterPayer = null) {
       </div>
     `).join("") : `<p class="muted" style="text-align:center;">No wholesale sales recorded.</p>`;
   } else if (type === 'list_purchases') {
-    titleEl.textContent = filterPayer ? `📋 Purchases List (${filterPayer})` : "📋 All Purchases (Buy) List";
-    const filteredPurchases = filterPayer ? purchasesRegistry.filter(p => p.funder === filterPayer) : purchasesRegistry;
-    htmlContent = filteredPurchases.length ? filteredPurchases.map(p => `
+    titleEl.textContent = "📋 All Purchases (Buy) List";
+    htmlContent = purchasesRegistry.length ? purchasesRegistry.map(p => `
       <div style="background:#fff7ed; border:1px solid #fed7aa; border-radius:8px; padding:10px; font-size:13px;">
         <strong>${p.purId || 'PUR'} - ${p.product}</strong> | Pese Diye: ${p.funder} | Vendor: ${p.vendor} | Qty: ${p.qty} | Total: ₹${p.total} (Paid: ₹${p.paidAmount})<br>
         <small class="muted">Date: ${p.date} | Notes: ${p.notes || '-'}</small>
       </div>
-    `).join("") : `<p class="muted" style="text-align:center;">No purchase records found for ${filterPayer || 'Any'}.</p>`;
+    `).join("") : `<p class="muted" style="text-align:center;">No purchase records.</p>`;
+  } else if (type === 'list_purchases_soham') {
+    titleEl.textContent = "📋 Soham Purchases (Buy) List";
+    const list = purchasesRegistry.filter(p => p.funder === "Soham");
+    htmlContent = list.length ? list.map(p => `
+      <div style="background:#fff7ed; border:1px solid #fed7aa; border-radius:8px; padding:10px; font-size:13px;">
+        <strong>${p.purId || 'PUR'} - ${p.product}</strong> | Vendor: ${p.vendor} | Qty: ${p.qty} | Paid: ₹${p.paidAmount || p.total}<br>
+        <small class="muted">Date: ${p.date} | Notes: ${p.notes || '-'}</small>
+      </div>
+    `).join("") : `<p class="muted" style="text-align:center;">No purchases by Soham.</p>`;
+  } else if (type === 'list_purchases_jeet') {
+    titleEl.textContent = "📋 Jeet Purchases (Buy) List";
+    const list = purchasesRegistry.filter(p => p.funder === "Jeet");
+    htmlContent = list.length ? list.map(p => `
+      <div style="background:#fff7ed; border:1px solid #fed7aa; border-radius:8px; padding:10px; font-size:13px;">
+        <strong>${p.purId || 'PUR'} - ${p.product}</strong> | Vendor: ${p.vendor} | Qty: ${p.qty} | Paid: ₹${p.paidAmount || p.total}<br>
+        <small class="muted">Date: ${p.date} | Notes: ${p.notes || '-'}</small>
+      </div>
+    `).join("") : `<p class="muted" style="text-align:center;">No purchases by Jeet.</p>`;
+  } else if (type === 'list_purchases_farm') {
+    titleEl.textContent = "📋 Farm Purchases (Buy) List";
+    const list = purchasesRegistry.filter(p => p.funder === "Farm");
+    htmlContent = list.length ? list.map(p => `
+      <div style="background:#fff7ed; border:1px solid #fed7aa; border-radius:8px; padding:10px; font-size:13px;">
+        <strong>${p.purId || 'PUR'} - ${p.product}</strong> | Vendor: ${p.vendor} | Qty: ${p.qty} | Paid: ₹${p.paidAmount || p.total}<br>
+        <small class="muted">Date: ${p.date} | Notes: ${p.notes || '-'}</small>
+      </div>
+    `).join("") : `<p class="muted" style="text-align:center;">No purchases by Farm Vault.</p>`;
   } else if (type === 'list_expenses') {
-    titleEl.textContent = filterPayer ? `📋 Expenses List (${filterPayer})` : "📋 All Expenses List";
-    const exps = filterPayer ? expensesRegistry.filter(e => e.category !== "Damage Received" && e.payer === filterPayer) : expensesRegistry.filter(e => e.category !== "Damage Received");
+    titleEl.textContent = "📋 All Expenses List";
+    const exps = expensesRegistry.filter(e => e.category !== "Damage Received");
     htmlContent = exps.length ? exps.map(e => `
       <div style="background:#fef3c7; border:1px solid #fde68a; border-radius:8px; padding:10px; font-size:13px;">
         <strong>${e.expId || 'EXP'} - ${e.category}</strong> | Payer: ${e.payer} | Amount: ₹${e.amount}<br>
         <small class="muted">Desc: ${e.desc} | Date: ${e.date}</small>
       </div>
-    `).join("") : `<p class="muted" style="text-align:center;">No expense records found for ${filterPayer || 'Any'}.</p>`;
+    `).join("") : `<p class="muted" style="text-align:center;">No expense records.</p>`;
+  } else if (type === 'list_expenses_soham') {
+    titleEl.textContent = "📋 Soham Expenses List";
+    const list = expensesRegistry.filter(e => e.category !== "Damage Received" && e.payer === "Soham");
+    htmlContent = list.length ? list.map(e => `
+      <div style="background:#fef3c7; border:1px solid #fde68a; border-radius:8px; padding:10px; font-size:13px;">
+        <strong>${e.expId || 'EXP'} - ${e.category}</strong> | Amount: ₹${e.amount}<br>
+        <small class="muted">Desc: ${e.desc} | Date: ${e.date}</small>
+      </div>
+    `).join("") : `<p class="muted" style="text-align:center;">No expenses by Soham.</p>`;
+  } else if (type === 'list_expenses_jeet') {
+    titleEl.textContent = "📋 Jeet Expenses List";
+    const list = expensesRegistry.filter(e => e.category !== "Damage Received" && e.payer === "Jeet");
+    htmlContent = list.length ? list.map(e => `
+      <div style="background:#fef3c7; border:1px solid #fde68a; border-radius:8px; padding:10px; font-size:13px;">
+        <strong>${e.expId || 'EXP'} - ${e.category}</strong> | Amount: ₹${e.amount}<br>
+        <small class="muted">Desc: ${e.desc} | Date: ${e.date}</small>
+      </div>
+    `).join("") : `<p class="muted" style="text-align:center;">No expenses by Jeet.</p>`;
+  } else if (type === 'list_expenses_farm') {
+    titleEl.textContent = "📋 Farm Expenses List";
+    const list = expensesRegistry.filter(e => e.category !== "Damage Received" && e.payer === "Farm");
+    htmlContent = list.length ? list.map(e => `
+      <div style="background:#fef3c7; border:1px solid #fde68a; border-radius:8px; padding:10px; font-size:13px;">
+        <strong>${e.expId || 'EXP'} - ${e.category}</strong> | Amount: ₹${e.amount}<br>
+        <small class="muted">Desc: ${e.desc} | Date: ${e.date}</small>
+      </div>
+    `).join("") : `<p class="muted" style="text-align:center;">No expenses by Farm Vault.</p>`;
   } else if (type === 'list_damages') {
-    titleEl.textContent = filterPayer ? `📋 Damage Losses List (${filterPayer})` : "📋 All Damage Losses List";
-    const dmgs = filterPayer ? expensesRegistry.filter(e => e.category === "Damage Received" && e.payer === filterPayer) : expensesRegistry.filter(e => e.category === "Damage Received");
+    titleEl.textContent = "📋 All Damage Losses List";
+    const dmgs = expensesRegistry.filter(e => e.category === "Damage Received");
     htmlContent = dmgs.length ? dmgs.map(d => `
       <div style="background:#fef2f2; border:1px solid #fca5a5; border-radius:8px; padding:10px; font-size:13px;">
         <strong>${d.expId || 'DMG'} - ${d.desc}</strong> | Pese Rakhe: ${d.payer} | Amount: ₹${d.amount}<br>
         <small class="muted">Date: ${d.date} | Notes: ${d.notes || '-'}</small>
       </div>
-    `).join("") : `<p class="muted" style="text-align:center;">No damage records found for ${filterPayer || 'Any'}.</p>`;
+    `).join("") : `<p class="muted" style="text-align:center;">No damage records.</p>`;
   } else if (type === 'list_partner_expenses') {
-    titleEl.textContent = filterPayer ? `📋 Net Expenses List (${filterPayer})` : "📋 Soham & Jeet Net Expenses List (6 - 9)";
-    let sohamNet = ( (expensesRegistry.filter(e => e.category !== "Damage Received" && e.payer === "Soham").reduce((s, e) => s + Number(e.amount || 0), 0)) + (purchasesRegistry.filter(p => p.funder === "Soham").reduce((s, p) => s + Number(p.paidAmount !== undefined ? p.paidAmount : p.total || 0), 0)) ) - (expensesRegistry.filter(e => e.category === "Damage Received" && e.payer === "Soham").reduce((s, d) => s + Number(d.amount || 0), 0));
-    
-    let jeetNet = ( (expensesRegistry.filter(e => e.category !== "Damage Received" && e.payer === "Jeet").reduce((s, e) => s + Number(e.amount || 0), 0)) + (purchasesRegistry.filter(p => p.funder === "Jeet").reduce((s, p) => s + Number(p.paidAmount !== undefined ? p.paidAmount : p.total || 0), 0)) ) - (expensesRegistry.filter(e => e.category === "Damage Received" && e.payer === "Jeet").reduce((s, d) => s + Number(d.amount || 0), 0));
-
-    if (filterPayer === 'Soham') {
-      htmlContent = `<div style="background:#eef2ff; border:1px solid #c7d2fe; border-radius:8px; padding:12px; font-size:14px;"><strong>Soham Net Expense (Card 6 minus Card 9):</strong> <span style="color:#2563eb; font-weight:bold;">Rs ${sohamNet.toFixed(2)}</span></div>`;
-    } else if (filterPayer === 'Jeet') {
-      htmlContent = `<div style="background:#eef2ff; border:1px solid #c7d2fe; border-radius:8px; padding:12px; font-size:14px;"><strong>Jeet Net Expense (Card 6 minus Card 9):</strong> <span style="color:#d97706; font-weight:bold;">Rs ${jeetNet.toFixed(2)}</span></div>`;
-    } else {
-      htmlContent = `
-        <div style="background:#eef2ff; border:1px solid #c7d2fe; border-radius:8px; padding:12px; font-size:14px; line-height:1.6;">
-          <strong>Net Expense Summary (Card 6 minus Card 9):</strong><br>
-          • Soham Net Expense: <span style="font-weight:bold; color:#2563eb;">Rs ${sohamNet.toFixed(2)}</span><br>
-          • Jeet Net Expense: <span style="font-weight:bold; color:#d97706;">Rs ${jeetNet.toFixed(2)}</span>
-        </div>
-      `;
-    }
+    titleEl.textContent = "📋 Soham & Jeet Net Expenses List (6 - 9)";
+    htmlContent = `
+      <div style="background:#eef2ff; border:1px solid #c7d2fe; border-radius:8px; padding:12px; font-size:14px; line-height:1.6;">
+        <strong>Net Expense Summary (Card 6 minus Card 9):</strong><br>
+        • Soham Net Expense: <span id="modalSohamNet" style="font-weight:bold; color:#2563eb;">Rs 0.00</span><br>
+        • Jeet Net Expense: <span id="modalJeetNet" style="font-weight:bold; color:#d97706;">Rs 0.00</span>
+      </div>
+    `;
   }
 
   listEl.innerHTML = htmlContent;
@@ -1682,46 +1725,28 @@ function computeFinancialLedgerStatements() {
   if(document.getElementById("ovFarmBookingTotal")) document.getElementById("ovFarmBookingTotal").textContent = "Rs " + farmBookingTotal.toFixed(2);
   if(document.getElementById("ovSellTotal")) document.getElementById("ovSellTotal").textContent = "Rs " + sellTotal.toFixed(2);
   
-  // 4) Buy Total Card with Breakdown (Clickable to filter per person)
+  // 4) Buy Total Card with Breakdown & Click handlers
   if(document.getElementById("ovBuyTotal")) document.getElementById("ovBuyTotal").textContent = "Rs " + buyTotal.toFixed(2);
-  const sohamBuyEl = document.getElementById("ovSohamBuy");
-  if(sohamBuyEl) {
-    sohamBuyEl.textContent = "Rs " + sohamBuyTotal.toFixed(2);
-    sohamBuyEl.style.cursor = "pointer";
-    sohamBuyEl.onclick = (e) => { e.stopPropagation(); openAdminFilterModal('list_purchases', 'Soham'); };
+  if(document.getElementById("ovSohamBuy")) {
+    document.getElementById("ovSohamBuy").innerHTML = `<span style="cursor:pointer; text-decoration:underline;" onclick="event.stopPropagation(); openAdminFilterModal('list_purchases_soham')">Soham: Rs ${sohamBuyTotal.toFixed(2)}</span>`;
   }
-  const jeetBuyEl = document.getElementById("ovJeetBuy");
-  if(jeetBuyEl) {
-    jeetBuyEl.textContent = "Rs " + jeetBuyTotal.toFixed(2);
-    jeetBuyEl.style.cursor = "pointer";
-    jeetBuyEl.onclick = (e) => { e.stopPropagation(); openAdminFilterModal('list_purchases', 'Jeet'); };
+  if(document.getElementById("ovJeetBuy")) {
+    document.getElementById("ovJeetBuy").innerHTML = `<span style="cursor:pointer; text-decoration:underline;" onclick="event.stopPropagation(); openAdminFilterModal('list_purchases_jeet')">Jeet: Rs ${jeetBuyTotal.toFixed(2)}</span>`;
   }
-  const farmBuyEl = document.getElementById("ovFarmBuy");
-  if(farmBuyEl) {
-    farmBuyEl.textContent = "Rs " + farmBuyTotal.toFixed(2);
-    farmBuyEl.style.cursor = "pointer";
-    farmBuyEl.onclick = (e) => { e.stopPropagation(); openAdminFilterModal('list_purchases', 'Farm'); };
+  if(document.getElementById("ovFarmBuy")) {
+    document.getElementById("ovFarmBuy").innerHTML = `<span style="cursor:pointer; text-decoration:underline;" onclick="event.stopPropagation(); openAdminFilterModal('list_purchases_farm')">Farm: Rs ${farmBuyTotal.toFixed(2)}</span>`;
   }
 
-  // 5) Expense Total Card with Breakdown (Clickable to filter per person)
+  // 5) Expense Total Card with Breakdown & Click handlers
   if(document.getElementById("ovExpenseTotal")) document.getElementById("ovExpenseTotal").textContent = "Rs " + expenseTotal.toFixed(2);
-  const sohamExpOnlyEl = document.getElementById("ovSohamExpOnly");
-  if(sohamExpOnlyEl) {
-    sohamExpOnlyEl.textContent = "Rs " + sohamExpOnly.toFixed(2);
-    sohamExpOnlyEl.style.cursor = "pointer";
-    sohamExpOnlyEl.onclick = (e) => { e.stopPropagation(); openAdminFilterModal('list_expenses', 'Soham'); };
+  if(document.getElementById("ovSohamExpOnly")) {
+    document.getElementById("ovSohamExpOnly").innerHTML = `<span style="cursor:pointer; text-decoration:underline;" onclick="event.stopPropagation(); openAdminFilterModal('list_expenses_soham')">Soham: Rs ${sohamExpOnly.toFixed(2)}</span>`;
   }
-  const jeetExpOnlyEl = document.getElementById("ovJeetExpOnly");
-  if(jeetExpOnlyEl) {
-    jeetExpOnlyEl.textContent = "Rs " + jeetExpOnly.toFixed(2);
-    jeetExpOnlyEl.style.cursor = "pointer";
-    jeetExpOnlyEl.onclick = (e) => { e.stopPropagation(); openAdminFilterModal('list_expenses', 'Jeet'); };
+  if(document.getElementById("ovJeetExpOnly")) {
+    document.getElementById("ovJeetExpOnly").innerHTML = `<span style="cursor:pointer; text-decoration:underline;" onclick="event.stopPropagation(); openAdminFilterModal('list_expenses_jeet')">Jeet: Rs ${jeetExpOnly.toFixed(2)}</span>`;
   }
-  const farmExpOnlyEl = document.getElementById("ovFarmExpOnly");
-  if(farmExpOnlyEl) {
-    farmExpOnlyEl.textContent = "Rs " + farmExpOnly.toFixed(2);
-    farmExpOnlyEl.style.cursor = "pointer";
-    farmExpOnlyEl.onclick = (e) => { e.stopPropagation(); openAdminFilterModal('list_expenses', 'Farm'); };
+  if(document.getElementById("ovFarmExpOnly")) {
+    document.getElementById("ovFarmExpOnly").innerHTML = `<span style="cursor:pointer; text-decoration:underline;" onclick="event.stopPropagation(); openAdminFilterModal('list_expenses_farm')">Farm: Rs ${farmExpOnly.toFixed(2)}</span>`;
   }
   
   // 6) Partner & Farm Total (4 + 5 Total: Expense + Buy)
@@ -1735,40 +1760,15 @@ function computeFinancialLedgerStatements() {
   // 8) Unified Net Profit: 1 + 2 + 3 - 4 - 5
   if(document.getElementById("ovProfit")) document.getElementById("ovProfit").textContent = "Rs " + netProfit.toFixed(2);
   
-  // 9) Damage Losses Card with Breakdown (Clickable to filter per person)
+  // 9) Damage Losses Card with Breakdown
   if(document.getElementById("ovDamage")) document.getElementById("ovDamage").textContent = "Rs " + damageTotal.toFixed(2);
-  const sohamDmgEl = document.getElementById("ovSohamDmgCard");
-  if(sohamDmgEl) {
-    sohamDmgEl.textContent = "Rs " + sohamDmgTotal.toFixed(2);
-    sohamDmgEl.style.cursor = "pointer";
-    sohamDmgEl.onclick = (e) => { e.stopPropagation(); openAdminFilterModal('list_damages', 'Soham'); };
-  }
-  const jeetDmgEl = document.getElementById("ovJeetDmgCard");
-  if(jeetDmgEl) {
-    jeetDmgEl.textContent = "Rs " + jeetDmgTotal.toFixed(2);
-    jeetDmgEl.style.cursor = "pointer";
-    jeetDmgEl.onclick = (e) => { e.stopPropagation(); openAdminFilterModal('list_damages', 'Jeet'); };
-  }
-  const farmDmgEl = document.getElementById("ovFarmDmgCard");
-  if(farmDmgEl) {
-    farmDmgEl.textContent = "Rs " + farmDmgTotal.toFixed(2);
-    farmDmgEl.style.cursor = "pointer";
-    farmDmgEl.onclick = (e) => { e.stopPropagation(); openAdminFilterModal('list_damages', 'Farm'); };
-  }
+  if(document.getElementById("ovSohamDmgCard")) document.getElementById("ovSohamDmgCard").textContent = "Rs " + sohamDmgTotal.toFixed(2);
+  if(document.getElementById("ovJeetDmgCard")) document.getElementById("ovJeetDmgCard").textContent = "Rs " + jeetDmgTotal.toFixed(2);
+  if(document.getElementById("ovFarmDmgCard")) document.getElementById("ovFarmDmgCard").textContent = "Rs " + farmDmgTotal.toFixed(2);
 
-  // 10) Soham & Jeet Net Expenses: (6 - 9) (Clickable to filter per person)
-  const sohamNetEl = document.getElementById("ovSohamNet");
-  if(sohamNetEl) {
-    sohamNetEl.textContent = "Rs " + sohamNetExp.toFixed(2);
-    sohamNetEl.style.cursor = "pointer";
-    sohamNetEl.onclick = (e) => { e.stopPropagation(); openAdminFilterModal('list_partner_expenses', 'Soham'); };
-  }
-  const jeetNetEl = document.getElementById("ovJeetNet");
-  if(jeetNetEl) {
-    jeetNetEl.textContent = "Rs " + jeetNetExp.toFixed(2);
-    jeetNetEl.style.cursor = "pointer";
-    jeetNetEl.onclick = (e) => { e.stopPropagation(); openAdminFilterModal('list_partner_expenses', 'Jeet'); };
-  }
+  // 10) Soham & Jeet Net Expenses: (6 - 9)
+  if(document.getElementById("ovSohamNet")) document.getElementById("ovSohamNet").textContent = "Rs " + sohamNetExp.toFixed(2);
+  if(document.getElementById("ovJeetNet")) document.getElementById("ovJeetNet").textContent = "Rs " + jeetNetExp.toFixed(2);
 
   // Sub Tab 1: Expense Top Summary & Table
   if(document.getElementById("subTabExpTotalDisplay")) document.getElementById("subTabExpTotalDisplay").textContent = "Rs " + expenseTotal.toFixed(2);

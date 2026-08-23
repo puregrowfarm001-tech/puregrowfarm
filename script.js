@@ -1614,7 +1614,7 @@ function computeFinancialLedgerStatements() {
   const buyTotal = purchasesRegistry.reduce((sum, p) => sum + Number(p.paidAmount !== undefined ? p.paidAmount : p.total || 0), 0);
   const expenseTotal = expensesRegistry.filter(e => e.category !== "Damage Received").reduce((sum, e) => sum + Number(e.amount || 0), 0);
 
-  // Partner wise Buy Totals
+  // Partner wise Buy Totals (4)
   let sohamBuyTotal = 0, jeetBuyTotal = 0, farmBuyTotal = 0;
   purchasesRegistry.forEach(p => {
     const amt = Number(p.paidAmount !== undefined ? p.paidAmount : p.total || 0);
@@ -1623,7 +1623,7 @@ function computeFinancialLedgerStatements() {
     else if(p.funder === "Farm") farmBuyTotal += amt;
   });
 
-  // Partner wise Expense Totals (Expenses only)
+  // Partner wise Expense Totals (5)
   let sohamExpOnly = 0, jeetExpOnly = 0, farmExpOnly = 0;
   expensesRegistry.filter(e => e.category !== "Damage Received").forEach(e => {
     const amt = Number(e.amount || 0);
@@ -1632,35 +1632,28 @@ function computeFinancialLedgerStatements() {
     else if(e.payer === "Farm") farmExpOnly += amt;
   });
 
-  // 6) Partner & Farm Total (4 + 5) -> Soham, Jeet, Farm alag alag
+  // 6) Partner & Farm Total -> Strictly 4 + 5 (Buy + Expense for Soham, Jeet & Farm separately)
   let sohamExpTotal = sohamExpOnly + sohamBuyTotal;
   let jeetExpTotal = jeetExpOnly + jeetBuyTotal;
   let farmExpTotal = farmExpOnly + farmBuyTotal;
 
-  // Damage Totals & Partner Adjustments (Card 9)
+  // Damage Totals (9)
   const damageRows = expensesRegistry.filter(e => e.category === "Damage Received");
   const damageTotal = damageRows.reduce((sum, d) => sum + Number(d.amount || 0), 0);
 
   let sohamDmgTotal = 0, jeetDmgTotal = 0, farmDmgTotal = 0;
   damageRows.forEach(d => {
     const amt = Number(d.amount || 0);
-    if(d.payer === "Soham") {
-      sohamDmgTotal += amt;
-      sohamExpTotal += amt;
-    } else if(d.payer === "Jeet") {
-      jeetDmgTotal += amt;
-      jeetExpTotal += amt;
-    } else if(d.payer === "Farm") {
-      farmDmgTotal += amt;
-      farmExpTotal += amt;
-    }
+    if(d.payer === "Soham") sohamDmgTotal += amt;
+    else if(d.payer === "Jeet") jeetDmgTotal += amt;
+    else if(d.payer === "Farm") farmDmgTotal += amt;
   });
 
   // 10) Soham & Jeet Net Expenses = (6 - 9)
   let sohamNetExp = sohamExpTotal - sohamDmgTotal;
   let jeetNetExp = jeetExpTotal - jeetDmgTotal;
 
-  // 7) Farm Available Balance: 1 + 2 + 3 + 9 (9 me sirf farm ka data: farmDmgTotal) - 6 (6 me sirf farm ka data: farmExpTotal)
+  // 7) Farm Available Balance: 1 + 2 + 3 + 9 (farm data) - 6 (farm data)
   const farmAvailableBalance = (orderTotal + farmBookingTotal + sellTotal + farmDmgTotal) - farmExpTotal;
 
   // 8) Unified Net Profit: 1 + 2 + 3 - 4 - 5
@@ -1683,7 +1676,7 @@ function computeFinancialLedgerStatements() {
   if(document.getElementById("ovJeetExpOnly")) document.getElementById("ovJeetExpOnly").textContent = "Rs " + jeetExpOnly.toFixed(2);
   if(document.getElementById("ovFarmExpOnly")) document.getElementById("ovFarmExpOnly").textContent = "Rs " + farmExpOnly.toFixed(2);
   
-  // 6) Partner & Farm Total (4 + 5) - Soham, Jeet, Farm Separated
+  // 6) Partner & Farm Total (Strictly 4 + 5) - Soham, Jeet, Farm Separated
   if(document.getElementById("ovSohamTotal")) document.getElementById("ovSohamTotal").textContent = "Rs " + sohamExpTotal.toFixed(2);
   if(document.getElementById("ovJeetTotal")) document.getElementById("ovJeetTotal").textContent = "Rs " + jeetExpTotal.toFixed(2);
   if(document.getElementById("ovFarmTotal")) document.getElementById("ovFarmTotal").textContent = "Rs " + farmExpTotal.toFixed(2);

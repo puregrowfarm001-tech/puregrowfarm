@@ -816,8 +816,9 @@ function populateAdminDashboardTables() {
   const directOfflineSales = salesRegistry.reduce((sum, s) => sum + Number(s.paidAmount !== undefined ? s.paidAmount : s.total || 0), 0);
   const approvedTotalRevenue = approvedOnlineRevenue + directOfflineSales;
   
-  // Pending Confirm Orders aur Orders Pending Delivery Counts
+  // 1. Pending Confirm Orders count (Jo abhi tak unverified hain)
   const pendingConfirmCount = validOrders.filter(o => o && o.status === 'Pending Verification').length;
+  // 2. Orders Pending Delivery count (Jab tak deliver nahi hota tab tak count me rahega)
   const pendingDeliveryCount = validOrders.filter(o => o && o.status === 'Approved' && o.trackingStage !== 'Delivered' && o.status !== 'Delivered').length;
   const refundPendingCount = validOrders.filter(o => o && o.status && o.status.startsWith('Cancelled') && o.refundStage !== 'Refund Credited').length;
 

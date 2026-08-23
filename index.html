@@ -637,17 +637,18 @@
           <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px;" id="adminLiveStockCardsContainer"></div>
         </div>
 
-        <div style="margin: 20px 0; display: flex; gap: 8px; flex-wrap: wrap;">
-          <button type="button" class="btn" id="btnSubTabDryStock" onclick="switchSubAccountingTab('subTabDryStock')">🌾 Daily Dry Mushroom Stock Page</button>
-          <button type="button" class="btn" id="btnSubTabExpense" onclick="switchSubAccountingTab('subTabExpense')">1. Expenses Page</button>
-          <button type="button" class="btn" id="btnSubTabSell" onclick="switchSubAccountingTab('subTabSell')">2. Sell Page</button>
-          <button type="button" class="btn" id="btnSubTabBuy" onclick="switchSubAccountingTab('subTabBuy')">3. Buy Page</button>
-          <button type="button" class="btn" id="btnSubTabDamage" onclick="switchSubAccountingTab('subTabDamage')">4. Damage Page</button>
+        <!-- Separated Navigation Buttons Bar for 5 Pages -->
+        <div class="sub-accounting-nav">
+          <button type="button" class="btn" id="btnSubTabDryStock" onclick="switchSubAccountingTab('subTabDryStock')">🌾 Daily Dry Mushroom Stock</button>
+          <button type="button" class="btn" id="btnSubTabExpense" onclick="switchSubAccountingTab('subTabExpense')">📝 1. Expenses Page</button>
+          <button type="button" class="btn" id="btnSubTabSell" onclick="switchSubAccountingTab('subTabSell')">💰 2. Sell Page</button>
+          <button type="button" class="btn" id="btnSubTabBuy" onclick="switchSubAccountingTab('subTabBuy')">🛒 3. Buy Page</button>
+          <button type="button" class="btn" id="btnSubTabDamage" onclick="switchSubAccountingTab('subTabDamage')">⚠️ 4. Damage Page</button>
         </div>
 
         <!-- Sub Tab 0: Daily Dry Mushroom Stock Manager -->
         <div id="subTabDryStock" class="sub-accounting-section" style="display:none;">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:10px;">
             <h4 style="margin:0;">🌾 Daily Dry Mushroom Production & Inward Stock Ledger</h4>
             <span style="font-size:14px; font-weight:bold; color:var(--accent); background:#f0fdf4; padding:6px 12px; border-radius:8px; border:1px solid #bbf7d0;">
               Total Dry Stock Inwarded: <span id="dailyDryTotalSum">0 kg</span>
@@ -679,7 +680,7 @@
           </div>
         </div>
 
-        <!-- Sub Tab 1: Expense Page (With Farm, Mushroom, Student & Farmer categories) -->
+        <!-- Sub Tab 1: Expense Page -->
         <div id="subTabExpense" class="sub-accounting-section" style="display:none;">
           <h4>1. Log Operational Outflow & Records</h4>
           <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap:16px;">
@@ -731,7 +732,7 @@
           </div>
         </div>
 
-        <!-- Sub Tab 2: Sell Page (With Received Payment, Notes, Edit & Delete) -->
+        <!-- Sub Tab 2: Sell Page -->
         <div id="subTabSell" class="sub-accounting-section" style="display:none;">
           <h4>2. Log Manual Wholesale Production Sale (Direct Offline Inflow)</h4>
           <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap:16px;">
@@ -761,7 +762,7 @@
                 <input type="number" id="saleRate" placeholder="Agreed Unit Spot Cost (Rs)" required>
                 <input type="number" id="saleDelivery" placeholder="Delivery Logistics Charge (Rs) [0 for Free]" value="0" min="0">
                 <input type="number" id="salePaidAmount" placeholder="Received Payment Amount (Rs) [Kitna Pesa Aaya]" required>
-                <input type="text" id="saleNotes" placeholder="Client Notes / Remarks (e.g. Received in cash, remaining balance)">
+                <input type="text" id="saleNotes" placeholder="Client Notes / Remarks">
                 <button type="submit">Log Operational Sales Inflow</button>
               </form>
             </div>
@@ -785,7 +786,7 @@
           </div>
         </div>
 
-        <!-- Sub Tab 3: Buy Page (With Payable vs Paid Amount, Notes, Edit & Delete) -->
+        <!-- Sub Tab 3: Buy Page -->
         <div id="subTabBuy" class="sub-accounting-section" style="display:none;">
           <h4>3. Log Raw Inventory Material Bulk Buy Outflow</h4>
           <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap:16px;">
@@ -811,7 +812,7 @@
                 <input type="number" step="0.01" id="purQty" placeholder="InwardLot Weight Volume Units" required>
                 <input type="number" id="purRate" placeholder="Purchase Valuation Rate (Rs)" required>
                 <input type="number" id="purPaidAmount" placeholder="Paid Amount (Rs) [Kitna Pesa Diya Hai]" required>
-                <input type="text" id="purNotes" placeholder="Vendor Notes / Batch Memo (e.g. 500 advance, balance on next week)">
+                <input type="text" id="purNotes" placeholder="Vendor Notes / Batch Memo">
                 <button type="submit">Execute Inventory Buy Inflow</button>
               </form>
             </div>
@@ -835,7 +836,7 @@
           </div>
         </div>
 
-        <!-- Sub Tab 4: Damage Page (With Notes, Edit & Delete) -->
+        <!-- Sub Tab 4: Damage Page -->
         <div id="subTabDamage" class="sub-accounting-section" style="display:none;">
           <h4>4. Log Damages Inward & Loss Factor Records</h4>
           <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap:16px;">

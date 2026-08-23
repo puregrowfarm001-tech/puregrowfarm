@@ -111,7 +111,6 @@ nav a:hover, nav a:focus-visible { color: var(--accent); background: #ffffff; }
 
 button:hover, .btn:hover { background: #246e33; }
 button:disabled { background: #98a2a8; cursor: not-allowed; }
-.nav-toggle { display: none; color: var(--dark); background: var(--soft); border: 1px solid var(--line); }
 
 .auth-container {
   max-width: 420px;
@@ -175,7 +174,6 @@ button:disabled { background: #98a2a8; cursor: not-allowed; }
   border-radius: 6px; padding: 6px 14px;
   cursor: pointer; font-weight: bold;
 }
-.grid-data-layout { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; margin-top: 12px; }
 .data-item-card { background: #f9fbf9; border: 1px solid var(--line); border-radius: 10px; padding: 14px; margin-bottom: 10px; }
 
 .hero {
@@ -188,8 +186,8 @@ button:disabled { background: #98a2a8; cursor: not-allowed; }
 
 .hero h1 { margin: 0 0 10px; font-size: 34px; line-height: 1.2; }
 .hero p { margin: 0 0 18px; }
-.cards, .review-list { display: flex; flex-wrap: wrap; gap: 12px; }
-.card, .product, .cart-box, .review-card, .fast-facts {
+.cards { display: flex; flex-wrap: wrap; gap: 12px; }
+.card, .product, .cart-box {
   background: var(--card);
   border-radius: 12px;
   box-shadow: 0 6px 22px rgba(12, 18, 20, 0.06);
@@ -198,7 +196,6 @@ button:disabled { background: #98a2a8; cursor: not-allowed; }
 .card { flex: 1; min-width: 200px; padding: 12px; }
 .small-title { font-size: 13px; }
 .card-title { font-weight: 800; font-size: 18px; }
-.hero-links { display: grid; gap: 8px; margin-top: 18px; }
 
 .hero-photo {
   padding: 18px;
@@ -261,17 +258,9 @@ button:disabled { background: #98a2a8; cursor: not-allowed; }
 .bill-row { padding: 7px 0; border-top: 1px solid var(--line); }
 .total { color: var(--accent); font-size: 18px; font-weight: bold; }
 .payment-help { display: none; padding: 10px 12px; background: #eef7ee; border-radius: 10px; color: #246e33; font-weight: 700; margin-bottom: 10px; }
-.payment-help.show { display: block; }
 
 .gallery { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
 .gallery img { width: 100%; height: 300px; object-fit: cover; border-radius: 8px; }
-
-.reviews, .contact {
-  padding: 20px;
-  margin-top: 18px;
-  border-radius: 12px;
-  background: linear-gradient(180deg, #fff, #f7fff7);
-}
 
 form { display: grid; gap: 10px; }
 input, textarea, select {
@@ -282,31 +271,16 @@ input, textarea, select {
   font-size: 15px;
 }
 
-footer { padding: 28px 0; color: var(--muted); font-size: 14px; text-align: center; }
-
 dialog { width: min(760px, calc(100% - 30px)); border: 0; border-radius: 12px; padding: 20px; }
 dialog::backdrop { background: rgba(0, 0, 0, 0.5); }
 .dialog-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 pre { overflow: auto; max-height: 330px; padding: 12px; color: #eef8ef; background: #101711; border-radius: 8px; white-space: pre-wrap; }
-
-.invoice-logo-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px;
-  margin-bottom: 12px;
-  border: 1px solid var(--line);
-  border-radius: 12px;
-  background: #f8fbf7;
-}
-.invoice-logo-row img { width: 74px; height: 58px; object-fit: contain; border-radius: 10px; }
 
 .visit-section { padding: 20px; margin-top: 18px; border-radius: 12px; background: linear-gradient(180deg,#fff,#f7fff7); }
 .visit-tabs { display: flex; gap: 10px; margin: 12px 0 18px; }
 .visit-tabs button { flex: 1; }
 .visit-form { display: none; padding: 16px; background: #fff; border-radius: 12px; box-shadow: 0 6px 22px rgba(12,18,20,0.06); }
 .visit-form.active { display: grid; }
-.payment-box, .thankyou { padding: 15px; background: #eef7ee; border-radius: 10px; text-align: center; margin-bottom: 12px; }
 .thankyou { display: none; margin-top: 16px; }
 .visit-actions { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
 
@@ -331,61 +305,51 @@ th { background: #f8faf8; font-weight: 700; }
 .fin-val { font-size: 24px; font-weight: 800; color: var(--accent); margin-top: 6px; }
 .partner-cash-card { background: var(--soft); padding: 10px; border-radius: 8px; font-weight: bold; font-size: 14px; margin-top: 8px; }
 
-.cert-preview-area { display: flex; justify-content: center; margin-top: 20px; background: #f0f0f0; padding: 20px; border-radius: 8px; }
-.certificate-frame { width: 100%; max-width: 650px; background: #fff; border: 12px double #2b8a3e; padding: 30px; position: relative; text-align: center; color: #222; }
-.cert-title { font-size: 32px; font-weight: bold; color: #1e4620; }
-.cert-name { font-size: 24px; font-weight: bold; color: #2b8a3e; border-bottom: 2px solid #ddd; display: inline-block; padding: 0 30px; margin: 8px 0; }
-.cert-footer-row { display: flex; justify-content: space-between; align-items: center; margin-top: 40px; font-size: 13px; }
-.cert-sig-line { border-top: 1px solid #777; width: 140px; margin: 6px auto 0; }
+/* Sub-accounting Separate Navigation Buttons Bar Styling */
+.sub-accounting-nav {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin: 20px 0 16px 0;
+  padding: 12px;
+  background: #f8fafc;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+
+.sub-accounting-nav button {
+  flex: 1;
+  min-width: 170px;
+  background: #ffffff;
+  color: #1e293b;
+  border: 1px solid var(--line);
+  font-weight: 700;
+  font-size: 13.5px;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+}
+
+.sub-accounting-nav button:hover {
+  background: var(--soft);
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.sub-accounting-nav button.active-subtab {
+  background: var(--accent) !important;
+  color: #fff !important;
+  border-color: var(--accent) !important;
+}
+
+.sub-accounting-section {
+  background: #fff;
+  padding: 20px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  margin-top: 10px;
+}
 
 @media (max-width: 920px) {
   .hero, .shop-layout { grid-template-columns: 1fr; }
   .gallery { grid-template-columns: repeat(2, 1fr); }
-}
-
-/* Fixed 1-Page PDF Download Engine */
-@media print {
-  /* Hide every single component layout completely to prevent extra blank pages */
-  body * {
-    display: none !important;
-  }
-  
-  /* ONLY display the print frame container */
-  #certificatePrintPrintoutFrame, 
-  #certificatePrintPrintoutFrame * {
-    display: block !important;
-  }
-  
-  /* Flex elements layout correction inside print box */
-  #certificatePrintPrintoutFrame div {
-    display: block !important;
-  }
-  #certificatePrintPrintoutFrame .cert-header-top,
-  #certificatePrintPrintoutFrame style + div + div + div + div {
-    display: flex !important; 
-  }
-
-  /* Force absolute single page alignment */
-  #certificatePrintPrintoutFrame {
-    position: absolute !important;
-    left: 0 !important;
-    top: 0 !important;
-    width: 100% !important;
-    margin: 0 !important;
-    padding: 0 !important;
-  }
-  
-  .certificate-frame {
-    page-break-inside: avoid !important;
-    page-break-after: avoid !important;
-    page-break-before: avoid !important;
-    margin: 0 auto !important;
-    border: 8px solid #1e4620 !important;
-    background: #ffffff !important;
-  }
-
-  @page {
-    size: A4 portrait;
-    margin: 10mm;
-  }
 }

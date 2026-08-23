@@ -497,16 +497,35 @@
       </div>
 
       <div class="erp-nav" id="erpNavbarBlock">
-        <button class="btn active-tab" id="tabNavOrders" onclick="switchErpTab('erpOrdersTab', 'tabNavOrders')">Orders Manager Page</button>
+        <button class="btn active-tab" id="tabNavAccounting" onclick="switchErpTab('erpAccountingTab', 'tabNavAccounting')">Farm Core Financial & Stock Page</button>
+        <button class="btn" id="tabNavOrders" onclick="switchErpTab('erpOrdersTab', 'tabNavOrders')">Orders Manager Page</button>
         <button class="btn" id="tabNavBookings" onclick="switchErpTab('erpBookingsTab', 'tabNavBookings')">Farm Training Bookings Page</button>
-        <button class="btn" id="tabNavAccounting" onclick="switchErpTab('erpAccountingTab', 'tabNavAccounting')">Farm Core Financial & Stock Page</button>
         <button class="btn" id="tabNavUsers" onclick="switchErpTab('erpUsersTab', 'tabNavUsers')">Registered Accounts Ledger</button>
-        <button class="btn" id="tabNavDryStockPage" onclick="switchErpTab('erpDryStockTab', 'tabNavDryStockPage')">🌾 Daily Dry Stock & Production</button>
       </div>
 
       <!-- ERP Segment 1: Orders -->
-      <div id="erpOrdersTab" class="erp-section active">
+      <div id="erpOrdersTab" class="erp-section">
         <h3>E-Commerce Customer Orders Grid Ledger & Shipment Management</h3>
+        
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; margin-bottom: 18px;">
+          <div style="background: #eff6ff; border: 1px solid #bfdbfe; padding: 12px; border-radius: 10px;">
+            <div style="font-size: 12px; color: #1e40af; font-weight: bold;">📦 Total Orders Received</div>
+            <div id="adminTotalOrdersCount" style="font-size: 22px; font-weight: 800; color: #1d4ed8; margin-top: 4px;">0</div>
+          </div>
+          <div style="background: #f0fdf4; border: 1px solid #bbf7d0; padding: 12px; border-radius: 10px;">
+            <div style="font-size: 12px; color: #166534; font-weight: bold;">💰 Total Farm Revenue (Approved)</div>
+            <div id="adminApprovedRevenueValue" style="font-size: 22px; font-weight: 800; color: #15803d; margin-top: 4px;">Rs 0.00</div>
+          </div>
+          <div style="background: #fffbeb; border: 1px solid #fde68a; padding: 12px; border-radius: 10px;">
+            <div style="font-size: 12px; color: #92400e; font-weight: bold;">⏳ Orders Pending Delivery</div>
+            <div id="adminPendingOrdersCount" style="font-size: 22px; font-weight: 800; color: #d97706; margin-top: 4px;">0</div>
+          </div>
+          <div style="background: #fff7ed; border: 1px solid #fed7aa; padding: 12px; border-radius: 10px;">
+            <div style="font-size: 12px; color: #9a3412; font-weight: bold;">🔄 Refund Pending Orders</div>
+            <div id="adminRefundPendingCount" style="font-size: 22px; font-weight: 800; color: #ea580c; margin-top: 4px;">0</div>
+          </div>
+        </div>
+
         <div class="table-responsive">
           <table>
             <thead>
@@ -531,6 +550,30 @@
       <!-- ERP Segment 2: Course Bookings -->
       <div id="erpBookingsTab" class="erp-section">
         <h3>Farm Training Workshop & Student Internship Bookings Ledger</h3>
+        
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 18px;">
+          <div style="background: #e0f2fe; border: 1px solid #bae6fd; padding: 12px; border-radius: 10px;">
+            <div style="font-size: 12px; color: #0369a1; font-weight: bold;">🎓 Total Students</div>
+            <div id="adminTotalStudentsCount" style="font-size: 22px; font-weight: 800; color: #0284c7; margin-top: 4px;">0</div>
+          </div>
+          <div style="background: #fef3c7; border: 1px solid #fde68a; padding: 12px; border-radius: 10px;">
+            <div style="font-size: 12px; color: #92400e; font-weight: bold;">👨‍🌾 Total Farmers</div>
+            <div id="adminTotalFarmersCount" style="font-size: 22px; font-weight: 800; color: #b45309; margin-top: 4px;">0</div>
+          </div>
+          <div style="background: #f0fdf4; border: 1px solid #bbf7d0; padding: 12px; border-radius: 10px;">
+            <div style="font-size: 12px; color: #166534; font-weight: bold;">💵 Farm Booking Total Revenue</div>
+            <div id="adminTotalBookingsFee" style="font-size: 22px; font-weight: 800; color: #15803d; margin-top: 4px;">Rs 0.00</div>
+          </div>
+          <div style="background: #fffbeb; border: 1px solid #fde68a; padding: 12px; border-radius: 10px;">
+            <div style="font-size: 12px; color: #92400e; font-weight: bold;">⏳ Farm Bookings Pending</div>
+            <div id="adminBookingsPendingCount" style="font-size: 22px; font-weight: 800; color: #d97706; margin-top: 4px;">0</div>
+          </div>
+          <div style="background: #fff7ed; border: 1px solid #fed7aa; padding: 12px; border-radius: 10px;">
+            <div style="font-size: 12px; color: #9a3412; font-weight: bold;">📜 Certificates Pending</div>
+            <div id="adminCertificatesPendingCount" style="font-size: 22px; font-weight: 800; color: #ea580c; margin-top: 4px;">0</div>
+          </div>
+        </div>
+
         <div class="table-responsive">
           <table>
             <thead>
@@ -553,7 +596,7 @@
       </div>
 
       <!-- ERP Segment 3: Financial Accounting Desk View Screen -->
-      <div id="erpAccountingTab" class="erp-section">
+      <div id="erpAccountingTab" class="erp-section active">
         <h3>Multi-Axis Complete Production Ledger Statements Dashboard</h3>
         
         <div class="fin-grid">
@@ -594,11 +637,46 @@
           <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px;" id="adminLiveStockCardsContainer"></div>
         </div>
 
-        <div class="sub-accounting-nav">
-          <button type="button" class="btn" id="btnSubTabExpense" onclick="switchSubAccountingTab('subTabExpense')">📝 1. Expenses Page</button>
-          <button type="button" class="btn" id="btnSubTabSell" onclick="switchSubAccountingTab('subTabSell')">💰 2. Sell Page</button>
-          <button type="button" class="btn" id="btnSubTabBuy" onclick="switchSubAccountingTab('subTabBuy')">🛒 3. Buy Page</button>
-          <button type="button" class="btn" id="btnSubTabDamage" onclick="switchSubAccountingTab('subTabDamage')">⚠️ 4. Damage Page</button>
+        <div style="margin: 20px 0; display: flex; gap: 8px; flex-wrap: wrap;">
+          <button type="button" class="btn" id="btnSubTabDryStock" onclick="switchSubAccountingTab('subTabDryStock')">🌾 Daily Dry Mushroom Stock Page</button>
+          <button type="button" class="btn" id="btnSubTabExpense" onclick="switchSubAccountingTab('subTabExpense')">1. Expenses Page</button>
+          <button type="button" class="btn" id="btnSubTabSell" onclick="switchSubAccountingTab('subTabSell')">2. Sell Page</button>
+          <button type="button" class="btn" id="btnSubTabBuy" onclick="switchSubAccountingTab('subTabBuy')">3. Buy Page</button>
+          <button type="button" class="btn" id="btnSubTabDamage" onclick="switchSubAccountingTab('subTabDamage')">4. Damage Page</button>
+        </div>
+
+        <!-- Sub Tab 0: Daily Dry Mushroom Stock Manager -->
+        <div id="subTabDryStock" class="sub-accounting-section" style="display:none;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+            <h4 style="margin:0;">🌾 Daily Dry Mushroom Production & Inward Stock Ledger</h4>
+            <span style="font-size:14px; font-weight:bold; color:var(--accent); background:#f0fdf4; padding:6px 12px; border-radius:8px; border:1px solid #bbf7d0;">
+              Total Dry Stock Inwarded: <span id="dailyDryTotalSum">0 kg</span>
+            </span>
+          </div>
+
+          <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap:16px;">
+            <div class="db-card">
+              <form onsubmit="saveDailyDryStockEntry(event)">
+                <label>Select Production Date: <input type="date" id="dryLogDate" required></label>
+                <input type="number" step="0.01" id="dryLogQty" placeholder="Weight of Dry Mushroom (kg)" required>
+                <input type="text" id="dryLogNotes" placeholder="Context / Batch Description (e.g. Polyhouse 1 Dry Yield)" required>
+                <button type="submit" style="background:#ca8a04;">+ Add Daily Dry Stock</button>
+              </form>
+            </div>
+            <div class="table-responsive">
+              <table class="sub-table">
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Batch Context</th>
+                    <th>Dry Weight (kg)</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="dailyDryStockTableBody"></tbody>
+              </table>
+            </div>
+          </div>
         </div>
 
         <!-- Sub Tab 1: Expense Page -->
@@ -813,41 +891,6 @@
             </thead>
             <tbody id="adminUsersTableBody"></tbody>
           </table>
-        </div>
-      </div>
-
-      <!-- ERP Segment 5: Dedicated Daily Dry Stock & Production Page -->
-      <div id="erpDryStockTab" class="erp-section">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:10px;">
-          <h3 style="margin:0;">🌾 Daily Dry Mushroom Production & Inward Stock Ledger</h3>
-          <span style="font-size:15px; font-weight:bold; color:var(--accent); background:#f0fdf4; padding:8px 14px; border-radius:8px; border:1px solid #bbf7d0;">
-            Total Dry Stock Inwarded: <span id="dailyDryTotalSum">0 kg</span>
-          </span>
-        </div>
-
-        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap:18px;">
-          <div class="db-card" style="background:#f8fafc; padding:16px; border-radius:10px; border:1px solid var(--line);">
-            <h4 style="margin-top:0; color:var(--accent);">➕ Add Daily Dry Mushroom Inward</h4>
-            <form onsubmit="saveDailyDryStockEntry(event)">
-              <label>Select Production Date: <input type="date" id="dryLogDate" required></label>
-              <input type="number" step="0.01" id="dryLogQty" placeholder="Weight of Dry Mushroom (kg)" required>
-              <input type="text" id="dryLogNotes" placeholder="Context / Batch Description (e.g. Polyhouse 1 Dry Yield)" required>
-              <button type="submit" style="background:#ca8a04; margin-top:8px;">+ Save Dry Stock Entry</button>
-            </form>
-          </div>
-          <div class="table-responsive">
-            <table class="sub-table">
-              <thead>
-                <tr>
-                  <th>Date</th>
-                  <th>Batch Context</th>
-                  <th>Dry Weight (kg)</th>
-                  <th>Action</th>
-                </tr>
-              </thead>
-              <tbody id="dailyDryStockTableBody"></tbody>
-            </table>
-          </div>
         </div>
       </div>
     </section>

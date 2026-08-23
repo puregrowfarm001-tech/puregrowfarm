@@ -45,6 +45,9 @@ let notificationsRegistry = getCleanData('pgf_notifications');
 
 let currentUser = JSON.parse(localStorage.getItem('pgf_session')) || null;
 
+// =========================================================
+// HELPER: PRODUCT IMAGE MAPPER & 1-CLICK CLIPBOARD COPY
+// =========================================================
 function getOrderProductImage(orderProductsText) {
   const text = (orderProductsText || "").toLowerCase();
   if (text.includes("khakhra")) return "mushroom/Methi khakhra 2.png";
@@ -64,6 +67,9 @@ function copyToClipboard(text) {
   });
 }
 
+// =========================================================
+// SEPARATE MODAL CONTROLLERS (ORDERS & BOOKINGS)
+// =========================================================
 function openOrdersModal() {
   document.getElementById("userOrdersModal").classList.add("active-modal");
   loadUserPanelData();
@@ -86,6 +92,9 @@ function closeModalOutside(e, modalId) {
   }
 }
 
+// =========================================================
+// PASSWORD STRENGTH CHECKER & EYE TOGGLE
+// =========================================================
 function togglePasswordVisibility(inputId, btn) {
   const input = document.getElementById(inputId);
   if (!input) return;
@@ -118,10 +127,13 @@ function checkPasswordStrength(pwd) {
     feedback.textContent = "✅ Strong password!";
   } else {
     feedback.style.color = "#ef4444";
-    feedback.textContent = "❌ Weak password!";
+    feedback.textContent = "❌ Weak password! Ensure 8+ chars, 1 uppercase (A-Z), 1 number (0-9), and 1 symbol (@$!%*?&).";
   }
 }
 
+// =========================================================
+// NOTIFICATIONS ENGINE WITH AUTO-READ DISMISS
+// =========================================================
 function pushNotification(targetRecipient, title, message, targetAction = 'general') {
   const newNotif = {
     id: "NOTIF-" + Date.now(),
@@ -173,8 +185,11 @@ function handleNotificationClick(notifId) {
     else if (notif.action === 'booking' || notif.action === 'certificate') switchErpTab('erpBookingsTab', 'tabNavBookings');
     else switchErpTab('erpOrdersTab', 'tabNavOrders');
   } else {
-    if (notif.action === 'certificate' || notif.action === 'booking') openBookingsModal();
-    else openOrdersModal();
+    if (notif.action === 'certificate' || notif.action === 'booking') {
+      openBookingsModal();
+    } else {
+      openOrdersModal();
+    }
   }
 }
 
@@ -210,6 +225,7 @@ function renderNotificationBadge() {
           <span style="font-size:10px; color:#64748b;">${n.time}</span>
         </div>
         <div style="color:#475569; line-height:1.3;">${n.message}</div>
+        <div style="font-size:10px; color:var(--accent); margin-top:4px; font-weight:bold;">👉 Click to open details</div>
       </div>
     `).join("");
   }
@@ -236,10 +252,23 @@ function clearAllNotifications() {
   renderNotificationBadge();
 }
 
+document.addEventListener('click', function(e) {
+  const wrapper = document.getElementById("notificationBellWrapper");
+  const panel = document.getElementById("notificationDropdownPanel");
+  if (wrapper && panel && !wrapper.contains(e.target)) {
+    if (panel.style.display === "block") {
+      markAllNotificationsAsRead();
+    }
+    panel.style.display = "none";
+  }
+});
+
 function scrollToCartSection() {
   const target = document.getElementById("cartBasketSidebar");
   if (target) {
     target.scrollIntoView({ behavior: 'smooth' });
+    target.style.boxShadow = "0 0 15px rgba(22, 163, 74, 0.5)";
+    setTimeout(() => { target.style.boxShadow = ""; }, 1500);
   }
 }
 
@@ -274,7 +303,7 @@ function triggerAdminView() {
   renderNotificationBadge();
   renderAdminLiveStockSummary();
   renderDailyDryStockTable();
-  switchErpTab('erpOrdersTab', 'tabNavOrders');
+  switchSubAccountingTab('subTabDryStock');
 }
 
 function exitAdminPanel() { handleLogout(); }
@@ -355,7 +384,7 @@ function handleRegister(e) {
   const password = document.getElementById("regPassword").value;
 
   if (!isPasswordStrong(password)) {
-    alert("⚠️ Kripya Strong Password dalein!");
+    alert("⚠️ Kripya Strong Password dalein!\n\nRules:\n• Minimum 8 characters\n• Kam se kam 1 Capital letter (A-Z)\n• Kam se kam 1 Number (0-9)\n• Kam se kam 1 Special character (@$!%*?&)");
     return;
   }
 
@@ -365,7 +394,10 @@ function handleRegister(e) {
     return;
   }
 
-  const newUser = { name, phone, email, password };
+  const now = new Date();
+  const currentFormattedDateTime = now.toLocaleDateString('en-IN') + " " + now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+
+  const newUser = { name, phone, email, password, registeredOn: currentFormattedDateTime };
   usersDatabase.push(newUser);
   localStorage.setItem('pgf_user_db', JSON.stringify(usersDatabase));
 
@@ -389,55 +421,279 @@ function handleLogout() {
   checkUserSession();
 }
 
+function toggleOrderDetailsView(orderId) {
+  const panel = document.getElementById(`order-details-${orderId}`);
+  const arrow = document.getElementById(`arrow-${orderId}`);
+  if (!panel) return;
+  if (panel.style.display === "none" || panel.style.display === "") {
+    panel.style.display = "block";
+    if (arrow) arrow.textContent = "▲";
+  } else {
+    panel.style.display = "none";
+    if (arrow) arrow.textContent = "▼";
+  }
+}
+
 function loadUserPanelData() {
   if (!currentUser) return;
   const oList = document.getElementById("userOrdersList");
   const bList = document.getElementById("userBookingsList");
+  const historyCertWrapper = document.getElementById("historyCertificateWrapper");
+  const historyCertContainer = document.getElementById("historyCertificatesContainer");
   
   const myOrders = orderRegistry.filter(o => o && o.email === currentUser.email);
   const myBookings = bookingsRegistry.filter(b => b && b.email === currentUser.email);
 
   if (oList) {
-    oList.innerHTML = myOrders.length ? myOrders.map(o => `
-      <div style="border: 1px solid #e2e8f0; border-radius: 12px; margin-bottom: 14px; background:#fff; padding:12px;">
-        <strong>Ref: ${o.orderId}</strong> - ₹${o.total} [${o.status || 'Pending'}]
-      </div>
-    `).join("") : "No active orders.";
+    oList.innerHTML = myOrders.length ? myOrders.map(o => {
+      const isDelivered = o.status === 'Delivered' || o.trackingStage === 'Delivered';
+      const isApproved = o.status === 'Approved' || isDelivered;
+      const isCancelled = o.status && o.status.startsWith('Cancelled');
+      const isRejected = o.status && o.status.startsWith('Rejected');
+      const isPending = o.status === 'Pending Verification';
+
+      const stage = o.trackingStage || (isDelivered ? 'Delivered' : (isApproved ? 'Packed' : 'Placed'));
+      const orderPlacedDate = o.dateLogged || new Date().toLocaleDateString('en-IN');
+      const courier = o.courierName || "Ekart Logistics";
+      const awb = o.trackingNumber || ("FMPC" + Math.floor(1000000000 + Math.random() * 9000000000));
+      const loc = o.currentLocation || "Farm Facility";
+      const arrivalDeliveryDate = o.deliveryDays || "2-4 Business Days";
+      const refundCompletedDate = o.refundCreditedDate || orderPlacedDate;
+      const prodImg = getOrderProductImage(o.products);
+
+      const stageMap = { 'Placed': 1, 'Packed': 2, 'Shipped': 3, 'OutForDelivery': 4, 'Delivered': 5 };
+      const curLevel = stageMap[stage] || (isDelivered ? 5 : (isApproved ? 2 : 1));
+
+      let statusDotColor = "#16a34a";
+      let statusText = "Delivered on " + (arrivalDeliveryDate !== "2-4 Business Days" ? arrivalDeliveryDate : orderPlacedDate);
+      let subtitleText = `Delivered to your address via ${courier}`;
+
+      if (isPending) {
+        statusDotColor = "#eab308";
+        statusText = "Verification Pending";
+        subtitleText = "Admin is reviewing payment";
+      } else if (isCancelled) {
+        if (o.refundStage === 'Refund Credited') {
+          statusDotColor = "#16a34a";
+          statusText = "Refund Completed " + refundCompletedDate;
+          subtitleText = `Refund of ₹${o.total} credited to UPI`;
+        } else {
+          statusDotColor = "#ea580c";
+          statusText = "Cancelled / " + (o.refundStage || 'Refund Initiated');
+          subtitleText = "Your order was cancelled by Farm Admin.";
+        }
+      } else if (isRejected) {
+        statusDotColor = "#ef4444";
+        statusText = "Order Rejected";
+        subtitleText = "Payment Not Verified / Invalid UTR";
+      } else {
+        if (stage === 'Placed') { statusText = "Order Placed " + orderPlacedDate; subtitleText = "Your order has been placed."; }
+        else if (stage === 'Packed') { statusText = "Seller Packed & Ready"; subtitleText = `Dispatched with ${courier}`; }
+        else if (stage === 'Shipped') { statusText = "Shipped via " + courier; subtitleText = `AWB: ${awb}`; }
+        else if (stage === 'OutForDelivery') { statusText = "Out For Delivery"; subtitleText = `Arriving Today via ${courier}`; }
+        else if (stage === 'Delivered') { statusText = "Delivered " + (arrivalDeliveryDate !== "2-4 Business Days" ? arrivalDeliveryDate : orderPlacedDate); subtitleText = "Delivered safely to your doorstep"; }
+      }
+
+      return `
+        <div style="border: 1px solid #e2e8f0; border-radius: 12px; margin-bottom: 14px; background:#fff; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,0.04);">
+          <div onclick="toggleOrderDetailsView('${o.orderId}')" style="display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; cursor: pointer; gap: 10px; background: #ffffff; overflow-x: auto; -webkit-overflow-scrolling: touch;">
+            <div style="display: flex; align-items: center; gap: 12px; min-width: 180px; flex: 1;">
+              <img src="${prodImg}" alt="Product Photo" style="width: 58px; height: 58px; object-fit: cover; border-radius: 8px; border: 1px solid #e2e8f0; flex-shrink: 0; background:#f8fafc;">
+              <div>
+                <strong style="font-size: 13.5px; color: #1e293b; display: block; line-height: 1.3;">${o.products}</strong>
+                <span style="font-size: 11.5px; color: #64748b; margin-top: 2px; display: block;">
+                  Ref: ${o.orderId}<br>Total: <strong style="color: #0f172a;">₹${o.total}</strong>
+                </span>
+              </div>
+            </div>
+
+            <div style="text-align: right; min-width: 160px; flex-shrink: 0;">
+              <div style="display: flex; align-items: center; justify-content: flex-end; gap: 5px;">
+                <span style="width: 8px; height: 8px; border-radius: 50%; background: ${statusDotColor}; display: inline-block; flex-shrink: 0;"></span>
+                <strong style="font-size: 12.5px; color: #1e293b; white-space: nowrap;">${statusText}</strong>
+              </div>
+              <div style="font-size: 11px; color: #64748b; margin-top: 2px; line-height: 1.2;">${subtitleText}</div>
+            </div>
+
+            <span id="arrow-${o.orderId}" style="font-size: 11px; color: #94a3b8; margin-left: 4px; flex-shrink: 0;">▼</span>
+          </div>
+
+          <div id="order-details-${o.orderId}" style="display: none; padding: 14px 16px; background: #f8fafc; border-top: 1px solid #f1f5f9;">
+            <div style="background:#fff; padding: 12px; border-radius: 8px; border: 1px solid #e2e8f0; font-size:13px; margin-bottom: 12px; line-height:1.6;">
+              <div><strong>📅 Order Placed Date:</strong> <span style="color:#0284c7; font-weight:bold;">${orderPlacedDate}</span></div>
+              <div><strong>Shipping Address:</strong> <span style="color:#475569;">${o.address || 'N/A'}</span></div>
+              <div><strong>Contact Number:</strong> <span style="color:#475569;">${o.phone || 'N/A'}</span></div>
+              <div style="margin-top:4px;"><strong>Payment Mode:</strong> <span class="badge" style="background:#eef2ff; color:#3730a3;">${o.paymentMode || 'UPI'}</span> | <strong>Txn ID:</strong> <code>${o.txnId || 'N/A'}</code> | <strong>Your UPI:</strong> <code style="color:var(--accent); font-weight:bold;">${o.userUpiId || 'N/A'}</code></div>
+              
+              ${isApproved && !isCancelled && !isRejected ? `
+                <div style="margin-top:8px; background:#f0fdf4; padding:10px 12px; border-radius:6px; border:1px solid #bbf7d0; color:#15803d; font-size:13px; line-height:1.5;">
+                  <strong>🚚 Target Delivery Date (Kab Pahuchega):</strong> <span style="font-weight:800; font-size:14px; text-decoration:underline;">${arrivalDeliveryDate}</span><br>
+                  <strong>📦 Dispatched Courier:</strong> <span>${courier}</span> (AWB Tracking Code: <code>${awb}</code>)
+                </div>
+              ` : ''}
+            </div>
+
+            ${isPending ? `
+              <div style="background: #fffbeb; border: 1px solid #fcd34d; border-radius: 8px; padding: 10px; font-size: 13px; color: #92400e;">
+                ⏳ <strong>Status: Verification Pending</strong><br>
+                <span style="font-size:12px;">Admin jaise hi payment verify karke approve karega, live delivery date aur courier tracking activate ho jayegi.</span>
+              </div>
+            ` : ''}
+
+            ${(isApproved || stage === 'Placed') && !isCancelled && !isRejected ? `
+              <div style="background: #ffffff; padding: 16px; border-radius: 8px; border: 1px solid #e2e8f0;">
+                <div class="vertical-timeline">
+                  <div class="timeline-step ${curLevel >= 1 ? 'completed' : ''}">
+                    <div class="timeline-dot"></div>
+                    <div class="timeline-title">Order Confirmed <span>${orderPlacedDate}</span></div>
+                    <div class="timeline-desc">Your Order was placed on ${orderPlacedDate}.</div>
+                  </div>
+
+                  <div class="timeline-step ${curLevel >= 2 ? 'completed' : ''}">
+                    <div class="timeline-dot"></div>
+                    <div class="timeline-title">Seller Processed & Packed</div>
+                    <div class="timeline-desc">Seller has packed your order at Farm Hub.</div>
+                    <div class="timeline-desc" style="color:#0284c7; font-size:12px;">Dispatched with delivery partner: <strong>${courier}</strong></div>
+                  </div>
+
+                  <div class="timeline-step ${curLevel >= 3 ? 'completed' : ''}">
+                    <div class="timeline-dot"></div>
+                    <div class="timeline-title">Shipped</div>
+                    <div class="timeline-desc"><strong>${courier} - ${awb}</strong></div>
+                    <div class="timeline-desc">Your item has been shipped. (📍 Hub: ${loc})</div>
+                  </div>
+
+                  <div class="timeline-step ${curLevel >= 4 ? 'completed' : ''}">
+                    <div class="timeline-dot"></div>
+                    <div class="timeline-title">Out For Delivery</div>
+                    <div class="timeline-desc">Your item is out for delivery with ${courier} executive.</div>
+                  </div>
+
+                  <div class="timeline-step ${curLevel >= 5 ? 'completed' : ''}">
+                    <div class="timeline-dot"></div>
+                    <div class="timeline-title">Delivered <span>(Arriving Date: ${arrivalDeliveryDate})</span></div>
+                    <div class="timeline-desc">Item safely delivered to your doorstep.</div>
+                  </div>
+                </div>
+              </div>
+            ` : ''}
+
+            ${isCancelled ? `
+              <div style="background: #ffffff; padding: 16px; border-radius: 8px; border: 1px solid ${o.refundStage === 'Refund Credited' ? '#86efac' : '#fed7aa'};">
+                <div style="background:${o.refundStage === 'Refund Credited' ? '#f0fdf4' : '#fff7ed'}; padding:12px; border-radius:8px; border-left:4px solid ${o.refundStage === 'Refund Credited' ? '#16a34a' : '#ea580c'}; margin-bottom:12px;">
+                  <strong style="color:${o.refundStage === 'Refund Credited' ? '#15803d' : '#c2410c'}; font-size:14px;">
+                    ${o.refundStage === 'Refund Credited' ? `✅ Refund Completed on ${refundCompletedDate}` : `Refund Status: ${o.refundStage || 'Refund Initiated'}`}
+                  </strong>
+                  <p style="margin: 4px 0 0 0; font-size: 12.5px; color:${o.refundStage === 'Refund Credited' ? '#166534' : '#7c2d12'};">
+                    ${o.refundStage === 'Refund Credited' 
+                      ? `• Refund of <strong>₹${o.total}</strong> has been transferred successfully on <strong>${refundCompletedDate}</strong> to your UPI ID: <strong>${o.userUpiId || 'Linked Bank'}</strong>.` 
+                      : `• Refund of ₹${o.total} for your order will be credited directly to your UPI ID: <strong>${o.userUpiId || 'Registered Account'}</strong>.`}
+                  </p>
+                </div>
+
+                <div class="vertical-timeline">
+                  <div class="timeline-step completed cancelled-line">
+                    <div class="timeline-dot"></div>
+                    <div class="timeline-title">Order Placed <span>${orderPlacedDate}</span></div>
+                    <div class="timeline-desc">Your Order was placed on ${orderPlacedDate}.</div>
+                  </div>
+                  
+                  <div class="timeline-step ${o.refundStage === 'Refund Credited' ? 'completed' : 'cancelled'}">
+                    <div class="timeline-dot" style="${o.refundStage === 'Refund Credited' ? 'background:#16a34a;' : ''}"></div>
+                    <div class="timeline-title" style="color:${o.refundStage === 'Refund Credited' ? '#16a34a' : '#ef4444'};">
+                      ${o.refundStage === 'Refund Credited' ? `Refund Completed (${refundCompletedDate})` : 'Order Cancelled'}
+                    </div>
+                    <div class="timeline-desc">${o.refundStage === 'Refund Credited' ? `Full refund of ₹${o.total} credited to your UPI.` : `Reason: ${o.status.replace('Cancelled (Reason: ', '').replace(')', '')}`}</div>
+                  </div>
+                </div>
+              </div>
+            ` : ''}
+
+            ${isRejected ? `
+              <div style="background: #fef2f2; border: 1px solid #f87171; border-radius: 8px; padding: 12px;">
+                <strong style="color: #991b1b; font-size: 14px;">❌ Order Rejected</strong>
+                <p style="margin: 4px 0 0 0; font-size: 12px; color: #7f1d1d;"><strong>Reason:</strong> ${o.status.replace('Rejected (Reason: ', '').replace(')', '')}</p>
+              </div>
+            ` : ''}
+
+          </div>
+        </div>
+      `;
+    }).join("") : "No active orders mapped for this profile.";
   }
 
   if (bList) {
-    bList.innerHTML = myBookings.length ? myBookings.map(b => `
-      <div class="data-item-card">
-        <strong>Booking ID: ${b.bookingId}</strong> - ${b.type} Visit [${b.status}]
-      </div>
-    `).join("") : "No course training applications logged.";
+    bList.innerHTML = myBookings.length ? myBookings.map(b => {
+      const isConfirmed = b.status === 'Confirmed' || b.status === 'Approved';
+      let statusColor = isConfirmed ? 'var(--accent)' : (b.status && b.status.startsWith('Rejected') ? 'var(--danger)' : 'var(--warn)');
+      const certNote = b.certIssued ? `<br><span style="color:var(--accent); font-weight:bold;">📜 Certificate Approved & Ready to Download below!</span>` : (isConfirmed ? `<br><span style="color:#d97706; font-size:12px;">⏳ Step 1: Farm Booking Confirmed. Step 2: Certificate will unlock after training.</span>` : '');
+      
+      return `
+        <div class="data-item-card" style="border: 1px solid #cbd5e1; border-radius: 10px; padding: 12px; margin-bottom: 10px; background:#fff;">
+          <strong>Booking ID: ${b.bookingId || ''}</strong><br>
+          <small>Booked On: ${b.dateLogged || ''}</small><br>
+          <strong>Scheme: ${b.type || ''} Visit [<span style="color:${statusColor}; font-weight:bold;">${isConfirmed ? 'Booking Confirmed' : (b.status || 'Pending Verification')}</span>]</strong>
+          <br><small>Your UPI ID: <code style="color:var(--accent);">${b.userUpiId || 'N/A'}</code></small>
+          ${certNote}
+        </div>
+      `;
+    }).join("") : "No course training applications logged.";
+
+    const issuedBookings = myBookings.filter(b => b.certIssued === true);
+
+    if (issuedBookings.length > 0 && historyCertWrapper && historyCertContainer) {
+      let historyCertHtml = "";
+      issuedBookings.forEach((b) => {
+        const titleText = b.type === "Student" ? "Certificate of Internship" : "Certificate of Farming";
+        historyCertHtml += `
+          <div style="padding: 10px; background: #fff; border: 1px solid var(--line); border-radius: 8px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
+            <div>
+              <span style="font-weight: bold; font-size:13px; color: var(--accent);">${titleText}</span><br>
+              <small class="muted">Ref ID: ${b.bookingId}</small>
+            </div>
+            <button type="button" class="btn" style="min-height:30px; padding: 4px 10px; font-size:12px;" onclick="downloadCertificatePDF('${b.bookingId}')">📥 Download PDF</button>
+          </div>
+        `;
+      });
+      historyCertContainer.innerHTML = historyCertHtml;
+      historyCertWrapper.style.display = "block";
+    } else if (historyCertWrapper) {
+      historyCertWrapper.style.display = "none";
+    }
   }
 }
 
 function switchErpTab(tabId, buttonId) {
   document.querySelectorAll('.erp-section').forEach(s => s.classList.remove('active'));
-  const targetSec = document.getElementById(tabId);
-  if (targetSec) targetSec.classList.add('active');
-
+  document.getElementById(tabId).classList.add('active');
   document.querySelectorAll('#erpNavbarBlock button').forEach(btn => btn.classList.remove('active-tab'));
-  const targetBtn = document.getElementById(buttonId);
-  if (targetBtn) targetBtn.classList.add('active-tab');
+  document.getElementById(buttonId).classList.add('active-tab');
 }
 
 function switchSubAccountingTab(subTabId) {
   document.querySelectorAll('.sub-accounting-section').forEach(section => section.style.display = 'none');
-  const targetSec = document.getElementById(subTabId);
-  if (targetSec) targetSec.style.display = 'block';
+  document.getElementById(subTabId).style.display = 'block';
+  
+  const buttons = ['btnSubTabDryStock', 'btnSubTabExpense', 'btnSubTabSell', 'btnSubTabBuy', 'btnSubTabDamage'];
+  buttons.forEach(bId => {
+    if(document.getElementById(bId)) document.getElementById(bId).style.background = 'var(--muted)';
+  });
+  
+  let targetActiveButton = 'btn' + subTabId.charAt(0).toUpperCase() + subTabId.slice(1);
+  if(document.getElementById(targetActiveButton)) document.getElementById(targetActiveButton).style.background = 'var(--accent)';
 }
 
 function deleteUserAccount(idx) {
-  if (confirm("Delete this user account?")) {
+  if (confirm(`Kya aap sach me ${usersDatabase[idx].name} ka account delete karna chahte hain?`)) {
     usersDatabase.splice(idx, 1);
     localStorage.setItem('pgf_user_db', JSON.stringify(usersDatabase));
     populateAdminDashboardTables();
   }
 }
 
+// =========================================================
+// LIVE STOCK SUMMARY
+// =========================================================
 function renderAdminLiveStockSummary() {
   const container = document.getElementById("adminLiveStockCardsContainer");
   if (!container) return;
@@ -450,18 +706,26 @@ function renderAdminLiveStockSummary() {
     <div style="background: #fefce8; border: 1px solid #fef08a; padding: 14px; border-radius: 10px;">
       <div style="font-size: 13px; color: #854d0e; font-weight: bold;">🌾 Dry Mushroom Available Stock</div>
       <div style="font-size: 24px; font-weight: 900; color: #a16207; margin: 6px 0;">${dryProd.stock} kg</div>
+      <small style="color:#64748b; font-size:11px;">(Controlled via Buy / Daily Drying Log)</small>
     </div>
+
     <div style="background: #fff7ed; border: 1px solid #ffedd5; padding: 14px; border-radius: 10px;">
       <div style="font-size: 13px; color: #9a3412; font-weight: bold;">🧇 Methi Khakhra Available Stock</div>
       <div style="font-size: 24px; font-weight: 900; color: #ea580c; margin: 6px 0;">${khakhraProd.stock} packs</div>
+      <small style="color:#64748b; font-size:11px;">(Controlled via Buy Page)</small>
     </div>
+
     <div style="background: #f0fdf4; border: 1px solid #bbf7d0; padding: 14px; border-radius: 10px;">
       <div style="font-size: 13px; color: #166534; font-weight: bold;">🫓 Adad Papad Available Stock</div>
       <div style="font-size: 24px; font-weight: 900; color: #15803d; margin: 6px 0;">${papadProd.stock} packs</div>
+      <small style="color:#64748b; font-size:11px;">(Controlled via Buy Page)</small>
     </div>
   `;
 }
 
+// =========================================================
+// DAILY DRY MUSHROOM STOCK MANAGEMENT
+// =========================================================
 function saveDailyDryStockEntry(e) {
   e.preventDefault();
   const rawDate = document.getElementById("dryLogDate").value;
@@ -538,26 +802,506 @@ function renderDailyDryStockTable() {
   `).join("");
 }
 
+// =========================================================
+// ADMIN ERP TABLES & METRICS
+// =========================================================
 function populateAdminDashboardTables() {
   renderAdminLiveStockSummary();
   renderDailyDryStockTable();
 
   const validOrders = orderRegistry.filter(o => o && o.name && o.orderId);
+  const totalOrders = validOrders.length;
+  
+  const approvedOrdersList = validOrders.filter(o => o.status === 'Approved' || o.status === 'Delivered');
+  const approvedOnlineRevenue = approvedOrdersList.reduce((sum, o) => sum + Number(o.total || 0), 0);
+  const directOfflineSales = salesRegistry.reduce((sum, s) => sum + Number(s.paidAmount !== undefined ? s.paidAmount : s.total || 0), 0);
+  const approvedTotalRevenue = approvedOnlineRevenue + directOfflineSales;
+  
+  const pendingOrders = validOrders.filter(o => o.status !== 'Delivered' && o.trackingStage !== 'Delivered' && !o.status.startsWith('Cancelled') && !o.status.startsWith('Rejected')).length;
+  const refundPendingCount = validOrders.filter(o => o.status && o.status.startsWith('Cancelled') && o.refundStage !== 'Refund Credited').length;
+
+  if (document.getElementById("adminTotalOrdersCount")) document.getElementById("adminTotalOrdersCount").textContent = totalOrders;
+  if (document.getElementById("adminApprovedRevenueValue")) document.getElementById("adminApprovedRevenueValue").textContent = `Rs ${approvedTotalRevenue.toFixed(2)}`;
+  if (document.getElementById("adminPendingOrdersCount")) document.getElementById("adminPendingOrdersCount").textContent = pendingOrders;
+  if (document.getElementById("adminRefundPendingCount")) document.getElementById("adminRefundPendingCount").textContent = refundPendingCount;
+
   if (document.getElementById("adminOrdersTableBody")) {
-    document.getElementById("adminOrdersTableBody").innerHTML = validOrders.length ? validOrders.map((o, idx) => `
-      <tr>
-        <td><strong>${o.orderId}</strong></td>
-        <td>${o.dateLogged || ''}</td>
-        <td><strong>${o.name}</strong><br><small>${o.phone}</small></td>
-        <td><small>${o.address}</small></td>
-        <td>${o.products}</td>
-        <td style="color:var(--accent); font-weight:bold;">Rs ${o.total}</td>
-        <td>${o.paymentMode} <br><code>${o.txnId}</code></td>
-        <td><span class="badge badge-confirmed">${o.status}</span></td>
-        <td>🚚 ${o.deliveryDays || 'Pending'}</td>
-        <td><button class="btn" style="padding:4px 8px; font-size:11px;" onclick="handleOrderApprove(${idx})">Approve</button></td>
-      </tr>
-    `).join("") : `<tr><td colspan="10" style="text-align:center;">No orders yet.</td></tr>`;
+    if (!validOrders.length) {
+      document.getElementById("adminOrdersTableBody").innerHTML = `<tr><td colspan="10" style="text-align:center; color:var(--muted); padding:24px; font-weight:bold;">No customer orders placed yet.</td></tr>`;
+    } else {
+      document.getElementById("adminOrdersTableBody").innerHTML = validOrders.map((o, idx) => {
+        const grandTotal = Number(o.total || 0);
+        const mode = o.paymentMode || "Online UPI";
+        const status = o.status || "Pending Verification";
+        const isDelivered = status === 'Delivered' || o.trackingStage === 'Delivered';
+        const isApproved = status === 'Approved' || isDelivered;
+        const isCancelled = status.startsWith('Cancelled');
+        const isRejected = status.startsWith('Rejected');
+        
+        const stage = o.trackingStage || (isDelivered ? 'Delivered' : (isApproved ? 'Packed' : 'Placed'));
+        const loc = o.currentLocation || 'Farm Facility';
+        const eta = o.deliveryDays || '';
+        const courier = o.courierName || 'Ekart Logistics';
+        const refundDate = o.refundCreditedDate || getTodayIsoString();
+        const displayDateTime = o.dateLogged || new Date().toLocaleDateString('en-IN');
+        const userUpi = o.userUpiId || "N/A";
+
+        return `
+          <tr>
+            <td><strong>${o.orderId}</strong></td>
+            <td style="white-space: nowrap;">
+              <span style="color:#0284c7; font-weight:bold; font-size:12px;">📅 ${displayDateTime}</span>
+            </td>
+            <td>
+              <strong>${o.name}</strong><br>
+              <small>${o.phone || 'N/A'}</small><br>
+              <small class="muted">${o.email || ''}</small>
+            </td>
+            <td><small>${o.address || 'N/A'}</small></td>
+            <td>${o.products || 'N/A'}</td>
+            <td style="color:var(--accent); font-weight:bold; font-size:14px;">Rs ${grandTotal}</td>
+            <td>
+              <span class="badge" style="background:#eef2ff; color:#3730a3; margin-bottom:3px; font-weight:bold;">${mode}</span><br>
+              <small>Txn: <code>${o.txnId || 'N/A'}</code></small><br>
+              <div style="display:flex; align-items:center; gap:4px; margin-top:2px;">
+                <code style="background:#f1f5f9; padding:2px 4px; border-radius:4px; color:#0f172a; font-size:11px;">UPI: ${userUpi}</code>
+                ${userUpi !== 'N/A' ? `<button type="button" title="Copy UPI ID" style="padding:1px 5px; min-height:auto; font-size:10px; background:#0284c7;" onclick="copyToClipboard('${userUpi}')">📋</button>` : ''}
+              </div>
+            </td>
+            <td>
+              <span class="badge ${isDelivered ? 'badge-confirmed' : (isCancelled ? 'badge-pending' : (isRejected ? 'badge-pending' : (isApproved ? 'badge-confirmed' : 'badge-pending')))}" style="${isRejected ? 'background:#fee2e2; color:#991b1b;' : (isCancelled ? 'background:#ffedd5; color:#c2410c;' : (isDelivered ? 'background:#16a34a; color:#fff;' : ''))}">
+                ${status}
+              </span>
+              ${isCancelled ? `<br><small style="color:${o.refundStage === 'Refund Credited' ? '#16a34a' : '#ea580c'}; font-weight:bold;">Refund: ${o.refundStage || 'Initiated'} ${o.refundCreditedDate ? `(${o.refundCreditedDate})` : ''}</small>` : ''}
+            </td>
+            
+            <td style="min-width: 280px;">
+              ${isApproved && !isCancelled && !isRejected ? `
+                <div style="background:#f8fafc; padding:8px; border-radius:8px; border:1px solid #e2e8f0; font-size:12px;">
+                  <div style="margin-bottom:6px; display:flex; align-items:center; gap:4px; background:#fff; padding:4px 6px; border-radius:6px; border:1px solid #cbd5e1;">
+                    <label style="font-size:11px; font-weight:bold; color:#0f172a; white-space:nowrap;">📅 Delivery Date:</label>
+                    <input type="date" value="${eta}" style="padding:2px 4px; font-size:11px; width:100%; border:1px solid #94a3b8; border-radius:4px;" onchange="updateExpectedDeliveryDate(${idx}, this.value)">
+                  </div>
+
+                  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px; gap:4px;">
+                    <span style="font-weight:bold; color:#0284c7; white-space:nowrap;">Stage: ${stage}</span>
+                    <input type="text" value="${courier}" placeholder="Courier Name" style="padding:2px 6px; font-size:11px; font-weight:bold; color:#334155; border:1px solid #94a3b8; border-radius:4px; width:140px; text-align:right;" onchange="updateOrderCourierDirect(${idx}, this.value)">
+                  </div>
+                  
+                  <div style="color:#334155; margin-bottom:6px;">📍 ${loc}</div>
+
+                  <div style="display:flex; gap:3px; flex-wrap:wrap;">
+                    <button type="button" class="btn" style="padding:2px 5px; font-size:10px; min-height:22px; background:${stage==='Placed'?'#2b8a3e':'#94a3b8'};" onclick="setOrderStageDirect(${idx}, 'Placed')">Placed</button>
+                    <button type="button" class="btn" style="padding:2px 5px; font-size:10px; min-height:22px; background:${stage==='Packed'?'#2b8a3e':'#94a3b8'};" onclick="setOrderStageDirect(${idx}, 'Packed')">Packed</button>
+                    <button type="button" class="btn" style="padding:2px 5px; font-size:10px; min-height:22px; background:${stage==='Shipped'?'#2b8a3e':'#94a3b8'};" onclick="setOrderStageDirect(${idx}, 'Shipped')">Shipped</button>
+                    <button type="button" class="btn" style="padding:2px 5px; font-size:10px; min-height:22px; background:${stage==='OutForDelivery'?'#2b8a3e':'#94a3b8'};" onclick="setOrderStageDirect(${idx}, 'OutForDelivery')">Out Delivery</button>
+                    <button type="button" class="btn" style="padding:2px 5px; font-size:10px; min-height:22px; background:${stage==='Delivered'?'#16a34a':'#94a3b8'};" onclick="setOrderStageDirect(${idx}, 'Delivered')">Delivered</button>
+                  </div>
+                </div>
+              ` : (isCancelled ? `
+                <div style="background:#fffaf5; padding:8px; border-radius:8px; border:1px solid #fdba74; font-size:12px;">
+                  <span style="font-weight:bold; color:#ea580c;">Refund Control Action</span>
+                  
+                  <div style="margin: 6px 0 4px 0; display:flex; align-items:center; gap:4px; background:#fff; padding:3px 6px; border-radius:4px; border:1px solid #cbd5e1;">
+                    <label style="font-size:10.5px; font-weight:bold; white-space:nowrap;">📅 Refund Date:</label>
+                    <input type="date" value="${refundDate}" id="refundDateInput_${idx}" style="padding:1px 4px; font-size:11px; width:100%; border:1px solid #94a3b8; border-radius:4px;" onchange="updateOrderRefundDate(${idx}, this.value)">
+                  </div>
+
+                  <div style="display:flex; gap:4px; flex-wrap:wrap; margin-top:4px;">
+                    <button type="button" class="btn" style="padding:3px 6px; font-size:11px; min-height:24px; background:${o.refundStage==='Refund Initiated'?'#ea580c':'#94a3b8'};" onclick="setRefundStageDirect(${idx}, 'Refund Initiated')">Initiated</button>
+                    <button type="button" class="btn" style="padding:3px 6px; font-size:11px; min-height:24px; background:${o.refundStage==='Refund Processing'?'#ea580c':'#94a3b8'};" onclick="setRefundStageDirect(${idx}, 'Refund Processing')">Processing</button>
+                    <button type="button" class="btn" style="padding:3px 6px; font-size:11px; min-height:24px; background:${o.refundStage==='Refund Credited'?'#16a34a':'#dc2626'}; font-weight:bold;" onclick="setRefundStageDirect(${idx}, 'Refund Credited')">💸 Credited</button>
+                  </div>
+                </div>
+              ` : (isRejected ? `<span style="color:#dc2626; font-weight:bold; font-size:12px;">Rejected</span>` : `<span style="color:#d97706; font-weight:bold; font-size:12px;">Approve or Cancel</span>`))}
+            </td>
+
+            <td>
+              <button class="btn" style="padding:6px 10px; font-size:11.5px; background:#0f172a; border-radius:6px;" onclick="openOrderActionsMenu(${idx})">
+                ⚙️ Manage
+              </button>
+            </td>
+          </tr>
+        `;
+      }).join("");
+    }
+  }
+
+  const validBookings = bookingsRegistry.filter(b => b && b.name && b.bookingId);
+  const totalStudents = validBookings.filter(b => b.type === "Student").length;
+  const totalFarmers = validBookings.filter(b => b.type === "Farmer").length;
+  const totalBookingsFee = validBookings.filter(b => b.status === "Confirmed" || b.status === "Approved").reduce((sum, b) => sum + Number(b.fee || 0), 0);
+  const pendingBookings = validBookings.filter(b => b.status === "Pending Verification").length;
+  const pendingCertificates = validBookings.filter(b => (b.status === "Confirmed" || b.status === "Approved") && !b.certIssued).length;
+
+  if (document.getElementById("adminTotalStudentsCount")) document.getElementById("adminTotalStudentsCount").textContent = totalStudents;
+  if (document.getElementById("adminTotalFarmersCount")) document.getElementById("adminTotalFarmersCount").textContent = totalFarmers;
+  if (document.getElementById("adminTotalBookingsFee")) document.getElementById("adminTotalBookingsFee").textContent = `Rs ${totalBookingsFee.toFixed(2)}`;
+  if (document.getElementById("adminBookingsPendingCount")) document.getElementById("adminBookingsPendingCount").textContent = pendingBookings;
+  if (document.getElementById("adminCertificatesPendingCount")) document.getElementById("adminCertificatesPendingCount").textContent = pendingCertificates;
+
+  if (document.getElementById("adminBookingsTableBody")) {
+    if (!validBookings.length) {
+      document.getElementById("adminBookingsTableBody").innerHTML = `<tr><td colspan="10" style="text-align:center; color:var(--muted); padding:24px; font-weight:bold;">No student or farmer training registrations yet.</td></tr>`;
+    } else {
+      const bookingsTbody = document.getElementById("adminBookingsTableBody");
+      bookingsTbody.innerHTML = validBookings.map((b, idx) => {
+        const isStudent = b.type === "Student";
+        const submittedDetails = isStudent ? `
+          <div style="line-height:1.4;">
+            <strong>College:</strong> ${b.college || 'N/A'}<br>
+            <strong>Course:</strong> ${b.course || 'N/A'} (Roll: ${b.enrollment || 'N/A'})<br>
+            <strong>Dates:</strong> <span style="color:#0369a1; font-weight:600;">${b.start || 'N/A'}</span> to <span style="color:#0369a1; font-weight:600;">${b.end || 'N/A'}</span>
+          </div>
+        ` : `
+          <div style="line-height:1.4;">
+            <strong>Session Date:</strong> <span style="color:#92400e; font-weight:600;">${b.date || 'N/A'}</span><br>
+            <span class="muted">Farmer Practical Training</span>
+          </div>
+        `;
+
+        const mode = b.paymentMode || "UPI Gateway";
+        const isConfirmed = b.status === "Confirmed" || b.status === "Approved";
+        const certIssued = b.certIssued === true;
+        const bUpi = b.userUpiId || "N/A";
+
+        return `
+          <tr>
+            <td><strong>${b.bookingId}</strong></td>
+            <td><span class="badge" style="background:${isStudent ? '#e0f2fe; color:#0369a1;' : '#fef3c7; color:#92400e;'}">${b.type || 'Booking'}</span></td>
+            <td>
+              <strong>${b.name}</strong><br>
+              <small>${b.phone || 'N/A'}</small><br>
+              <small class="muted">${b.email || 'N/A'}</small>
+            </td>
+            <td><small>${submittedDetails}</small></td>
+            <td style="font-weight:bold; color:var(--accent); font-size:14px;">Rs ${b.fee || 0}</td>
+            <td>
+              <span class="badge" style="background:#eef2ff; color:#3730a3; margin-bottom:3px; font-weight:bold;">${mode}</span><br>
+              <small>Txn: <code>${b.txnId || 'N/A'}</code></small><br>
+              <div style="display:flex; align-items:center; gap:4px; margin-top:2px;">
+                <code style="background:#f1f5f9; padding:2px 4px; border-radius:4px; color:#0f172a; font-size:11px;">UPI: ${bUpi}</code>
+                ${bUpi !== 'N/A' ? `<button type="button" title="Copy UPI ID" style="padding:1px 5px; min-height:auto; font-size:10px; background:#0284c7;" onclick="copyToClipboard('${bUpi}')">📋</button>` : ''}
+              </div>
+            </td>
+            <td><small style="color:#0284c7; font-weight:bold;">${b.dateLogged || 'N/A'}</small></td>
+            <td>
+              <span class="badge ${isConfirmed ? 'badge-confirmed' : 'badge-pending'}">${isConfirmed ? '1. Confirmed' : 'Pending'}</span>
+            </td>
+            <td>
+              <span class="badge ${certIssued ? 'badge-confirmed' : 'badge-pending'}">${certIssued ? '2. Approved' : 'Pending Approval'}</span>
+            </td>
+            <td>
+              <div style="display:flex; flex-direction:column; gap:4px;">
+                ${!isConfirmed ? `
+                  <button class="btn" style="padding:4px 8px; min-height:auto; font-size:11px; background:var(--accent);" onclick="confirmBookingSlot(${idx})">1. Approve Farm Book</button>
+                  <button class="btn" style="padding:4px 8px; min-height:auto; font-size:11px; background:var(--danger);" onclick="rejectTrainingBooking(${idx})">Reject</button>
+                ` : `
+                  ${!certIssued ? `
+                    <button class="btn" style="padding:4px 8px; min-height:auto; font-size:11px; background:#0284c7;" onclick="issueUserCertificate(${idx})">2. Approve Certificate</button>
+                  ` : `
+                    <button type="button" class="btn" style="padding:3px 6px; min-height:auto; font-size:11px; background:var(--accent);" onclick="downloadCertificatePDF('${b.bookingId}')">📜 Download PDF</button>
+                  `}
+                `}
+                <button type="button" class="btn" style="padding:3px 6px; min-height:auto; font-size:10px; background:#4b5563;" onclick="adminEditCertificateData(${idx})">✏️ Edit Certificate</button>
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join("");
+    }
+  }
+
+  if (document.getElementById("adminUsersTableBody")) {
+    const validUsers = usersDatabase.filter(u => u && u.name && u.email);
+    if (!validUsers.length) {
+      document.getElementById("adminUsersTableBody").innerHTML = `<tr><td colspan="6" style="text-align:center; color:var(--muted); padding:24px; font-weight:bold;">No users registered yet.</td></tr>`;
+    } else {
+      document.getElementById("adminUsersTableBody").innerHTML = validUsers.map((u, idx) => `
+        <tr>
+          <td>${idx + 1}</td>
+          <td><strong>${u.name}</strong></td>
+          <td>${u.phone || 'N/A'}</td>
+          <td><code>${u.email}</code></td>
+          <td><mark style="background:#f3f4f6; padding:2px 4px; border-radius:4px;">${u.password || '******'}</mark></td>
+          <td>
+            <button class="btn" style="padding:4px 8px; min-height:auto; background:var(--danger);" onclick="deleteUserAccount(${idx})">Delete Account</button>
+          </td>
+        </tr>
+      `).join("");
+    }
+  }
+}
+
+function openOrderActionsMenu(idx) {
+  const o = orderRegistry[idx];
+  const choice = prompt(
+    `👉 Select an action for Order #${o.orderId} (${o.name}):\n\n` +
+    `1. Approve Order\n` +
+    `2. Reject Order\n` +
+    `3. Cancel & Refund\n` +
+    `4. Edit Details\n\n` +
+    `Enter option number (1, 2, 3 or 4):`,
+    "1"
+  );
+
+  if (!choice) return;
+
+  if (choice.trim() === "1") handleOrderApprove(idx);
+  else if (choice.trim() === "2") handleOrderReject(idx);
+  else if (choice.trim() === "3") handleOrderCancelRefund(idx);
+  else if (choice.trim() === "4") adminEditOrderDetails(idx);
+  else alert("⚠️ Invalid option selected.");
+}
+
+function updateOrderCourierDirect(idx, newCourier) {
+  if (!newCourier) return;
+  orderRegistry[idx].courierName = newCourier.trim();
+  localStorage.setItem('pgf_orders', JSON.stringify(orderRegistry));
+  pushNotification(orderRegistry[idx].email, '🚚 Courier Partner Updated', `Your Order #${orderRegistry[idx].orderId} will be delivered via: ${newCourier}.`, 'order');
+}
+
+function updateExpectedDeliveryDate(idx, newDate) {
+  if (!newDate) return;
+  orderRegistry[idx].deliveryDays = newDate.trim();
+  localStorage.setItem('pgf_orders', JSON.stringify(orderRegistry));
+  pushNotification(orderRegistry[idx].email, '🚚 Delivery Date Scheduled', `Your Order #${orderRegistry[idx].orderId} is scheduled to arrive on: ${newDate}.`, 'order');
+  populateAdminDashboardTables();
+}
+
+function updateOrderRefundDate(idx, newDate) {
+  if (!newDate) return;
+  orderRegistry[idx].refundCreditedDate = newDate.trim();
+  localStorage.setItem('pgf_orders', JSON.stringify(orderRegistry));
+}
+
+function adminEditOrderDetails(idx) {
+  const o = orderRegistry[idx];
+  const newPhone = prompt("1. Customer Phone:", o.phone || "");
+  if (newPhone !== null && newPhone.trim() !== "") o.phone = newPhone.trim();
+  const newAddress = prompt("2. Address:", o.address || "");
+  if (newAddress !== null && newAddress.trim() !== "") o.address = newAddress.trim();
+  const newMode = prompt("3. Payment Mode:", o.paymentMode || "Online UPI");
+  if (newMode !== null && newMode.trim() !== "") o.paymentMode = newMode.trim();
+  const newTxnId = prompt("4. Transaction ID:", o.txnId || "");
+  if (newTxnId !== null && newTxnId.trim() !== "") o.txnId = newTxnId.trim();
+  const newUpi = prompt("5. Customer UPI ID:", o.userUpiId || "");
+  if (newUpi !== null && newUpi.trim() !== "") o.userUpiId = newUpi.trim();
+
+  localStorage.setItem('pgf_orders', JSON.stringify(orderRegistry));
+  pushNotification(o.email, '🚚 Order Details Updated', `Your Order #${o.orderId} details have been updated by Admin.`, 'order');
+  populateAdminDashboardTables();
+  alert("✅ Order Details updated successfully!");
+}
+
+function adminEditCertificateData(idx) {
+  const b = bookingsRegistry[idx];
+  const newName = prompt("Candidate Name:", b.name);
+  if (newName !== null && newName.trim() !== "") b.name = newName.trim();
+
+  if (b.type === "Student") {
+    const newCollege = prompt("College Name:", b.college || "");
+    if (newCollege !== null && newCollege.trim() !== "") b.college = newCollege.trim();
+    const newStart = prompt("Start Date (YYYY-MM-DD):", b.start || "");
+    if (newStart !== null && newStart.trim() !== "") b.start = newStart.trim();
+    const newEnd = prompt("End Date (YYYY-MM-DD):", b.end || "");
+    if (newEnd !== null && newEnd.trim() !== "") b.end = newEnd.trim();
+  } else {
+    const newDate = prompt("Training Session Date:", b.date || "");
+    if (newDate !== null && newDate.trim() !== "") b.date = newDate.trim();
+  }
+
+  localStorage.setItem('pgf_bookings', JSON.stringify(bookingsRegistry));
+  populateAdminDashboardTables();
+  alert("✅ Certificate records successfully updated!");
+}
+
+function handleOrderApprove(idx) {
+  const o = orderRegistry[idx];
+  const defaultDeliveryDate = o.deliveryDays || getTodayIsoString();
+  const inputDeliveryDate = prompt("Order delivery date (YYYY-MM-DD):", defaultDeliveryDate);
+  if (inputDeliveryDate === null) return;
+  const finalDeliveryDate = inputDeliveryDate.trim() || defaultDeliveryDate;
+
+  const defaultCourier = o.courierName || "Ekart Logistics";
+  const inputCourier = prompt("Courier partner:", defaultCourier);
+  if (inputCourier === null) return;
+  const finalCourier = inputCourier.trim() || defaultCourier;
+
+  o.status = "Approved";
+  o.trackingStage = "Packed";
+  o.deliveryDays = finalDeliveryDate;
+  o.courierName = finalCourier;
+  o.trackingNumber = o.trackingNumber || ("FMPC" + Math.floor(1000000000 + Math.random() * 9000000000));
+  o.currentLocation = `Dispatched via ${finalCourier} at Farm Hub`;
+  o.paymentReceived = true;
+  o.refundStage = "";
+  
+  localStorage.setItem('pgf_orders', JSON.stringify(orderRegistry));
+  pushNotification(o.email, '📦 Order Approved & Dispatched!', `Your Order #${o.orderId} is confirmed.`, 'order');
+
+  alert(`✅ Order Approved Successfully!`);
+  populateAdminDashboardTables();
+  computeFinancialLedgerStatements();
+}
+
+function handleOrderReject(idx) {
+  const o = orderRegistry[idx];
+  let reason = prompt("Reason for rejection:", "Payment Not Received");
+  if (reason === null) return;
+
+  o.status = `Rejected (Reason: ${reason})`;
+  o.paymentReceived = false;
+  o.trackingStage = "";
+  o.refundStage = "";
+
+  localStorage.setItem('pgf_orders', JSON.stringify(orderRegistry));
+  pushNotification(o.email, '❌ Order Rejected', `Your Order #${o.orderId} was rejected.`, 'order');
+
+  alert("❌ Order Rejected!");
+  populateAdminDashboardTables();
+  computeFinancialLedgerStatements();
+}
+
+function handleOrderCancelRefund(idx) {
+  const o = orderRegistry[idx];
+  let reason = prompt("Reason for cancellation:", "Item Out of Stock");
+  if (reason === null) return;
+
+  o.status = `Cancelled (Reason: ${reason})`;
+  o.trackingStage = "Cancelled";
+  o.refundStage = "Refund Initiated";
+  o.refundCreditedDate = "";
+
+  localStorage.setItem('pgf_orders', JSON.stringify(orderRegistry));
+  pushNotification(o.email, '⚠️ Order Cancelled', `Your Order #${o.orderId} was cancelled.`, 'order');
+
+  alert("🔄 Order Cancelled & Refund Initiated.");
+  populateAdminDashboardTables();
+  computeFinancialLedgerStatements();
+}
+
+function setOrderStageDirect(idx, newStage) {
+  const o = orderRegistry[idx];
+  o.trackingStage = newStage;
+  if (newStage === 'Delivered') o.status = "Delivered";
+
+  localStorage.setItem('pgf_orders', JSON.stringify(orderRegistry));
+  pushNotification(o.email, '🚚 Order Shipment Update', `Order #${o.orderId} stage updated to: ${newStage}.`, 'order');
+  populateAdminDashboardTables();
+}
+
+function setRefundStageDirect(idx, newRefStage) {
+  const o = orderRegistry[idx];
+  o.refundStage = newRefStage;
+  const refundInput = document.getElementById(`refundDateInput_${idx}`);
+  o.refundCreditedDate = refundInput ? refundInput.value : getTodayIsoString();
+
+  localStorage.setItem('pgf_orders', JSON.stringify(orderRegistry));
+  if (newRefStage === 'Refund Credited') {
+    pushNotification(o.email, '💰 Refund Completed', `₹${o.total} refunded successfully.`, 'order');
+  }
+  populateAdminDashboardTables();
+  computeFinancialLedgerStatements();
+}
+
+function confirmBookingSlot(idx) {
+  bookingsRegistry[idx].status = "Confirmed";
+  bookingsRegistry[idx].approvedDate = new Date().toLocaleDateString('en-IN');
+  bookingsRegistry[idx].certIssued = false;
+  localStorage.setItem('pgf_bookings', JSON.stringify(bookingsRegistry));
+  
+  const target = bookingsRegistry[idx];
+  pushNotification(target.email, '🎓 Farm Booking Confirmed!', `Your booking #${target.bookingId} confirmed.`, 'booking');
+  alert(`✅ Farm Booking Approved!`);
+  populateAdminDashboardTables();
+  computeFinancialLedgerStatements();
+}
+
+function issueUserCertificate(idx) {
+  const target = bookingsRegistry[idx];
+  if (confirm(`Approve certificate for ${target.name}?`)) {
+    target.certIssued = true;
+    target.certIssueDate = new Date().toLocaleDateString('en-IN');
+    localStorage.setItem('pgf_bookings', JSON.stringify(bookingsRegistry));
+    pushNotification(target.email, '📜 Certificate Issued & Ready!', `Your certificate is ready.`, 'certificate');
+    alert("✅ Certificate Approved!");
+    populateAdminDashboardTables();
+  }
+}
+
+function rejectTrainingBooking(idx) {
+  const target = bookingsRegistry[idx];
+  let reason = prompt("Reason:", "Unverified");
+  if(reason === null) return;
+  target.status = `Rejected (Reason: ${reason})`;
+  target.certIssued = false;
+  localStorage.setItem('pgf_bookings', JSON.stringify(bookingsRegistry));
+  pushNotification(target.email, '❌ Farm Booking Rejected', `Booking rejected.`, 'booking');
+  populateAdminDashboardTables();
+}
+
+function adminEditExpense(idx) {
+  const exp = expensesRegistry[idx];
+  const newAmt = prompt("Amount (Rs):", exp.amount);
+  if (newAmt !== null && !isNaN(parseFloat(newAmt))) exp.amount = parseFloat(newAmt);
+  localStorage.setItem('pgf_expenses', JSON.stringify(expensesRegistry));
+  computeFinancialLedgerStatements();
+}
+
+function adminDeleteExpense(idx) {
+  if (confirm("Delete expense entry?")) {
+    expensesRegistry.splice(idx, 1);
+    localStorage.setItem('pgf_expenses', JSON.stringify(expensesRegistry));
+    computeFinancialLedgerStatements();
+  }
+}
+
+function adminEditSale(idx) {
+  const s = salesRegistry[idx];
+  const newPaid = prompt("Received Payment Amount:", s.paidAmount || s.total);
+  if (newPaid !== null && !isNaN(parseFloat(newPaid))) s.paidAmount = parseFloat(newPaid);
+  localStorage.setItem('pgf_sales', JSON.stringify(salesRegistry));
+  computeFinancialLedgerStatements();
+}
+
+function adminDeleteSale(idx) {
+  if (confirm("Delete sale entry?")) {
+    salesRegistry.splice(idx, 1);
+    localStorage.setItem('pgf_sales', JSON.stringify(salesRegistry));
+    computeFinancialLedgerStatements();
+  }
+}
+
+function adminEditPurchase(idx) {
+  const p = purchasesRegistry[idx];
+  const newPaid = prompt("Paid Amount:", p.paidAmount || p.total);
+  if (newPaid !== null && !isNaN(parseFloat(newPaid))) p.paidAmount = parseFloat(newPaid);
+  localStorage.setItem('pgf_purchases', JSON.stringify(purchasesRegistry));
+  computeFinancialLedgerStatements();
+}
+
+function adminDeletePurchase(idx) {
+  if (confirm("Delete purchase entry?")) {
+    purchasesRegistry.splice(idx, 1);
+    localStorage.setItem('pgf_purchases', JSON.stringify(purchasesRegistry));
+    computeFinancialLedgerStatements();
+  }
+}
+
+function adminEditDamage(idx) {
+  const dmg = expensesRegistry[idx];
+  const newAmt = prompt("Damage Amount:", dmg.amount);
+  if (newAmt !== null && !isNaN(parseFloat(newAmt))) dmg.amount = parseFloat(newAmt);
+  localStorage.setItem('pgf_expenses', JSON.stringify(expensesRegistry));
+  computeFinancialLedgerStatements();
+}
+
+function adminDeleteDamage(idx) {
+  if (confirm("Delete damage entry?")) {
+    expensesRegistry.splice(idx, 1);
+    localStorage.setItem('pgf_expenses', JSON.stringify(expensesRegistry));
+    computeFinancialLedgerStatements();
   }
 }
 
@@ -571,142 +1315,686 @@ function computeFinancialLedgerStatements() {
 
   const totalPurchases = purchasesRegistry.reduce((sum, p) => sum + Number(p.paidAmount !== undefined ? p.paidAmount : p.total || 0), 0);
   const totalExpenses = expensesRegistry.filter(e => e.category !== "Damage Received").reduce((sum, e) => sum + Number(e.amount || 0), 0);
-  const netProfit = totalSales - (totalPurchases + totalExpenses);
+  const totalDamages = expensesRegistry.filter(e => e.category === "Damage Received").reduce((sum, e) => sum + Number(e.amount || 0), 0);
+
+  const totalCreditedRefunds = orderRegistry
+    .filter(o => o && o.status && o.status.startsWith('Cancelled') && o.refundStage === 'Refund Credited')
+    .reduce((sum, o) => sum + Number(o.total || 0), 0);
+
+  const netProfit = totalSales - (totalPurchases + totalExpenses + totalDamages + totalCreditedRefunds);
 
   if(document.getElementById("finTotalRevenue")) document.getElementById("finTotalRevenue").textContent = "Rs " + totalSales.toFixed(2);
   if(document.getElementById("finTotalPurchases")) document.getElementById("finTotalPurchases").textContent = "Rs " + totalPurchases.toFixed(2);
   if(document.getElementById("finTotalExpenses")) document.getElementById("finTotalExpenses").textContent = "Rs " + totalExpenses.toFixed(2);
+  if(document.getElementById("finTotalRefunds")) document.getElementById("finTotalRefunds").textContent = "Rs " + totalCreditedRefunds.toFixed(2);
   if(document.getElementById("finNetProfit")) document.getElementById("finNetProfit").textContent = "Rs " + netProfit.toFixed(2);
-  if(document.getElementById("cashFarm")) document.getElementById("cashFarm").textContent = "Rs " + totalSales.toFixed(2);
+
+  let cashBalances = { Soham: 0, Jeet: 0, Farm: 0 };
+  
+  cashBalances.Farm += approvedOnlineOrdersRevenue;
+  cashBalances.Farm -= totalCreditedRefunds;
+
+  salesRegistry.forEach(s => { 
+    if(cashBalances[s.collector] !== undefined) cashBalances[s.collector] += Number(s.paidAmount !== undefined ? s.paidAmount : s.total || 0); 
+  });
+  
+  expensesRegistry.filter(e => e.category !== "Damage Received").forEach(e => { 
+    if(cashBalances[e.payer] !== undefined) cashBalances[e.payer] -= Number(e.amount || 0); 
+  });
+  
+  purchasesRegistry.forEach(p => { 
+    if(cashBalances[p.funder] !== undefined) cashBalances[p.funder] -= Number(p.paidAmount !== undefined ? p.paidAmount : p.total || 0); 
+  });
+
+  expensesRegistry.filter(e => e.category === "Damage Received").forEach(d => {
+    const amt = Number(d.amount || 0);
+    if (d.payer === "Farm") cashBalances.Farm += amt;
+    else if (d.payer === "Soham") cashBalances.Soham -= amt;
+    else if (d.payer === "Jeet") cashBalances.Jeet -= amt;
+  });
+
+  if(document.getElementById("cashSoham")) document.getElementById("cashSoham").textContent = "Rs " + cashBalances.Soham.toFixed(2);
+  if(document.getElementById("cashJeet")) document.getElementById("cashJeet").textContent = "Rs " + cashBalances.Jeet.toFixed(2);
+  if(document.getElementById("cashFarm")) document.getElementById("cashFarm").textContent = "Rs " + cashBalances.Farm.toFixed(2);
+
+  const expRows = expensesRegistry.filter(e => e.category !== "Damage Received");
+  if(document.getElementById("subExpenseTableBody")) {
+    document.getElementById("subExpenseTableBody").innerHTML = expRows.map((e, idx) => `
+      <tr>
+        <td>${e.date}</td>
+        <td>${e.category}</td>
+        <td>${e.payer}</td>
+        <td>${e.desc}</td>
+        <td style="color:var(--warn); font-weight:bold;">Rs ${e.amount}</td>
+        <td><small>${e.notes || '-'}</small></td>
+        <td>
+          <button type="button" class="btn" style="padding:2px 5px; font-size:10px; min-height:auto; background:#0284c7;" onclick="adminEditExpense(${idx})">✏️</button>
+          <button type="button" class="btn" style="padding:2px 5px; font-size:10px; min-height:auto; background:var(--danger);" onclick="adminDeleteExpense(${idx})">🗑️</button>
+        </td>
+      </tr>
+    `).join("");
+  }
+
+  if(document.getElementById("subSellTableBody")) {
+    document.getElementById("subSellTableBody").innerHTML = salesRegistry.map((s, idx) => {
+      const sub = Number(s.subtotal || (s.qty * s.rate) || s.total);
+      const del = Number(s.delivery || 0);
+      const grandTotal = Number(s.total || (sub + del));
+      const paid = Number(s.paidAmount !== undefined ? s.paidAmount : grandTotal);
+      const pending = Math.max(0, grandTotal - paid);
+
+      return `
+        <tr>
+          <td>${s.date}</td>
+          <td>${s.product}</td>
+          <td><strong>${s.buyer}</strong><br><small>${s.phone || ''}</small></td>
+          <td>${s.qty}</td>
+          <td style="color:var(--accent); font-weight:bold;">Rs ${grandTotal.toFixed(2)}</td>
+          <td>
+            <span style="color:#16a34a; font-weight:bold;">Rs ${paid.toFixed(2)}</span>
+            ${pending > 0 ? `<br><small style="color:#dc2626; font-weight:bold;">Due: Rs ${pending.toFixed(2)}</small>` : '<br><small style="color:#16a34a;">(Paid)</small>'}
+          </td>
+          <td><small>${s.notes || '-'}</small></td>
+          <td>
+            <div style="display:flex; gap:3px;">
+              <button type="button" class="btn" style="padding:2px 5px; font-size:10px; min-height:auto;" onclick="downloadOfflineSaleInvoice('${s.saleId}')">📄</button>
+              <button type="button" class="btn" style="padding:2px 5px; font-size:10px; min-height:auto; background:#0284c7;" onclick="adminEditSale(${idx})">✏️</button>
+              <button type="button" class="btn" style="padding:2px 5px; font-size:10px; min-height:auto; background:var(--danger);" onclick="adminDeleteSale(${idx})">🗑️</button>
+            </div>
+          </td>
+        </tr>
+      `;
+    }).join("");
+  }
+
+  if(document.getElementById("subBuyTableBody")) {
+    document.getElementById("subBuyTableBody").innerHTML = purchasesRegistry.map((p, idx) => {
+      const totalPayable = Number(p.total || (p.qty * p.rate));
+      const paid = Number(p.paidAmount !== undefined ? p.paidAmount : totalPayable);
+      const pendingToVendor = Math.max(0, totalPayable - paid);
+
+      return `
+        <tr>
+          <td>${p.date}</td>
+          <td>${p.product}</td>
+          <td><strong>${p.vendor}</strong></td>
+          <td>${p.qty}</td>
+          <td style="color:var(--danger); font-weight:bold;">Rs ${totalPayable.toFixed(2)}</td>
+          <td>
+            <span style="color:#16a34a; font-weight:bold;">Paid: Rs ${paid.toFixed(2)}</span>
+            ${pendingToVendor > 0 ? `<br><small style="color:#ea580c; font-weight:bold;">Pending: Rs ${pendingToVendor.toFixed(2)}</small>` : '<br><small style="color:#16a34a;">(Clear)</small>'}
+          </td>
+          <td><small>${p.notes || '-'}</small></td>
+          <td>
+            <button type="button" class="btn" style="padding:2px 5px; font-size:10px; min-height:auto; background:#0284c7;" onclick="adminEditPurchase(${idx})">✏️</button>
+            <button type="button" class="btn" style="padding:2px 5px; font-size:10px; min-height:auto; background:var(--danger);" onclick="adminDeletePurchase(${idx})">🗑️</button>
+          </td>
+        </tr>
+      `;
+    }).join("");
+  }
+
+  const dmgRows = expensesRegistry.filter(e => e.category === "Damage Received");
+  if(document.getElementById("subDamageTableBody")) {
+    document.getElementById("subDamageTableBody").innerHTML = dmgRows.map((d, idx) => `
+      <tr>
+        <td>${d.date}</td>
+        <td>${d.desc}</td>
+        <td>${d.payer}</td>
+        <td style="color:${d.payer === 'Farm' ? 'var(--accent)' : 'var(--danger)'}; font-weight:bold;">${d.payer === 'Farm' ? '+' : '-'} Rs ${d.amount}</td>
+        <td><small>${d.notes || '-'}</small></td>
+        <td>
+          <button type="button" class="btn" style="padding:2px 5px; font-size:10px; min-height:auto; background:#0284c7;" onclick="adminEditDamage(${idx})">✏️</button>
+          <button type="button" class="btn" style="padding:2px 5px; font-size:10px; min-height:auto; background:var(--danger);" onclick="adminDeleteDamage(${idx})">🗑️</button>
+        </td>
+      </tr>
+    `).join("");
+  }
 }
 
 function saveAdminExpense(e) {
   e.preventDefault();
+  const rawDate = document.getElementById("expLogDate").value;
   const data = {
     expId: "EXP-" + Date.now().toString().slice(-4),
-    date: document.getElementById("expLogDate").value || new Date().toLocaleDateString('en-IN'),
+    date: rawDate ? new Date(rawDate).toLocaleDateString('en-IN') : new Date().toLocaleDateString('en-IN'),
     category: document.getElementById("expCategory").value,
     payer: document.getElementById("expPayer").value,
+    mode: document.getElementById("expMode").value,
     desc: document.getElementById("expDesc").value.trim(),
-    amount: parseFloat(document.getElementById("expAmount").value)
+    amount: parseFloat(document.getElementById("expAmount").value),
+    notes: document.getElementById("expNotes") ? document.getElementById("expNotes").value.trim() : ""
   };
   expensesRegistry.push(data);
   localStorage.setItem('pgf_expenses', JSON.stringify(expensesRegistry));
   e.target.reset();
+  initDefaultDatePickers();
   computeFinancialLedgerStatements();
 }
 
 function saveAdminSale(e) {
   e.preventDefault();
+  const rawDate = document.getElementById("saleLogDate").value;
   const qty = parseFloat(document.getElementById("saleQty").value);
   const rate = parseFloat(document.getElementById("saleRate").value);
-  const total = qty * rate;
+  const delivery = parseFloat(document.getElementById("saleDelivery").value) || 0;
+  const paid = parseFloat(document.getElementById("salePaidAmount").value) || 0;
+  const notes = document.getElementById("saleNotes") ? document.getElementById("saleNotes").value.trim() : "";
+  const prodType = document.getElementById("saleProduct").value;
+
+  const targetProd = products.find(p => p.type === prodType || p.name.toLowerCase().includes(prodType.toLowerCase()));
+  if (targetProd && !targetProd.bulk) {
+    targetProd.stock = Math.max(0, targetProd.stock - qty);
+    saveProductsToStorage();
+    renderProducts();
+  }
+
+  const subtotal = qty * rate;
+  const grandTotal = subtotal + delivery;
+
   const data = {
     saleId: "SALE-" + Date.now().toString().slice(-4),
-    date: document.getElementById("saleLogDate").value || new Date().toLocaleDateString('en-IN'),
-    product: document.getElementById("saleProduct").value,
+    date: rawDate ? new Date(rawDate).toLocaleDateString('en-IN') : new Date().toLocaleDateString('en-IN'),
+    product: prodType,
+    collector: document.getElementById("saleCollector").value,
     buyer: document.getElementById("saleBuyer").value.trim(),
+    phone: document.getElementById("salePhone").value.trim(),
+    address: document.getElementById("saleAddress").value.trim(),
     qty: qty,
     rate: rate,
-    total: total,
-    paidAmount: parseFloat(document.getElementById("salePaidAmount").value) || total
+    subtotal: subtotal,
+    delivery: delivery,
+    total: grandTotal,
+    paidAmount: paid,
+    notes: notes
   };
+
   salesRegistry.push(data);
   localStorage.setItem('pgf_sales', JSON.stringify(salesRegistry));
   e.target.reset();
+  if (document.getElementById("saleDelivery")) document.getElementById("saleDelivery").value = "0";
+  initDefaultDatePickers();
   computeFinancialLedgerStatements();
   renderAdminLiveStockSummary();
+  alert(`✅ Wholesale Sale Entry saved!`);
 }
 
 function saveAdminPurchase(e) {
   e.preventDefault();
+  const rawDate = document.getElementById("purLogDate").value;
   const qty = parseFloat(document.getElementById("purQty").value);
   const rate = parseFloat(document.getElementById("purRate").value);
-  const total = qty * rate;
+  const paid = parseFloat(document.getElementById("purPaidAmount").value) || (qty * rate);
+  const purType = document.getElementById("purProduct").value;
+  const notes = document.getElementById("purNotes") ? document.getElementById("purNotes").value.trim() : "";
+  
+  let matchedProd = null;
+  if (purType.includes("Dry")) matchedProd = products.find(p => p.type === "dry");
+  else if (purType.includes("Khakhra")) matchedProd = products.find(p => p.type === "khakhra");
+  else if (purType.includes("Papad")) matchedProd = products.find(p => p.type === "papad");
+  else if (purType.includes("Green")) matchedProd = products.find(p => p.type === "green");
+
+  if (matchedProd) {
+    matchedProd.stock = (matchedProd.stock || 0) + qty;
+    saveProductsToStorage();
+    renderProducts();
+  }
+
   const data = {
     purId: "PUR-" + Date.now().toString().slice(-4),
-    date: document.getElementById("purLogDate").value || new Date().toLocaleDateString('en-IN'),
-    product: document.getElementById("purProduct").value,
+    date: rawDate ? new Date(rawDate).toLocaleDateString('en-IN') : new Date().toLocaleDateString('en-IN'),
+    product: purType,
+    funder: document.getElementById("purFunder").value,
     vendor: document.getElementById("purVendor").value.trim(),
     qty: qty,
     rate: rate,
-    total: total,
-    paidAmount: parseFloat(document.getElementById("purPaidAmount").value) || total
+    total: qty * rate,
+    paidAmount: paid,
+    notes: notes
   };
+
   purchasesRegistry.push(data);
   localStorage.setItem('pgf_purchases', JSON.stringify(purchasesRegistry));
   e.target.reset();
+  initDefaultDatePickers();
   computeFinancialLedgerStatements();
+  renderAdminLiveStockSummary();
+  alert(`✅ Inventory Buy recorded!`);
 }
 
 function saveAdminDamage(e) {
   e.preventDefault();
+  const rawDate = document.getElementById("dmgLogDate").value;
+  const payerType = document.getElementById("dmgPayer").value;
+  const amountVal = parseFloat(document.getElementById("dmgAmount").value);
+  const notes = document.getElementById("dmgNotes") ? document.getElementById("dmgNotes").value.trim() : "";
+
   const data = {
     expId: "DMG-" + Date.now().toString().slice(-4),
-    date: document.getElementById("dmgLogDate").value || new Date().toLocaleDateString('en-IN'),
+    date: rawDate ? new Date(rawDate).toLocaleDateString('en-IN') : new Date().toLocaleDateString('en-IN'),
     category: "Damage Received",
-    payer: document.getElementById("dmgPayer").value,
+    payer: payerType,
+    mode: "Internal Allocation",
     desc: document.getElementById("dmgDesc").value.trim(),
-    amount: parseFloat(document.getElementById("dmgAmount").value)
+    amount: amountVal,
+    notes: notes
   };
+
   expensesRegistry.push(data);
   localStorage.setItem('pgf_expenses', JSON.stringify(expensesRegistry));
   e.target.reset();
+  initDefaultDatePickers();
   computeFinancialLedgerStatements();
+  alert(`✅ Damage recorded!`);
+}
+
+function downloadOfflineSaleInvoice(saleId) {
+  const targetSale = salesRegistry.find(s => s.saleId === saleId);
+  if(!targetSale) return alert("Invoice not found.");
+  
+  const sub = Number(targetSale.subtotal || (targetSale.qty * targetSale.rate) || targetSale.total);
+  const del = Number(targetSale.delivery || 0);
+  const grandTotal = Number(targetSale.total || (sub + del));
+  const paid = Number(targetSale.paidAmount !== undefined ? targetSale.paidAmount : grandTotal);
+  const due = Math.max(0, grandTotal - paid);
+
+  document.getElementById("invNum").textContent = targetSale.saleId;
+  document.getElementById("invDate").textContent = targetSale.date;
+  document.getElementById("invClientName").textContent = targetSale.buyer;
+  document.getElementById("invClientEmail").textContent = "Phone: " + (targetSale.phone || "N/A");
+  document.getElementById("invClientAddr").textContent = "Address: " + (targetSale.address || "Direct Spot Distribution");
+  
+  document.getElementById("invoiceTableItemsBody").innerHTML = `
+    <tr>
+      <td style="padding:12px 14px; border-bottom:1px solid #e6e9ec; font-weight: 600;">${targetSale.product} Lot Log Entry</td>
+      <td style="padding:12px 14px; border-bottom:1px solid #e6e9ec; text-align:right;">Rs ${Number(targetSale.rate).toFixed(2)}</td>
+      <td style="padding:12px 14px; border-bottom:1px solid #e6e9ec; text-align:center;">${targetSale.qty}</td>
+      <td style="padding:12px 14px; border-bottom:1px solid #e6e9ec; text-align:right; font-weight:600; color:var(--accent);">Rs ${sub.toFixed(2)}</td>
+    </tr>
+  `;
+  
+  document.getElementById("invSub").textContent = `Rs ${sub.toFixed(2)}`;
+  document.getElementById("invDelivery").textContent = `Rs ${del.toFixed(2)}`;
+  document.getElementById("invTotal").textContent = `Rs ${grandTotal.toFixed(2)}`;
+
+  const notesSec = document.getElementById("invNotesSection");
+  if (notesSec) {
+    if (targetSale.notes) {
+      notesSec.style.display = "block";
+      notesSec.innerHTML = `<strong>Memo:</strong> ${targetSale.notes}`;
+    } else {
+      notesSec.style.display = "none";
+    }
+  }
+
+  const paidRow = document.getElementById("invPaidRow");
+  const dueRow = document.getElementById("invDueRow");
+  if (paidRow && dueRow) {
+    paidRow.style.display = "flex";
+    dueRow.style.display = "flex";
+    document.getElementById("invPaid").textContent = `Rs ${paid.toFixed(2)}`;
+    document.getElementById("invDue").textContent = `Rs ${due.toFixed(2)}`;
+  }
+
+  const waTargetPhone = (targetSale.phone && targetSale.phone.replace(/[^0-9]/g, '')) || farmWhatsapp;
+  const cleanPhone = waTargetPhone.length === 10 ? "91" + waTargetPhone : waTargetPhone;
+
+  const waInvoiceText = `*PURE GROW FARM - INVOICE*\\nRef: ${targetSale.saleId}\\nTotal: Rs ${grandTotal.toFixed(2)}`;
+  const waBtn = document.getElementById("whatsappInvoice");
+  if (waBtn) {
+    waBtn.href = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(waInvoiceText)}`;
+  }
+  document.getElementById("invoiceDialog").showModal();
 }
 
 function renderProducts(list = products) {
   if(!document.getElementById("productsList")) return;
-  document.getElementById("productsList").innerHTML = list.map(product => `
-    <article class="product">
-      <img src="${product.image}" alt="${product.name}">
-      <h3>${product.name}</h3>
-      <p class="muted">${product.detail}</p>
-      <div class="product-actions">
-        <div class="pill">Rs ${product.price} / ${product.unit}</div>
-        <button type="button" onclick="addToCart(${product.id})">Add Cart</button>
-      </div>
-    </article>
-  `).join("");
+  document.getElementById("productsList").innerHTML = list.map(product => {
+    const inStock = product.stock > 0;
+    return `
+      <article class="product">
+        <img src="${product.image}" alt="${product.name}">
+        <h3>${product.name}</h3>
+        <p class="muted">${product.detail}</p>
+        <div style="margin-bottom: 8px;">
+          ${product.bulk ? `<span class="badge" style="background: #e0f2fe; color: #0369a1;">📦 Custom Supply</span>` : (inStock ? `<span class="badge badge-confirmed">🟢 Available: ${product.stock} ${product.unit}</span>` : `<span class="badge" style="background:#fee2e2; color:#991b1b;">🔴 Out of Stock</span>`)}
+        </div>
+        <div style="margin-top:auto;">
+          <div class="product-actions">
+            <div class="pill">Rs ${product.price} / ${product.unit}</div>
+            ${product.bulk ? `<button type="button" onclick="window.open('https://wa.me/${farmWhatsapp}')">Contact Bulk</button>` : `<button type="button" ${inStock ? '' : 'disabled'} onclick="addToCart(${product.id})">${inStock ? 'Add Cart' : 'Out of Stock'}</button>`}
+          </div>
+        </div>
+      </article>
+    `;
+  }).join("");
+}
+
+function updateHeaderCartCounter() {
+  const badge = document.getElementById("headerCartCount");
+  if (!badge) return;
+  const totalCount = [...cart.values()].reduce((sum, item) => sum + item.qty, 0);
+  badge.textContent = totalCount;
 }
 
 function addToCart(id) {
   const product = products.find(item => item.id === id);
-  if (!product) return;
-  cart.set(id, { ...product, qty: (cart.get(id)?.qty || 0) + 1 });
+  if (!product || product.stock <= 0) return alert("Out of stock!");
+  const current = cart.get(id);
+  const currentQty = current ? current.qty : 0;
+  if (currentQty + 1 > product.stock) return alert(`Only ${product.stock} available!`);
+  cart.set(id, { ...product, qty: currentQty + 1 });
   renderCart();
+  updateHeaderCartCounter();
+}
+
+function minusCart(id) {
+  const item = cart.get(id);
+  if (!item) return;
+  if (item.qty === 1) cart.delete(id);
+  else cart.set(id, { ...item, qty: item.qty - 1 });
+  renderCart();
+  updateHeaderCartCounter();
+}
+
+function getTotals() {
+  const subtotal = [...cart.values()].reduce((sum, item) => sum + (item.price * item.qty), 0);
+  const delivery = subtotal > 0 ? (subtotal > 1000 ? 0 : 50) : 0;
+  return { subtotal, delivery, total: subtotal + delivery };
 }
 
 function renderCart() {
-  const subtotal = [...cart.values()].reduce((sum, item) => sum + (item.price * item.qty), 0);
-  if(document.getElementById("subtotal")) document.getElementById("subtotal").textContent = `Rs ${subtotal}`;
-  if(document.getElementById("total")) document.getElementById("total").textContent = `Rs ${subtotal}`;
+  const bill = getTotals();
+  if(document.getElementById("subtotal")) document.getElementById("subtotal").textContent = `Rs ${bill.subtotal}`;
+  if(document.getElementById("delivery")) document.getElementById("delivery").textContent = `Rs ${bill.delivery}`;
+  if(document.getElementById("total")) document.getElementById("total").textContent = `Rs ${bill.total}`;
+  updateHeaderCartCounter();
+
+  if (!cart.size) { 
+    if(document.getElementById("cartItems")) document.getElementById("cartItems").innerHTML = `<p class="muted">Cart selection is empty.</p>`; 
+    if(document.getElementById("paymentMode")) document.getElementById("paymentMode").value = "";
+    if(document.getElementById("paymentId")) {
+      document.getElementById("paymentId").value = "";
+      document.getElementById("paymentId").disabled = true;
+    }
+    if(document.getElementById("confirmOrderBtn")) document.getElementById("confirmOrderBtn").disabled = true;
+    return; 
+  }
+  
   if(document.getElementById("cartItems")) {
     document.getElementById("cartItems").innerHTML = [...cart.values()].map(item => `
       <div class="cart-item">
-        <strong>${item.name}</strong> x ${item.qty}
+        <div><strong>${item.name}</strong><br><span class="muted">Rs ${item.price} x ${item.qty}</span></div>
+        <div class="qty-actions">
+          <button type="button" onclick="minusCart(${item.id})">-</button>
+          <button type="button" onclick="addToCart(${item.id})">+</button>
+        </div>
       </div>
     `).join("");
   }
+  validateOrderForm();
+}
+
+function openProductPayment() {
+  const mode = document.getElementById("paymentMode").value;
+  const bill = getTotals();
+  if(!mode || !cart.size) {
+    document.getElementById("paymentId").value = "";
+    document.getElementById("paymentId").disabled = true;
+    validateOrderForm();
+    return;
+  }
+  document.getElementById("productPaymentHelp").style.display = "block";
+  document.getElementById("productPaymentHelp").textContent = `Launching UPI Payment app link for Rs ${bill.total}.`;
+  window.location.href = `upi://pay?pa=${encodeURIComponent(farmUpiId)}&pn=${encodeURIComponent(farmName)}&am=${bill.total}&cu=INR`;
+  document.getElementById("paymentId").disabled = false;
+  validateOrderForm();
+}
+
+function validateOrderForm() {
+  const address = document.getElementById("address") ? document.getElementById("address").value.trim() : "";
+  const userUpi = document.getElementById("userUpiId") ? document.getElementById("userUpiId").value.trim() : "";
+  const mode = document.getElementById("paymentMode") ? document.getElementById("paymentMode").value : "";
+  const txnId = document.getElementById("paymentId") ? document.getElementById("paymentId").value.trim() : "";
+  const isValid = cart.size > 0 && address.length > 4 && userUpi.length >= 5 && userUpi.includes('@') && mode !== "" && txnId.length >= 6;
+  if(document.getElementById("confirmOrderBtn")) document.getElementById("confirmOrderBtn").disabled = !isValid;
+}
+
+if(document.getElementById("address")) {
+  document.getElementById("address").addEventListener("input", validateOrderForm);
 }
 
 function confirmOrder(e) {
   e.preventDefault();
+  const bill = getTotals();
+  const currentTimestamp = new Date().toLocaleDateString('en-IN') + " " + new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+  const generatedOrderId = "PGF-INV-" + Date.now().toString().slice(-5);
+
+  cart.forEach((item, prodId) => {
+    const prod = products.find(p => p.id === prodId);
+    if (prod && !prod.bulk) prod.stock = Math.max(0, prod.stock - item.qty);
+  });
+  saveProductsToStorage();
+  renderProducts();
+
   const data = {
-    orderId: "PGF-INV-" + Date.now().toString().slice(-5),
+    orderId: generatedOrderId,
     name: currentUser.name,
     phone: currentUser.phone,
     email: currentUser.email,
-    address: document.getElementById("address").value,
-    total: 500,
-    status: "Pending Verification",
-    dateLogged: new Date().toLocaleDateString('en-IN')
+    address: document.getElementById("address").value.trim(),
+    userUpiId: document.getElementById("userUpiId").value.trim(),
+    products: [...cart.values()].map(i => `${i.name} [x${i.qty}]`).join(", "),
+    subtotal: bill.subtotal,
+    delivery: bill.delivery,
+    total: bill.total,
+    paymentMode: document.getElementById("paymentMode").value,
+    txnId: document.getElementById("paymentId").value.trim(),
+    dateLogged: currentTimestamp,
+    deliveryDays: "",
+    courierName: "Ekart Logistics",
+    refundCreditedDate: "",
+    status: "Pending Verification"
   };
+
   orderRegistry.unshift(data);
   localStorage.setItem('pgf_orders', JSON.stringify(orderRegistry));
-  alert("Order Placed Successfully!");
+  
+  document.getElementById("invNum").textContent = data.orderId;
+  document.getElementById("invDate").textContent = new Date().toLocaleDateString('en-IN');
+  document.getElementById("invClientName").textContent = data.name;
+  document.getElementById("invClientEmail").textContent = "Email: " + data.email + " | Ph: " + data.phone;
+  document.getElementById("invClientAddr").textContent = "Address: " + data.address;
+  
+  document.getElementById("invoiceTableItemsBody").innerHTML = [...cart.values()].map(item => `
+    <tr>
+      <td style="padding:12px 14px; border-bottom:1px solid #e6e9ec;">${item.name} (${item.unit})</td>
+      <td style="padding:12px 14px; border-bottom:1px solid #e6e9ec; text-align:right;">Rs ${item.price}</td>
+      <td style="padding:12px 14px; border-bottom:1px solid #e6e9ec; text-align:center;">${item.qty}</td>
+      <td style="padding:12px 14px; border-bottom:1px solid #e6e9ec; text-align:right;">Rs ${item.price * item.qty}</td>
+    </tr>
+  `).join("");
+  
+  document.getElementById("invSub").textContent = "Rs " + bill.subtotal;
+  document.getElementById("invDelivery").textContent = "Rs " + bill.delivery;
+  document.getElementById("invTotal").textContent = "Rs " + bill.total;
+
+  pushNotification('ADMIN', '🛍️ New Order Placed!', `${data.name} placed order #${data.orderId}`, 'order');
+  alert("Order submitted!");
+  document.getElementById("invoiceDialog").showModal();
+  
   cart.clear();
   renderCart();
+  document.getElementById("orderForm").reset();
+  checkUserSession();
+}
+
+function closeInvoice() { document.getElementById("invoiceDialog").close(); }
+
+function showVisitForm(id) {
+  document.getElementById("studentForm").classList.remove("active");
+  document.getElementById("farmerForm").classList.remove("active");
+  document.getElementById(id).classList.add("active");
+}
+
+function openVisitPayment(formId, amount) {
+  const modeSelectId = formId === "studentForm" ? "spaymentMode" : "fpaymentMode";
+  const helpId = formId === "studentForm" ? "studentPaymentHelp" : "farmerPaymentHelp";
+  const txnInputId = formId === "studentForm" ? "spayment" : "fpayment";
+  const mode = document.getElementById(modeSelectId).value;
+
+  if (!mode) {
+    document.getElementById(txnInputId).value = "";
+    document.getElementById(txnInputId).disabled = true;
+    if(formId === "studentForm") validateStudentForm();
+    else validateFarmerForm();
+    return;
+  }
+  document.getElementById(helpId).style.display = "block";
+  document.getElementById(helpId).textContent = `Launching UPI App for program fee Rs ${amount}.`;
+  window.location.href = `upi://pay?pa=${encodeURIComponent(farmUpiId)}&pn=${encodeURIComponent(farmName)}&am=${amount}&cu=INR`;
+  document.getElementById(txnInputId).disabled = false;
+  if(formId === "studentForm") validateStudentForm();
+  else validateFarmerForm();
+}
+
+function validateStudentForm() {
+  const enroll = document.getElementById("senroll").value.trim();
+  const college = document.getElementById("scollege").value.trim();
+  const course = document.getElementById("scourse").value.trim();
+  const start = document.getElementById("sstart").value;
+  const end = document.getElementById("send").value;
+  const userUpi = document.getElementById("suserUpi") ? document.getElementById("suserUpi").value.trim() : "";
+  const txn = document.getElementById("spayment").value.trim();
+  const isDisabled = document.getElementById("spayment").disabled;
+  const isValid = !isDisabled && enroll !== "" && college !== "" && course !== "" && start !== "" && end !== "" && userUpi.length >= 5 && userUpi.includes('@') && txn.length >= 6;
+  document.getElementById("studentSubmitBtn").disabled = !isValid;
+}
+
+function validateFarmerForm() {
+  const date = document.getElementById("fdate").value;
+  const userUpi = document.getElementById("fuserUpi") ? document.getElementById("fuserUpi").value.trim() : "";
+  const txn = document.getElementById("fpayment").value.trim();
+  const isDisabled = document.getElementById("fpayment").disabled;
+  const isValid = !isDisabled && date !== "" && userUpi.length >= 5 && userUpi.includes('@') && txn.length >= 6;
+  document.getElementById("farmerSubmitBtn").disabled = !isValid;
+}
+
+if(document.getElementById("studentForm")) {
+  ['senroll', 'scollege', 'scourse', 'sstart', 'send', 'suserUpi'].forEach(id => {
+    if(document.getElementById(id)) document.getElementById(id).addEventListener("input", validateStudentForm);
+  });
+}
+if(document.getElementById("farmerForm")) {
+  ['fdate', 'fuserUpi'].forEach(id => {
+    if(document.getElementById(id)) document.getElementById(id).addEventListener("input", validateFarmerForm);
+  });
+}
+
+function submitStudentVisit(e) {
+  e.preventDefault();
+  const currentTimestamp = new Date().toLocaleDateString('en-IN') + " " + new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+  const data = {
+    bookingId: "PGF-STU-" + Date.now().toString().slice(-4),
+    type: "Student",
+    name: currentUser.name,
+    phone: currentUser.phone,
+    email: currentUser.email,
+    enrollment: document.getElementById("senroll").value.trim(),
+    college: document.getElementById("scollege").value.trim(),
+    course: document.getElementById("scourse").value.trim(),
+    start: document.getElementById("sstart").value,
+    end: document.getElementById("send").value,
+    userUpiId: document.getElementById("suserUpi").value.trim(),
+    fee: 100,
+    paymentMode: document.getElementById("spaymentMode").value,
+    txnId: document.getElementById("spayment").value.trim(),
+    dateLogged: currentTimestamp,
+    status: "Pending Verification",
+    certIssued: false
+  };
+  bookingsRegistry.unshift(data);
+  localStorage.setItem('pgf_bookings', JSON.stringify(bookingsRegistry));
+  pushNotification('ADMIN', '🎓 New Student Registration', `${data.name} applied for Internship.`, 'booking');
+  alert("Student Registration Submitted!");
+  document.getElementById("studentForm").reset();
+  document.getElementById("spayment").disabled = true;
+  checkUserSession();
+}
+
+function submitFarmerVisit(e) {
+  e.preventDefault();
+  const currentTimestamp = new Date().toLocaleDateString('en-IN') + " " + new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+  const data = {
+    bookingId: "PGF-FAR-" + Date.now().toString().slice(-4),
+    type: "Farmer",
+    name: currentUser.name,
+    phone: currentUser.phone,
+    email: currentUser.email,
+    date: document.getElementById("fdate").value,
+    userUpiId: document.getElementById("fuserUpi").value.trim(),
+    fee: 699,
+    paymentMode: document.getElementById("fpaymentMode").value,
+    txnId: document.getElementById("fpayment").value.trim(),
+    dateLogged: currentTimestamp,
+    status: "Pending Verification",
+    certIssued: false
+  };
+  bookingsRegistry.unshift(data);
+  localStorage.setItem('pgf_bookings', JSON.stringify(bookingsRegistry));
+  pushNotification('ADMIN', '👨‍🌾 New Farmer Training Booking', `${data.name} booked training.`, 'booking');
+  alert("Farmer Booking Submitted!");
+  document.getElementById("farmerForm").reset();
+  document.getElementById("fpayment").disabled = true;
+  checkUserSession();
+}
+
+if (document.getElementById("productSearch")) {
+  document.getElementById("productSearch").addEventListener("input", function(e) {
+    const searchTerm = e.target.value.toLowerCase().trim();
+    const filteredProducts = products.filter(product => product.name.toLowerCase().includes(searchTerm) || product.detail.toLowerCase().includes(searchTerm));
+    renderProducts(filteredProducts);
+  });
+}
+
+function downloadCertificatePDF(bookingId) {
+  const targetBooking = bookingsRegistry.find(b => b && b.bookingId === bookingId);
+  if (!targetBooking) return alert("Certificate not found.");
+  if (!targetBooking.certIssued) return alert("Certificate not issued yet.");
+
+  const titleText = targetBooking.type === "Student" ? "Certificate of Internship" : "Certificate of Farming";
+  const basePath = window.location.href.substring(0, window.location.href.lastIndexOf('/') + 1);
+  const logoUrl = basePath + "mushroom/pgf logo.png";
+
+  const certificateHTML = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>${titleText} - ${targetBooking.name}</title>
+  <style>
+    body { font-family: Arial, sans-serif; text-align: center; padding: 30px; }
+    .certificate-frame { border: 8px solid #1e4620; padding: 30px; max-width: 800px; margin: 0 auto; }
+  </style>
+</head>
+<body>
+  <div class="certificate-frame">
+    <h2>PURE GROW FARM</h2>
+    <h1>${titleText}</h1>
+    <p>This is to certify that</p>
+    <h2>${targetBooking.name.toUpperCase()}</h2>
+    <p>has successfully completed the program.</p>
+  </div>
+  <script>window.onload = function() { window.print(); };<\/script>
+</body>
+</html>`;
+
+  const blob = new Blob([certificateHTML], { type: 'text/html;charset=utf-8' });
+  const blobUrl = URL.createObjectURL(blob);
+  window.open(blobUrl, '_blank');
+}
+
+function printDivInvoice() {
+  window.print();
 }
 
 renderProducts();

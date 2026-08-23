@@ -692,7 +692,7 @@ function deleteUserAccount(idx) {
 }
 
 // =========================================================
-// LIVE STOCK SUMMARY
+// LIVE STOCK SUMMARY (DRY MUSHROOM, KHAKHRA & PAPAD)
 // =========================================================
 function renderAdminLiveStockSummary() {
   const container = document.getElementById("adminLiveStockCardsContainer");
@@ -724,7 +724,7 @@ function renderAdminLiveStockSummary() {
 }
 
 // =========================================================
-// DAILY DRY MUSHROOM STOCK MANAGEMENT
+// DAILY DRY MUSHROOM STOCK MANAGEMENT & TOTALS
 // =========================================================
 function saveDailyDryStockEntry(e) {
   e.preventDefault();
@@ -803,7 +803,7 @@ function renderDailyDryStockTable() {
 }
 
 // =========================================================
-// ADMIN ERP TABLES & METRICS
+// ADMIN ERP TABLES, METRICS & INLINE COURIER EDIT
 // =========================================================
 function populateAdminDashboardTables() {
   renderAdminLiveStockSummary();
@@ -885,7 +885,7 @@ function populateAdminDashboardTables() {
 
                   <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px; gap:4px;">
                     <span style="font-weight:bold; color:#0284c7; white-space:nowrap;">Stage: ${stage}</span>
-                    <input type="text" value="${courier}" placeholder="Courier Name" style="padding:2px 6px; font-size:11px; font-weight:bold; color:#334155; border:1px solid #94a3b8; border-radius:4px; width:140px; text-align:right;" onchange="updateOrderCourierDirect(${idx}, this.value)">
+                    <input type="text" value="${courier}" placeholder="Courier Name (e.g. Ekart)" style="padding:2px 6px; font-size:11px; font-weight:bold; color:#334155; border:1px solid #94a3b8; border-radius:4px; width:140px; text-align:right;" onchange="updateOrderCourierDirect(${idx}, this.value)">
                   </div>
                   
                   <div style="color:#334155; margin-bottom:6px;">📍 ${loc}</div>
@@ -910,15 +910,15 @@ function populateAdminDashboardTables() {
                   <div style="display:flex; gap:4px; flex-wrap:wrap; margin-top:4px;">
                     <button type="button" class="btn" style="padding:3px 6px; font-size:11px; min-height:24px; background:${o.refundStage==='Refund Initiated'?'#ea580c':'#94a3b8'};" onclick="setRefundStageDirect(${idx}, 'Refund Initiated')">Initiated</button>
                     <button type="button" class="btn" style="padding:3px 6px; font-size:11px; min-height:24px; background:${o.refundStage==='Refund Processing'?'#ea580c':'#94a3b8'};" onclick="setRefundStageDirect(${idx}, 'Refund Processing')">Processing</button>
-                    <button type="button" class="btn" style="padding:3px 6px; font-size:11px; min-height:24px; background:${o.refundStage==='Refund Credited'?'#16a34a':'#dc2626'}; font-weight:bold;" onclick="setRefundStageDirect(${idx}, 'Refund Credited')">💸 Credited</button>
+                    <button type="button" class="btn" style="padding:3px 6px; font-size:11px; min-height:24px; background:${o.refundStage==='Refund Credited'?'#16a34a':'#dc2626'}; font-weight:bold;" onclick="setRefundStageDirect(${idx}, 'Refund Credited')">💸 Credited (Deduct Cash)</button>
                   </div>
                 </div>
-              ` : (isRejected ? `<span style="color:#dc2626; font-weight:bold; font-size:12px;">Rejected</span>` : `<span style="color:#d97706; font-weight:bold; font-size:12px;">Approve or Cancel</span>`))}
+              ` : (isRejected ? `<span style="color:#dc2626; font-weight:bold; font-size:12px;">Rejected</span>` : `<span style="color:#d97706; font-weight:bold; font-size:12px;">Approve or Cancel to track</span>`))}
             </td>
 
             <td>
               <button class="btn" style="padding:6px 10px; font-size:11.5px; background:#0f172a; border-radius:6px;" onclick="openOrderActionsMenu(${idx})">
-                ⚙️ Manage
+                ⚙️ Manage Order
               </button>
             </td>
           </tr>
@@ -1037,21 +1037,27 @@ function openOrderActionsMenu(idx) {
   const o = orderRegistry[idx];
   const choice = prompt(
     `👉 Select an action for Order #${o.orderId} (${o.name}):\n\n` +
-    `1. Approve Order\n` +
+    `1. Approve Order (Sets Delivery Date & Courier)\n` +
     `2. Reject Order\n` +
     `3. Cancel & Refund\n` +
-    `4. Edit Details\n\n` +
+    `4. Edit Details (Phone, Address, Payment Mode, Txn ID & UPI ID)\n\n` +
     `Enter option number (1, 2, 3 or 4):`,
     "1"
   );
 
   if (!choice) return;
 
-  if (choice.trim() === "1") handleOrderApprove(idx);
-  else if (choice.trim() === "2") handleOrderReject(idx);
-  else if (choice.trim() === "3") handleOrderCancelRefund(idx);
-  else if (choice.trim() === "4") adminEditOrderDetails(idx);
-  else alert("⚠️ Invalid option selected.");
+  if (choice.trim() === "1") {
+    handleOrderApprove(idx);
+  } else if (choice.trim() === "2") {
+    handleOrderReject(idx);
+  } else if (choice.trim() === "3") {
+    handleOrderCancelRefund(idx);
+  } else if (choice.trim() === "4") {
+    adminEditOrderDetails(idx);
+  } else {
+    alert("⚠️ Invalid option selected. Please enter 1, 2, 3, or 4.");
+  }
 }
 
 function updateOrderCourierDirect(idx, newCourier) {
@@ -1077,15 +1083,20 @@ function updateOrderRefundDate(idx, newDate) {
 
 function adminEditOrderDetails(idx) {
   const o = orderRegistry[idx];
-  const newPhone = prompt("1. Customer Phone:", o.phone || "");
+
+  const newPhone = prompt("1. Customer Phone Number edit karein:", o.phone || "");
   if (newPhone !== null && newPhone.trim() !== "") o.phone = newPhone.trim();
-  const newAddress = prompt("2. Address:", o.address || "");
+
+  const newAddress = prompt("2. Customer Shipping Address edit karein:", o.address || "");
   if (newAddress !== null && newAddress.trim() !== "") o.address = newAddress.trim();
-  const newMode = prompt("3. Payment Mode:", o.paymentMode || "Online UPI");
+
+  const newMode = prompt("3. Payment Mode edit karein (e.g. GPay, PhonePe, Paytm, UPI, Cash):", o.paymentMode || "Online UPI");
   if (newMode !== null && newMode.trim() !== "") o.paymentMode = newMode.trim();
-  const newTxnId = prompt("4. Transaction ID:", o.txnId || "");
+
+  const newTxnId = prompt("4. Online Payment Transaction ID (UTR) edit karein:", o.txnId || "");
   if (newTxnId !== null && newTxnId.trim() !== "") o.txnId = newTxnId.trim();
-  const newUpi = prompt("5. Customer UPI ID:", o.userUpiId || "");
+
+  const newUpi = prompt("5. Customer UPI ID edit karein (e.g. name@okhdfcbank):", o.userUpiId || "");
   if (newUpi !== null && newUpi.trim() !== "") o.userUpiId = newUpi.trim();
 
   localStorage.setItem('pgf_orders', JSON.stringify(orderRegistry));
@@ -1096,15 +1107,17 @@ function adminEditOrderDetails(idx) {
 
 function adminEditCertificateData(idx) {
   const b = bookingsRegistry[idx];
-  const newName = prompt("Candidate Name:", b.name);
+  const newName = prompt("Candidate Name for Certificate:", b.name);
   if (newName !== null && newName.trim() !== "") b.name = newName.trim();
 
   if (b.type === "Student") {
     const newCollege = prompt("College Name:", b.college || "");
     if (newCollege !== null && newCollege.trim() !== "") b.college = newCollege.trim();
-    const newStart = prompt("Start Date (YYYY-MM-DD):", b.start || "");
+
+    const newStart = prompt("Internship Start Date (YYYY-MM-DD):", b.start || "");
     if (newStart !== null && newStart.trim() !== "") b.start = newStart.trim();
-    const newEnd = prompt("End Date (YYYY-MM-DD):", b.end || "");
+
+    const newEnd = prompt("Internship End Date (YYYY-MM-DD):", b.end || "");
     if (newEnd !== null && newEnd.trim() !== "") b.end = newEnd.trim();
   } else {
     const newDate = prompt("Training Session Date:", b.date || "");
@@ -1118,13 +1131,14 @@ function adminEditCertificateData(idx) {
 
 function handleOrderApprove(idx) {
   const o = orderRegistry[idx];
+
   const defaultDeliveryDate = o.deliveryDays || getTodayIsoString();
-  const inputDeliveryDate = prompt("Order delivery date (YYYY-MM-DD):", defaultDeliveryDate);
+  const inputDeliveryDate = prompt("Order kis Date tak customer ko milega? (YYYY-MM-DD):", defaultDeliveryDate);
   if (inputDeliveryDate === null) return;
   const finalDeliveryDate = inputDeliveryDate.trim() || defaultDeliveryDate;
 
   const defaultCourier = o.courierName || "Ekart Logistics";
-  const inputCourier = prompt("Courier partner:", defaultCourier);
+  const inputCourier = prompt("Order kis Courier partner se dispatch hoga? (e.g. Ekart, Delhivery, BlueDart, DTDC):", defaultCourier);
   if (inputCourier === null) return;
   const finalCourier = inputCourier.trim() || defaultCourier;
 
@@ -1133,21 +1147,27 @@ function handleOrderApprove(idx) {
   o.deliveryDays = finalDeliveryDate;
   o.courierName = finalCourier;
   o.trackingNumber = o.trackingNumber || ("FMPC" + Math.floor(1000000000 + Math.random() * 9000000000));
-  o.currentLocation = `Dispatched via ${finalCourier} at Farm Hub`;
+  o.currentLocation = `Processing & Dispatched via ${finalCourier} at Farm Hub`;
   o.paymentReceived = true;
   o.refundStage = "";
   
   localStorage.setItem('pgf_orders', JSON.stringify(orderRegistry));
-  pushNotification(o.email, '📦 Order Approved & Dispatched!', `Your Order #${o.orderId} is confirmed.`, 'order');
+  
+  pushNotification(
+    o.email, 
+    '📦 Order Approved & Dispatched!', 
+    `Your Order #${o.orderId} is confirmed. Placed Date: ${o.dateLogged}. Expected Delivery Date: ${finalDeliveryDate} via ${finalCourier}.`, 
+    'order'
+  );
 
-  alert(`✅ Order Approved Successfully!`);
+  alert(`✅ Order Approved Successfully!\n\n• Delivery Date: ${finalDeliveryDate}\n• Courier Partner: ${finalCourier}`);
   populateAdminDashboardTables();
   computeFinancialLedgerStatements();
 }
 
 function handleOrderReject(idx) {
   const o = orderRegistry[idx];
-  let reason = prompt("Reason for rejection:", "Payment Not Received");
+  let reason = prompt("Reject karne ka reason likhein (Payment nahi mila / Fake UTR):", "Payment Not Received / Invalid Txn ID");
   if (reason === null) return;
 
   o.status = `Rejected (Reason: ${reason})`;
@@ -1156,16 +1176,16 @@ function handleOrderReject(idx) {
   o.refundStage = "";
 
   localStorage.setItem('pgf_orders', JSON.stringify(orderRegistry));
-  pushNotification(o.email, '❌ Order Rejected', `Your Order #${o.orderId} was rejected.`, 'order');
+  pushNotification(o.email, '❌ Order Rejected', `Your Order #${o.orderId} was rejected. Reason: ${reason}.`, 'order');
 
-  alert("❌ Order Rejected!");
+  alert("❌ Option 2: Order Reject ho gaya! (Iska paisa accounting me count nahi hoga)");
   populateAdminDashboardTables();
   computeFinancialLedgerStatements();
 }
 
 function handleOrderCancelRefund(idx) {
   const o = orderRegistry[idx];
-  let reason = prompt("Reason for cancellation:", "Item Out of Stock");
+  let reason = prompt("Order Cancel karne ka reason likhein (User ko message jayega):", "Item Out of Stock / Unserviceable Pincode");
   if (reason === null) return;
 
   o.status = `Cancelled (Reason: ${reason})`;
@@ -1174,9 +1194,10 @@ function handleOrderCancelRefund(idx) {
   o.refundCreditedDate = "";
 
   localStorage.setItem('pgf_orders', JSON.stringify(orderRegistry));
-  pushNotification(o.email, '⚠️ Order Cancelled', `Your Order #${o.orderId} was cancelled.`, 'order');
+  
+  pushNotification(o.email, '⚠️ Order Cancelled', `Aapka Order #${o.orderId} cancel kar diya gaya hai. Reason: ${reason}. Refund aapke UPI ID (${o.userUpiId || 'Bank'}) par process kiya ja raha hai.`, 'order');
 
-  alert("🔄 Order Cancelled & Refund Initiated.");
+  alert("🔄 Option 3: Order Cancel ho gaya aur User ko cancellation notification bhej di gayi hai.");
   populateAdminDashboardTables();
   computeFinancialLedgerStatements();
 }
@@ -1184,23 +1205,42 @@ function handleOrderCancelRefund(idx) {
 function setOrderStageDirect(idx, newStage) {
   const o = orderRegistry[idx];
   o.trackingStage = newStage;
-  if (newStage === 'Delivered') o.status = "Delivered";
+
+  if (newStage === 'Placed') {
+    o.currentLocation = "Farm Order Desk";
+  } else if (newStage === 'Packed') {
+    o.currentLocation = `Pure Grow Farm Central Hub (${o.courierName || 'Ekart Logistics'})`;
+  } else if (newStage === 'Shipped') {
+    o.currentLocation = `In Transit via ${o.courierName || 'Ekart Logistics'} Hub`;
+  } else if (newStage === 'OutForDelivery') {
+    o.currentLocation = `Out for Delivery with ${o.courierName || 'Ekart Logistics'} Partner`;
+  } else if (newStage === 'Delivered') {
+    o.currentLocation = "Delivered to Customer Doorstep";
+    o.status = "Delivered";
+  }
 
   localStorage.setItem('pgf_orders', JSON.stringify(orderRegistry));
-  pushNotification(o.email, '🚚 Order Shipment Update', `Order #${o.orderId} stage updated to: ${newStage}.`, 'order');
+  pushNotification(o.email, '🚚 Order Shipment Update', `Order #${o.orderId} stage updated to: ${newStage}. (${o.currentLocation})`, 'order');
   populateAdminDashboardTables();
 }
 
 function setRefundStageDirect(idx, newRefStage) {
   const o = orderRegistry[idx];
   o.refundStage = newRefStage;
+  
   const refundInput = document.getElementById(`refundDateInput_${idx}`);
-  o.refundCreditedDate = refundInput ? refundInput.value : getTodayIsoString();
+  const selectedDate = refundInput ? refundInput.value : getTodayIsoString();
+  o.refundCreditedDate = selectedDate;
 
   localStorage.setItem('pgf_orders', JSON.stringify(orderRegistry));
+  
   if (newRefStage === 'Refund Credited') {
-    pushNotification(o.email, '💰 Refund Completed', `₹${o.total} refunded successfully.`, 'order');
+    pushNotification(o.email, '💰 Refund Completed', `₹${o.total} has been successfully credited on ${selectedDate} to your UPI ID: ${o.userUpiId || 'Bank Account'}.`, 'order');
+    alert(`💸 Refund of ₹${o.total} marked as Credited on ${selectedDate}! Farm Cash Vault se paisa deduct ho gaya.`);
+  } else {
+    pushNotification(o.email, '💰 Refund Status Update', `Refund for Order #${o.orderId} status: ${newRefStage}.`, 'order');
   }
+  
   populateAdminDashboardTables();
   computeFinancialLedgerStatements();
 }
@@ -1212,45 +1252,68 @@ function confirmBookingSlot(idx) {
   localStorage.setItem('pgf_bookings', JSON.stringify(bookingsRegistry));
   
   const target = bookingsRegistry[idx];
-  pushNotification(target.email, '🎓 Farm Booking Confirmed!', `Your booking #${target.bookingId} confirmed.`, 'booking');
-  alert(`✅ Farm Booking Approved!`);
+  pushNotification(target.email, '🎓 Farm Booking Confirmed!', `Your ${target.type} program booking #${target.bookingId} has been confirmed.`, 'booking');
+
+  alert(`✅ 1. Farm Booking Approved for ${target.name}!`);
   populateAdminDashboardTables();
   computeFinancialLedgerStatements();
 }
 
 function issueUserCertificate(idx) {
   const target = bookingsRegistry[idx];
-  if (confirm(`Approve certificate for ${target.name}?`)) {
+  if (confirm(`Kya aap ${target.name} ke liye certificate approve karna chahte hain?`)) {
     target.certIssued = true;
     target.certIssueDate = new Date().toLocaleDateString('en-IN');
     localStorage.setItem('pgf_bookings', JSON.stringify(bookingsRegistry));
-    pushNotification(target.email, '📜 Certificate Issued & Ready!', `Your certificate is ready.`, 'certificate');
-    alert("✅ Certificate Approved!");
+
+    pushNotification(target.email, '📜 Certificate Issued & Ready!', `Your certificate for ${target.type} program (#${target.bookingId}) is ready to download.`, 'certificate');
+
+    alert("✅ 2. Certificate Approved ho gaya!");
     populateAdminDashboardTables();
   }
 }
 
 function rejectTrainingBooking(idx) {
   const target = bookingsRegistry[idx];
-  let reason = prompt("Reason:", "Unverified");
+  let reason = prompt("Reject karne ka reason likhein:", "Payment unverified");
   if(reason === null) return;
+  
   target.status = `Rejected (Reason: ${reason})`;
   target.certIssued = false;
   localStorage.setItem('pgf_bookings', JSON.stringify(bookingsRegistry));
-  pushNotification(target.email, '❌ Farm Booking Rejected', `Booking rejected.`, 'booking');
+
+  pushNotification(target.email, '❌ Farm Booking Rejected', `Your booking #${target.bookingId} was rejected. Reason: ${reason}.`, 'booking');
   populateAdminDashboardTables();
 }
 
 function adminEditExpense(idx) {
   const exp = expensesRegistry[idx];
-  const newAmt = prompt("Amount (Rs):", exp.amount);
+
+  const newDate = prompt("1. Operation Date:", exp.date || getTodayIsoString());
+  if (newDate !== null && newDate.trim() !== "") exp.date = newDate.trim();
+
+  const newCategory = prompt("2. Category (Farm / Mushroom / Student & Farmer):", exp.category || "Farm");
+  if (newCategory !== null && newCategory.trim() !== "") exp.category = newCategory.trim();
+
+  const newPayer = prompt("3. Payer Party (Soham / Jeet / Farm):", exp.payer || "Farm");
+  if (newPayer !== null && newPayer.trim() !== "") exp.payer = newPayer.trim();
+
+  const newDesc = prompt("4. Context / Item Summary:", exp.desc || "");
+  if (newDesc !== null && newDesc.trim() !== "") exp.desc = newDesc.trim();
+
+  const newAmt = prompt("5. Amount (Rs):", exp.amount);
   if (newAmt !== null && !isNaN(parseFloat(newAmt))) exp.amount = parseFloat(newAmt);
+
+  const newNotes = prompt("6. Additional Notes / Memo:", exp.notes || "");
+  if (newNotes !== null) exp.notes = newNotes.trim();
+
   localStorage.setItem('pgf_expenses', JSON.stringify(expensesRegistry));
   computeFinancialLedgerStatements();
+  alert("✅ Expense row updated!");
 }
 
 function adminDeleteExpense(idx) {
-  if (confirm("Delete expense entry?")) {
+  if (confirm("Kya aap sach me ye Expense entry delete karna chahte hain?")) {
     expensesRegistry.splice(idx, 1);
     localStorage.setItem('pgf_expenses', JSON.stringify(expensesRegistry));
     computeFinancialLedgerStatements();
@@ -1259,14 +1322,41 @@ function adminDeleteExpense(idx) {
 
 function adminEditSale(idx) {
   const s = salesRegistry[idx];
-  const newPaid = prompt("Received Payment Amount:", s.paidAmount || s.total);
+  
+  const newDate = prompt("1. Sale Date:", s.date || getTodayIsoString());
+  if (newDate !== null && newDate.trim() !== "") s.date = newDate.trim();
+
+  const newBuyer = prompt("2. Buyer Name:", s.buyer || "");
+  if (newBuyer !== null && newBuyer.trim() !== "") s.buyer = newBuyer.trim();
+
+  const newPhone = prompt("3. Buyer Phone:", s.phone || "");
+  if (newPhone !== null && newPhone.trim() !== "") s.phone = newPhone.trim();
+
+  const newQty = prompt("4. Qty Lots:", s.qty);
+  if (newQty !== null && !isNaN(parseFloat(newQty))) s.qty = parseFloat(newQty);
+
+  const newRate = prompt("5. Unit Spot Rate (Rs):", s.rate);
+  if (newRate !== null && !isNaN(parseFloat(newRate))) s.rate = parseFloat(newRate);
+
+  const newDel = prompt("6. Delivery Charge (Rs):", s.delivery || 0);
+  if (newDel !== null && !isNaN(parseFloat(newDel))) s.delivery = parseFloat(newDel);
+
+  s.subtotal = s.qty * s.rate;
+  s.total = s.subtotal + s.delivery;
+
+  const newPaid = prompt(`7. Received Payment Amount (Total Rs ${s.total}):`, s.paidAmount !== undefined ? s.paidAmount : s.total);
   if (newPaid !== null && !isNaN(parseFloat(newPaid))) s.paidAmount = parseFloat(newPaid);
+
+  const newNotes = prompt("8. Sale Notes / Remarks:", s.notes || "");
+  if (newNotes !== null) s.notes = newNotes.trim();
+
   localStorage.setItem('pgf_sales', JSON.stringify(salesRegistry));
   computeFinancialLedgerStatements();
+  alert("✅ Sell Entry successfully updated!");
 }
 
 function adminDeleteSale(idx) {
-  if (confirm("Delete sale entry?")) {
+  if (confirm("Kya aap sach me ye Sell entry delete karna chahte hain?")) {
     salesRegistry.splice(idx, 1);
     localStorage.setItem('pgf_sales', JSON.stringify(salesRegistry));
     computeFinancialLedgerStatements();
@@ -1275,14 +1365,34 @@ function adminDeleteSale(idx) {
 
 function adminEditPurchase(idx) {
   const p = purchasesRegistry[idx];
-  const newPaid = prompt("Paid Amount:", p.paidAmount || p.total);
+  
+  const newDate = prompt("1. Purchase Date:", p.date || getTodayIsoString());
+  if (newDate !== null && newDate.trim() !== "") p.date = newDate.trim();
+
+  const newVendor = prompt("2. Vendor Name:", p.vendor || "");
+  if (newVendor !== null && newVendor.trim() !== "") p.vendor = newVendor.trim();
+
+  const newQty = prompt("3. Qty Units:", p.qty);
+  if (newQty !== null && !isNaN(parseFloat(newQty))) p.qty = parseFloat(newQty);
+
+  const newRate = prompt("4. Rate (Rs):", p.rate);
+  if (newRate !== null && !isNaN(parseFloat(newRate))) p.rate = parseFloat(newRate);
+
+  p.total = p.qty * p.rate;
+
+  const newPaid = prompt(`5. Vendor ko Kitna Paisa Diya Hai? (Total Rs ${p.total}):`, p.paidAmount !== undefined ? p.paidAmount : p.total);
   if (newPaid !== null && !isNaN(parseFloat(newPaid))) p.paidAmount = parseFloat(newPaid);
+
+  const newNotes = prompt("6. Vendor Notes / Memo:", p.notes || "");
+  if (newNotes !== null) p.notes = newNotes.trim();
+
   localStorage.setItem('pgf_purchases', JSON.stringify(purchasesRegistry));
   computeFinancialLedgerStatements();
+  alert("✅ Buy Purchase record updated!");
 }
 
 function adminDeletePurchase(idx) {
-  if (confirm("Delete purchase entry?")) {
+  if (confirm("Kya aap sach me ye Buy record delete karna chahte hain?")) {
     purchasesRegistry.splice(idx, 1);
     localStorage.setItem('pgf_purchases', JSON.stringify(purchasesRegistry));
     computeFinancialLedgerStatements();
@@ -1291,14 +1401,29 @@ function adminDeletePurchase(idx) {
 
 function adminEditDamage(idx) {
   const dmg = expensesRegistry[idx];
-  const newAmt = prompt("Damage Amount:", dmg.amount);
+  
+  const newDate = prompt("1. Damage Date:", dmg.date || getTodayIsoString());
+  if (newDate !== null && newDate.trim() !== "") dmg.date = newDate.trim();
+
+  const newPayer = prompt("2. Partner / Vault Location (Farm / Soham / Jeet):", dmg.payer || "Farm");
+  if (newPayer !== null && newPayer.trim() !== "") dmg.payer = newPayer.trim();
+
+  const newDesc = prompt("3. Damage Reason:", dmg.desc || "");
+  if (newDesc !== null && newDesc.trim() !== "") dmg.desc = newDesc.trim();
+
+  const newAmt = prompt("4. Damage Amount (Rs):", dmg.amount);
   if (newAmt !== null && !isNaN(parseFloat(newAmt))) dmg.amount = parseFloat(newAmt);
+
+  const newNotes = prompt("5. Audit Notes:", dmg.notes || "");
+  if (newNotes !== null) dmg.notes = newNotes.trim();
+
   localStorage.setItem('pgf_expenses', JSON.stringify(expensesRegistry));
   computeFinancialLedgerStatements();
+  alert("✅ Damage log updated!");
 }
 
 function adminDeleteDamage(idx) {
-  if (confirm("Delete damage entry?")) {
+  if (confirm("Kya aap sach me ye Damage entry delete karna chahte hain?")) {
     expensesRegistry.splice(idx, 1);
     localStorage.setItem('pgf_expenses', JSON.stringify(expensesRegistry));
     computeFinancialLedgerStatements();
@@ -1322,12 +1447,14 @@ function computeFinancialLedgerStatements() {
     .reduce((sum, o) => sum + Number(o.total || 0), 0);
 
   const netProfit = totalSales - (totalPurchases + totalExpenses + totalDamages + totalCreditedRefunds);
+  const totalFarmKharcha = totalPurchases + totalExpenses;
 
   if(document.getElementById("finTotalRevenue")) document.getElementById("finTotalRevenue").textContent = "Rs " + totalSales.toFixed(2);
   if(document.getElementById("finTotalPurchases")) document.getElementById("finTotalPurchases").textContent = "Rs " + totalPurchases.toFixed(2);
   if(document.getElementById("finTotalExpenses")) document.getElementById("finTotalExpenses").textContent = "Rs " + totalExpenses.toFixed(2);
   if(document.getElementById("finTotalRefunds")) document.getElementById("finTotalRefunds").textContent = "Rs " + totalCreditedRefunds.toFixed(2);
   if(document.getElementById("finNetProfit")) document.getElementById("finNetProfit").textContent = "Rs " + netProfit.toFixed(2);
+  if(document.getElementById("totalFarmKharcha")) document.getElementById("totalFarmKharcha").textContent = "Rs " + totalFarmKharcha.toFixed(2);
 
   let cashBalances = { Soham: 0, Jeet: 0, Farm: 0 };
   
@@ -1348,9 +1475,13 @@ function computeFinancialLedgerStatements() {
 
   expensesRegistry.filter(e => e.category === "Damage Received").forEach(d => {
     const amt = Number(d.amount || 0);
-    if (d.payer === "Farm") cashBalances.Farm += amt;
-    else if (d.payer === "Soham") cashBalances.Soham -= amt;
-    else if (d.payer === "Jeet") cashBalances.Jeet -= amt;
+    if (d.payer === "Farm") {
+      cashBalances.Farm += amt;
+    } else if (d.payer === "Soham") {
+      cashBalances.Soham -= amt;
+    } else if (d.payer === "Jeet") {
+      cashBalances.Jeet -= amt;
+    }
   });
 
   if(document.getElementById("cashSoham")) document.getElementById("cashSoham").textContent = "Rs " + cashBalances.Soham.toFixed(2);
@@ -1392,7 +1523,7 @@ function computeFinancialLedgerStatements() {
           <td style="color:var(--accent); font-weight:bold;">Rs ${grandTotal.toFixed(2)}</td>
           <td>
             <span style="color:#16a34a; font-weight:bold;">Rs ${paid.toFixed(2)}</span>
-            ${pending > 0 ? `<br><small style="color:#dc2626; font-weight:bold;">Due: Rs ${pending.toFixed(2)}</small>` : '<br><small style="color:#16a34a;">(Paid)</small>'}
+            ${pending > 0 ? `<br><small style="color:#dc2626; font-weight:bold;">Due: Rs ${pending.toFixed(2)}</small>` : '<br><small style="color:#16a34a;">(Fully Paid)</small>'}
           </td>
           <td><small>${s.notes || '-'}</small></td>
           <td>
@@ -1516,7 +1647,7 @@ function saveAdminSale(e) {
   initDefaultDatePickers();
   computeFinancialLedgerStatements();
   renderAdminLiveStockSummary();
-  alert(`✅ Wholesale Sale Entry saved!`);
+  alert(`✅ Wholesale Sale Entry saved! Total: Rs ${grandTotal}, Received: Rs ${paid}`);
 }
 
 function saveAdminPurchase(e) {
@@ -1559,7 +1690,7 @@ function saveAdminPurchase(e) {
   initDefaultDatePickers();
   computeFinancialLedgerStatements();
   renderAdminLiveStockSummary();
-  alert(`✅ Inventory Buy recorded!`);
+  alert(`✅ Inventory Buy recorded! Total: Rs ${qty * rate}, Paid to Vendor: Rs ${paid}`);
 }
 
 function saveAdminDamage(e) {
@@ -1585,7 +1716,7 @@ function saveAdminDamage(e) {
   e.target.reset();
   initDefaultDatePickers();
   computeFinancialLedgerStatements();
-  alert(`✅ Damage recorded!`);
+  alert(`✅ Damage recorded: ${payerType === 'Farm' ? '+Rs ' + amountVal + ' added to Farm Vault' : '-Rs ' + amountVal + ' deducted from ' + payerType + ' expenses'}`);
 }
 
 function downloadOfflineSaleInvoice(saleId) {
@@ -1601,8 +1732,8 @@ function downloadOfflineSaleInvoice(saleId) {
   document.getElementById("invNum").textContent = targetSale.saleId;
   document.getElementById("invDate").textContent = targetSale.date;
   document.getElementById("invClientName").textContent = targetSale.buyer;
-  document.getElementById("invClientEmail").textContent = "Phone: " + (targetSale.phone || "N/A");
-  document.getElementById("invClientAddr").textContent = "Address: " + (targetSale.address || "Direct Spot Distribution");
+  document.getElementById("invClientEmail").textContent = "Phone Lines: " + (targetSale.phone || "N/A");
+  document.getElementById("invClientAddr").textContent = "Shipping Address: " + (targetSale.address || "Direct Spot Distribution Counter");
   
   document.getElementById("invoiceTableItemsBody").innerHTML = `
     <tr>
@@ -1621,7 +1752,7 @@ function downloadOfflineSaleInvoice(saleId) {
   if (notesSec) {
     if (targetSale.notes) {
       notesSec.style.display = "block";
-      notesSec.innerHTML = `<strong>Memo:</strong> ${targetSale.notes}`;
+      notesSec.innerHTML = `<strong>Memo / Note:</strong> ${targetSale.notes}`;
     } else {
       notesSec.style.display = "none";
     }
@@ -1639,11 +1770,30 @@ function downloadOfflineSaleInvoice(saleId) {
   const waTargetPhone = (targetSale.phone && targetSale.phone.replace(/[^0-9]/g, '')) || farmWhatsapp;
   const cleanPhone = waTargetPhone.length === 10 ? "91" + waTargetPhone : waTargetPhone;
 
-  const waInvoiceText = `*PURE GROW FARM - INVOICE*\\nRef: ${targetSale.saleId}\\nTotal: Rs ${grandTotal.toFixed(2)}`;
+  const waInvoiceText = 
+`*PURE GROW FARM - SALES INVOICE RECEIPT*
+----------------------------------------
+📄 *Invoice Ref:* ${targetSale.saleId}
+📅 *Date:* ${targetSale.date}
+👤 *Customer:* ${targetSale.buyer}
+📞 *Phone:* ${targetSale.phone || 'N/A'}
+📍 *Address:* ${targetSale.address || 'Direct Spot Delivery'}
+🍄 *Product:* ${targetSale.product} (${targetSale.qty} Units @ Rs ${targetSale.rate}/unit)
+----------------------------------------
+💰 *Subtotal:* Rs ${sub.toFixed(2)}
+🚚 *Delivery:* Rs ${del.toFixed(2)}
+💵 *Grand Total:* Rs ${grandTotal.toFixed(2)}
+✅ *Paid Amount:* Rs ${paid.toFixed(2)}
+${due > 0 ? `⚠️ *Pending Balance:* Rs ${due.toFixed(2)}\n` : `🎉 *Status:* Fully Paid\n`}${targetSale.notes ? `📝 *Note:* ${targetSale.notes}\n` : ''}----------------------------------------
+*Thank you for your business!*
+Pure Grow Farm, Makhiyala, Gujarat
+📞 +91 9067891039 | +91 8200145732`;
+
   const waBtn = document.getElementById("whatsappInvoice");
   if (waBtn) {
     waBtn.href = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(waInvoiceText)}`;
   }
+  
   document.getElementById("invoiceDialog").showModal();
 }
 
@@ -1651,18 +1801,32 @@ function renderProducts(list = products) {
   if(!document.getElementById("productsList")) return;
   document.getElementById("productsList").innerHTML = list.map(product => {
     const inStock = product.stock > 0;
+
     return `
       <article class="product">
         <img src="${product.image}" alt="${product.name}">
         <h3>${product.name}</h3>
         <p class="muted">${product.detail}</p>
+        
         <div style="margin-bottom: 8px;">
-          ${product.bulk ? `<span class="badge" style="background: #e0f2fe; color: #0369a1;">📦 Custom Supply</span>` : (inStock ? `<span class="badge badge-confirmed">🟢 Available: ${product.stock} ${product.unit}</span>` : `<span class="badge" style="background:#fee2e2; color:#991b1b;">🔴 Out of Stock</span>`)}
+          ${product.bulk ? 
+            `<span class="badge" style="background: #e0f2fe; color: #0369a1; font-size:11px;">📦 Custom Supply</span>` : 
+            (inStock 
+              ? `<span class="badge badge-confirmed" style="font-size:11px;">🟢 Available: ${product.stock} ${product.unit}</span>` 
+              : `<span class="badge" style="background:#fee2e2; color:#991b1b; font-size:11px;">🔴 Out of Stock</span>`
+            )
+          }
         </div>
+
         <div style="margin-top:auto;">
           <div class="product-actions">
             <div class="pill">Rs ${product.price} / ${product.unit}</div>
-            ${product.bulk ? `<button type="button" onclick="window.open('https://wa.me/${farmWhatsapp}')">Contact Bulk</button>` : `<button type="button" ${inStock ? '' : 'disabled'} onclick="addToCart(${product.id})">${inStock ? 'Add Cart' : 'Out of Stock'}</button>`}
+            ${product.bulk ? 
+              `<button type="button" onclick="window.open('https://wa.me/${farmWhatsapp}')">Contact Bulk</button>` : 
+              `<button type="button" ${inStock ? '' : 'disabled style="background:#9ca3af; cursor:not-allowed;"'} onclick="addToCart(${product.id})">
+                ${inStock ? 'Add Cart' : 'Out of Stock'}
+              </button>`
+            }
           </div>
         </div>
       </article>
@@ -1679,10 +1843,19 @@ function updateHeaderCartCounter() {
 
 function addToCart(id) {
   const product = products.find(item => item.id === id);
-  if (!product || product.stock <= 0) return alert("Out of stock!");
+  if (!product || product.stock <= 0) {
+    alert("⚠️ Abhi yeh item stock me uplabdh nahi hai!");
+    return;
+  }
+
   const current = cart.get(id);
   const currentQty = current ? current.qty : 0;
-  if (currentQty + 1 > product.stock) return alert(`Only ${product.stock} available!`);
+
+  if (currentQty + 1 > product.stock) {
+    alert(`⚠️ Stock me sirf ${product.stock} items hi uplabdh hain!`);
+    return;
+  }
+
   cart.set(id, { ...product, qty: currentQty + 1 });
   renderCart();
   updateHeaderCartCounter();
@@ -1708,6 +1881,7 @@ function renderCart() {
   if(document.getElementById("subtotal")) document.getElementById("subtotal").textContent = `Rs ${bill.subtotal}`;
   if(document.getElementById("delivery")) document.getElementById("delivery").textContent = `Rs ${bill.delivery}`;
   if(document.getElementById("total")) document.getElementById("total").textContent = `Rs ${bill.total}`;
+
   updateHeaderCartCounter();
 
   if (!cart.size) { 
@@ -1744,9 +1918,12 @@ function openProductPayment() {
     validateOrderForm();
     return;
   }
+  
   document.getElementById("productPaymentHelp").style.display = "block";
   document.getElementById("productPaymentHelp").textContent = `Launching UPI Payment app link for Rs ${bill.total}.`;
+  
   window.location.href = `upi://pay?pa=${encodeURIComponent(farmUpiId)}&pn=${encodeURIComponent(farmName)}&am=${bill.total}&cu=INR`;
+  
   document.getElementById("paymentId").disabled = false;
   validateOrderForm();
 }
@@ -1756,6 +1933,7 @@ function validateOrderForm() {
   const userUpi = document.getElementById("userUpiId") ? document.getElementById("userUpiId").value.trim() : "";
   const mode = document.getElementById("paymentMode") ? document.getElementById("paymentMode").value : "";
   const txnId = document.getElementById("paymentId") ? document.getElementById("paymentId").value.trim() : "";
+  
   const isValid = cart.size > 0 && address.length > 4 && userUpi.length >= 5 && userUpi.includes('@') && mode !== "" && txnId.length >= 6;
   if(document.getElementById("confirmOrderBtn")) document.getElementById("confirmOrderBtn").disabled = !isValid;
 }
@@ -1772,7 +1950,9 @@ function confirmOrder(e) {
 
   cart.forEach((item, prodId) => {
     const prod = products.find(p => p.id === prodId);
-    if (prod && !prod.bulk) prod.stock = Math.max(0, prod.stock - item.qty);
+    if (prod && !prod.bulk) {
+      prod.stock = Math.max(0, prod.stock - item.qty);
+    }
   });
   saveProductsToStorage();
   renderProducts();
@@ -1804,14 +1984,14 @@ function confirmOrder(e) {
   document.getElementById("invDate").textContent = new Date().toLocaleDateString('en-IN');
   document.getElementById("invClientName").textContent = data.name;
   document.getElementById("invClientEmail").textContent = "Email: " + data.email + " | Ph: " + data.phone;
-  document.getElementById("invClientAddr").textContent = "Address: " + data.address;
+  document.getElementById("invClientAddr").textContent = "Address: " + data.address + " | User UPI: " + data.userUpiId;
   
   document.getElementById("invoiceTableItemsBody").innerHTML = [...cart.values()].map(item => `
     <tr>
-      <td style="padding:12px 14px; border-bottom:1px solid #e6e9ec;">${item.name} (${item.unit})</td>
+      <td style="padding:12px 14px; border-bottom:1px solid #e6e9ec; font-weight: 600;">${item.name} (${item.unit})</td>
       <td style="padding:12px 14px; border-bottom:1px solid #e6e9ec; text-align:right;">Rs ${item.price}</td>
       <td style="padding:12px 14px; border-bottom:1px solid #e6e9ec; text-align:center;">${item.qty}</td>
-      <td style="padding:12px 14px; border-bottom:1px solid #e6e9ec; text-align:right;">Rs ${item.price * item.qty}</td>
+      <td style="padding:12px 14px; border-bottom:1px solid #e6e9ec; text-align:right; font-weight:600; color:var(--accent);">Rs ${item.price * item.qty}</td>
     </tr>
   `).join("");
   
@@ -1819,8 +1999,20 @@ function confirmOrder(e) {
   document.getElementById("invDelivery").textContent = "Rs " + bill.delivery;
   document.getElementById("invTotal").textContent = "Rs " + bill.total;
 
-  pushNotification('ADMIN', '🛍️ New Order Placed!', `${data.name} placed order #${data.orderId}`, 'order');
-  alert("Order submitted!");
+  const paidRow = document.getElementById("invPaidRow");
+  const dueRow = document.getElementById("invDueRow");
+  const notesSec = document.getElementById("invNotesSection");
+  if (paidRow) paidRow.style.display = "none";
+  if (dueRow) dueRow.style.display = "none";
+  if (notesSec) notesSec.style.display = "none";
+
+  pushNotification('ADMIN', '🛍️ New Order Placed!', `${data.name} placed order #${data.orderId} for Rs ${data.total}`, 'order');
+  
+  const waMessage = `NEW GOODS ORDER VERIFICATION FLOW:\n----------------------------------------\nInvoice Ref Code: ${data.orderId}\nClient Legal Name: ${data.name}\nClient UPI ID: ${data.userUpiId}\nProducts Mapped: ${data.products}\nTotal Paid Amount: Rs ${data.total}\nPayment Method: ${data.paymentMode}\nTransaction Hash ID Code: ${data.txnId}\n----------------------------------------`;
+  
+  alert("Order submitted! Opening WhatsApp summary.");
+  window.open(`https://wa.me/${farmWhatsapp}?text=${encodeURIComponent(waMessage)}`, '_blank');
+  
   document.getElementById("invoiceDialog").showModal();
   
   cart.clear();
@@ -1850,9 +2042,12 @@ function openVisitPayment(formId, amount) {
     else validateFarmerForm();
     return;
   }
+  
   document.getElementById(helpId).style.display = "block";
   document.getElementById(helpId).textContent = `Launching UPI App for program fee Rs ${amount}.`;
+  
   window.location.href = `upi://pay?pa=${encodeURIComponent(farmUpiId)}&pn=${encodeURIComponent(farmName)}&am=${amount}&cu=INR`;
+  
   document.getElementById(txnInputId).disabled = false;
   if(formId === "studentForm") validateStudentForm();
   else validateFarmerForm();
@@ -1867,6 +2062,7 @@ function validateStudentForm() {
   const userUpi = document.getElementById("suserUpi") ? document.getElementById("suserUpi").value.trim() : "";
   const txn = document.getElementById("spayment").value.trim();
   const isDisabled = document.getElementById("spayment").disabled;
+  
   const isValid = !isDisabled && enroll !== "" && college !== "" && course !== "" && start !== "" && end !== "" && userUpi.length >= 5 && userUpi.includes('@') && txn.length >= 6;
   document.getElementById("studentSubmitBtn").disabled = !isValid;
 }
@@ -1876,6 +2072,7 @@ function validateFarmerForm() {
   const userUpi = document.getElementById("fuserUpi") ? document.getElementById("fuserUpi").value.trim() : "";
   const txn = document.getElementById("fpayment").value.trim();
   const isDisabled = document.getElementById("fpayment").disabled;
+  
   const isValid = !isDisabled && date !== "" && userUpi.length >= 5 && userUpi.includes('@') && txn.length >= 6;
   document.getElementById("farmerSubmitBtn").disabled = !isValid;
 }
@@ -1915,8 +2112,12 @@ function submitStudentVisit(e) {
   };
   bookingsRegistry.unshift(data);
   localStorage.setItem('pgf_bookings', JSON.stringify(bookingsRegistry));
-  pushNotification('ADMIN', '🎓 New Student Registration', `${data.name} applied for Internship.`, 'booking');
-  alert("Student Registration Submitted!");
+
+  pushNotification('ADMIN', '🎓 New Student Registration', `${data.name} applied for Internship (#${data.bookingId}).`, 'booking');
+
+  const waText = `NEW STUDENT INTERNSHIP REGISTRATION:\n----------------------------------------\nBooking Ref ID: ${data.bookingId}\nName: ${data.name}\nStudent UPI ID: ${data.userUpiId}\nCollege: ${data.college}\nCourse: ${data.course}\nUTR Tracking Number: ${data.txnId}\n----------------------------------------`;
+  window.open(`https://wa.me/${farmWhatsapp}?text=${encodeURIComponent(waText)}`, '_blank');
+  
   document.getElementById("studentForm").reset();
   document.getElementById("spayment").disabled = true;
   checkUserSession();
@@ -1942,8 +2143,12 @@ function submitFarmerVisit(e) {
   };
   bookingsRegistry.unshift(data);
   localStorage.setItem('pgf_bookings', JSON.stringify(bookingsRegistry));
-  pushNotification('ADMIN', '👨‍🌾 New Farmer Training Booking', `${data.name} booked training.`, 'booking');
-  alert("Farmer Booking Submitted!");
+
+  pushNotification('ADMIN', '👨‍🌾 New Farmer Training Booking', `${data.name} booked training (#${data.bookingId}) for ${data.date}.`, 'booking');
+
+  const waText = `NEW FARMER TRAINING BOOKING:\n----------------------------------------\nBooking Ref ID: ${data.bookingId}\nName: ${data.name}\nFarmer UPI ID: ${data.userUpiId}\nTraining Date: ${data.date}\nUTR Tracking Number: ${data.txnId}\n----------------------------------------`;
+  window.open(`https://wa.me/${farmWhatsapp}?text=${encodeURIComponent(waText)}`, '_blank');
+  
   document.getElementById("farmerForm").reset();
   document.getElementById("fpayment").disabled = true;
   checkUserSession();
@@ -1952,7 +2157,10 @@ function submitFarmerVisit(e) {
 if (document.getElementById("productSearch")) {
   document.getElementById("productSearch").addEventListener("input", function(e) {
     const searchTerm = e.target.value.toLowerCase().trim();
-    const filteredProducts = products.filter(product => product.name.toLowerCase().includes(searchTerm) || product.detail.toLowerCase().includes(searchTerm));
+    const filteredProducts = products.filter(product => {
+      return product.name.toLowerCase().includes(searchTerm) || 
+             product.detail.toLowerCase().includes(searchTerm);
+    });
     renderProducts(filteredProducts);
   });
 }
@@ -1960,41 +2168,170 @@ if (document.getElementById("productSearch")) {
 function downloadCertificatePDF(bookingId) {
   const targetBooking = bookingsRegistry.find(b => b && b.bookingId === bookingId);
   if (!targetBooking) return alert("Certificate not found.");
-  if (!targetBooking.certIssued) return alert("Certificate not issued yet.");
+  if (!targetBooking.certIssued) return alert("Certificate has not been issued yet by Farm Admin.");
 
   const titleText = targetBooking.type === "Student" ? "Certificate of Internship" : "Certificate of Farming";
+  const descText = targetBooking.type === "Student" 
+    ? `has successfully completed an internship program in Oyster Mushroom Cultivation at Pure Grow Farm, at Makhiyala, Gujarat.`
+    : `has successfully completed the practical farmer training framework module in Oyster Mushroom Cultivation at Pure Grow Farm, at Makhiyala, Gujarat.`;
+  
+  const durationContent = targetBooking.type === "Student" 
+    ? `from <strong>${targetBooking.start || 'N/A'}</strong> to <strong>${targetBooking.end || 'N/A'}</strong>`
+    : `on target session date <strong>${targetBooking.date || 'N/A'}</strong>`;
+
+  const actualApprovedDate = targetBooking.certIssueDate ? targetBooking.certIssueDate : (targetBooking.dateLogged ? targetBooking.dateLogged.split(" ")[0] : new Date().toLocaleDateString('en-IN'));
+
   const basePath = window.location.href.substring(0, window.location.href.lastIndexOf('/') + 1);
   const logoUrl = basePath + "mushroom/pgf logo.png";
+  const sohamSignUrl = basePath + "mushroom/soham sign.png";
+  const jeetSignUrl = basePath + "mushroom/jeet sign.png";
 
   const certificateHTML = `<!DOCTYPE html>
 <html>
 <head>
   <meta charset="utf-8">
+  <meta name="viewport" content="width=1024, initial-scale=0.4, user-scalable=yes">
   <title>${titleText} - ${targetBooking.name}</title>
   <style>
-    body { font-family: Arial, sans-serif; text-align: center; padding: 30px; }
-    .certificate-frame { border: 8px solid #1e4620; padding: 30px; max-width: 800px; margin: 0 auto; }
+    @page { size: A4 landscape; margin: 6mm; }
+    * { box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    body { 
+      margin: 0; 
+      padding: 12px; 
+      font-family: Arial, sans-serif; 
+      background: #f8fafc; 
+      text-align: center;
+      min-width: 980px; 
+    }
+    .certificate-frame { 
+      width: 960px; 
+      background: #fff; 
+      border: 8px solid #1e4620; 
+      padding: 20px; 
+      box-sizing: border-box; 
+      margin: 0 auto; 
+      box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    }
+    .inner-border { border: 2px solid #d97706; padding: 20px; background: #ffffff; }
+    .cert-header-top { display: flex; justify-content: center; align-items: center; gap: 15px; }
+    .cert-title { font-size: 28px; font-weight: bold; color: #1e4620; text-transform: uppercase; letter-spacing: 1px; font-family: 'Times New Roman', Times, serif; margin: 12px 0 6px 0; }
+    .cert-name { font-size: 24px; font-weight: bold; color: #2b8a3e; border-bottom: 2px solid #d97706; display: inline-block; padding: 0 20px; margin: 6px auto; font-family: 'Times New Roman', Times, serif; }
+    .cert-desc { font-size: 14px; line-height: 1.6; text-align: justify; margin: 12px auto; max-width: 820px; color: #222; }
+    .cert-footer-grid { display: flex; justify-content: space-between; align-items: flex-end; margin-top: 25px; padding: 0 10px; }
+    .sign-img { width: 120px; height: 48px; object-fit: contain; display: block; margin: 0 auto -8px auto; mix-blend-mode: multiply; }
+    .no-print-bar { margin-bottom: 12px; background: #f0fdf4; border: 1px solid #bbf7d0; padding: 10px; border-radius: 8px; width: 960px; margin-left: auto; margin-right: auto; }
+    .no-print-btn { background: #2b8a3e; color: #fff; border: 0; padding: 8px 18px; font-weight: bold; border-radius: 6px; font-size: 14px; cursor: pointer; }
+    @media print { .no-print-bar { display: none !important; } body { padding: 0; background: #fff; min-width: 100%; } .certificate-frame { width: 100%; box-shadow: none; } }
   </style>
 </head>
 <body>
-  <div class="certificate-frame">
-    <h2>PURE GROW FARM</h2>
-    <h1>${titleText}</h1>
-    <p>This is to certify that</p>
-    <h2>${targetBooking.name.toUpperCase()}</h2>
-    <p>has successfully completed the program.</p>
+  <div class="no-print-bar">
+    <button class="no-print-btn" onclick="window.print()">📥 Click Here to Save / Download PDF</button>
   </div>
-  <script>window.onload = function() { window.print(); };<\/script>
+
+  <div class="certificate-frame">
+    <div class="inner-border">
+      <div class="cert-header-top">
+        <img src="${logoUrl}" alt="Logo" style="width: 60px; height: auto;">
+        <div style="text-align:left;">
+          <h2 style="color: #1e4620; margin: 0; font-size: 20px; font-weight: 800;">PURE GROW FARM</h2>
+          <p style="margin: 2px 0 0 0; font-size: 11px; color:#6b7280;">Makhiyala, Gujarat, 362011 | puregrowfarm001@gmail.com</p>
+        </div>
+      </div>
+      <hr style="border:0; border-top: 2px solid #2b8a3e; margin: 10px 0;">
+      <div class="cert-title">${titleText}</div>
+      <p style="font-style: italic; margin: 3px 0; color: #555; font-size: 13px;">This is to certify that</p>
+      <div class="cert-name">${targetBooking.name.toUpperCase()}</div>
+      <p style="font-style: italic; margin: 5px 0; color: #555; font-size: 13px;">${descText}</p>
+      <p class="cert-desc">
+        The program execution guidelines were conducted ${durationContent}. 
+        During this framework index period, the candidate gained foundational knowledge in mushroom biology, substrate preparation, spawn inoculation, and scientific crop management, demonstrating an exceptional work ethic.
+      </p>
+      
+      <div class="cert-footer-grid">
+        <div style="text-align: center; width: 34%;">
+          <div style="height: 50px; display: flex; align-items: flex-end; justify-content: center;">
+            <img src="${sohamSignUrl}" alt="Soham Gajera Signature" class="sign-img">
+          </div>
+          <div style="border-top: 1.5px solid #333; width: 160px; margin: 0 auto 4px auto;"></div>
+          <div style="font-size: 13px; font-weight: bold; color: #1e4620;">Soham N Gajera</div>
+          <div style="font-size: 10px; color: #475569; margin-top: 2px;">Co-Founder & Managing Director</div>
+        </div>
+
+        <div style="text-align: center; width: 28%;">
+          <img src="${logoUrl}" alt="Stamp" style="width: 55px; height: auto; opacity: 0.95;">
+          <div style="font-size: 9px; font-weight: 800; color: #1e4620; margin-top: 2px; letter-spacing: 0.5px;">PURE GROW FARM</div>
+          <div style="font-size: 11px; color: #334155; margin-top: 3px;">
+            <strong>Approved Date:</strong> ${actualApprovedDate}
+          </div>
+        </div>
+
+        <div style="text-align: center; width: 34%;">
+          <div style="height: 50px; display: flex; align-items: flex-end; justify-content: center;">
+            <img src="${jeetSignUrl}" alt="Jeet Gajera Signature" class="sign-img">
+          </div>
+          <div style="border-top: 1.5px solid #333; width: 160px; margin: 0 auto 4px auto;"></div>
+          <div style="font-size: 13px; font-weight: bold; color: #1e4620;">Jeet A Gajera</div>
+          <div style="font-size: 10px; color: #475569; margin-top: 2px;">Co-Founder & Director<br>(Agriculture & Production)</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    window.addEventListener('load', function() {
+      setTimeout(function() {
+        window.print();
+      }, 500);
+    });
+  <\/script>
 </body>
 </html>`;
 
   const blob = new Blob([certificateHTML], { type: 'text/html;charset=utf-8' });
   const blobUrl = URL.createObjectURL(blob);
-  window.open(blobUrl, '_blank');
+  const printWindow = window.open(blobUrl, '_blank');
+  if (!printWindow) window.location.href = blobUrl;
 }
 
 function printDivInvoice() {
-  window.print();
+  const basePath = window.location.origin + window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/') + 1);
+  const absoluteLogoUrl = basePath + "mushroom/pgf logo.png";
+
+  const containerClone = document.getElementById('invoiceCaptureFrame').cloneNode(true);
+  const logoImg = containerClone.querySelector('#invoiceBrandLogo');
+  if (logoImg) {
+    logoImg.src = absoluteLogoUrl;
+  }
+
+  const invoiceHTML = `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <title>Pure Grow Farm - Invoice</title>
+        <style>
+          @page { size: A4; margin: 10mm; }
+          body { font-family: sans-serif; padding: 20px; background: #fff; color: #222; }
+          table { width: 100%; border-collapse: collapse; margin-bottom: 25px; font-size: 14px; }
+          th, td { border: 1px solid #e6e9ec; padding: 12px 14px; text-align: left; }
+          th { background: #2b8a3e !important; color: white !important; -webkit-print-color-adjust: exact; font-weight: bold; }
+        </style>
+      </head>
+      <body>
+        ${containerClone.innerHTML}
+        <script>
+          window.onload = function() {
+            setTimeout(function() { window.print(); }, 400);
+          };
+        <\/script>
+      </body>
+    </html>
+  `;
+
+  const blob = new Blob([invoiceHTML], { type: 'text/html;charset=utf-8' });
+  const blobUrl = URL.createObjectURL(blob);
+  const printWin = window.open(blobUrl, '_blank');
+  if (!printWin) window.location.href = blobUrl;
 }
 
 renderProducts();

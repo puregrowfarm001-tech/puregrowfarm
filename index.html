@@ -497,14 +497,15 @@
       </div>
 
       <div class="erp-nav" id="erpNavbarBlock">
-        <button class="btn active-tab" id="tabNavAccounting" onclick="switchErpTab('erpAccountingTab', 'tabNavAccounting')">Farm Core Financial & Stock Page</button>
-        <button class="btn" id="tabNavOrders" onclick="switchErpTab('erpOrdersTab', 'tabNavOrders')">Orders Manager Page</button>
+        <button class="btn active-tab" id="tabNavOrders" onclick="switchErpTab('erpOrdersTab', 'tabNavOrders')">Orders Manager Page</button>
         <button class="btn" id="tabNavBookings" onclick="switchErpTab('erpBookingsTab', 'tabNavBookings')">Farm Training Bookings Page</button>
+        <button class="btn" id="tabNavAccounting" onclick="switchErpTab('erpAccountingTab', 'tabNavAccounting')">Farm Core Financial & Stock Page</button>
         <button class="btn" id="tabNavUsers" onclick="switchErpTab('erpUsersTab', 'tabNavUsers')">Registered Accounts Ledger</button>
+        <button class="btn" id="tabNavOverviewSummary" onclick="switchErpTab('erpOverviewSummaryTab', 'tabNavOverviewSummary')">Overview & Live Summary Ledger</button>
       </div>
 
       <!-- ERP Segment 1: Orders -->
-      <div id="erpOrdersTab" class="erp-section">
+      <div id="erpOrdersTab" class="erp-section active">
         <h3>E-Commerce Customer Orders Grid Ledger & Shipment Management</h3>
         
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; margin-bottom: 18px;">
@@ -596,48 +597,10 @@
       </div>
 
       <!-- ERP Segment 3: Financial Accounting Desk View Screen -->
-      <div id="erpAccountingTab" class="erp-section active">
+      <div id="erpAccountingTab" class="erp-section">
         <h3>Multi-Axis Complete Production Ledger Statements Dashboard</h3>
-        
-        <div class="fin-grid">
-          <div class="fin-card">
-            <div class="muted small-title">Total Approved Sales Revenue (Net)</div>
-            <div class="fin-val" id="finTotalRevenue">Rs 0.00</div>
-          </div>
-          <div class="fin-card">
-            <div class="muted small-title">Total Farm Purchases Outflow</div>
-            <div class="fin-val" id="finTotalPurchases" style="color:var(--danger);">Rs 0.00</div>
-          </div>
-          <div class="fin-card">
-            <div class="muted small-title">Total Farm Direct Expenses Outflow</div>
-            <div class="fin-val" id="finTotalExpenses" style="color:var(--warn);">Rs 0.00</div>
-          </div>
-          <div class="fin-card">
-            <div class="muted small-title">Total Credited Order Refunds Returned Outflow</div>
-            <div class="fin-val" id="finTotalRefunds" style="color:#ea580c;">Rs 0.00</div>
-          </div>
-          <div class="fin-card" style="background:#f0fdf4; border: 2px solid #86efac;">
-            <div class="muted small-title">🏢 Farm Total Cash Available (Net Vault Balance)</div>
-            <div class="fin-val" id="cashFarm" style="color:#15803d; font-size:24px; font-weight:900;">Rs 0.00</div>
-          </div>
-          <div class="fin-card" style="background:var(--soft);">
-            <div class="muted small-title">Unified Net Profit Statement (P&L)</div>
-            <div class="fin-val" id="finNetProfit" style="color:var(--accent);">Rs 0.00</div>
-          </div>
-        </div>
 
-        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap:12px; margin-bottom:20px;">
-          <div class="partner-cash-card" style="background:#eef2ff; color:#3730a3;">👤 Soham Gajera Hand Cash: <span id="cashSoham">Rs 0.00</span></div>
-          <div class="partner-cash-card" style="background:#fef3c7; color:#92400e;">👤 Jeet Gajera Hand Cash: <span id="cashJeet">Rs 0.00</span></div>
-          <div class="partner-cash-card" style="background:#fee2e2; color:#991b1b;">📉 Total Farm Kharcha (Expenses + Purchases): <span id="totalFarmKharcha">Rs 0.00</span></div>
-        </div>
-
-        <div style="background: #fff; padding: 18px; border-radius: 12px; border: 1px solid var(--line); margin-bottom: 20px;">
-          <h4 style="margin: 0 0 12px 0; color: var(--accent); font-size: 16px;">📊 Live Farm Stock Summary (Dry Mushroom, Khakhra & Papad)</h4>
-          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px;" id="adminLiveStockCardsContainer"></div>
-        </div>
-
-        <div style="margin: 20px 0; display: flex; gap: 8px; flex-wrap: wrap;">
+        <div style="margin: 10px 0 20px 0; display: flex; gap: 8px; flex-wrap: wrap;">
           <button type="button" class="btn" id="btnSubTabDryStock" onclick="switchSubAccountingTab('subTabDryStock')">🌾 Daily Dry Mushroom Stock Page</button>
           <button type="button" class="btn" id="btnSubTabExpense" onclick="switchSubAccountingTab('subTabExpense')">1. Expenses Page</button>
           <button type="button" class="btn" id="btnSubTabSell" onclick="switchSubAccountingTab('subTabSell')">2. Sell Page</button>
@@ -679,7 +642,7 @@
           </div>
         </div>
 
-        <!-- Sub Tab 1: Expense Page -->
+        <!-- Sub Tab 1: Expense Page (With Farm, Mushroom, Student & Farmer categories) -->
         <div id="subTabExpense" class="sub-accounting-section" style="display:none;">
           <h4>1. Log Operational Outflow & Records</h4>
           <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap:16px;">
@@ -731,7 +694,7 @@
           </div>
         </div>
 
-        <!-- Sub Tab 2: Sell Page -->
+        <!-- Sub Tab 2: Sell Page (With Received Payment, Notes, Edit & Delete) -->
         <div id="subTabSell" class="sub-accounting-section" style="display:none;">
           <h4>2. Log Manual Wholesale Production Sale (Direct Offline Inflow)</h4>
           <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap:16px;">
@@ -761,7 +724,7 @@
                 <input type="number" id="saleRate" placeholder="Agreed Unit Spot Cost (Rs)" required>
                 <input type="number" id="saleDelivery" placeholder="Delivery Logistics Charge (Rs) [0 for Free]" value="0" min="0">
                 <input type="number" id="salePaidAmount" placeholder="Received Payment Amount (Rs) [Kitna Pesa Aaya]" required>
-                <input type="text" id="saleNotes" placeholder="Client Notes / Remarks">
+                <input type="text" id="saleNotes" placeholder="Client Notes / Remarks (e.g. Received in cash, remaining balance)">
                 <button type="submit">Log Operational Sales Inflow</button>
               </form>
             </div>
@@ -785,7 +748,7 @@
           </div>
         </div>
 
-        <!-- Sub Tab 3: Buy Page -->
+        <!-- Sub Tab 3: Buy Page (With Payable vs Paid Amount, Notes, Edit & Delete) -->
         <div id="subTabBuy" class="sub-accounting-section" style="display:none;">
           <h4>3. Log Raw Inventory Material Bulk Buy Outflow</h4>
           <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap:16px;">
@@ -811,7 +774,7 @@
                 <input type="number" step="0.01" id="purQty" placeholder="InwardLot Weight Volume Units" required>
                 <input type="number" id="purRate" placeholder="Purchase Valuation Rate (Rs)" required>
                 <input type="number" id="purPaidAmount" placeholder="Paid Amount (Rs) [Kitna Pesa Diya Hai]" required>
-                <input type="text" id="purNotes" placeholder="Vendor Notes / Batch Memo">
+                <input type="text" id="purNotes" placeholder="Vendor Notes / Batch Memo (e.g. 500 advance, balance on next week)">
                 <button type="submit">Execute Inventory Buy Inflow</button>
               </form>
             </div>
@@ -835,7 +798,7 @@
           </div>
         </div>
 
-        <!-- Sub Tab 4: Damage Page -->
+        <!-- Sub Tab 4: Damage Page (With Notes, Edit & Delete) -->
         <div id="subTabDamage" class="sub-accounting-section" style="display:none;">
           <h4>4. Log Damages Inward & Loss Factor Records</h4>
           <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap:16px;">
@@ -874,7 +837,50 @@
         </div>
       </div>
 
-      <!-- ERP Segment 4: Registered Users Tab View Screen -->
+      <!-- ERP Segment 4: Overview & Live Summary Ledger (Moved Data Here) -->
+      <div id="erpOverviewSummaryTab" class="erp-section">
+        <h3>Farm Core Financial & Stock Overview Summary Ledger</h3>
+        
+        <div class="fin-grid">
+          <div class="fin-card">
+            <div class="muted small-title">Total Approved Sales Revenue (Net)</div>
+            <div class="fin-val" id="finTotalRevenue">Rs 0.00</div>
+          </div>
+          <div class="fin-card">
+            <div class="muted small-title">Total Farm Purchases Outflow</div>
+            <div class="fin-val" id="finTotalPurchases" style="color:var(--danger);">Rs 0.00</div>
+          </div>
+          <div class="fin-card">
+            <div class="muted small-title">Total Farm Direct Expenses Outflow</div>
+            <div class="fin-val" id="finTotalExpenses" style="color:var(--warn);">Rs 0.00</div>
+          </div>
+          <div class="fin-card">
+            <div class="muted small-title">Total Credited Order Refunds Returned Outflow</div>
+            <div class="fin-val" id="finTotalRefunds" style="color:#ea580c;">Rs 0.00</div>
+          </div>
+          <div class="fin-card" style="background:#f0fdf4; border: 2px solid #86efac;">
+            <div class="muted small-title">🏢 Farm Total Cash Available (Net Vault Balance)</div>
+            <div class="fin-val" id="cashFarm" style="color:#15803d; font-size:24px; font-weight:900;">Rs 0.00</div>
+          </div>
+          <div class="fin-card" style="background:var(--soft);">
+            <div class="muted small-title">Unified Net Profit Statement (P&L)</div>
+            <div class="fin-val" id="finNetProfit" style="color:var(--accent);">Rs 0.00</div>
+          </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap:12px; margin-bottom:20px;">
+          <div class="partner-cash-card" style="background:#eef2ff; color:#3730a3;">👤 Soham Gajera Hand Cash: <span id="cashSoham">Rs 0.00</span></div>
+          <div class="partner-cash-card" style="background:#fef3c7; color:#92400e;">👤 Jeet Gajera Hand Cash: <span id="cashJeet">Rs 0.00</span></div>
+          <div class="partner-cash-card" style="background:#fee2e2; color:#991b1b;">📉 Total Farm Kharcha (Expenses + Purchases): <span id="totalFarmKharcha">Rs 0.00</span></div>
+        </div>
+
+        <div style="background: #fff; padding: 18px; border-radius: 12px; border: 1px solid var(--line); margin-bottom: 20px;">
+          <h4 style="margin: 0 0 12px 0; color: var(--accent); font-size: 16px;">📊 Live Farm Stock Summary (Dry Mushroom, Khakhra & Papad)</h4>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px;" id="adminLiveStockCardsContainer"></div>
+        </div>
+      </div>
+
+      <!-- ERP Segment 5: Registered Users Tab View Screen -->
       <div id="erpUsersTab" class="erp-section">
         <h3>Registered Customer Profiles Directory Database Workspace</h3>
         <div class="table-responsive">

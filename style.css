@@ -55,6 +55,14 @@ header {
 
 .dialog-actions .btn, .dialog-actions button { flex: 1; min-width: 170px; }
 
+.send-note {
+  padding: 10px 12px;
+  color: #246e33;
+  background: #eef7ee;
+  border-radius: 10px;
+  font-weight: 700;
+}
+
 .nav-wrapper { flex-wrap: nowrap; justify-content: flex-end; flex: 1; min-width: 0; }
 
 nav {
@@ -174,13 +182,16 @@ button:disabled { background: #98a2a8; cursor: not-allowed; }
   align-items: center;
   padding: 28px 0;
 }
+
 .hero h1 { margin: 0 0 10px; font-size: 34px; line-height: 1.2; }
+.hero p { margin: 0 0 18px; }
 .cards { display: flex; flex-wrap: wrap; gap: 12px; }
 .card, .product, .cart-box {
   background: var(--card);
   border-radius: 12px;
   box-shadow: 0 6px 22px rgba(12, 18, 20, 0.06);
 }
+
 .card { flex: 1; min-width: 200px; padding: 12px; }
 .small-title { font-size: 13px; }
 .card-title { font-weight: 800; font-size: 18px; }
@@ -264,12 +275,15 @@ footer { padding: 28px 0; color: var(--muted); font-size: 14px; text-align: cent
 dialog { width: min(760px, calc(100% - 30px)); border: 0; border-radius: 12px; padding: 20px; }
 dialog::backdrop { background: rgba(0, 0, 0, 0.5); }
 .dialog-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+pre { overflow: auto; max-height: 330px; padding: 12px; color: #eef8ef; background: #101711; border-radius: 8px; white-space: pre-wrap; }
 
 .visit-section { padding: 20px; margin-top: 18px; border-radius: 12px; background: linear-gradient(180deg,#fff,#f7fff7); }
 .visit-tabs { display: flex; gap: 10px; margin: 12px 0 18px; }
 .visit-tabs button { flex: 1; }
 .visit-form { display: none; padding: 16px; background: #fff; border-radius: 12px; box-shadow: 0 6px 22px rgba(12,18,20,0.06); }
 .visit-form.active { display: grid; }
+.thankyou { display: none; margin-top: 16px; padding: 15px; background: #eef7ee; border-radius: 10px; text-align: center; }
+.visit-actions { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
 
 .erp-wrapper { display: none; background: #f4f7f5; padding: 20px; border-radius: 14px; border: 2px dashed var(--accent); margin-top: 20px; }
 .erp-wrapper.active { display: block; }

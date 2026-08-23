@@ -744,6 +744,7 @@ function saveDailyDryStockEntry(e) {
   const dryEntry = {
     dryId: "DRY-" + Date.now().toString().slice(-4),
     date: rawDate ? new Date(rawDate).toLocaleDateString('en-IN') : new Date().toLocaleDateString('en-IN'),
+    rawIsoDate: rawDate || getTodayIsoString(),
     qty: qty,
     notes: notes || "Daily Farm Drying Batch"
   };
@@ -786,21 +787,29 @@ function renderDailyDryStockTable() {
   const totalDisplay = document.getElementById("dailyDryTotalSum");
   if (!tbody) return;
 
-  const totalDryWeight = dailyDryStockRegistry.reduce((sum, item) => sum + Number(item.qty || 0), 0);
+  const selectedYear = document.getElementById("adminYearFilterSelect")?.value || "ALL";
+
+  const filteredData = dailyDryStockRegistry.filter(item => {
+    if (selectedYear === "ALL") return true;
+    const itemDate = item.rawIsoDate || item.date || "";
+    return itemDate.includes(selectedYear);
+  });
+
+  const totalDryWeight = filteredData.reduce((sum, item) => sum + Number(item.qty || 0), 0);
   if (totalDisplay) totalDisplay.textContent = `${totalDryWeight.toFixed(2)} kg`;
 
-  if (!dailyDryStockRegistry.length) {
-    tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:var(--muted); padding:16px;">No daily dry mushroom records logged yet.</td></tr>`;
+  if (!filteredData.length) {
+    tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:var(--muted); padding:16px;">No daily dry mushroom records found for year ${selectedYear}.</td></tr>`;
     return;
   }
 
-  tbody.innerHTML = dailyDryStockRegistry.map((item, idx) => `
+  tbody.innerHTML = filteredData.map((item, idx) => `
     <tr>
       <td>${item.date}</td>
       <td>${item.notes}</td>
       <td style="color:#a16207; font-weight:bold; font-size:14px;">${item.qty} kg</td>
       <td>
-        <button type="button" class="btn" style="padding:2px 6px; min-height:auto; font-size:11px; background:var(--danger);" onclick="deleteDailyDryEntry(${idx})">Delete</button>
+        <button type="button" class="btn" style="padding:2px 6px; min-height:auto; font-size:11px; background:var(--danger);" onclick="deleteDailyDryEntry(${dailyDryStockRegistry.indexOf(item)})">Delete</button>
       </td>
     </tr>
   `).join("");
@@ -843,6 +852,50 @@ function filterSubTable(inputId, tbodyId) {
     const text = row.textContent.toLowerCase();
     row.style.display = text.includes(query) ? "" : "none";
   });
+}
+
+// =========================================================
+// YEAR FILTER & PRINT REPORT HANDLERS
+// =========================================================
+function handleAdminYearFilterChange() {
+  populateAdminDashboardTables();
+  computeFinancialLedgerStatements();
+}
+
+function printActiveAdminReport() {
+  const selectedYear = document.getElementById("adminYearFilterSelect")?.value || "ALL";
+  const activeSection = document.querySelector('.erp-section.active');
+  const sectionTitle = activeSection ? activeSection.querySelector('h3')?.textContent || "Admin ERP Report" : "Pure Grow Farm Report";
+
+  const printWindow = window.open('', '_blank');
+  printWindow.document.write(`
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>Pure Grow Farm - ${sectionTitle} (${selectedYear})</title>
+      <style>
+        body { font-family: sans-serif; padding: 20px; color: #111; background: #fff; }
+        h2 { color: #2b8a3e; margin-bottom: 4px; }
+        .meta { font-size: 13px; color: #555; margin-bottom: 20px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 13px; }
+        th, td { border: 1px solid #cbd5e1; padding: 8px 10px; text-align: left; }
+        th { background: #2b8a3e !important; color: white !important; -webkit-print-color-adjust: exact; }
+      </style>
+    </head>
+    <body>
+      <h2>Pure Grow Farm - Operational Report</h2>
+      <div class="meta"><strong>Section:</strong> ${sectionTitle} | <strong>Year Filter:</strong> ${selectedYear} | <strong>Generated On:</strong> ${new Date().toLocaleString()}</div>
+      <hr style="border:0; border-top:1px solid #cbd5e1;">
+      ${activeSection ? activeSection.innerHTML : ''}
+      <script>
+        window.onload = function() {
+          setTimeout(function() { window.print(); }, 500);
+        };
+      <\/script>
+    </body>
+    </html>
+  `);
+  printWindow.document.close();
 }
 
 // =========================================================
@@ -902,7 +955,14 @@ function populateAdminDashboardTables() {
   renderAdminLiveStockSummary();
   renderDailyDryStockTable();
 
-  const validOrders = orderRegistry.filter(o => o && o.name && o.orderId);
+  const selectedYear = document.getElementById("adminYearFilterSelect")?.value || "ALL";
+
+  const validOrders = orderRegistry.filter(o => {
+    if (!o || !o.name || !o.orderId) return false;
+    if (selectedYear === "ALL") return true;
+    const orderDateStr = o.rawIsoDate || o.dateLogged || "";
+    return orderDateStr.includes(selectedYear);
+  });
   
   const approvedOrdersList = validOrders.filter(o => o.status === 'Approved' || o.status === 'Delivered');
   const approvedOnlineRevenue = approvedOrdersList.reduce((sum, o) => sum + Number(o.total || 0), 0);
@@ -918,9 +978,10 @@ function populateAdminDashboardTables() {
 
   if (document.getElementById("adminOrdersTableBody")) {
     if (!validOrders.length) {
-      document.getElementById("adminOrdersTableBody").innerHTML = `<tr><td colspan="10" style="text-align:center; color:var(--muted); padding:24px; font-weight:bold;">No customer orders placed yet.</td></tr>`;
+      document.getElementById("adminOrdersTableBody").innerHTML = `<tr><td colspan="10" style="text-align:center; color:var(--muted); padding:24px; font-weight:bold;">No customer orders found for year ${selectedYear}.</td></tr>`;
     } else {
-      document.getElementById("adminOrdersTableBody").innerHTML = validOrders.map((o, idx) => {
+      document.getElementById("adminOrdersTableBody").innerHTML = validOrders.map((o) => {
+        const idx = orderRegistry.indexOf(o);
         const grandTotal = Number(o.total || 0);
         const mode = o.paymentMode || "Online UPI";
         const status = o.status || "Pending Verification";
@@ -1019,7 +1080,13 @@ function populateAdminDashboardTables() {
     }
   }
 
-  const validBookings = bookingsRegistry.filter(b => b && b.name && b.bookingId);
+  const validBookings = bookingsRegistry.filter(b => {
+    if (!b || !b.name || !b.bookingId) return false;
+    if (selectedYear === "ALL") return true;
+    const bookingDateStr = b.date || b.dateLogged || "";
+    return bookingDateStr.includes(selectedYear);
+  });
+
   const totalStudents = validBookings.filter(b => b.type === "Student").length;
   const totalFarmers = validBookings.filter(b => b.type === "Farmer").length;
   const totalBookingsFee = validBookings.filter(b => b.status === "Confirmed" || b.status === "Approved").reduce((sum, b) => sum + Number(b.fee || 0), 0);
@@ -1034,10 +1101,11 @@ function populateAdminDashboardTables() {
 
   if (document.getElementById("adminBookingsTableBody")) {
     if (!validBookings.length) {
-      document.getElementById("adminBookingsTableBody").innerHTML = `<tr><td colspan="10" style="text-align:center; color:var(--muted); padding:24px; font-weight:bold;">No student or farmer training registrations yet.</td></tr>`;
+      document.getElementById("adminBookingsTableBody").innerHTML = `<tr><td colspan="10" style="text-align:center; color:var(--muted); padding:24px; font-weight:bold;">No farm training bookings found for year ${selectedYear}.</td></tr>`;
     } else {
       const bookingsTbody = document.getElementById("adminBookingsTableBody");
-      bookingsTbody.innerHTML = validBookings.map((b, idx) => {
+      bookingsTbody.innerHTML = validBookings.map((b) => {
+        const idx = bookingsRegistry.indexOf(b);
         const isStudent = b.type === "Student";
         const submittedDetails = isStudent ? `
           <div style="line-height:1.4;">
@@ -1106,25 +1174,34 @@ function populateAdminDashboardTables() {
   }
 
   if (document.getElementById("adminUsersTableBody")) {
-    const validUsers = usersDatabase.filter(u => u && u.name && u.email);
+    const validUsers = usersDatabase.filter(u => {
+      if (!u || !u.name || !u.email) return false;
+      if (selectedYear === "ALL") return true;
+      const regDateStr = u.registeredOn || "";
+      return regDateStr.includes(selectedYear);
+    });
+
     if (!validUsers.length) {
-      document.getElementById("adminUsersTableBody").innerHTML = `<tr><td colspan="6" style="text-align:center; color:var(--muted); padding:24px; font-weight:bold;">No users registered yet.</td></tr>`;
+      document.getElementById("adminUsersTableBody").innerHTML = `<tr><td colspan="6" style="text-align:center; color:var(--muted); padding:24px; font-weight:bold;">No registered accounts found for year ${selectedYear}.</td></tr>`;
     } else {
-      document.getElementById("adminUsersTableBody").innerHTML = validUsers.map((u, idx) => `
-        <tr>
-          <td>${idx + 1}</td>
-          <td><strong>${u.name}</strong></td>
-          <td>${u.phone || 'N/A'}</td>
-          <td><code>${u.email}</code></td>
-          <td><mark style="background:#f3f4f6; padding:2px 4px; border-radius:4px;">${u.password || '******'}</mark></td>
-          <td>
-            <div style="display:flex; gap:4px; flex-wrap:wrap;">
-              <button class="btn" style="padding:4px 8px; min-height:auto; background:var(--danger);" onclick="deleteUserAccount(${idx})">Delete</button>
-              <button class="btn" style="padding:4px 8px; min-height:auto; background:#25d366;" onclick="sendAdminWhatsAppMessage('user', ${idx})">💬 WhatsApp</button>
-            </div>
-          </td>
-        </tr>
-      `).join("");
+      document.getElementById("adminUsersTableBody").innerHTML = validUsers.map((u) => {
+        const idx = usersDatabase.indexOf(u);
+        return `
+          <tr>
+            <td>${idx + 1}</td>
+            <td><strong>${u.name}</strong></td>
+            <td>${u.phone || 'N/A'}</td>
+            <td><code>${u.email}</code></td>
+            <td><mark style="background:#f3f4f6; padding:2px 4px; border-radius:4px;">${u.password || '******'}</mark></td>
+            <td>
+              <div style="display:flex; gap:4px; flex-wrap:wrap;">
+                <button class="btn" style="padding:4px 8px; min-height:auto; background:var(--danger);" onclick="deleteUserAccount(${idx})">Delete</button>
+                <button class="btn" style="padding:4px 8px; min-height:auto; background:#25d366;" onclick="sendAdminWhatsAppMessage('user', ${idx})">💬 WhatsApp</button>
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join("");
     }
   }
 }
@@ -1697,20 +1774,46 @@ function adminDeleteDamage(idx) {
 // MATHEMATICAL OVERVIEW & LEDGER CALCULATION LOGIC
 // =========================================================
 function computeFinancialLedgerStatements() {
-  const orderTotal = orderRegistry
-    .filter(o => o && (o.status === 'Approved' || o.status === 'Delivered'))
-    .reduce((sum, o) => sum + Number(o.total || 0), 0);
+  const selectedYear = document.getElementById("adminYearFilterSelect")?.value || "ALL";
 
-  const validBookings = bookingsRegistry.filter(b => b && b.name && (b.status === "Confirmed" || b.status === "Approved"));
-  const farmBookingTotal = validBookings.reduce((sum, b) => sum + Number(b.fee || 0), 0);
+  const filteredOrders = orderRegistry.filter(o => {
+    if (!o || !(o.status === 'Approved' || o.status === 'Delivered')) return false;
+    if (selectedYear === "ALL") return true;
+    return (o.rawIsoDate || o.dateLogged || "").includes(selectedYear);
+  });
+  const orderTotal = filteredOrders.reduce((sum, o) => sum + Number(o.total || 0), 0);
 
-  const sellTotal = salesRegistry.reduce((sum, s) => sum + Number(s.paidAmount !== undefined ? s.paidAmount : s.total || 0), 0);
-  const buyTotal = purchasesRegistry.reduce((sum, p) => sum + Number(p.paidAmount !== undefined ? p.paidAmount : p.total || 0), 0);
-  const expenseTotal = expensesRegistry.filter(e => e.category !== "Damage Received").reduce((sum, e) => sum + Number(e.amount || 0), 0);
+  const filteredBookings = bookingsRegistry.filter(b => {
+    if (!b || !b.name || !(b.status === "Confirmed" || b.status === "Approved")) return false;
+    if (selectedYear === "ALL") return true;
+    return (b.date || b.dateLogged || "").includes(selectedYear);
+  });
+  const farmBookingTotal = filteredBookings.reduce((sum, b) => sum + Number(b.fee || 0), 0);
+
+  const filteredSales = salesRegistry.filter(s => {
+    if (!s) return false;
+    if (selectedYear === "ALL") return true;
+    return (s.date || "").includes(selectedYear);
+  });
+  const sellTotal = filteredSales.reduce((sum, s) => sum + Number(s.paidAmount !== undefined ? s.paidAmount : s.total || 0), 0);
+
+  const filteredPurchases = purchasesRegistry.filter(p => {
+    if (!p) return false;
+    if (selectedYear === "ALL") return true;
+    return (p.date || "").includes(selectedYear);
+  });
+  const buyTotal = filteredPurchases.reduce((sum, p) => sum + Number(p.paidAmount !== undefined ? p.paidAmount : p.total || 0), 0);
+
+  const filteredExpenses = expensesRegistry.filter(e => {
+    if (!e || e.category === "Damage Received") return false;
+    if (selectedYear === "ALL") return true;
+    return (e.date || "").includes(selectedYear);
+  });
+  const expenseTotal = filteredExpenses.reduce((sum, e) => sum + Number(e.amount || 0), 0);
 
   // Partner wise Buy Totals (4)
   let sohamBuyTotal = 0, jeetBuyTotal = 0, farmBuyTotal = 0;
-  purchasesRegistry.forEach(p => {
+  filteredPurchases.forEach(p => {
     const amt = Number(p.paidAmount !== undefined ? p.paidAmount : p.total || 0);
     if(p.funder === "Soham") sohamBuyTotal += amt;
     else if(p.funder === "Jeet") jeetBuyTotal += amt;
@@ -1719,7 +1822,7 @@ function computeFinancialLedgerStatements() {
 
   // Partner wise Expense Totals (5)
   let sohamExpOnly = 0, jeetExpOnly = 0, farmExpOnly = 0;
-  expensesRegistry.filter(e => e.category !== "Damage Received").forEach(e => {
+  filteredExpenses.forEach(e => {
     const amt = Number(e.amount || 0);
     if(e.payer === "Soham") sohamExpOnly += amt;
     else if(e.payer === "Jeet") jeetExpOnly += amt;
@@ -1732,11 +1835,15 @@ function computeFinancialLedgerStatements() {
   let farmExpTotal = farmExpOnly + farmBuyTotal;
 
   // Damage Totals (9)
-  const damageRows = expensesRegistry.filter(e => e.category === "Damage Received");
-  const damageTotal = damageRows.reduce((sum, d) => sum + Number(d.amount || 0), 0);
+  const filteredDamages = expensesRegistry.filter(e => {
+    if (!e || e.category !== "Damage Received") return false;
+    if (selectedYear === "ALL") return true;
+    return (e.date || "").includes(selectedYear);
+  });
+  const damageTotal = filteredDamages.reduce((sum, d) => sum + Number(d.amount || 0), 0);
 
   let sohamDmgTotal = 0, jeetDmgTotal = 0, farmDmgTotal = 0;
-  damageRows.forEach(d => {
+  filteredDamages.forEach(d => {
     const amt = Number(d.amount || 0);
     if(d.payer === "Soham") sohamDmgTotal += amt;
     else if(d.payer === "Jeet") jeetDmgTotal += amt;
@@ -1797,27 +1904,29 @@ function computeFinancialLedgerStatements() {
   if(document.getElementById("subTabJeetExp")) document.getElementById("subTabJeetExp").textContent = "Rs " + jeetExpOnly.toFixed(2);
   if(document.getElementById("subTabFarmExp")) document.getElementById("subTabFarmExp").textContent = "Rs " + farmExpOnly.toFixed(2);
 
-  const expRows = expensesRegistry.filter(e => e.category !== "Damage Received");
   if(document.getElementById("subExpenseTableBody")) {
-    document.getElementById("subExpenseTableBody").innerHTML = expRows.map((e, idx) => `
-      <tr>
-        <td>${e.date}</td>
-        <td>${e.category}</td>
-        <td>${e.payer}</td>
-        <td>${e.desc}</td>
-        <td style="color:var(--warn); font-weight:bold;">Rs ${e.amount}</td>
-        <td><small>${e.notes || '-'}</small></td>
-        <td>
-          <button type="button" class="btn" style="padding:2px 5px; font-size:10px; min-height:auto; background:#0284c7;" onclick="adminEditExpense(${idx})">✏️</button>
-          <button type="button" class="btn" style="padding:2px 5px; font-size:10px; min-height:auto; background:var(--danger);" onclick="adminDeleteExpense(${idx})">🗑️</button>
-        </td>
-      </tr>
-    `).join("");
+    document.getElementById("subExpenseTableBody").innerHTML = filteredExpenses.map((e) => {
+      const idx = expensesRegistry.indexOf(e);
+      return `
+        <tr>
+          <td>${e.date}</td>
+          <td>${e.category}</td>
+          <td>${e.payer}</td>
+          <td>${e.desc}</td>
+          <td style="color:var(--warn); font-weight:bold;">Rs ${e.amount}</td>
+          <td><small>${e.notes || '-'}</small></td>
+          <td>
+            <button type="button" class="btn" style="padding:2px 5px; font-size:10px; min-height:auto; background:#0284c7;" onclick="adminEditExpense(${idx})">✏️</button>
+            <button type="button" class="btn" style="padding:2px 5px; font-size:10px; min-height:auto; background:var(--danger);" onclick="adminDeleteExpense(${idx})">🗑️</button>
+          </td>
+        </tr>
+      `;
+    }).join("") || `<tr><td colspan="7" style="text-align:center; color:var(--muted); padding:14px;">No expenses found for year ${selectedYear}.</td></tr>`;
   }
 
   // Sub Tab 2: Sell Top Summary & Table
-  const sellPaidTotal = salesRegistry.reduce((sum, s) => sum + Number(s.paidAmount !== undefined ? s.paidAmount : s.total || 0), 0);
-  const sellPendingTotal = salesRegistry.reduce((sum, s) => {
+  const sellPaidTotal = filteredSales.reduce((sum, s) => sum + Number(s.paidAmount !== undefined ? s.paidAmount : s.total || 0), 0);
+  const sellPendingTotal = filteredSales.reduce((sum, s) => {
     const tot = Number(s.total || 0);
     const pd = Number(s.paidAmount !== undefined ? s.paidAmount : tot);
     return sum + Math.max(0, tot - pd);
@@ -1828,7 +1937,8 @@ function computeFinancialLedgerStatements() {
   if(document.getElementById("subTabSellPending")) document.getElementById("subTabSellPending").textContent = "Rs " + sellPendingTotal.toFixed(2);
 
   if(document.getElementById("subSellTableBody")) {
-    document.getElementById("subSellTableBody").innerHTML = salesRegistry.map((s, idx) => {
+    document.getElementById("subSellTableBody").innerHTML = filteredSales.map((s) => {
+      const idx = salesRegistry.indexOf(s);
       const sub = Number(s.subtotal || (s.qty * s.rate) || s.total);
       const del = Number(s.delivery || 0);
       const grandTotal = Number(s.total || (sub + del));
@@ -1857,7 +1967,7 @@ function computeFinancialLedgerStatements() {
           </td>
         </tr>
       `;
-    }).join("");
+    }).join("") || `<tr><td colspan="9" style="text-align:center; color:var(--muted); padding:14px;">No sales found for year ${selectedYear}.</td></tr>`;
   }
 
   // Sub Tab 3: Buy Top Summary & Table
@@ -1867,7 +1977,8 @@ function computeFinancialLedgerStatements() {
   if(document.getElementById("subTabFarmBuy")) document.getElementById("subTabFarmBuy").textContent = "Rs " + farmBuyTotal.toFixed(2);
 
   if(document.getElementById("subBuyTableBody")) {
-    document.getElementById("subBuyTableBody").innerHTML = purchasesRegistry.map((p, idx) => {
+    document.getElementById("subBuyTableBody").innerHTML = filteredPurchases.map((p) => {
+      const idx = purchasesRegistry.indexOf(p);
       const totalPayable = Number(p.total || (p.qty * p.rate));
       const paid = Number(p.paidAmount !== undefined ? p.paidAmount : totalPayable);
       const pendingToVendor = Math.max(0, totalPayable - paid);
@@ -1891,7 +2002,7 @@ function computeFinancialLedgerStatements() {
           </td>
         </tr>
       `;
-    }).join("");
+    }).join("") || `<tr><td colspan="9" style="text-align:center; color:var(--muted); padding:14px;">No purchases found for year ${selectedYear}.</td></tr>`;
   }
 
   // Sub Tab 4: Damage Top Summary
@@ -1901,19 +2012,22 @@ function computeFinancialLedgerStatements() {
   if(document.getElementById("subTabFarmDmg")) document.getElementById("subTabFarmDmg").textContent = "Rs " + farmDmgTotal.toFixed(2);
 
   if(document.getElementById("subDamageTableBody")) {
-    document.getElementById("subDamageTableBody").innerHTML = damageRows.map((d, idx) => `
-      <tr>
-        <td>${d.date}</td>
-        <td>${d.desc}</td>
-        <td><span class="badge" style="background:#fee2e2; color:#991b1b;">${d.payer}</span></td>
-        <td style="color:var(--danger); font-weight:bold;">Rs ${d.amount}</td>
-        <td><small>${d.notes || '-'}</small></td>
-        <td>
-          <button type="button" class="btn" style="padding:2px 5px; font-size:10px; min-height:auto; background:#0284c7;" onclick="adminEditDamage(${idx})">✏️</button>
-          <button type="button" class="btn" style="padding:2px 5px; font-size:10px; min-height:auto; background:var(--danger);" onclick="adminDeleteDamage(${idx})">🗑️</button>
-        </td>
-      </tr>
-    `).join("");
+    document.getElementById("subDamageTableBody").innerHTML = filteredDamages.map((d) => {
+      const idx = expensesRegistry.indexOf(d);
+      return `
+        <tr>
+          <td>${d.date}</td>
+          <td>${d.desc}</td>
+          <td><span class="badge" style="background:#fee2e2; color:#991b1b;">${d.payer}</span></td>
+          <td style="color:var(--danger); font-weight:bold;">Rs ${d.amount}</td>
+          <td><small>${d.notes || '-'}</small></td>
+          <td>
+            <button type="button" class="btn" style="padding:2px 5px; font-size:10px; min-height:auto; background:#0284c7;" onclick="adminEditDamage(${idx})">✏️</button>
+            <button type="button" class="btn" style="padding:2px 5px; font-size:10px; min-height:auto; background:var(--danger);" onclick="adminDeleteDamage(${idx})">🗑️</button>
+          </td>
+        </tr>
+      `;
+    }).join("") || `<tr><td colspan="6" style="text-align:center; color:var(--muted); padding:14px;">No damages found for year ${selectedYear}.</td></tr>`;
   }
 }
 
@@ -2307,6 +2421,7 @@ function confirmOrder(e) {
     paymentMode: document.getElementById("paymentMode").value,
     txnId: document.getElementById("paymentId").value.trim(),
     dateLogged: currentTimestamp,
+    rawIsoDate: getTodayIsoString(),
     deliveryDays: "",
     courierName: "Ekart Logistics",
     refundCreditedDate: "",

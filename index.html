@@ -493,7 +493,20 @@
     <section id="adminErpView" class="erp-wrapper">
       <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid var(--accent); padding-bottom:12px; margin-bottom:15px; flex-wrap:wrap; gap:10px;">
         <h2>Pure Grow Farm - Operational Core ERP Console Hub[cite: 1]</h2>
-        <button class="btn" style="background:var(--danger);" onclick="exitAdminPanel()">Exit Admin Console</button>
+        
+        <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+          <div style="background:#fff; padding:4px 10px; border-radius:8px; border:1px solid var(--line); display:flex; align-items:center; gap:6px;">
+            <label style="font-size:12px; font-weight:bold; color:#334155;">📅 Year Filter:</label>
+            <select id="adminYearFilterSelect" style="padding:4px 8px; font-size:13px; border:1px solid #cbd5e1; border-radius:6px; font-weight:bold; color:var(--accent);" onchange="handleAdminYearFilterChange()">
+              <option value="ALL">All Years (Cumulative)</option>
+              <option value="2026">2026</option>
+              <option value="2025">2025</option>
+            </select>
+          </div>
+          
+          <button class="btn" style="background:#0284c7;" onclick="printActiveAdminReport()">🖨️ Print / Export Report</button>
+          <button class="btn" style="background:var(--danger);" onclick="exitAdminPanel()">Exit Admin Console</button>
+        </div>
       </div>
 
       <div class="erp-nav" id="erpNavbarBlock">

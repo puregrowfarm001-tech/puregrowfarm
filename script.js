@@ -1632,12 +1632,12 @@ function computeFinancialLedgerStatements() {
     else if(e.payer === "Farm") farmExpOnly += amt;
   });
 
-  // 6) Partner & Farm Total (Expense + Buy) -> Soham, Jeet, Farm separate totals
+  // 6) Partner & Farm Total (Expense + Buy) -> 4 + 5 (Soham, Jeet, Farm separate)
   let sohamExpTotal = sohamExpOnly + sohamBuyTotal;
   let jeetExpTotal = jeetExpOnly + jeetBuyTotal;
   let farmExpTotal = farmExpOnly + farmBuyTotal;
 
-  // Damage Totals & Partner Adjustments
+  // Damage Totals & Partner Adjustments (Card 9)
   const damageRows = expensesRegistry.filter(e => e.category === "Damage Received");
   const damageTotal = damageRows.reduce((sum, d) => sum + Number(d.amount || 0), 0);
 
@@ -1660,7 +1660,7 @@ function computeFinancialLedgerStatements() {
   let sohamNetExp = sohamExpTotal - sohamDmgTotal;
   let jeetNetExp = jeetExpTotal - jeetDmgTotal;
 
-  // 7) Farm Available Balance (Net Vault): 1 + 2 + 3 + 9 (farm data only) - 6 (farm data only)
+  // 7) Farm Available Balance: 1 + 2 + 3 + 9 (9 me sirf farm ka data: farmDmgTotal) - 6 (6 me sirf farm ka data: farmExpTotal)
   const farmAvailableBalance = (orderTotal + farmBookingTotal + sellTotal + farmDmgTotal) - farmExpTotal;
 
   // 8) Unified Net Profit: 1 + 2 + 3 - 4 - 5

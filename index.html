@@ -521,7 +521,7 @@
           </div>
 
           <div style="background: #f0fdf4; border: 1px solid #bbf7d0; padding: 12px; border-radius: 10px;">
-            <div style="font-size: 12px; color: #166534; font-weight: bold;">💰 Total Farm Revenue (Approved)</div>
+            <div style="font-size: 12px; color: #166534; font-weight: bold;">💰 Total Order Revenue (Approved)</div>
             <div id="adminApprovedRevenueValue" style="font-size: 22px; font-weight: 800; color: #15803d; margin-top: 4px;">Rs 0.00</div>
           </div>
           
@@ -648,7 +648,6 @@
 
         <!-- Sub Tab 1: Expense Page -->
         <div id="subTabExpense" class="sub-accounting-section" style="display:none;">
-          <!-- Top Summary Card for Expenses -->
           <div style="background:#fef3c7; border:1px solid #fde68a; padding:12px; border-radius:10px; margin-bottom:14px; display:flex; justify-content:space-between; align-items:center; cursor:pointer;" onclick="openAdminFilterModal('list_expenses')">
             <div>
               <strong style="color:#92400e; font-size:14px;">📊 Total Expenses Outflow: <span id="subTabExpTotalDisplay">Rs 0.00</span></strong>
@@ -709,7 +708,6 @@
 
         <!-- Sub Tab 2: Sell Page -->
         <div id="subTabSell" class="sub-accounting-section" style="display:none;">
-          <!-- Top Summary Card for Sell -->
           <div style="background:#f0fdf4; border:1px solid #bbf7d0; padding:12px; border-radius:10px; margin-bottom:14px; display:flex; justify-content:space-between; align-items:center; cursor:pointer;" onclick="openAdminFilterModal('list_sales')">
             <div>
               <strong style="color:#166534; font-size:14px;">💰 Total Sale Revenue: <span id="subTabSellTotalDisplay">Rs 0.00</span></strong>
@@ -732,17 +730,17 @@
                     <option value="Powder">Fine Ground Spore Mushroom Powder Lot</option>
                   </select>
                 </label>
-                <!-- Collector fixed to Farm as requested -->
+                
                 <input type="hidden" id="saleCollector" value="Farm">
                 <div style="background:#f8fafc; padding:8px 12px; border:1px solid var(--line); border-radius:8px; font-size:13px; color:#334155;">
-                  🏢 Financial Asset Collector Location: <strong>Farm Account General Vault (Fixed)</strong>
+                  🏢 Financial Asset Collector Location: <strong>Farm (Fixed)</strong>
                 </div>
 
                 <input type="text" id="saleBuyer" placeholder="Client Purchaser Name" required>
                 <input type="tel" id="salePhone" placeholder="Client Contact Number" required>
                 <input type="text" id="saleAddress" placeholder="Client Shipping Address" required>
-                <input type="number" step="0.01" id="saleQty" placeholder="Dispatched Weight Lots (Qty)" required>
-                <input type="number" id="saleRate" placeholder="Agreed Unit Price (Price per unit)" required>
+                <input type="number" step="0.01" id="saleQty" placeholder="Quantity (Qty)" required>
+                <input type="number" id="saleRate" placeholder="Price per unit (Price)" required>
                 <input type="number" id="saleDelivery" placeholder="Delivery Charge (Rs) [0 for Free]" value="0" min="0">
                 <input type="number" id="salePaidAmount" placeholder="Received Payment Amount (Rs) [Kitna Pesa Aaya]" required>
                 <input type="text" id="saleNotes" placeholder="Client Notes / Remarks">
@@ -772,11 +770,12 @@
 
         <!-- Sub Tab 3: Buy Page -->
         <div id="subTabBuy" class="sub-accounting-section" style="display:none;">
-          <!-- Top Summary Card for Buy -->
           <div style="background:#fff7ed; border:1px solid #fed7aa; padding:12px; border-radius:10px; margin-bottom:14px; display:flex; justify-content:space-between; align-items:center; cursor:pointer;" onclick="openAdminFilterModal('list_purchases')">
             <div>
               <strong style="color:#9a3412; font-size:14px;">🛍️ Total Buy Outflow: <span id="subTabBuyTotalDisplay">Rs 0.00</span></strong>
-              <div style="font-size:11px; color:#c2410c; margin-top:2px;">Paid to Vendors: <span id="subTabBuyPaid">Rs 0</span> | Due to Vendors: <span id="subTabBuyPending" style="color:#dc2626;">Rs 0</span></div>
+              <div style="font-size:11px; color:#c2410c; margin-top:2px;">
+                Soham Diye: <span id="subTabSohamBuy">Rs 0</span> | Jeet Diye: <span id="subTabJeetBuy">Rs 0</span> | Farm Diye: <span id="subTabFarmBuy">Rs 0</span>
+              </div>
             </div>
             <span style="font-size:12px; font-weight:bold; color:#9a3412;">🔍 View List</span>
           </div>
@@ -795,8 +794,7 @@
                   </select>
                 </label>
                 
-                <!-- Extra fields requested: Kisne pese diye he, kiske pas se liya he, kitna liye he -->
-                <label>Kisne Pese Diye He (Funder / Payer):
+                <label>Kisne Pese Diye He:
                   <select id="purFunder" required>
                     <option value="Farm">Farm Account General Vault</option>
                     <option value="Soham">Soham Gajera</option>
@@ -804,9 +802,8 @@
                   </select>
                 </label>
 
-                <input type="text" id="purVendor" placeholder="Kiske Pas Se Liya He (Vendor / Seller Name)" required>
-                
-                <input type="number" step="0.01" id="purQty" placeholder="Kitna Liya He (Quantity Units / Weight)" required>
+                <input type="text" id="purVendor" placeholder="Kiske Pas Se Liya He (Vendor Name)" required>
+                <input type="number" step="0.01" id="purQty" placeholder="Kitna Liya He (Qty)" required>
                 <input type="number" id="purRate" placeholder="Purchase Rate per unit (Rs)" required>
                 <input type="number" id="purPaidAmount" placeholder="Paid Amount to Vendor (Rs)" required>
                 <input type="text" id="purNotes" placeholder="Vendor Notes / Batch Memo">
@@ -819,9 +816,9 @@
                   <tr>
                     <th>Date</th>
                     <th>Resource</th>
-                    <th>Pese Diye (Funder)</th>
-                    <th>Kiske Pas Se Liya (Vendor)</th>
-                    <th>Kitna Liya (Qty)</th>
+                    <th>Pese Diye</th>
+                    <th>Kiske Pas Se Liya</th>
+                    <th>Kitna Liya</th>
                     <th>Rate</th>
                     <th>Total Payable</th>
                     <th>Paid / Due</th>
@@ -836,16 +833,26 @@
 
         <!-- Sub Tab 4: Damage Page -->
         <div id="subTabDamage" class="sub-accounting-section" style="display:none;">
+          <div style="background:#fef2f2; border:1px solid #fca5a5; padding:12px; border-radius:10px; margin-bottom:14px; display:flex; justify-content:space-between; align-items:center; cursor:pointer;" onclick="openAdminFilterModal('list_damages')">
+            <div>
+              <strong style="color:#991b1b; font-size:14px;">📉 Total Damage Losses: <span id="subTabDamageTotalDisplay">Rs 0.00</span></strong>
+              <div style="font-size:11px; color:#b91c1c; margin-top:2px;">
+                Soham Ke Pas: <span id="subTabSohamDmg">Rs 0</span> | Jeet Ke Pas: <span id="subTabJeetDmg">Rs 0</span> | Farm Ke Pas: <span id="subTabFarmDmg">Rs 0</span>
+              </div>
+            </div>
+            <span style="font-size:12px; font-weight:bold; color:#991b1b;">🔍 View List</span>
+          </div>
+
           <h4>4. Log Damages Inward & Loss Factor Records</h4>
           <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap:16px;">
             <div class="db-card">
               <form onsubmit="saveAdminDamage(event)">
                 <label>Select Damage Log Date: <input type="date" id="dmgLogDate" required></label>
-                <label>Resource Target Party Location:
+                <label>Kisne Pese Rakhe He (Partner Location):
                   <select id="dmgPayer" required>
-                    <option value="Farm">Farm General Account Vault (+ Inflow to Vault)</option>
-                    <option value="Soham">Soham Gajera Personal (- Deduct from Balance)</option>
-                    <option value="Jeet">Jeet Gajera Personal (- Deduct from Balance)</option>
+                    <option value="Farm">Farm General Account Vault</option>
+                    <option value="Soham">Soham Gajera</option>
+                    <option value="Jeet">Jeet Gajera</option>
                   </select>
                 </label>
                 <input type="text" id="dmgDesc" placeholder="Damage Reason Context" required>
@@ -860,7 +867,7 @@
                   <tr>
                     <th>Date</th>
                     <th>Context Info</th>
-                    <th>Partner Party</th>
+                    <th>Pese Kisne Rakhe</th>
                     <th>Adjusted Amount</th>
                     <th>Notes</th>
                     <th>Action</th>

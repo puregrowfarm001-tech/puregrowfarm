@@ -668,7 +668,7 @@
                     <option value="Student & Farmer">Student & Farmer Training / Internship Outflow</option>
                   </select>
                 </label>
-                <label>Assigned Resource Party:
+                <label>Assigned Resource Party (Kisne Pese Diye):
                   <select id="expPayer" required>
                     <option value="Soham">Soham Gajera</option>
                     <option value="Jeet">Jeet Gajera</option>
@@ -848,7 +848,7 @@
             <div class="db-card">
               <form onsubmit="saveAdminDamage(event)">
                 <label>Select Damage Log Date: <input type="date" id="dmgLogDate" required></label>
-                <label>Kisne Pese Rakhe He (Partner Location):
+                <label>Pese Kisne Rakhe He (Partner Location):
                   <select id="dmgPayer" required>
                     <option value="Farm">Farm General Account Vault</option>
                     <option value="Soham">Soham Gajera</option>
@@ -904,19 +904,21 @@
           <div class="fin-card" style="cursor:pointer;" onclick="openAdminFilterModal('list_purchases')">
             <div class="muted small-title">4) Buy Total (Purchases) 🔍</div>
             <div class="fin-val" id="ovBuyTotal" style="color:var(--danger);">Rs 0.00</div>
+            <div style="font-size:11px; color:#c2410c; margin-top:4px;">Soham: <span id="ovSohamBuy">Rs 0</span> | Jeet: <span id="ovJeetBuy">Rs 0</span> | Farm: <span id="ovFarmBuy">Rs 0</span></div>
           </div>
 
           <div class="fin-card" style="cursor:pointer;" onclick="openAdminFilterModal('list_expenses')">
             <div class="muted small-title">5) Expense Total 🔍</div>
             <div class="fin-val" id="ovExpenseTotal" style="color:var(--warn);">Rs 0.00</div>
+            <div style="font-size:11px; color:#b45309; margin-top:4px;">Soham: <span id="ovSohamExpOnly">Rs 0</span> | Jeet: <span id="ovJeetExpOnly">Rs 0</span> | Farm: <span id="ovFarmExpOnly">Rs 0</span></div>
           </div>
 
           <div class="fin-card" style="background: #f8fafc; border: 2px solid #cbd5e1; cursor:pointer;" onclick="openAdminFilterModal('list_expenses')">
-            <div class="muted small-title" style="font-weight:700; color:#0f172a;">6) Partner & Farm Expenses (Expense+Buy) 🔍</div>
+            <div class="muted small-title" style="font-weight:700; color:#0f172a;">6) Partner & Farm Total (Expense + Buy) 🔍</div>
             <div style="font-size: 13px; margin-top: 6px; line-height: 1.5;">
-              <div>👤 Soham Expenses: <strong id="ovSohamExp" style="color:#2563eb;">Rs 0.00</strong></div>
-              <div>👤 Jeet Expenses: <strong id="ovJeetExp" style="color:#d97706;">Rs 0.00</strong></div>
-              <div>🏢 Farm Account Exp: <strong id="ovFarmExp" style="color:#16a34a;">Rs 0.00</strong></div>
+              <div>👤 Soham Total: <strong id="ovSohamTotal" style="color:#2563eb;">Rs 0.00</strong></div>
+              <div>👤 Jeet Total: <strong id="ovJeetTotal" style="color:#d97706;">Rs 0.00</strong></div>
+              <div>🏢 Farm Total: <strong id="ovFarmTotal" style="color:#16a34a;">Rs 0.00</strong></div>
             </div>
           </div>
 
@@ -933,6 +935,7 @@
           <div class="fin-card" style="background:#fef2f2; border: 2px solid #fca5a5; cursor:pointer;" onclick="openAdminFilterModal('list_damages')">
             <div class="muted small-title">9) Total Damage Losses 🔍</div>
             <div class="fin-val" id="ovDamage" style="color:var(--danger);">Rs 0.00</div>
+            <div style="font-size:11px; color:#b91c1c; margin-top:4px;">Soham: <span id="ovSohamDmgCard">Rs 0</span> | Jeet: <span id="ovJeetDmgCard">Rs 0</span> | Farm: <span id="ovFarmDmgCard">Rs 0</span></div>
           </div>
 
         </div>

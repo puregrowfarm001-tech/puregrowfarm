@@ -1605,33 +1605,44 @@ function computeFinancialLedgerStatements() {
   const buyTotal = purchasesRegistry.reduce((sum, p) => sum + Number(p.paidAmount !== undefined ? p.paidAmount : p.total || 0), 0);
   const expenseTotal = expensesRegistry.filter(e => e.category !== "Damage Received").reduce((sum, e) => sum + Number(e.amount || 0), 0);
 
-  let sohamExpTotal = 0;
-  let jeetExpTotal = 0;
-  let farmExpTotal = 0;
-
-  expensesRegistry.filter(e => e.category !== "Damage Received").forEach(e => {
-    if (e.payer === "Soham") sohamExpTotal += Number(e.amount || 0);
-    else if (e.payer === "Jeet") jeetExpTotal += Number(e.amount || 0);
-    else if (e.payer === "Farm") farmExpTotal += Number(e.amount || 0);
-  });
-
+  // Partner wise Buy Totals
+  let sohamBuyTotal = 0, jeetBuyTotal = 0, farmBuyTotal = 0;
   purchasesRegistry.forEach(p => {
-    const pAmt = Number(p.paidAmount !== undefined ? p.paidAmount : p.total || 0);
-    if (p.funder === "Soham") sohamExpTotal += pAmt;
-    else if (p.funder === "Jeet") jeetExpTotal += pAmt;
-    else if (p.funder === "Farm") farmExpTotal += pAmt;
+    const amt = Number(p.paidAmount !== undefined ? p.paidAmount : p.total || 0);
+    if(p.funder === "Soham") sohamBuyTotal += amt;
+    else if(p.funder === "Jeet") jeetBuyTotal += amt;
+    else if(p.funder === "Farm") farmBuyTotal += amt;
   });
 
+  // Partner wise Expense Totals (Expenses only)
+  let sohamExpOnly = 0, jeetExpOnly = 0, farmExpOnly = 0;
+  expensesRegistry.filter(e => e.category !== "Damage Received").forEach(e => {
+    const amt = Number(e.amount || 0);
+    if(e.payer === "Soham") sohamExpOnly += amt;
+    else if(e.payer === "Jeet") jeetExpOnly += amt;
+    else if(e.payer === "Farm") farmExpOnly += amt;
+  });
+
+  // Partner wise Combined Totals (Expense + Buy)
+  let sohamExpTotal = sohamExpOnly + sohamBuyTotal;
+  let jeetExpTotal = jeetExpOnly + jeetBuyTotal;
+  let farmExpTotal = farmExpOnly + farmBuyTotal;
+
+  // Damage Totals & Partner Adjustments
   const damageRows = expensesRegistry.filter(e => e.category === "Damage Received");
   const damageTotal = damageRows.reduce((sum, d) => sum + Number(d.amount || 0), 0);
 
+  let sohamDmgTotal = 0, jeetDmgTotal = 0, farmDmgTotal = 0;
   damageRows.forEach(d => {
     const amt = Number(d.amount || 0);
-    if (d.payer === "Soham") {
+    if(d.payer === "Soham") {
+      sohamDmgTotal += amt;
       sohamExpTotal += amt;
-    } else if (d.payer === "Jeet") {
+    } else if(d.payer === "Jeet") {
+      jeetDmgTotal += amt;
       jeetExpTotal += amt;
-    } else if (d.payer === "Farm") {
+    } else if(d.payer === "Farm") {
+      farmDmgTotal += amt;
       farmExpTotal += amt;
     }
   });
@@ -1671,22 +1682,38 @@ function computeFinancialLedgerStatements() {
   if(document.getElementById("ovOrderTotal")) document.getElementById("ovOrderTotal").textContent = "Rs " + orderTotal.toFixed(2);
   if(document.getElementById("ovFarmBookingTotal")) document.getElementById("ovFarmBookingTotal").textContent = "Rs " + farmBookingTotal.toFixed(2);
   if(document.getElementById("ovSellTotal")) document.getElementById("ovSellTotal").textContent = "Rs " + sellTotal.toFixed(2);
-  if(document.getElementById("ovBuyTotal")) document.getElementById("ovBuyTotal").textContent = "Rs " + buyTotal.toFixed(2);
-  if(document.getElementById("ovExpenseTotal")) document.getElementById("ovExpenseTotal").textContent = "Rs " + expenseTotal.toFixed(2);
   
-  if(document.getElementById("ovSohamExp")) document.getElementById("ovSohamExp").textContent = "Rs " + sohamExpTotal.toFixed(2);
-  if(document.getElementById("ovJeetExp")) document.getElementById("ovJeetExp").textContent = "Rs " + jeetExpTotal.toFixed(2);
-  if(document.getElementById("ovFarmExp")) document.getElementById("ovFarmExp").textContent = "Rs " + farmExpTotal.toFixed(2);
+  // 4) Buy Total Card with Breakdown
+  if(document.getElementById("ovBuyTotal")) document.getElementById("ovBuyTotal").textContent = "Rs " + buyTotal.toFixed(2);
+  if(document.getElementById("ovSohamBuy")) document.getElementById("ovSohamBuy").textContent = "Rs " + sohamBuyTotal.toFixed(2);
+  if(document.getElementById("ovJeetBuy")) document.getElementById("ovJeetBuy").textContent = "Rs " + jeetBuyTotal.toFixed(2);
+  if(document.getElementById("ovFarmBuy")) document.getElementById("ovFarmBuy").textContent = "Rs " + farmBuyTotal.toFixed(2);
+
+  // 5) Expense Total Card with Breakdown
+  if(document.getElementById("ovExpenseTotal")) document.getElementById("ovExpenseTotal").textContent = "Rs " + expenseTotal.toFixed(2);
+  if(document.getElementById("ovSohamExpOnly")) document.getElementById("ovSohamExpOnly").textContent = "Rs " + sohamExpOnly.toFixed(2);
+  if(document.getElementById("ovJeetExpOnly")) document.getElementById("ovJeetExpOnly").textContent = "Rs " + jeetExpOnly.toFixed(2);
+  if(document.getElementById("ovFarmExpOnly")) document.getElementById("ovFarmExpOnly").textContent = "Rs " + farmExpOnly.toFixed(2);
+  
+  // 6) Partner & Farm Total (Expense + Buy) Card
+  if(document.getElementById("ovSohamTotal")) document.getElementById("ovSohamTotal").textContent = "Rs " + sohamExpTotal.toFixed(2);
+  if(document.getElementById("ovJeetTotal")) document.getElementById("ovJeetTotal").textContent = "Rs " + jeetExpTotal.toFixed(2);
+  if(document.getElementById("ovFarmTotal")) document.getElementById("ovFarmTotal").textContent = "Rs " + farmExpTotal.toFixed(2);
 
   if(document.getElementById("ovFarmAvailableBalance")) document.getElementById("ovFarmAvailableBalance").textContent = "Rs " + cashBalances.Farm.toFixed(2);
   if(document.getElementById("ovProfit")) document.getElementById("ovProfit").textContent = "Rs " + netProfit.toFixed(2);
+  
+  // 9) Damage Losses Card with Breakdown
   if(document.getElementById("ovDamage")) document.getElementById("ovDamage").textContent = "Rs " + damageTotal.toFixed(2);
+  if(document.getElementById("ovSohamDmgCard")) document.getElementById("ovSohamDmgCard").textContent = "Rs " + sohamDmgTotal.toFixed(2);
+  if(document.getElementById("ovJeetDmgCard")) document.getElementById("ovJeetDmgCard").textContent = "Rs " + jeetDmgTotal.toFixed(2);
+  if(document.getElementById("ovFarmDmgCard")) document.getElementById("ovFarmDmgCard").textContent = "Rs " + farmDmgTotal.toFixed(2);
 
   // Sub Tab 1: Expense Top Summary & Table
   if(document.getElementById("subTabExpTotalDisplay")) document.getElementById("subTabExpTotalDisplay").textContent = "Rs " + expenseTotal.toFixed(2);
-  if(document.getElementById("subTabSohamExp")) document.getElementById("subTabSohamExp").textContent = "Rs " + sohamExpTotal.toFixed(2);
-  if(document.getElementById("subTabJeetExp")) document.getElementById("subTabJeetExp").textContent = "Rs " + jeetExpTotal.toFixed(2);
-  if(document.getElementById("subTabFarmExp")) document.getElementById("subTabFarmExp").textContent = "Rs " + farmExpTotal.toFixed(2);
+  if(document.getElementById("subTabSohamExp")) document.getElementById("subTabSohamExp").textContent = "Rs " + sohamExpOnly.toFixed(2);
+  if(document.getElementById("subTabJeetExp")) document.getElementById("subTabJeetExp").textContent = "Rs " + jeetExpOnly.toFixed(2);
+  if(document.getElementById("subTabFarmExp")) document.getElementById("subTabFarmExp").textContent = "Rs " + farmExpOnly.toFixed(2);
 
   const expRows = expensesRegistry.filter(e => e.category !== "Damage Received");
   if(document.getElementById("subExpenseTableBody")) {
@@ -1751,15 +1778,7 @@ function computeFinancialLedgerStatements() {
     }).join("");
   }
 
-  // Sub Tab 3: Buy Top Summary & Table (Kiskne kitne pese diye breakdown)
-  let sohamBuyTotal = 0, jeetBuyTotal = 0, farmBuyTotal = 0;
-  purchasesRegistry.forEach(p => {
-    const amt = Number(p.paidAmount !== undefined ? p.paidAmount : p.total || 0);
-    if(p.funder === "Soham") sohamBuyTotal += amt;
-    else if(p.funder === "Jeet") jeetBuyTotal += amt;
-    else if(p.funder === "Farm") farmBuyTotal += amt;
-  });
-
+  // Sub Tab 3: Buy Top Summary & Table
   if(document.getElementById("subTabBuyTotalDisplay")) document.getElementById("subTabBuyTotalDisplay").textContent = "Rs " + buyTotal.toFixed(2);
   if(document.getElementById("subTabSohamBuy")) document.getElementById("subTabSohamBuy").textContent = "Rs " + sohamBuyTotal.toFixed(2);
   if(document.getElementById("subTabJeetBuy")) document.getElementById("subTabJeetBuy").textContent = "Rs " + jeetBuyTotal.toFixed(2);
@@ -1793,15 +1812,7 @@ function computeFinancialLedgerStatements() {
     }).join("");
   }
 
-  // Sub Tab 4: Damage Top Summary (Kisne kitne pese rakhe)
-  let sohamDmgTotal = 0, jeetDmgTotal = 0, farmDmgTotal = 0;
-  damageRows.forEach(d => {
-    const amt = Number(d.amount || 0);
-    if(d.payer === "Soham") sohamDmgTotal += amt;
-    else if(d.payer === "Jeet") jeetDmgTotal += amt;
-    else if(d.payer === "Farm") farmDmgTotal += amt;
-  });
-
+  // Sub Tab 4: Damage Top Summary
   if(document.getElementById("subTabDamageTotalDisplay")) document.getElementById("subTabDamageTotalDisplay").textContent = "Rs " + damageTotal.toFixed(2);
   if(document.getElementById("subTabSohamDmg")) document.getElementById("subTabSohamDmg").textContent = "Rs " + sohamDmgTotal.toFixed(2);
   if(document.getElementById("subTabJeetDmg")) document.getElementById("subTabJeetDmg").textContent = "Rs " + jeetDmgTotal.toFixed(2);

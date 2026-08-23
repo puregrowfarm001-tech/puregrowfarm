@@ -692,33 +692,39 @@ function deleteUserAccount(idx) {
 }
 
 // =========================================================
-// LIVE STOCK SUMMARY (DRY MUSHROOM, KHAKHRA & PAPAD)
+// LIVE STOCK SUMMARY (DRY, POWDER = DRY, KHAKHRA & PAPAD)
 // =========================================================
 function renderAdminLiveStockSummary() {
   const container = document.getElementById("adminLiveStockCardsContainer");
   if (!container) return;
 
   const dryProd = products.find(p => p.type === "dry") || { stock: 0 };
+  const powderProd = products.find(p => p.type === "powder") || { stock: 0 };
   const khakhraProd = products.find(p => p.type === "khakhra") || { stock: 0 };
   const papadProd = products.find(p => p.type === "papad") || { stock: 0 };
 
+  // Rule: powder stock = dry stock jitna hona chahiye
+  const synchronizedPowderStock = dryProd.stock;
+
   container.innerHTML = `
-    <div style="background: #fefce8; border: 1px solid #fef08a; padding: 14px; border-radius: 10px;">
-      <div style="font-size: 13px; color: #854d0e; font-weight: bold;">🌾 Dry Mushroom Available Stock</div>
-      <div style="font-size: 24px; font-weight: 900; color: #a16207; margin: 6px 0;">${dryProd.stock} kg</div>
-      <small style="color:#64748b; font-size:11px;">(Controlled via Buy / Daily Drying Log)</small>
+    <div style="background: #fefce8; border: 1px solid #fef08a; padding: 12px; border-radius: 10px;">
+      <div style="font-size: 12px; color: #854d0e; font-weight: bold;">🌾 Dry Mushroom Stock</div>
+      <div style="font-size: 20px; font-weight: 900; color: #a16207; margin: 4px 0;">${dryProd.stock} kg</div>
     </div>
 
-    <div style="background: #fff7ed; border: 1px solid #ffedd5; padding: 14px; border-radius: 10px;">
-      <div style="font-size: 13px; color: #9a3412; font-weight: bold;">🧇 Methi Khakhra Available Stock</div>
-      <div style="font-size: 24px; font-weight: 900; color: #ea580c; margin: 6px 0;">${khakhraProd.stock} packs</div>
-      <small style="color:#64748b; font-size:11px;">(Controlled via Buy Page)</small>
+    <div style="background: #f0fdf4; border: 1px solid #bbf7d0; padding: 12px; border-radius: 10px;">
+      <div style="font-size: 12px; color: #166534; font-weight: bold;">🧪 Powder Stock (Sync to Dry)</div>
+      <div style="font-size: 20px; font-weight: 900; color: #15803d; margin: 4px 0;">${synchronizedPowderStock} kg</div>
     </div>
 
-    <div style="background: #f0fdf4; border: 1px solid #bbf7d0; padding: 14px; border-radius: 10px;">
-      <div style="font-size: 13px; color: #166534; font-weight: bold;">🫓 Adad Papad Available Stock</div>
-      <div style="font-size: 24px; font-weight: 900; color: #15803d; margin: 6px 0;">${papadProd.stock} packs</div>
-      <small style="color:#64748b; font-size:11px;">(Controlled via Buy Page)</small>
+    <div style="background: #fff7ed; border: 1px solid #ffedd5; padding: 12px; border-radius: 10px;">
+      <div style="font-size: 12px; color: #9a3412; font-weight: bold;">🧇 Khakhra Stock</div>
+      <div style="font-size: 20px; font-weight: 900; color: #ea580c; margin: 4px 0;">${khakhraProd.stock} packs</div>
+    </div>
+
+    <div style="background: #f0fdf4; border: 1px solid #bbf7d0; padding: 12px; border-radius: 10px;">
+      <div style="font-size: 12px; color: #166534; font-weight: bold;">🫓 Papad Stock</div>
+      <div style="font-size: 20px; font-weight: 900; color: #15803d; margin: 4px 0;">${papadProd.stock} packs</div>
     </div>
   `;
 }
@@ -816,9 +822,7 @@ function populateAdminDashboardTables() {
   const directOfflineSales = salesRegistry.reduce((sum, s) => sum + Number(s.paidAmount !== undefined ? s.paidAmount : s.total || 0), 0);
   const approvedTotalRevenue = approvedOnlineRevenue + directOfflineSales;
   
-  // 1. Pending Confirm Orders count (Jo abhi tak unverified hain)
   const pendingConfirmCount = validOrders.filter(o => o && o.status === 'Pending Verification').length;
-  // 2. Orders Pending Delivery count (Jab tak deliver nahi hota tab tak count me rahega)
   const pendingDeliveryCount = validOrders.filter(o => o && o.status === 'Approved' && o.trackingStage !== 'Delivered' && o.status !== 'Delivered').length;
   const refundPendingCount = validOrders.filter(o => o && o.status && o.status.startsWith('Cancelled') && o.refundStage !== 'Refund Credited').length;
 
@@ -1323,7 +1327,7 @@ function setOrderStageDirect(idx, newStage) {
     o.currentLocation = `Out for Delivery with ${o.courierName || 'Ekart Logistics'} Partner`;
   } else if (newStage === 'Delivered') {
     o.currentLocation = "Delivered to Customer Doorstep";
-    o.status = "Delivered"; // Jab tak deliver nahi hoga tab tak pending delivery me dikhega, deliver hote hi hat jayega
+    o.status = "Delivered";
   }
 
   localStorage.setItem('pgf_orders', JSON.stringify(orderRegistry));
@@ -1537,35 +1541,71 @@ function adminDeleteDamage(idx) {
   }
 }
 
+// =========================================================
+// MATHEMATICAL OVERVIEW & LEDGER CALCULATION LOGIC
+// =========================================================
 function computeFinancialLedgerStatements() {
-  const approvedOnlineOrdersRevenue = orderRegistry
+  // 1) Order Total (Online approved orders revenue)
+  const orderTotal = orderRegistry
     .filter(o => o && (o.status === 'Approved' || o.status === 'Delivered'))
     .reduce((sum, o) => sum + Number(o.total || 0), 0);
 
-  const directOfflineSales = salesRegistry.reduce((sum, s) => sum + Number(s.paidAmount !== undefined ? s.paidAmount : s.total || 0), 0);
-  const totalSales = approvedOnlineOrdersRevenue + directOfflineSales;
+  // 2) Farm Booking Total
+  const validBookings = bookingsRegistry.filter(b => b && b.name && (b.status === "Confirmed" || b.status === "Approved"));
+  const farmBookingTotal = validBookings.reduce((sum, b) => sum + Number(b.fee || 0), 0);
 
-  const totalPurchases = purchasesRegistry.reduce((sum, p) => sum + Number(p.paidAmount !== undefined ? p.paidAmount : p.total || 0), 0);
-  const totalExpenses = expensesRegistry.filter(e => e.category !== "Damage Received").reduce((sum, e) => sum + Number(e.amount || 0), 0);
-  const totalDamages = expensesRegistry.filter(e => e.category === "Damage Received").reduce((sum, e) => sum + Number(e.amount || 0), 0);
+  // 3) Sell Total (Offline Wholesale)
+  const sellTotal = salesRegistry.reduce((sum, s) => sum + Number(s.paidAmount !== undefined ? s.paidAmount : s.total || 0), 0);
+
+  // 4) Buy Total (Purchases)
+  const buyTotal = purchasesRegistry.reduce((sum, p) => sum + Number(p.paidAmount !== undefined ? p.paidAmount : p.total || 0), 0);
+
+  // 5) Expense Total
+  const expenseTotal = expensesRegistry.filter(e => e.category !== "Damage Received").reduce((sum, e) => sum + Number(e.amount || 0), 0);
+
+  // 6) Partner & Farm individual expense tracking (Soham, Jeet, Farm ne kitne pese expense kiye hain)
+  let sohamExpTotal = 0;
+  let jeetExpTotal = 0;
+  let farmExpTotal = 0;
+
+  expensesRegistry.filter(e => e.category !== "Damage Received").forEach(e => {
+    if (e.payer === "Soham") sohamExpTotal += Number(e.amount || 0);
+    else if (e.payer === "Jeet") jeetExpTotal += Number(e.amount || 0);
+    else if (e.payer === "Farm") farmExpTotal += Number(e.amount || 0);
+  });
+
+  purchasesRegistry.forEach(p => {
+    const pAmt = Number(p.paidAmount !== undefined ? p.paidAmount : p.total || 0);
+    if (p.funder === "Soham") sohamExpTotal += pAmt;
+    else if (p.funder === "Jeet") jeetExpTotal += pAmt;
+    else if (p.funder === "Farm") farmExpTotal += pAmt;
+  });
+
+  // 9) Damage Total & Partner Deduction Logic
+  // Damage ke pese soham ya jeet me se jisne rakhe ho, uske expense/balance me cut ho jana chahiye aur point 6 me reflect ho
+  const damageRows = expensesRegistry.filter(e => e.category === "Damage Received");
+  const damageTotal = damageRows.reduce((sum, d) => sum + Number(d.amount || 0), 0);
+
+  damageRows.forEach(d => {
+    const amt = Number(d.amount || 0);
+    if (d.payer === "Soham") {
+      sohamExpTotal += amt;
+    } else if (d.payer === "Jeet") {
+      jeetExpTotal += amt;
+    } else if (d.payer === "Farm") {
+      farmExpTotal += amt;
+    }
+  });
+
+  // 7) Farm Available Balance (Net Vault Balance)
+  let cashBalances = { Soham: 0, Jeet: 0, Farm: 0 };
+  
+  cashBalances.Farm += orderTotal;
+  cashBalances.Farm += farmBookingTotal;
 
   const totalCreditedRefunds = orderRegistry
     .filter(o => o && o.status && o.status.startsWith('Cancelled') && o.refundStage === 'Refund Credited')
     .reduce((sum, o) => sum + Number(o.total || 0), 0);
-
-  const netProfit = totalSales - (totalPurchases + totalExpenses + totalDamages + totalCreditedRefunds);
-  const totalFarmKharcha = totalPurchases + totalExpenses;
-
-  if(document.getElementById("finTotalRevenue")) document.getElementById("finTotalRevenue").textContent = "Rs " + totalSales.toFixed(2);
-  if(document.getElementById("finTotalPurchases")) document.getElementById("finTotalPurchases").textContent = "Rs " + totalPurchases.toFixed(2);
-  if(document.getElementById("finTotalExpenses")) document.getElementById("finTotalExpenses").textContent = "Rs " + totalExpenses.toFixed(2);
-  if(document.getElementById("finTotalRefunds")) document.getElementById("finTotalRefunds").textContent = "Rs " + totalCreditedRefunds.toFixed(2);
-  if(document.getElementById("finNetProfit")) document.getElementById("finNetProfit").textContent = "Rs " + netProfit.toFixed(2);
-  if(document.getElementById("totalFarmKharcha")) document.getElementById("totalFarmKharcha").textContent = "Rs " + totalFarmKharcha.toFixed(2);
-
-  let cashBalances = { Soham: 0, Jeet: 0, Farm: 0 };
-  
-  cashBalances.Farm += approvedOnlineOrdersRevenue;
   cashBalances.Farm -= totalCreditedRefunds;
 
   salesRegistry.forEach(s => { 
@@ -1580,20 +1620,32 @@ function computeFinancialLedgerStatements() {
     if(cashBalances[p.funder] !== undefined) cashBalances[p.funder] -= Number(p.paidAmount !== undefined ? p.paidAmount : p.total || 0); 
   });
 
-  expensesRegistry.filter(e => e.category === "Damage Received").forEach(d => {
+  damageRows.forEach(d => {
     const amt = Number(d.amount || 0);
-    if (d.payer === "Farm") {
-      cashBalances.Farm += amt;
-    } else if (d.payer === "Soham") {
-      cashBalances.Soham -= amt;
-    } else if (d.payer === "Jeet") {
-      cashBalances.Jeet -= amt;
-    }
+    if (d.payer === "Farm") cashBalances.Farm += amt;
+    else if (d.payer === "Soham") cashBalances.Soham -= amt;
+    else if (d.payer === "Jeet") cashBalances.Jeet -= amt;
   });
 
-  if(document.getElementById("cashSoham")) document.getElementById("cashSoham").textContent = "Rs " + cashBalances.Soham.toFixed(2);
-  if(document.getElementById("cashJeet")) document.getElementById("cashJeet").textContent = "Rs " + cashBalances.Jeet.toFixed(2);
-  if(document.getElementById("cashFarm")) document.getElementById("cashFarm").textContent = "Rs " + cashBalances.Farm.toFixed(2);
+  // 8) Profit Calculation (Total Revenue - Total Outflows)
+  const totalRevenue = orderTotal + farmBookingTotal + sellTotal;
+  const totalOutflows = buyTotal + expenseTotal + damageTotal + totalCreditedRefunds;
+  const netProfit = totalRevenue - totalOutflows;
+
+  // DOM Elements Update
+  if(document.getElementById("ovOrderTotal")) document.getElementById("ovOrderTotal").textContent = "Rs " + orderTotal.toFixed(2);
+  if(document.getElementById("ovFarmBookingTotal")) document.getElementById("ovFarmBookingTotal").textContent = "Rs " + farmBookingTotal.toFixed(2);
+  if(document.getElementById("ovSellTotal")) document.getElementById("ovSellTotal").textContent = "Rs " + sellTotal.toFixed(2);
+  if(document.getElementById("ovBuyTotal")) document.getElementById("ovBuyTotal").textContent = "Rs " + buyTotal.toFixed(2);
+  if(document.getElementById("ovExpenseTotal")) document.getElementById("ovExpenseTotal").textContent = "Rs " + expenseTotal.toFixed(2);
+  
+  if(document.getElementById("ovSohamExp")) document.getElementById("ovSohamExp").textContent = "Rs " + sohamExpTotal.toFixed(2);
+  if(document.getElementById("ovJeetExp")) document.getElementById("ovJeetExp").textContent = "Rs " + jeetExpTotal.toFixed(2);
+  if(document.getElementById("ovFarmExp")) document.getElementById("ovFarmExp").textContent = "Rs " + farmExpTotal.toFixed(2);
+
+  if(document.getElementById("ovFarmAvailableBalance")) document.getElementById("ovFarmAvailableBalance").textContent = "Rs " + cashBalances.Farm.toFixed(2);
+  if(document.getElementById("ovProfit")) document.getElementById("ovProfit").textContent = "Rs " + netProfit.toFixed(2);
+  if(document.getElementById("ovDamage")) document.getElementById("ovDamage").textContent = "Rs " + damageTotal.toFixed(2);
 
   const expRows = expensesRegistry.filter(e => e.category !== "Damage Received");
   if(document.getElementById("subExpenseTableBody")) {
@@ -1672,9 +1724,8 @@ function computeFinancialLedgerStatements() {
     }).join("");
   }
 
-  const dmgRows = expensesRegistry.filter(e => e.category === "Damage Received");
   if(document.getElementById("subDamageTableBody")) {
-    document.getElementById("subDamageTableBody").innerHTML = dmgRows.map((d, idx) => `
+    document.getElementById("subDamageTableBody").innerHTML = damageRows.map((d, idx) => `
       <tr>
         <td>${d.date}</td>
         <td>${d.desc}</td>

@@ -807,7 +807,7 @@ function renderDailyDryStockTable() {
 }
 
 // =========================================================
-// SEARCH HELPERS FOR ADMIN TABS
+// SEARCH HELPERS FOR ADMIN TABS & SUB-TABLES
 // =========================================================
 function filterAdminOrdersTable() {
   const query = (document.getElementById("adminOrdersSearchInput")?.value || "").toLowerCase().trim();
@@ -830,6 +830,15 @@ function filterAdminBookingsTable() {
 function filterAdminUsersTable() {
   const query = (document.getElementById("adminUsersSearchInput")?.value || "").toLowerCase().trim();
   const rows = document.querySelectorAll("#adminUsersTableBody tr");
+  rows.forEach(row => {
+    const text = row.textContent.toLowerCase();
+    row.style.display = text.includes(query) ? "" : "none";
+  });
+}
+
+function filterSubTable(inputId, tbodyId) {
+  const query = (document.getElementById(inputId)?.value || "").toLowerCase().trim();
+  const rows = document.querySelectorAll(`#${tbodyId} tr`);
   rows.forEach(row => {
     const text = row.textContent.toLowerCase();
     row.style.display = text.includes(query) ? "" : "none";

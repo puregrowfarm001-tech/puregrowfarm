@@ -622,8 +622,9 @@
 
         <!-- Sub Tab 0: Daily Dry Mushroom Stock Manager -->
         <div id="subTabDryStock" class="sub-accounting-section" style="display:none;">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:10px;">
             <h4 style="margin:0;">🌾 Daily Dry Mushroom Production & Inward Stock Ledger</h4>
+            <input type="search" id="searchDryStockInput" placeholder="🔍 Search Dry Stock..." style="max-width:240px;" oninput="filterSubTable('searchDryStockInput', 'dailyDryStockTableBody')">
             <span style="font-size:14px; font-weight:bold; color:var(--accent); background:#f0fdf4; padding:6px 12px; border-radius:8px; border:1px solid #bbf7d0;">
               Total Dry Stock Inwarded: <span id="dailyDryTotalSum">0 kg</span>
             </span>
@@ -664,7 +665,11 @@
             <span style="font-size:12px; font-weight:bold; color:#b45309;">🔍 View List</span>
           </div>
 
-          <h4>1. Log Operational Outflow & Records</h4>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:10px;">
+            <h4>1. Log Operational Outflow & Records</h4>
+            <input type="search" id="searchExpenseInput" placeholder="🔍 Search Expenses..." style="max-width:240px;" oninput="filterSubTable('searchExpenseInput', 'subExpenseTableBody')">
+          </div>
+
           <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap:16px;">
             <div class="db-card">
               <form onsubmit="saveAdminExpense(event)">
@@ -724,7 +729,11 @@
             <span style="font-size:12px; font-weight:bold; color:#166534;">🔍 View List</span>
           </div>
 
-          <h4>2. Log Manual Wholesale Production Sale (Direct Offline Inflow)</h4>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:10px;">
+            <h4>2. Log Manual Wholesale Production Sale (Direct Offline Inflow)</h4>
+            <input type="search" id="searchSellInput" placeholder="🔍 Search Sales by Buyer, Product..." style="max-width:240px;" oninput="filterSubTable('searchSellInput', 'subSellTableBody')">
+          </div>
+
           <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap:16px;">
             <div class="db-card">
               <form onsubmit="saveAdminSale(event)">
@@ -788,7 +797,11 @@
             <span style="font-size:12px; font-weight:bold; color:#9a3412;">🔍 View List</span>
           </div>
 
-          <h4>3. Log Raw Inventory Material Bulk Buy Outflow</h4>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:10px;">
+            <h4>3. Log Raw Inventory Material Bulk Buy Outflow</h4>
+            <input type="search" id="searchBuyInput" placeholder="🔍 Search Purchases by Vendor..." style="max-width:240px;" oninput="filterSubTable('searchBuyInput', 'subBuyTableBody')">
+          </div>
+
           <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap:16px;">
             <div class="db-card">
               <form onsubmit="saveAdminPurchase(event)">
@@ -851,7 +864,11 @@
             <span style="font-size:12px; font-weight:bold; color:#991b1b;">🔍 View List</span>
           </div>
 
-          <h4>4. Log Damages Inward & Loss Factor Records</h4>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:10px;">
+            <h4>4. Log Damages Inward & Loss Factor Records</h4>
+            <input type="search" id="searchDamageInput" placeholder="🔍 Search Damages..." style="max-width:240px;" oninput="filterSubTable('searchDamageInput', 'subDamageTableBody')">
+          </div>
+
           <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap:16px;">
             <div class="db-card">
               <form onsubmit="saveAdminDamage(event)">

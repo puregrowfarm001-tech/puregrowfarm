@@ -699,7 +699,6 @@ function renderAdminLiveStockSummary() {
   if (!container) return;
 
   const dryProd = products.find(p => p.type === "dry") || { stock: 0 };
-  const powderProd = products.find(p => p.type === "powder") || { stock: 0 };
   const khakhraProd = products.find(p => p.type === "khakhra") || { stock: 0 };
   const papadProd = products.find(p => p.type === "papad") || { stock: 0 };
 
@@ -1039,7 +1038,7 @@ function populateAdminDashboardTables() {
 }
 
 // =========================================================
-// ADMIN FILTER MODAL POPUP FOR PENDING LISTS
+// ADMIN FILTER & LIST MODAL POPUP FOR ALL TABS
 // =========================================================
 function openAdminFilterModal(type) {
   const modal = document.getElementById("adminFilterPopupModal");
@@ -1138,6 +1137,56 @@ function openAdminFilterModal(type) {
         </div>
       `).join("");
     }
+  } else if (type === 'list_orders') {
+    titleEl.textContent = "📋 All Orders List";
+    htmlContent = orderRegistry.length ? orderRegistry.map(o => `
+      <div style="background:#f8fafc; border:1px solid #cbd5e1; border-radius:8px; padding:10px; font-size:13px;">
+        <strong>${o.orderId} - ${o.name}</strong> | Total: ₹${o.total} | Status: <strong>${o.status}</strong><br>
+        <small class="muted">Products: ${o.products} | Date: ${o.dateLogged}</small>
+      </div>
+    `).join("") : `<p class="muted" style="text-align:center;">No orders recorded.</p>`;
+  } else if (type === 'list_bookings') {
+    titleEl.textContent = "📋 All Farm Training Bookings List";
+    htmlContent = bookingsRegistry.length ? bookingsRegistry.map(b => `
+      <div style="background:#f8fafc; border:1px solid #cbd5e1; border-radius:8px; padding:10px; font-size:13px;">
+        <strong>${b.bookingId} - ${b.name} (${b.type})</strong> | Fee: ₹${b.fee} | Status: <strong>${b.status}</strong><br>
+        <small class="muted">Date: ${b.dateLogged}</small>
+      </div>
+    `).join("") : `<p class="muted" style="text-align:center;">No bookings recorded.</p>`;
+  } else if (type === 'list_sales') {
+    titleEl.textContent = "📋 All Wholesale Sales List";
+    htmlContent = salesRegistry.length ? salesRegistry.map(s => `
+      <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:8px; padding:10px; font-size:13px;">
+        <strong>${s.saleId || 'SALE'} - ${s.product}</strong> | Buyer: ${s.buyer} | Qty: ${s.qty} | Total: ₹${s.total} (Paid: ₹${s.paidAmount})<br>
+        <small class="muted">Date: ${s.date} | Notes: ${s.notes || '-'}</small>
+      </div>
+    `).join("") : `<p class="muted" style="text-align:center;">No wholesale sales recorded.</p>`;
+  } else if (type === 'list_purchases') {
+    titleEl.textContent = "📋 All Purchases (Buy) List";
+    htmlContent = purchasesRegistry.length ? purchasesRegistry.map(p => `
+      <div style="background:#fff7ed; border:1px solid #fed7aa; border-radius:8px; padding:10px; font-size:13px;">
+        <strong>${p.purId || 'PUR'} - ${p.product}</strong> | Vendor: ${p.vendor} | Funder: ${p.funder} | Qty: ${p.qty} | Total: ₹${p.total} (Paid: ₹${p.paidAmount})<br>
+        <small class="muted">Date: ${p.date} | Notes: ${p.notes || '-'}</small>
+      </div>
+    `).join("") : `<p class="muted" style="text-align:center;">No purchase records.</p>`;
+  } else if (type === 'list_expenses') {
+    titleEl.textContent = "📋 All Expenses List";
+    const exps = expensesRegistry.filter(e => e.category !== "Damage Received");
+    htmlContent = exps.length ? exps.map(e => `
+      <div style="background:#fef3c7; border:1px solid #fde68a; border-radius:8px; padding:10px; font-size:13px;">
+        <strong>${e.expId || 'EXP'} - ${e.category}</strong> | Payer: ${e.payer} | Amount: ₹${e.amount}<br>
+        <small class="muted">Desc: ${e.desc} | Date: ${e.date}</small>
+      </div>
+    `).join("") : `<p class="muted" style="text-align:center;">No expense records.</p>`;
+  } else if (type === 'list_damages') {
+    titleEl.textContent = "📋 All Damage Losses List";
+    const dmgs = expensesRegistry.filter(e => e.category === "Damage Received");
+    htmlContent = dmgs.length ? dmgs.map(d => `
+      <div style="background:#fef2f2; border:1px solid #fca5a5; border-radius:8px; padding:10px; font-size:13px;">
+        <strong>${d.expId || 'DMG'} - ${d.desc}</strong> | Party: ${d.payer} | Amount: ₹${d.amount}<br>
+        <small class="muted">Date: ${d.date} | Notes: ${d.notes || '-'}</small>
+      </div>
+    `).join("") : `<p class="muted" style="text-align:center;">No damage records.</p>`;
   }
 
   listEl.innerHTML = htmlContent;
@@ -1479,21 +1528,24 @@ function adminEditPurchase(idx) {
   const newDate = prompt("1. Purchase Date:", p.date || getTodayIsoString());
   if (newDate !== null && newDate.trim() !== "") p.date = newDate.trim();
 
-  const newVendor = prompt("2. Vendor Name:", p.vendor || "");
+  const newFunder = prompt("2. Pese Diye (Funder: Farm / Soham / Jeet):", p.funder || "Farm");
+  if (newFunder !== null && newFunder.trim() !== "") p.funder = newFunder.trim();
+
+  const newVendor = prompt("3. Kiske Pas Se Liya (Vendor Name):", p.vendor || "");
   if (newVendor !== null && newVendor.trim() !== "") p.vendor = newVendor.trim();
 
-  const newQty = prompt("3. Qty Units:", p.qty);
+  const newQty = prompt("4. Kitna Liya (Qty Units):", p.qty);
   if (newQty !== null && !isNaN(parseFloat(newQty))) p.qty = parseFloat(newQty);
 
-  const newRate = prompt("4. Rate (Rs):", p.rate);
+  const newRate = prompt("5. Rate (Rs):", p.rate);
   if (newRate !== null && !isNaN(parseFloat(newRate))) p.rate = parseFloat(newRate);
 
   p.total = p.qty * p.rate;
 
-  const newPaid = prompt(`5. Vendor ko Kitna Paisa Diya Hai? (Total Rs ${p.total}):`, p.paidAmount !== undefined ? p.paidAmount : p.total);
+  const newPaid = prompt(`6. Paid Amount to Vendor (Total Rs ${p.total}):`, p.paidAmount !== undefined ? p.paidAmount : p.total);
   if (newPaid !== null && !isNaN(parseFloat(newPaid))) p.paidAmount = parseFloat(newPaid);
 
-  const newNotes = prompt("6. Vendor Notes / Memo:", p.notes || "");
+  const newNotes = prompt("7. Vendor Notes / Memo:", p.notes || "");
   if (newNotes !== null) p.notes = newNotes.trim();
 
   localStorage.setItem('pgf_purchases', JSON.stringify(purchasesRegistry));
@@ -1544,25 +1596,17 @@ function adminDeleteDamage(idx) {
 // MATHEMATICAL OVERVIEW & LEDGER CALCULATION LOGIC
 // =========================================================
 function computeFinancialLedgerStatements() {
-  // 1) Order Total (Online approved orders revenue)
   const orderTotal = orderRegistry
     .filter(o => o && (o.status === 'Approved' || o.status === 'Delivered'))
     .reduce((sum, o) => sum + Number(o.total || 0), 0);
 
-  // 2) Farm Booking Total
   const validBookings = bookingsRegistry.filter(b => b && b.name && (b.status === "Confirmed" || b.status === "Approved"));
   const farmBookingTotal = validBookings.reduce((sum, b) => sum + Number(b.fee || 0), 0);
 
-  // 3) Sell Total (Offline Wholesale)
   const sellTotal = salesRegistry.reduce((sum, s) => sum + Number(s.paidAmount !== undefined ? s.paidAmount : s.total || 0), 0);
-
-  // 4) Buy Total (Purchases)
   const buyTotal = purchasesRegistry.reduce((sum, p) => sum + Number(p.paidAmount !== undefined ? p.paidAmount : p.total || 0), 0);
-
-  // 5) Expense Total
   const expenseTotal = expensesRegistry.filter(e => e.category !== "Damage Received").reduce((sum, e) => sum + Number(e.amount || 0), 0);
 
-  // 6) Partner & Farm individual expense tracking (Soham, Jeet, Farm ne kitne pese expense kiye hain)
   let sohamExpTotal = 0;
   let jeetExpTotal = 0;
   let farmExpTotal = 0;
@@ -1580,7 +1624,6 @@ function computeFinancialLedgerStatements() {
     else if (p.funder === "Farm") farmExpTotal += pAmt;
   });
 
-  // 9) Damage Total & Partner Deduction Logic
   const damageRows = expensesRegistry.filter(e => e.category === "Damage Received");
   const damageTotal = damageRows.reduce((sum, d) => sum + Number(d.amount || 0), 0);
 
@@ -1595,7 +1638,6 @@ function computeFinancialLedgerStatements() {
     }
   });
 
-  // 7) Farm Available Balance (Net Vault Balance)
   let cashBalances = { Soham: 0, Jeet: 0, Farm: 0 };
   
   cashBalances.Farm += orderTotal;
@@ -1625,10 +1667,9 @@ function computeFinancialLedgerStatements() {
     else if (d.payer === "Jeet") cashBalances.Jeet -= amt;
   });
 
-  // 8) Profit Calculation (Order Total + Farm Booking Total + Sell Total - Buy Total - Expense Total)
   const netProfit = (orderTotal + farmBookingTotal + sellTotal) - (buyTotal + expenseTotal);
 
-  // DOM Elements Update
+  // Overview DOM Updates
   if(document.getElementById("ovOrderTotal")) document.getElementById("ovOrderTotal").textContent = "Rs " + orderTotal.toFixed(2);
   if(document.getElementById("ovFarmBookingTotal")) document.getElementById("ovFarmBookingTotal").textContent = "Rs " + farmBookingTotal.toFixed(2);
   if(document.getElementById("ovSellTotal")) document.getElementById("ovSellTotal").textContent = "Rs " + sellTotal.toFixed(2);
@@ -1642,6 +1683,12 @@ function computeFinancialLedgerStatements() {
   if(document.getElementById("ovFarmAvailableBalance")) document.getElementById("ovFarmAvailableBalance").textContent = "Rs " + cashBalances.Farm.toFixed(2);
   if(document.getElementById("ovProfit")) document.getElementById("ovProfit").textContent = "Rs " + netProfit.toFixed(2);
   if(document.getElementById("ovDamage")) document.getElementById("ovDamage").textContent = "Rs " + damageTotal.toFixed(2);
+
+  // Sub Tab 1: Expense Top Summary & Table
+  if(document.getElementById("subTabExpTotalDisplay")) document.getElementById("subTabExpTotalDisplay").textContent = "Rs " + expenseTotal.toFixed(2);
+  if(document.getElementById("subTabSohamExp")) document.getElementById("subTabSohamExp").textContent = "Rs " + sohamExpTotal.toFixed(2);
+  if(document.getElementById("subTabJeetExp")) document.getElementById("subTabJeetExp").textContent = "Rs " + jeetExpTotal.toFixed(2);
+  if(document.getElementById("subTabFarmExp")) document.getElementById("subTabFarmExp").textContent = "Rs " + farmExpTotal.toFixed(2);
 
   const expRows = expensesRegistry.filter(e => e.category !== "Damage Received");
   if(document.getElementById("subExpenseTableBody")) {
@@ -1661,6 +1708,18 @@ function computeFinancialLedgerStatements() {
     `).join("");
   }
 
+  // Sub Tab 2: Sell Top Summary & Table
+  const sellPaidTotal = salesRegistry.reduce((sum, s) => sum + Number(s.paidAmount !== undefined ? s.paidAmount : s.total || 0), 0);
+  const sellPendingTotal = salesRegistry.reduce((sum, s) => {
+    const tot = Number(s.total || 0);
+    const pd = Number(s.paidAmount !== undefined ? s.paidAmount : tot);
+    return sum + Math.max(0, tot - pd);
+  }, 0);
+
+  if(document.getElementById("subTabSellTotalDisplay")) document.getElementById("subTabSellTotalDisplay").textContent = "Rs " + sellTotal.toFixed(2);
+  if(document.getElementById("subTabSellPaid")) document.getElementById("subTabSellPaid").textContent = "Rs " + sellPaidTotal.toFixed(2);
+  if(document.getElementById("subTabSellPending")) document.getElementById("subTabSellPending").textContent = "Rs " + sellPendingTotal.toFixed(2);
+
   if(document.getElementById("subSellTableBody")) {
     document.getElementById("subSellTableBody").innerHTML = salesRegistry.map((s, idx) => {
       const sub = Number(s.subtotal || (s.qty * s.rate) || s.total);
@@ -1675,12 +1734,13 @@ function computeFinancialLedgerStatements() {
           <td>${s.product}</td>
           <td><strong>${s.buyer}</strong><br><small>${s.phone || ''}</small></td>
           <td>${s.qty}</td>
+          <td style="font-weight:600;">Rs ${Number(s.rate || 0).toFixed(2)}</td>
+          <td>Rs ${del.toFixed(2)}</td>
           <td style="color:var(--accent); font-weight:bold;">Rs ${grandTotal.toFixed(2)}</td>
           <td>
             <span style="color:#16a34a; font-weight:bold;">Rs ${paid.toFixed(2)}</span>
             ${pending > 0 ? `<br><small style="color:#dc2626; font-weight:bold;">Due: Rs ${pending.toFixed(2)}</small>` : '<br><small style="color:#16a34a;">(Fully Paid)</small>'}
           </td>
-          <td><small>${s.notes || '-'}</small></td>
           <td>
             <div style="display:flex; gap:3px;">
               <button type="button" class="btn" style="padding:2px 5px; font-size:10px; min-height:auto;" onclick="downloadOfflineSaleInvoice('${s.saleId}')">📄</button>
@@ -1693,6 +1753,18 @@ function computeFinancialLedgerStatements() {
     }).join("");
   }
 
+  // Sub Tab 3: Buy Top Summary & Table
+  const buyPaidTotal = purchasesRegistry.reduce((sum, p) => sum + Number(p.paidAmount !== undefined ? p.paidAmount : p.total || 0), 0);
+  const buyPendingTotal = purchasesRegistry.reduce((sum, p) => {
+    const tot = Number(p.total || 0);
+    const pd = Number(p.paidAmount !== undefined ? p.paidAmount : tot);
+    return sum + Math.max(0, tot - pd);
+  }, 0);
+
+  if(document.getElementById("subTabBuyTotalDisplay")) document.getElementById("subTabBuyTotalDisplay").textContent = "Rs " + buyTotal.toFixed(2);
+  if(document.getElementById("subTabBuyPaid")) document.getElementById("subTabBuyPaid").textContent = "Rs " + buyPaidTotal.toFixed(2);
+  if(document.getElementById("subTabBuyPending")) document.getElementById("subTabBuyPending").textContent = "Rs " + buyPendingTotal.toFixed(2);
+
   if(document.getElementById("subBuyTableBody")) {
     document.getElementById("subBuyTableBody").innerHTML = purchasesRegistry.map((p, idx) => {
       const totalPayable = Number(p.total || (p.qty * p.rate));
@@ -1703,14 +1775,15 @@ function computeFinancialLedgerStatements() {
         <tr>
           <td>${p.date}</td>
           <td>${p.product}</td>
+          <td><span class="badge" style="background:#eef2ff; color:#3730a3;">${p.funder || 'Farm'}</span></td>
           <td><strong>${p.vendor}</strong></td>
           <td>${p.qty}</td>
+          <td>Rs ${p.rate}</td>
           <td style="color:var(--danger); font-weight:bold;">Rs ${totalPayable.toFixed(2)}</td>
           <td>
             <span style="color:#16a34a; font-weight:bold;">Paid: Rs ${paid.toFixed(2)}</span>
-            ${pendingToVendor > 0 ? `<br><small style="color:#ea580c; font-weight:bold;">Pending: Rs ${pendingToVendor.toFixed(2)}</small>` : '<br><small style="color:#16a34a;">(Clear)</small>'}
+            ${pendingToVendor > 0 ? `<br><small style="color:#ea580c; font-weight:bold;">Due: Rs ${pendingToVendor.toFixed(2)}</small>` : '<br><small style="color:#16a34a;">(Clear)</small>'}
           </td>
-          <td><small>${p.notes || '-'}</small></td>
           <td>
             <button type="button" class="btn" style="padding:2px 5px; font-size:10px; min-height:auto; background:#0284c7;" onclick="adminEditPurchase(${idx})">✏️</button>
             <button type="button" class="btn" style="padding:2px 5px; font-size:10px; min-height:auto; background:var(--danger);" onclick="adminDeletePurchase(${idx})">🗑️</button>
@@ -1781,7 +1854,7 @@ function saveAdminSale(e) {
     saleId: "SALE-" + Date.now().toString().slice(-4),
     date: rawDate ? new Date(rawDate).toLocaleDateString('en-IN') : new Date().toLocaleDateString('en-IN'),
     product: prodType,
-    collector: document.getElementById("saleCollector").value,
+    collector: "Farm", // Fixed to Farm as requested
     buyer: document.getElementById("saleBuyer").value.trim(),
     phone: document.getElementById("salePhone").value.trim(),
     address: document.getElementById("saleAddress").value.trim(),
@@ -1811,6 +1884,8 @@ function saveAdminPurchase(e) {
   const rate = parseFloat(document.getElementById("purRate").value);
   const paid = parseFloat(document.getElementById("purPaidAmount").value) || (qty * rate);
   const purType = document.getElementById("purProduct").value;
+  const funder = document.getElementById("purFunder").value;
+  const vendor = document.getElementById("purVendor").value.trim();
   const notes = document.getElementById("purNotes") ? document.getElementById("purNotes").value.trim() : "";
   
   let matchedProd = null;
@@ -1829,8 +1904,8 @@ function saveAdminPurchase(e) {
     purId: "PUR-" + Date.now().toString().slice(-4),
     date: rawDate ? new Date(rawDate).toLocaleDateString('en-IN') : new Date().toLocaleDateString('en-IN'),
     product: purType,
-    funder: document.getElementById("purFunder").value,
-    vendor: document.getElementById("purVendor").value.trim(),
+    funder: funder,
+    vendor: vendor,
     qty: qty,
     rate: rate,
     total: qty * rate,

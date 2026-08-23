@@ -510,13 +510,11 @@
         
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; margin-bottom: 18px;">
           
-          <!-- Pending Confirm Order Button Card -->
           <div style="background: #e0f2fe; border: 1px solid #bae6fd; padding: 12px; border-radius: 10px; cursor: pointer;" onclick="openAdminFilterModal('orders_pending_confirm')">
             <div style="font-size: 12px; color: #0369a1; font-weight: bold;">⌛ Pending Confirm Order 🔍</div>
             <div id="adminPendingConfirmCount" style="font-size: 22px; font-weight: 800; color: #0284c7; margin-top: 4px;">0</div>
           </div>
 
-          <!-- Orders Pending Delivery Button Card -->
           <div style="background: #fffbeb; border: 1px solid #fde68a; padding: 12px; border-radius: 10px; cursor: pointer;" onclick="openAdminFilterModal('orders_pending_delivery')">
             <div style="font-size: 12px; color: #92400e; font-weight: bold;">⏳ Orders Pending Delivery 🔍</div>
             <div id="adminPendingDeliveryCount" style="font-size: 22px; font-weight: 800; color: #d97706; margin-top: 4px;">0</div>
@@ -650,6 +648,15 @@
 
         <!-- Sub Tab 1: Expense Page -->
         <div id="subTabExpense" class="sub-accounting-section" style="display:none;">
+          <!-- Top Summary Card for Expenses -->
+          <div style="background:#fef3c7; border:1px solid #fde68a; padding:12px; border-radius:10px; margin-bottom:14px; display:flex; justify-content:space-between; align-items:center; cursor:pointer;" onclick="openAdminFilterModal('list_expenses')">
+            <div>
+              <strong style="color:#92400e; font-size:14px;">📊 Total Expenses Outflow: <span id="subTabExpTotalDisplay">Rs 0.00</span></strong>
+              <div style="font-size:11px; color:#b45309; margin-top:2px;">Soham: <span id="subTabSohamExp">Rs 0</span> | Jeet: <span id="subTabJeetExp">Rs 0</span> | Farm: <span id="subTabFarmExp">Rs 0</span></div>
+            </div>
+            <span style="font-size:12px; font-weight:bold; color:#b45309;">🔍 View List</span>
+          </div>
+
           <h4>1. Log Operational Outflow & Records</h4>
           <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap:16px;">
             <div class="db-card">
@@ -702,6 +709,15 @@
 
         <!-- Sub Tab 2: Sell Page -->
         <div id="subTabSell" class="sub-accounting-section" style="display:none;">
+          <!-- Top Summary Card for Sell -->
+          <div style="background:#f0fdf4; border:1px solid #bbf7d0; padding:12px; border-radius:10px; margin-bottom:14px; display:flex; justify-content:space-between; align-items:center; cursor:pointer;" onclick="openAdminFilterModal('list_sales')">
+            <div>
+              <strong style="color:#166534; font-size:14px;">💰 Total Sale Revenue: <span id="subTabSellTotalDisplay">Rs 0.00</span></strong>
+              <div style="font-size:11px; color:#15803d; margin-top:2px;">Received: <span id="subTabSellPaid">Rs 0</span> | Pending / Due: <span id="subTabSellPending" style="color:#dc2626;">Rs 0</span></div>
+            </div>
+            <span style="font-size:12px; font-weight:bold; color:#166534;">🔍 View List</span>
+          </div>
+
           <h4>2. Log Manual Wholesale Production Sale (Direct Offline Inflow)</h4>
           <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap:16px;">
             <div class="db-card">
@@ -716,19 +732,18 @@
                     <option value="Powder">Fine Ground Spore Mushroom Powder Lot</option>
                   </select>
                 </label>
-                <label>Financial Asset Collector Location:
-                  <select id="saleCollector" required>
-                    <option value="Farm">Farm Account General Vault (Automated Default)</option>
-                    <option value="Soham">Soham Gajera Pocket Cash</option>
-                    <option value="Jeet Gajera">Jeet Gajera Pocket Cash</option>
-                  </select>
-                </label>
+                <!-- Collector fixed to Farm as requested -->
+                <input type="hidden" id="saleCollector" value="Farm">
+                <div style="background:#f8fafc; padding:8px 12px; border:1px solid var(--line); border-radius:8px; font-size:13px; color:#334155;">
+                  🏢 Financial Asset Collector Location: <strong>Farm Account General Vault (Fixed)</strong>
+                </div>
+
                 <input type="text" id="saleBuyer" placeholder="Client Purchaser Name" required>
                 <input type="tel" id="salePhone" placeholder="Client Contact Number" required>
                 <input type="text" id="saleAddress" placeholder="Client Shipping Address" required>
-                <input type="number" step="0.01" id="saleQty" placeholder="Dispatched Weight Lots (kg/Packs)" required>
-                <input type="number" id="saleRate" placeholder="Agreed Unit Spot Cost (Rs)" required>
-                <input type="number" id="saleDelivery" placeholder="Delivery Logistics Charge (Rs) [0 for Free]" value="0" min="0">
+                <input type="number" step="0.01" id="saleQty" placeholder="Dispatched Weight Lots (Qty)" required>
+                <input type="number" id="saleRate" placeholder="Agreed Unit Price (Price per unit)" required>
+                <input type="number" id="saleDelivery" placeholder="Delivery Charge (Rs) [0 for Free]" value="0" min="0">
                 <input type="number" id="salePaidAmount" placeholder="Received Payment Amount (Rs) [Kitna Pesa Aaya]" required>
                 <input type="text" id="saleNotes" placeholder="Client Notes / Remarks">
                 <button type="submit">Log Operational Sales Inflow</button>
@@ -742,9 +757,10 @@
                     <th>Product</th>
                     <th>Buyer</th>
                     <th>Qty</th>
+                    <th>Price</th>
+                    <th>Delivery</th>
                     <th>Total</th>
                     <th>Received / Pending</th>
-                    <th>Notes</th>
                     <th>Action</th>
                   </tr>
                 </thead>
@@ -756,6 +772,15 @@
 
         <!-- Sub Tab 3: Buy Page -->
         <div id="subTabBuy" class="sub-accounting-section" style="display:none;">
+          <!-- Top Summary Card for Buy -->
+          <div style="background:#fff7ed; border:1px solid #fed7aa; padding:12px; border-radius:10px; margin-bottom:14px; display:flex; justify-content:space-between; align-items:center; cursor:pointer;" onclick="openAdminFilterModal('list_purchases')">
+            <div>
+              <strong style="color:#9a3412; font-size:14px;">🛍️ Total Buy Outflow: <span id="subTabBuyTotalDisplay">Rs 0.00</span></strong>
+              <div style="font-size:11px; color:#c2410c; margin-top:2px;">Paid to Vendors: <span id="subTabBuyPaid">Rs 0</span> | Due to Vendors: <span id="subTabBuyPending" style="color:#dc2626;">Rs 0</span></div>
+            </div>
+            <span style="font-size:12px; font-weight:bold; color:#9a3412;">🔍 View List</span>
+          </div>
+
           <h4>3. Log Raw Inventory Material Bulk Buy Outflow</h4>
           <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap:16px;">
             <div class="db-card">
@@ -769,17 +794,21 @@
                     <option value="Green">Green Mushroom Base Inward Spores</option>
                   </select>
                 </label>
-                <label>Funding Inward Resource Channel Provider:
+                
+                <!-- Extra fields requested: Kisne pese diye he, kiske pas se liya he, kitna liye he -->
+                <label>Kisne Pese Diye He (Funder / Payer):
                   <select id="purFunder" required>
                     <option value="Farm">Farm Account General Vault</option>
-                    <option value="Soham">Soham Gajera Personal Assets</option>
-                    <option value="Jeet">Jeet Gajera Personal Assets</option>
+                    <option value="Soham">Soham Gajera</option>
+                    <option value="Jeet">Jeet Gajera</option>
                   </select>
                 </label>
-                <input type="text" id="purVendor" placeholder="Vendor Farmer Source Entity Name" required>
-                <input type="number" step="0.01" id="purQty" placeholder="InwardLot Weight Volume Units" required>
-                <input type="number" id="purRate" placeholder="Purchase Valuation Rate (Rs)" required>
-                <input type="number" id="purPaidAmount" placeholder="Paid Amount (Rs) [Kitna Pesa Diya Hai]" required>
+
+                <input type="text" id="purVendor" placeholder="Kiske Pas Se Liya He (Vendor / Seller Name)" required>
+                
+                <input type="number" step="0.01" id="purQty" placeholder="Kitna Liya He (Quantity Units / Weight)" required>
+                <input type="number" id="purRate" placeholder="Purchase Rate per unit (Rs)" required>
+                <input type="number" id="purPaidAmount" placeholder="Paid Amount to Vendor (Rs)" required>
                 <input type="text" id="purNotes" placeholder="Vendor Notes / Batch Memo">
                 <button type="submit">Execute Inventory Buy Inflow</button>
               </form>
@@ -790,11 +819,12 @@
                   <tr>
                     <th>Date</th>
                     <th>Resource</th>
-                    <th>Vendor</th>
-                    <th>Qty</th>
+                    <th>Pese Diye (Funder)</th>
+                    <th>Kiske Pas Se Liya (Vendor)</th>
+                    <th>Kitna Liya (Qty)</th>
+                    <th>Rate</th>
                     <th>Total Payable</th>
-                    <th>Paid / Due to Vendor</th>
-                    <th>Notes</th>
+                    <th>Paid / Due</th>
                     <th>Action</th>
                   </tr>
                 </thead>
@@ -843,40 +873,39 @@
         </div>
       </div>
 
-      <!-- ERP Segment 4: Overview & Live Summary Ledger (Updated as requested) -->
+      <!-- ERP Segment 4: Overview & Live Summary Ledger -->
       <div id="erpOverviewSummaryTab" class="erp-section">
         <h3>Farm Core Financial & Stock Overview Summary Ledger</h3>
         
-        <!-- 9 Specific Metrics Grid -->
         <div class="fin-grid" style="grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; margin-bottom: 20px;">
           
-          <div class="fin-card">
-            <div class="muted small-title">1) Order Total (Online Sales)</div>
+          <div class="fin-card" style="cursor:pointer;" onclick="openAdminFilterModal('list_orders')">
+            <div class="muted small-title">1) Order Total (Online Sales) 🔍</div>
             <div class="fin-val" id="ovOrderTotal">Rs 0.00</div>
           </div>
 
-          <div class="fin-card">
-            <div class="muted small-title">2) Farm Booking Total</div>
+          <div class="fin-card" style="cursor:pointer;" onclick="openAdminFilterModal('list_bookings')">
+            <div class="muted small-title">2) Farm Booking Total 🔍</div>
             <div class="fin-val" id="ovFarmBookingTotal">Rs 0.00</div>
           </div>
 
-          <div class="fin-card">
-            <div class="muted small-title">3) Sell Total (Offline Wholesale)</div>
+          <div class="fin-card" style="cursor:pointer;" onclick="openAdminFilterModal('list_sales')">
+            <div class="muted small-title">3) Sell Total (Offline Wholesale) 🔍</div>
             <div class="fin-val" id="ovSellTotal">Rs 0.00</div>
           </div>
 
-          <div class="fin-card">
-            <div class="muted small-title">4) Buy Total (Purchases)</div>
+          <div class="fin-card" style="cursor:pointer;" onclick="openAdminFilterModal('list_purchases')">
+            <div class="muted small-title">4) Buy Total (Purchases) 🔍</div>
             <div class="fin-val" id="ovBuyTotal" style="color:var(--danger);">Rs 0.00</div>
           </div>
 
-          <div class="fin-card">
-            <div class="muted small-title">5) Expense Total</div>
+          <div class="fin-card" style="cursor:pointer;" onclick="openAdminFilterModal('list_expenses')">
+            <div class="muted small-title">5) Expense Total 🔍</div>
             <div class="fin-val" id="ovExpenseTotal" style="color:var(--warn);">Rs 0.00</div>
           </div>
 
-          <div class="fin-card" style="background: #f8fafc; border: 2px solid #cbd5e1;">
-            <div class="muted small-title" style="font-weight:700; color:#0f172a;">6) Partner & Farm Expenses Breakdown</div>
+          <div class="fin-card" style="background: #f8fafc; border: 2px solid #cbd5e1; cursor:pointer;" onclick="openAdminFilterModal('list_expenses')">
+            <div class="muted small-title" style="font-weight:700; color:#0f172a;">6) Partner & Farm Expenses Breakdown 🔍</div>
             <div style="font-size: 13px; margin-top: 6px; line-height: 1.5;">
               <div>👤 Soham Expenses: <strong id="ovSohamExp" style="color:#2563eb;">Rs 0.00</strong></div>
               <div>👤 Jeet Expenses: <strong id="ovJeetExp" style="color:#d97706;">Rs 0.00</strong></div>
@@ -894,14 +923,13 @@
             <div class="fin-val" id="ovProfit" style="color:var(--accent);">Rs 0.00</div>
           </div>
 
-          <div class="fin-card" style="background:#fef2f2; border: 2px solid #fca5a5;">
-            <div class="muted small-title">9) Total Damage Losses</div>
+          <div class="fin-card" style="background:#fef2f2; border: 2px solid #fca5a5; cursor:pointer;" onclick="openAdminFilterModal('list_damages')">
+            <div class="muted small-title">9) Total Damage Losses 🔍</div>
             <div class="fin-val" id="ovDamage" style="color:var(--danger);">Rs 0.00</div>
           </div>
 
         </div>
 
-        <!-- Live Stock Summary Card at the bottom with Powder Equal-to-Dry rule -->
         <div style="background: #fff; padding: 18px; border-radius: 12px; border: 1px solid var(--line); margin-bottom: 20px;">
           <h4 style="margin: 0 0 12px 0; color: var(--accent); font-size: 16px;">📊 Live Farm Stock Summary (Dry, Powder, Khakhra & Papad)</h4>
           <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px;" id="adminLiveStockCardsContainer"></div>
@@ -929,11 +957,11 @@
       </div>
     </section>
 
-    <!-- Admin Filter Popup Modal for Pending Lists -->
+    <!-- Admin Filter Popup Modal for Lists & Pending Items -->
     <div id="adminFilterPopupModal" class="data-popup-modal" onclick="closeModalOutside(event, 'adminFilterPopupModal')">
-      <div class="popup-content-box" style="max-width: 680px;">
+      <div class="popup-content-box" style="max-width: 780px;">
         <button type="button" class="close-popup-btn" onclick="document.getElementById('adminFilterPopupModal').classList.remove('active-modal')">Close (X)</button>
-        <h2 id="adminFilterModalTitle" style="color: var(--accent); margin-bottom: 12px;">Filtered Pending List</h2>
+        <h2 id="adminFilterModalTitle" style="color: var(--accent); margin-bottom: 12px;">Detailed List View</h2>
         <div id="adminFilterModalContentList" style="display: flex; flex-direction: column; gap: 10px; margin-top: 15px;"></div>
       </div>
     </div>

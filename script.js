@@ -1686,7 +1686,7 @@ function computeFinancialLedgerStatements() {
     else if(e.payer === "Farm") farmExpOnly += amt;
   });
 
-  // 6) Partner & Farm Total (Expense + Buy) = 4 + 5 total
+  // 6) Partner & Farm Total (Expense + Buy) = 4 + 5 total (Alag-alag Soham, Jeet, Farm)
   let sohamExpTotal = sohamExpOnly + sohamBuyTotal;
   let jeetExpTotal = jeetExpOnly + jeetBuyTotal;
   let farmExpTotal = farmExpOnly + farmBuyTotal;
@@ -1714,8 +1714,8 @@ function computeFinancialLedgerStatements() {
   let sohamNetExp = sohamExpTotal - sohamDmgTotal;
   let jeetNetExp = jeetExpTotal - jeetDmgTotal;
 
-  // 7) Farm Available Balance: 1 + 2 + 3 - 6 (6 me sirf farm ka total minus hoga)
-  const farmAvailableBalance = (orderTotal + farmBookingTotal + sellTotal) - farmExpTotal;
+  // 7) Farm Available Balance: 1 + 2 + 3 + (9 ka farm total) - (6 ka farm total)
+  const farmAvailableBalance = (orderTotal + farmBookingTotal + sellTotal + farmDmgTotal) - farmExpTotal;
 
   // 8) Unified Net Profit: 1 + 2 + 3 - 4 - 5
   const netProfit = (orderTotal + farmBookingTotal + sellTotal) - buyTotal - expenseTotal;
@@ -1749,12 +1749,12 @@ function computeFinancialLedgerStatements() {
     document.getElementById("ovFarmExpOnly").innerHTML = `<span style="cursor:pointer; text-decoration:underline;" onclick="event.stopPropagation(); openAdminFilterModal('list_expenses_farm')">Farm: Rs ${farmExpOnly.toFixed(2)}</span>`;
   }
   
-  // 6) Partner & Farm Total (4 + 5 Total: Expense + Buy)
+  // 6) Partner & Farm Total (4 + 5 Total: Expense + Buy) - Alag-alag Soham, Jeet, Farm
   if(document.getElementById("ovSohamTotal")) document.getElementById("ovSohamTotal").textContent = "Rs " + sohamExpTotal.toFixed(2);
   if(document.getElementById("ovJeetTotal")) document.getElementById("ovJeetTotal").textContent = "Rs " + jeetExpTotal.toFixed(2);
   if(document.getElementById("ovFarmTotal")) document.getElementById("ovFarmTotal").textContent = "Rs " + farmExpTotal.toFixed(2);
 
-  // 7) Farm Available Balance: 1 + 2 + 3 - 6 (Farm total)
+  // 7) Farm Available Balance: 1 + 2 + 3 + (9 ka farm) - (6 ka farm)
   if(document.getElementById("ovFarmAvailableBalance")) document.getElementById("ovFarmAvailableBalance").textContent = "Rs " + farmAvailableBalance.toFixed(2);
   
   // 8) Unified Net Profit: 1 + 2 + 3 - 4 - 5
@@ -1770,7 +1770,7 @@ function computeFinancialLedgerStatements() {
   if(document.getElementById("ovSohamNet")) document.getElementById("ovSohamNet").textContent = "Rs " + sohamNetExp.toFixed(2);
   if(document.getElementById("ovJeetNet")) document.getElementById("ovJeetNet").textContent = "Rs " + jeetNetExp.toFixed(2);
 
-  // Sub Tab 1: Expense Top Summary & Table (With Clickable Soham, Jeet, Farm summary)
+  // Sub Tab 1: Expense Top Summary & Table
   if(document.getElementById("subTabExpTotalDisplay")) document.getElementById("subTabExpTotalDisplay").textContent = "Rs " + expenseTotal.toFixed(2);
   const subTabSohamEl = document.getElementById("subTabSohamExp");
   const subTabJeetEl = document.getElementById("subTabJeetExp");
@@ -1849,7 +1849,7 @@ function computeFinancialLedgerStatements() {
     }).join("");
   }
 
-  // Sub Tab 3: Buy Top Summary & Table (With Clickable Soham, Jeet, Farm summary)
+  // Sub Tab 3: Buy Top Summary & Table
   if(document.getElementById("subTabBuyTotalDisplay")) document.getElementById("subTabBuyTotalDisplay").textContent = "Rs " + buyTotal.toFixed(2);
   const subTabSohamBuyEl = document.getElementById("subTabSohamBuy");
   const subTabJeetBuyEl = document.getElementById("subTabJeetBuy");

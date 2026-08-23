@@ -1632,7 +1632,7 @@ function computeFinancialLedgerStatements() {
     else if(e.payer === "Farm") farmExpOnly += amt;
   });
 
-  // 6) Partner & Farm Total (Expense + Buy) = 4 + 5 total
+  // 6) Partner & Farm Total (Expense + Buy) -> Soham, Jeet, Farm separate totals
   let sohamExpTotal = sohamExpOnly + sohamBuyTotal;
   let jeetExpTotal = jeetExpOnly + jeetBuyTotal;
   let farmExpTotal = farmExpOnly + farmBuyTotal;
@@ -1660,8 +1660,8 @@ function computeFinancialLedgerStatements() {
   let sohamNetExp = sohamExpTotal - sohamDmgTotal;
   let jeetNetExp = jeetExpTotal - jeetDmgTotal;
 
-  // 7) Farm Available Balance: 1 + 2 + 3 - 6 (6 me sirf farm ka total minus hoga)
-  const farmAvailableBalance = (orderTotal + farmBookingTotal + sellTotal) - farmExpTotal;
+  // 7) Farm Available Balance (Net Vault): 1 + 2 + 3 + 9 (farm data only) - 6 (farm data only)
+  const farmAvailableBalance = (orderTotal + farmBookingTotal + sellTotal + farmDmgTotal) - farmExpTotal;
 
   // 8) Unified Net Profit: 1 + 2 + 3 - 4 - 5
   const netProfit = (orderTotal + farmBookingTotal + sellTotal) - buyTotal - expenseTotal;
@@ -1683,15 +1683,15 @@ function computeFinancialLedgerStatements() {
   if(document.getElementById("ovJeetExpOnly")) document.getElementById("ovJeetExpOnly").textContent = "Rs " + jeetExpOnly.toFixed(2);
   if(document.getElementById("ovFarmExpOnly")) document.getElementById("ovFarmExpOnly").textContent = "Rs " + farmExpOnly.toFixed(2);
   
-  // 6) Partner & Farm Total (4 + 5 Total: Expense + Buy)
+  // 6) Partner & Farm Total (Expense + Buy)
   if(document.getElementById("ovSohamTotal")) document.getElementById("ovSohamTotal").textContent = "Rs " + sohamExpTotal.toFixed(2);
   if(document.getElementById("ovJeetTotal")) document.getElementById("ovJeetTotal").textContent = "Rs " + jeetExpTotal.toFixed(2);
   if(document.getElementById("ovFarmTotal")) document.getElementById("ovFarmTotal").textContent = "Rs " + farmExpTotal.toFixed(2);
 
-  // 7) Farm Available Balance: 1 + 2 + 3 - 6 (Farm total)
+  // 7) Farm Available Balance: 1 + 2 + 3 + 9 (farm data) - 6 (farm data)
   if(document.getElementById("ovFarmAvailableBalance")) document.getElementById("ovFarmAvailableBalance").textContent = "Rs " + farmAvailableBalance.toFixed(2);
   
-  // 8) Unified Net Profit: 1 + 2 + 3 - 4 - 5
+  // 8) Unified Net Profit
   if(document.getElementById("ovProfit")) document.getElementById("ovProfit").textContent = "Rs " + netProfit.toFixed(2);
   
   // 9) Damage Losses Card with Breakdown

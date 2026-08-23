@@ -1632,7 +1632,7 @@ function computeFinancialLedgerStatements() {
     else if(e.payer === "Farm") farmExpOnly += amt;
   });
 
-  // 6) Partner & Farm Total (Expense + Buy) -> 4 + 5 (Soham, Jeet, Farm separate)
+  // 6) Partner & Farm Total (4 + 5) -> Soham, Jeet, Farm alag alag
   let sohamExpTotal = sohamExpOnly + sohamBuyTotal;
   let jeetExpTotal = jeetExpOnly + jeetBuyTotal;
   let farmExpTotal = farmExpOnly + farmBuyTotal;
@@ -1683,7 +1683,7 @@ function computeFinancialLedgerStatements() {
   if(document.getElementById("ovJeetExpOnly")) document.getElementById("ovJeetExpOnly").textContent = "Rs " + jeetExpOnly.toFixed(2);
   if(document.getElementById("ovFarmExpOnly")) document.getElementById("ovFarmExpOnly").textContent = "Rs " + farmExpOnly.toFixed(2);
   
-  // 6) Partner & Farm Total (Expense + Buy)
+  // 6) Partner & Farm Total (4 + 5) - Soham, Jeet, Farm Separated
   if(document.getElementById("ovSohamTotal")) document.getElementById("ovSohamTotal").textContent = "Rs " + sohamExpTotal.toFixed(2);
   if(document.getElementById("ovJeetTotal")) document.getElementById("ovJeetTotal").textContent = "Rs " + jeetExpTotal.toFixed(2);
   if(document.getElementById("ovFarmTotal")) document.getElementById("ovFarmTotal").textContent = "Rs " + farmExpTotal.toFixed(2);

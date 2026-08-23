@@ -803,7 +803,7 @@ function renderDailyDryStockTable() {
     return;
   }
 
-  tbody.innerHTML = filteredData.map((item, idx) => `
+  tbody.innerHTML = filteredData.map((item) => `
     <tr>
       <td>${item.date}</td>
       <td>${item.notes}</td>
@@ -855,7 +855,7 @@ function filterSubTable(inputId, tbodyId) {
 }
 
 // =========================================================
-// YEAR FILTER & PRINT REPORT HANDLERS
+// YEAR FILTER & CLEAN EXCEL-LIKE PRINT REPORT HANDLER
 // =========================================================
 function handleAdminYearFilterChange() {
   populateAdminDashboardTables();
@@ -867,6 +867,32 @@ function printActiveAdminReport() {
   const activeSection = document.querySelector('.erp-section.active');
   const sectionTitle = activeSection ? activeSection.querySelector('h3')?.textContent || "Admin ERP Report" : "Pure Grow Farm Report";
 
+  const sectionClone = activeSection.cloneNode(true);
+  
+  const searchInputs = sectionClone.querySelectorAll('input[type="search"]');
+  searchInputs.forEach(input => input.remove());
+
+  const tables = sectionClone.querySelectorAll('table');
+  tables.forEach(table => {
+    const headers = table.querySelectorAll('th');
+    const rows = table.querySelectorAll('tr');
+
+    let removeIndices = [];
+    headers.forEach((th, index) => {
+      const text = th.textContent.toLowerCase();
+      if (text.includes('delivery & tracking') || text.includes('actions & whatsapp') || text.includes('action')) {
+        removeIndices.push(index);
+      }
+    });
+
+    rows.forEach(row => {
+      const cols = row.querySelectorAll('th, td');
+      removeIndices.forEach(colIndex => {
+        if (cols[colIndex]) cols[colIndex].remove();
+      });
+    });
+  });
+
   const printWindow = window.open('', '_blank');
   printWindow.document.write(`
     <!DOCTYPE html>
@@ -874,19 +900,20 @@ function printActiveAdminReport() {
     <head>
       <title>Pure Grow Farm - ${sectionTitle} (${selectedYear})</title>
       <style>
-        body { font-family: sans-serif; padding: 20px; color: #111; background: #fff; }
-        h2 { color: #2b8a3e; margin-bottom: 4px; }
+        body { font-family: Arial, sans-serif; padding: 20px; color: #111; background: #fff; }
+        h2 { color: #2b8a3e; margin-bottom: 4px; font-size: 20px; }
         .meta { font-size: 13px; color: #555; margin-bottom: 20px; }
-        table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 13px; }
-        th, td { border: 1px solid #cbd5e1; padding: 8px 10px; text-align: left; }
-        th { background: #2b8a3e !important; color: white !important; -webkit-print-color-adjust: exact; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 12px; }
+        th, td { border: 1px solid #94a3b8; padding: 8px 10px; text-align: left; }
+        th { background: #2b8a3e !important; color: white !important; -webkit-print-color-adjust: exact; font-weight: bold; }
+        tr:nth-child(even) { background-color: #f8fafc; }
       </style>
     </head>
     <body>
-      <h2>Pure Grow Farm - Operational Report</h2>
+      <h2>Pure Grow Farm - Operational Ledger Report</h2>
       <div class="meta"><strong>Section:</strong> ${sectionTitle} | <strong>Year Filter:</strong> ${selectedYear} | <strong>Generated On:</strong> ${new Date().toLocaleString()}</div>
       <hr style="border:0; border-top:1px solid #cbd5e1;">
-      ${activeSection ? activeSection.innerHTML : ''}
+      ${sectionClone.innerHTML}
       <script>
         window.onload = function() {
           setTimeout(function() { window.print(); }, 500);

@@ -810,7 +810,6 @@ function populateAdminDashboardTables() {
   renderDailyDryStockTable();
 
   const validOrders = orderRegistry.filter(o => o && o.name && o.orderId);
-  const totalOrders = validOrders.length;
   
   const approvedOrdersList = validOrders.filter(o => o.status === 'Approved' || o.status === 'Delivered');
   const approvedOnlineRevenue = approvedOrdersList.reduce((sum, o) => sum + Number(o.total || 0), 0);
@@ -820,7 +819,7 @@ function populateAdminDashboardTables() {
   const pendingOrders = validOrders.filter(o => o.status !== 'Delivered' && o.trackingStage !== 'Delivered' && !o.status.startsWith('Cancelled') && !o.status.startsWith('Rejected')).length;
   const refundPendingCount = validOrders.filter(o => o.status && o.status.startsWith('Cancelled') && o.refundStage !== 'Refund Credited').length;
 
-  if (document.getElementById("adminTotalOrdersCount")) document.getElementById("adminTotalOrdersCount").textContent = totalOrders;
+  if (document.getElementById("adminPendingOrdersCount")) document.getElementById("adminPendingOrdersCount").textContent = pendingOrders;
   if (document.getElementById("adminApprovedRevenueValue")) document.getElementById("adminApprovedRevenueValue").textContent = `Rs ${approvedTotalRevenue.toFixed(2)}`;
   if (document.getElementById("adminPendingOrdersCount")) document.getElementById("adminPendingOrdersCount").textContent = pendingOrders;
   if (document.getElementById("adminRefundPendingCount")) document.getElementById("adminRefundPendingCount").textContent = refundPendingCount;
@@ -1031,6 +1030,93 @@ function populateAdminDashboardTables() {
       `).join("");
     }
   }
+}
+
+// =========================================================
+// ADMIN FILTER MODAL POPUP FOR PENDING LISTS
+// =========================================================
+function openAdminFilterModal(type) {
+  const modal = document.getElementById("adminFilterPopupModal");
+  const titleEl = document.getElementById("adminFilterModalTitle");
+  const listEl = document.getElementById("adminFilterModalContentList");
+  if (!modal || !titleEl || !listEl) return;
+
+  modal.classList.add("active-modal");
+  let htmlContent = "";
+
+  if (type === 'orders_pending_delivery') {
+    titleEl.textContent = "⏳ Orders Pending Delivery";
+    const pendingList = orderRegistry.filter(o => o && o.name && o.status !== 'Delivered' && o.trackingStage !== 'Delivered' && !o.status.startsWith('Cancelled') && !o.status.startsWith('Rejected'));
+    
+    if (pendingList.length === 0) {
+      htmlContent = `<p class="muted" style="text-align:center; padding:15px;">No orders pending delivery.</p>`;
+    } else {
+      htmlContent = pendingList.map(o => `
+        <div style="background:#f8fafc; border:1px solid #cbd5e1; border-radius:8px; padding:12px; display:flex; justify-content:space-between; align-items:center; gap:10px;">
+          <div>
+            <strong>${o.orderId} - ${o.name}</strong><br>
+            <small class="muted">Products: ${o.products} | Total: ₹${o.total}</small><br>
+            <small style="color:var(--warn); font-weight:bold;">Status: ${o.status || 'Pending'} | Stage: ${o.trackingStage || 'Placed'}</small>
+          </div>
+          <button type="button" class="btn" style="font-size:12px; padding:6px 12px; min-height:auto;" onclick="closeModalOutside({target:{id:'adminFilterPopupModal'}}, 'adminFilterPopupModal'); switchErpTab('erpOrdersTab', 'tabNavOrders');">View in Orders</button>
+        </div>
+      `).join("");
+    }
+  } else if (type === 'orders_refund_pending') {
+    titleEl.textContent = "🔄 Refund Pending Orders";
+    const refundList = orderRegistry.filter(o => o && o.status && o.status.startsWith('Cancelled') && o.refundStage !== 'Refund Credited');
+
+    if (refundList.length === 0) {
+      htmlContent = `<p class="muted" style="text-align:center; padding:15px;">No refund pending orders.</p>`;
+    } else {
+      htmlContent = refundList.map(o => `
+        <div style="background:#fff7ed; border:1px solid #fed7aa; border-radius:8px; padding:12px; display:flex; justify-content:space-between; align-items:center; gap:10px;">
+          <div>
+            <strong>${o.orderId} - ${o.name}</strong><br>
+            <small class="muted">Refund Amount: ₹${o.total} | UPI: ${o.userUpiId || 'N/A'}</small><br>
+            <small style="color:#ea580c; font-weight:bold;">Refund Status: ${o.refundStage || 'Initiated'}</small>
+          </div>
+          <button type="button" class="btn" style="font-size:12px; padding:6px 12px; min-height:auto;" onclick="closeModalOutside({target:{id:'adminFilterPopupModal'}}, 'adminFilterPopupModal'); switchErpTab('erpOrdersTab', 'tabNavOrders');">Process Refund</button>
+        </div>
+      `).join("");
+    }
+  } else if (type === 'bookings_pending') {
+    titleEl.textContent = "⏳ Farm Bookings Pending Verification";
+    const pendingBookingsList = bookingsRegistry.filter(b => b && b.name && b.status === "Pending Verification");
+
+    if (pendingBookingsList.length === 0) {
+      htmlContent = `<p class="muted" style="text-align:center; padding:15px;">No farm bookings pending verification.</p>`;
+    } else {
+      htmlContent = pendingBookingsList.map(b => `
+        <div style="background:#fffbeb; border:1px solid #fde68a; border-radius:8px; padding:12px; display:flex; justify-content:space-between; align-items:center; gap:10px;">
+          <div>
+            <strong>${b.bookingId} - ${b.name} (${b.type})</strong><br>
+            <small class="muted">Fee: ₹${b.fee} | UPI: ${b.userUpiId || 'N/A'} | Txn: ${b.txnId || 'N/A'}</small>
+          </div>
+          <button type="button" class="btn" style="font-size:12px; padding:6px 12px; min-height:auto;" onclick="closeModalOutside({target:{id:'adminFilterPopupModal'}}, 'adminFilterPopupModal'); switchErpTab('erpBookingsTab', 'tabNavBookings');">Approve Booking</button>
+        </div>
+      `).join("");
+    }
+  } else if (type === 'certificates_pending') {
+    titleEl.textContent = "📜 Certificates Pending Approval";
+    const pendingCertList = bookingsRegistry.filter(b => b && b.name && (b.status === "Confirmed" || b.status === "Approved") && !b.certIssued);
+
+    if (pendingCertList.length === 0) {
+      htmlContent = `<p class="muted" style="text-align:center; padding:15px;">No certificates pending approval.</p>`;
+    } else {
+      htmlContent = pendingCertList.map(b => `
+        <div style="background:#fff7ed; border:1px solid #fed7aa; border-radius:8px; padding:12px; display:flex; justify-content:space-between; align-items:center; gap:10px;">
+          <div>
+            <strong>${b.bookingId} - ${b.name} (${b.type})</strong><br>
+            <small class="muted">Status: Booking Confirmed | Training Completed</small>
+          </div>
+          <button type="button" class="btn" style="font-size:12px; padding:6px 12px; min-height:auto;" onclick="closeModalOutside({target:{id:'adminFilterPopupModal'}}, 'adminFilterPopupModal'); switchErpTab('erpBookingsTab', 'tabNavBookings');">Issue Certificate</button>
+        </div>
+      `).join("");
+    }
+  }
+
+  listEl.innerHTML = htmlContent;
 }
 
 function openOrderActionsMenu(idx) {

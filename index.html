@@ -509,17 +509,13 @@
         <h3>E-Commerce Customer Orders Grid Ledger & Shipment Management</h3>
         
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; margin-bottom: 18px;">
-          <div style="background: #eff6ff; border: 1px solid #bfdbfe; padding: 12px; border-radius: 10px;">
-            <div style="font-size: 12px; color: #1e40af; font-weight: bold;">📦 Total Orders Received</div>
-            <div id="adminTotalOrdersCount" style="font-size: 22px; font-weight: 800; color: #1d4ed8; margin-top: 4px;">0</div>
+          <div style="background: #fffbeb; border: 1px solid #fde68a; padding: 12px; border-radius: 10px; cursor: pointer;" onclick="openAdminFilterModal('orders_pending_delivery')">
+            <div style="font-size: 12px; color: #92400e; font-weight: bold;">⏳ Orders Pending Delivery 🔍</div>
+            <div id="adminPendingOrdersCount" style="font-size: 22px; font-weight: 800; color: #d97706; margin-top: 4px;">0</div>
           </div>
           <div style="background: #f0fdf4; border: 1px solid #bbf7d0; padding: 12px; border-radius: 10px;">
             <div style="font-size: 12px; color: #166534; font-weight: bold;">💰 Total Farm Revenue (Approved)</div>
             <div id="adminApprovedRevenueValue" style="font-size: 22px; font-weight: 800; color: #15803d; margin-top: 4px;">Rs 0.00</div>
-          </div>
-          <div style="background: #fffbeb; border: 1px solid #fde68a; padding: 12px; border-radius: 10px; cursor: pointer;" onclick="openAdminFilterModal('orders_pending_delivery')">
-            <div style="font-size: 12px; color: #92400e; font-weight: bold;">⏳ Orders Pending Delivery 🔍</div>
-            <div id="adminPendingOrdersCount" style="font-size: 22px; font-weight: 800; color: #d97706; margin-top: 4px;">0</div>
           </div>
           <div style="background: #fff7ed; border: 1px solid #fed7aa; padding: 12px; border-radius: 10px; cursor: pointer;" onclick="openAdminFilterModal('orders_refund_pending')">
             <div style="font-size: 12px; color: #9a3412; font-weight: bold;">🔄 Refund Pending Orders 🔍</div>

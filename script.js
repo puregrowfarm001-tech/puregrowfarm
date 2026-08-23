@@ -816,12 +816,14 @@ function populateAdminDashboardTables() {
   const directOfflineSales = salesRegistry.reduce((sum, s) => sum + Number(s.paidAmount !== undefined ? s.paidAmount : s.total || 0), 0);
   const approvedTotalRevenue = approvedOnlineRevenue + directOfflineSales;
   
-  const pendingOrders = validOrders.filter(o => o.status !== 'Delivered' && o.trackingStage !== 'Delivered' && !o.status.startsWith('Cancelled') && !o.status.startsWith('Rejected')).length;
-  const refundPendingCount = validOrders.filter(o => o.status && o.status.startsWith('Cancelled') && o.refundStage !== 'Refund Credited').length;
+  // Pending Confirm Orders aur Pending Delivery Counts
+  const pendingConfirmCount = validOrders.filter(o => o && o.status === 'Pending Verification').length;
+  const pendingDeliveryOrders = validOrders.filter(o => o && o.status === 'Approved' && o.trackingStage !== 'Delivered').length;
+  const refundPendingCount = validOrders.filter(o => o && o.status && o.status.startsWith('Cancelled') && o.refundStage !== 'Refund Credited').length;
 
-  if (document.getElementById("adminPendingOrdersCount")) document.getElementById("adminPendingOrdersCount").textContent = pendingOrders;
+  if (document.getElementById("adminPendingConfirmCount")) document.getElementById("adminPendingConfirmCount").textContent = pendingConfirmCount;
+  if (document.getElementById("adminPendingOrdersCount")) document.getElementById("adminPendingOrdersCount").textContent = pendingDeliveryOrders;
   if (document.getElementById("adminApprovedRevenueValue")) document.getElementById("adminApprovedRevenueValue").textContent = `Rs ${approvedTotalRevenue.toFixed(2)}`;
-  if (document.getElementById("adminPendingOrdersCount")) document.getElementById("adminPendingOrdersCount").textContent = pendingOrders;
   if (document.getElementById("adminRefundPendingCount")) document.getElementById("adminRefundPendingCount").textContent = refundPendingCount;
 
   if (document.getElementById("adminOrdersTableBody")) {
@@ -1044,9 +1046,27 @@ function openAdminFilterModal(type) {
   modal.classList.add("active-modal");
   let htmlContent = "";
 
-  if (type === 'orders_pending_delivery') {
+  if (type === 'orders_pending_confirm') {
+    titleEl.textContent = "⌛ Pending Confirm Orders List";
+    const pendingConfirmList = orderRegistry.filter(o => o && o.name && o.status === 'Pending Verification');
+    
+    if (pendingConfirmList.length === 0) {
+      htmlContent = `<p class="muted" style="text-align:center; padding:15px;">No pending confirmation orders.</p>`;
+    } else {
+      htmlContent = pendingConfirmList.map(o => `
+        <div style="background:#f8fafc; border:1px solid #cbd5e1; border-radius:8px; padding:12px; display:flex; justify-content:space-between; align-items:center; gap:10px;">
+          <div>
+            <strong>${o.orderId} - ${o.name}</strong><br>
+            <small class="muted">Products: ${o.products} | Total: ₹${o.total}</small><br>
+            <small style="color:var(--warn); font-weight:bold;">UPI: ${o.userUpiId || 'N/A'} | Txn: ${o.txnId || 'N/A'}</small>
+          </div>
+          <button type="button" class="btn" style="font-size:12px; padding:6px 12px; min-height:auto;" onclick="closeModalOutside({target:{id:'adminFilterPopupModal'}}, 'adminFilterPopupModal'); switchErpTab('erpOrdersTab', 'tabNavOrders'); adminEditOrderDetails(${orderRegistry.indexOf(o)}); ">✏️ Edit & Approve</button>
+        </div>
+      `).join("");
+    }
+  } else if (type === 'orders_pending_delivery') {
     titleEl.textContent = "⏳ Orders Pending Delivery";
-    const pendingList = orderRegistry.filter(o => o && o.name && o.status !== 'Delivered' && o.trackingStage !== 'Delivered' && !o.status.startsWith('Cancelled') && !o.status.startsWith('Rejected'));
+    const pendingList = orderRegistry.filter(o => o && o.name && o.status === 'Approved' && o.trackingStage !== 'Delivered');
     
     if (pendingList.length === 0) {
       htmlContent = `<p class="muted" style="text-align:center; padding:15px;">No orders pending delivery.</p>`;
@@ -1056,7 +1076,7 @@ function openAdminFilterModal(type) {
           <div>
             <strong>${o.orderId} - ${o.name}</strong><br>
             <small class="muted">Products: ${o.products} | Total: ₹${o.total}</small><br>
-            <small style="color:var(--warn); font-weight:bold;">Status: ${o.status || 'Pending'} | Stage: ${o.trackingStage || 'Placed'}</small>
+            <small style="color:var(--warn); font-weight:bold;">Status: ${o.status || 'Approved'} | Stage: ${o.trackingStage || 'Packed'}</small>
           </div>
           <button type="button" class="btn" style="font-size:12px; padding:6px 12px; min-height:auto;" onclick="closeModalOutside({target:{id:'adminFilterPopupModal'}}, 'adminFilterPopupModal'); switchErpTab('erpOrdersTab', 'tabNavOrders');">View in Orders</button>
         </div>
@@ -1302,7 +1322,7 @@ function setOrderStageDirect(idx, newStage) {
     o.currentLocation = `Out for Delivery with ${o.courierName || 'Ekart Logistics'} Partner`;
   } else if (newStage === 'Delivered') {
     o.currentLocation = "Delivered to Customer Doorstep";
-    o.status = "Delivered";
+    o.status = "Delivered"; // Yeh ensure karega ki order pending delivery list se hat jaye
   }
 
   localStorage.setItem('pgf_orders', JSON.stringify(orderRegistry));

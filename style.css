@@ -55,14 +55,6 @@ header {
 
 .dialog-actions .btn, .dialog-actions button { flex: 1; min-width: 170px; }
 
-.send-note {
-  padding: 10px 12px;
-  color: #246e33;
-  background: #eef7ee;
-  border-radius: 10px;
-  font-weight: 700;
-}
-
 .nav-wrapper { flex-wrap: nowrap; justify-content: flex-end; flex: 1; min-width: 0; }
 
 nav {
@@ -305,7 +297,6 @@ th { background: #f8faf8; font-weight: 700; }
 .fin-val { font-size: 24px; font-weight: 800; color: var(--accent); margin-top: 6px; }
 .partner-cash-card { background: var(--soft); padding: 10px; border-radius: 8px; font-weight: bold; font-size: 14px; margin-top: 8px; }
 
-/* Sub-accounting Separate Navigation Buttons Bar Styling */
 .sub-accounting-nav {
   display: flex;
   gap: 10px;
@@ -333,12 +324,6 @@ th { background: #f8faf8; font-weight: 700; }
   background: var(--soft);
   color: var(--accent);
   border-color: var(--accent);
-}
-
-.sub-accounting-nav button.active-subtab {
-  background: var(--accent) !important;
-  color: #fff !important;
-  border-color: var(--accent) !important;
 }
 
 .sub-accounting-section {

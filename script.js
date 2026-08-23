@@ -1605,41 +1605,34 @@ function computeFinancialLedgerStatements() {
   const buyTotal = purchasesRegistry.reduce((sum, p) => sum + Number(p.paidAmount !== undefined ? p.paidAmount : p.total || 0), 0);
   const expenseTotal = expensesRegistry.filter(e => e.category !== "Damage Received").reduce((sum, e) => sum + Number(e.amount || 0), 0);
 
-  // Partner Wise Expense Breakdown
-  let sohamExpTotal = 0, jeetExpTotal = 0, farmExpTotal = 0;
+  let sohamExpTotal = 0;
+  let jeetExpTotal = 0;
+  let farmExpTotal = 0;
+
   expensesRegistry.filter(e => e.category !== "Damage Received").forEach(e => {
     if (e.payer === "Soham") sohamExpTotal += Number(e.amount || 0);
     else if (e.payer === "Jeet") jeetExpTotal += Number(e.amount || 0);
     else if (e.payer === "Farm") farmExpTotal += Number(e.amount || 0);
   });
 
-  // Partner Wise Buy Breakdown
-  let sohamBuyTotal = 0, jeetBuyTotal = 0, farmBuyTotal = 0;
   purchasesRegistry.forEach(p => {
     const pAmt = Number(p.paidAmount !== undefined ? p.paidAmount : p.total || 0);
-    if (p.funder === "Soham") sohamBuyTotal += pAmt;
-    else if (p.funder === "Jeet") jeetBuyTotal += pAmt;
-    else if (p.funder === "Farm") farmBuyTotal += pAmt;
+    if (p.funder === "Soham") sohamExpTotal += pAmt;
+    else if (p.funder === "Jeet") jeetExpTotal += pAmt;
+    else if (p.funder === "Farm") farmExpTotal += pAmt;
   });
-
-  // Partner & Farm Total (Expense + Buy combined as requested)
-  let sohamTotalExpBuy = sohamExpTotal + sohamBuyTotal;
-  let jeetTotalExpBuy = jeetExpTotal + jeetBuyTotal;
-  let farmTotalExpBuy = farmExpTotal + farmBuyTotal;
 
   const damageRows = expensesRegistry.filter(e => e.category === "Damage Received");
   const damageTotal = damageRows.reduce((sum, d) => sum + Number(d.amount || 0), 0);
 
-  // Partner Wise Damage Breakdown (Kisne pese rakhe)
-  let sohamDmgTotal = 0, jeetDmgTotal = 0, farmDmgTotal = 0;
   damageRows.forEach(d => {
     const amt = Number(d.amount || 0);
     if (d.payer === "Soham") {
-      sohamDmgTotal += amt;
+      sohamExpTotal += amt;
     } else if (d.payer === "Jeet") {
-      jeetDmgTotal += amt;
+      jeetExpTotal += amt;
     } else if (d.payer === "Farm") {
-      farmDmgTotal += amt;
+      farmExpTotal += amt;
     }
   });
 
@@ -1681,10 +1674,9 @@ function computeFinancialLedgerStatements() {
   if(document.getElementById("ovBuyTotal")) document.getElementById("ovBuyTotal").textContent = "Rs " + buyTotal.toFixed(2);
   if(document.getElementById("ovExpenseTotal")) document.getElementById("ovExpenseTotal").textContent = "Rs " + expenseTotal.toFixed(2);
   
-  // Point 6: (Expense + Buy) Total for Soham, Jeet, Farm
-  if(document.getElementById("ovSohamExp")) document.getElementById("ovSohamExp").textContent = "Rs " + sohamTotalExpBuy.toFixed(2);
-  if(document.getElementById("ovJeetExp")) document.getElementById("ovJeetExp").textContent = "Rs " + jeetTotalExpBuy.toFixed(2);
-  if(document.getElementById("ovFarmExp")) document.getElementById("ovFarmExp").textContent = "Rs " + farmTotalExpBuy.toFixed(2);
+  if(document.getElementById("ovSohamExp")) document.getElementById("ovSohamExp").textContent = "Rs " + sohamExpTotal.toFixed(2);
+  if(document.getElementById("ovJeetExp")) document.getElementById("ovJeetExp").textContent = "Rs " + jeetExpTotal.toFixed(2);
+  if(document.getElementById("ovFarmExp")) document.getElementById("ovFarmExp").textContent = "Rs " + farmExpTotal.toFixed(2);
 
   if(document.getElementById("ovFarmAvailableBalance")) document.getElementById("ovFarmAvailableBalance").textContent = "Rs " + cashBalances.Farm.toFixed(2);
   if(document.getElementById("ovProfit")) document.getElementById("ovProfit").textContent = "Rs " + netProfit.toFixed(2);
@@ -1759,7 +1751,15 @@ function computeFinancialLedgerStatements() {
     }).join("");
   }
 
-  // Sub Tab 3: Buy Top Summary & Table
+  // Sub Tab 3: Buy Top Summary & Table (Kiskne kitne pese diye breakdown)
+  let sohamBuyTotal = 0, jeetBuyTotal = 0, farmBuyTotal = 0;
+  purchasesRegistry.forEach(p => {
+    const amt = Number(p.paidAmount !== undefined ? p.paidAmount : p.total || 0);
+    if(p.funder === "Soham") sohamBuyTotal += amt;
+    else if(p.funder === "Jeet") jeetBuyTotal += amt;
+    else if(p.funder === "Farm") farmBuyTotal += amt;
+  });
+
   if(document.getElementById("subTabBuyTotalDisplay")) document.getElementById("subTabBuyTotalDisplay").textContent = "Rs " + buyTotal.toFixed(2);
   if(document.getElementById("subTabSohamBuy")) document.getElementById("subTabSohamBuy").textContent = "Rs " + sohamBuyTotal.toFixed(2);
   if(document.getElementById("subTabJeetBuy")) document.getElementById("subTabJeetBuy").textContent = "Rs " + jeetBuyTotal.toFixed(2);
@@ -1793,7 +1793,15 @@ function computeFinancialLedgerStatements() {
     }).join("");
   }
 
-  // Sub Tab 4: Damage Top Summary & Table
+  // Sub Tab 4: Damage Top Summary (Kisne kitne pese rakhe)
+  let sohamDmgTotal = 0, jeetDmgTotal = 0, farmDmgTotal = 0;
+  damageRows.forEach(d => {
+    const amt = Number(d.amount || 0);
+    if(d.payer === "Soham") sohamDmgTotal += amt;
+    else if(d.payer === "Jeet") jeetDmgTotal += amt;
+    else if(d.payer === "Farm") farmDmgTotal += amt;
+  });
+
   if(document.getElementById("subTabDamageTotalDisplay")) document.getElementById("subTabDamageTotalDisplay").textContent = "Rs " + damageTotal.toFixed(2);
   if(document.getElementById("subTabSohamDmg")) document.getElementById("subTabSohamDmg").textContent = "Rs " + sohamDmgTotal.toFixed(2);
   if(document.getElementById("subTabJeetDmg")) document.getElementById("subTabJeetDmg").textContent = "Rs " + jeetDmgTotal.toFixed(2);

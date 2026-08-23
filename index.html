@@ -651,7 +651,7 @@
           <div style="background:#fef3c7; border:1px solid #fde68a; padding:12px; border-radius:10px; margin-bottom:14px; display:flex; justify-content:space-between; align-items:center; cursor:pointer;" onclick="openAdminFilterModal('list_expenses')">
             <div>
               <strong style="color:#92400e; font-size:14px;">📊 Total Expenses Outflow: <span id="subTabExpTotalDisplay">Rs 0.00</span></strong>
-              <div style="font-size:11px; color:#b45309; margin-top:2px;">Soham Diye: <span id="subTabSohamExp">Rs 0</span> | Jeet Diye: <span id="subTabJeetExp">Rs 0</span> | Farm Diye: <span id="subTabFarmExp">Rs 0</span></div>
+              <div style="font-size:11px; color:#b45309; margin-top:2px;">Soham: <span id="subTabSohamExp">Rs 0</span> | Jeet: <span id="subTabJeetExp">Rs 0</span> | Farm: <span id="subTabFarmExp">Rs 0</span></div>
             </div>
             <span style="font-size:12px; font-weight:bold; color:#b45309;">🔍 View List</span>
           </div>
@@ -668,7 +668,7 @@
                     <option value="Student & Farmer">Student & Farmer Training / Internship Outflow</option>
                   </select>
                 </label>
-                <label>Assigned Resource Party (Kisne Pese Diye):
+                <label>Assigned Resource Party:
                   <select id="expPayer" required>
                     <option value="Soham">Soham Gajera</option>
                     <option value="Jeet">Jeet Gajera</option>
@@ -693,7 +693,7 @@
                   <tr>
                     <th>Date</th>
                     <th>Category</th>
-                    <th>Pese Diye</th>
+                    <th>Payer</th>
                     <th>Context</th>
                     <th>Amount</th>
                     <th>Notes</th>
@@ -848,7 +848,7 @@
             <div class="db-card">
               <form onsubmit="saveAdminDamage(event)">
                 <label>Select Damage Log Date: <input type="date" id="dmgLogDate" required></label>
-                <label>Pese Kisne Rakhe He (Partner Location):
+                <label>Kisne Pese Rakhe He (Partner Location):
                   <select id="dmgPayer" required>
                     <option value="Farm">Farm General Account Vault</option>
                     <option value="Soham">Soham Gajera</option>
@@ -912,11 +912,11 @@
           </div>
 
           <div class="fin-card" style="background: #f8fafc; border: 2px solid #cbd5e1; cursor:pointer;" onclick="openAdminFilterModal('list_expenses')">
-            <div class="muted small-title" style="font-weight:700; color:#0f172a;">6) Partner & Farm (Expense + Buy) Total 🔍</div>
+            <div class="muted small-title" style="font-weight:700; color:#0f172a;">6) Partner & Farm Expenses (Expense+Buy) 🔍</div>
             <div style="font-size: 13px; margin-top: 6px; line-height: 1.5;">
-              <div>👤 Soham Total: <strong id="ovSohamExp" style="color:#2563eb;">Rs 0.00</strong></div>
-              <div>👤 Jeet Total: <strong id="ovJeetExp" style="color:#d97706;">Rs 0.00</strong></div>
-              <div>🏢 Farm Account: <strong id="ovFarmExp" style="color:#16a34a;">Rs 0.00</strong></div>
+              <div>👤 Soham Expenses: <strong id="ovSohamExp" style="color:#2563eb;">Rs 0.00</strong></div>
+              <div>👤 Jeet Expenses: <strong id="ovJeetExp" style="color:#d97706;">Rs 0.00</strong></div>
+              <div>🏢 Farm Account Exp: <strong id="ovFarmExp" style="color:#16a34a;">Rs 0.00</strong></div>
             </div>
           </div>
 
@@ -1091,7 +1091,7 @@
         </div>
 
         <div style="color: var(--muted); font-size: 13px; text-align: center;">
-          Pure Grow Farm - Oyster Mushrooms Enterprise © 2024. All rights reserved.
+          Pure Grow Farm - Oyster Mushrooms Enterprise © 2026. All rights reserved.
         </div>
       </div>
     </footer>

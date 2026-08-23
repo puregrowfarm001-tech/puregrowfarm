@@ -1714,7 +1714,7 @@ function computeFinancialLedgerStatements() {
   let sohamNetExp = sohamExpTotal - sohamDmgTotal;
   let jeetNetExp = jeetExpTotal - jeetDmgTotal;
 
-  // 7) Farm Available Balance: 1 + 2 + 3 - 6 (6 me sirf farm ka total) + 9 (9 ka sirf farm ka total)
+  // 7) Farm Available Balance: 1 + 2 + 3 - (6 ka farm total) + (9 ka farm total)
   const farmAvailableBalance = (orderTotal + farmBookingTotal + sellTotal) - farmExpTotal + farmDmgTotal;
 
   // 8) Unified Net Profit: 1 + 2 + 3 - 4 - 5
@@ -1749,7 +1749,7 @@ function computeFinancialLedgerStatements() {
     document.getElementById("ovFarmExpOnly").innerHTML = `<span style="cursor:pointer; text-decoration:underline;" onclick="event.stopPropagation(); openAdminFilterModal('list_expenses_farm')">Farm: Rs ${farmExpOnly.toFixed(2)}</span>`;
   }
   
-  // 6) Partner & Farm Total (4 + 5 Total: Expense + Buy) - Alag-alag show
+  // 6) Partner & Farm Total (4 + 5 Total: Expense + Buy) with individual Soham, Jeet, Farm breakdown
   if(document.getElementById("ovSohamTotal")) document.getElementById("ovSohamTotal").textContent = "Rs " + sohamExpTotal.toFixed(2);
   if(document.getElementById("ovJeetTotal")) document.getElementById("ovJeetTotal").textContent = "Rs " + jeetExpTotal.toFixed(2);
   if(document.getElementById("ovFarmTotal")) document.getElementById("ovFarmTotal").textContent = "Rs " + farmExpTotal.toFixed(2);

@@ -508,6 +508,10 @@
       <div id="erpOrdersTab" class="erp-section active">
         <h3>E-Commerce Customer Orders Grid Ledger & Shipment Management</h3>
         
+        <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 15px; flex-wrap: wrap;">
+          <input type="search" id="adminOrdersSearchInput" placeholder="🔍 Search Orders by Name, Phone, ID..." style="max-width: 340px;" oninput="filterAdminOrdersTable()">
+        </div>
+
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; margin-bottom: 18px;">
           
           <div style="background: #e0f2fe; border: 1px solid #bae6fd; padding: 12px; border-radius: 10px; cursor: pointer;" onclick="openAdminFilterModal('orders_pending_confirm')">
@@ -544,7 +548,7 @@
                 <th>Payment Mode, Txn ID & User UPI</th>
                 <th>Order Status</th>
                 <th>Flipkart Expected Delivery Date & Tracking</th>
-                <th>Actions</th>
+                <th>Actions & WhatsApp</th>
               </tr>
             </thead>
             <tbody id="adminOrdersTableBody"></tbody>
@@ -556,6 +560,10 @@
       <div id="erpBookingsTab" class="erp-section">
         <h3>Farm Training Workshop & Student Internship Bookings Ledger</h3>
         
+        <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 15px; flex-wrap: wrap;">
+          <input type="search" id="adminBookingsSearchInput" placeholder="🔍 Search Bookings by Name, College, ID..." style="max-width: 340px;" oninput="filterAdminBookingsTable()">
+        </div>
+
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 18px;">
           <div style="background: #e0f2fe; border: 1px solid #bae6fd; padding: 12px; border-radius: 10px;">
             <div style="font-size: 12px; color: #0369a1; font-weight: bold;">🎓 Total Students</div>
@@ -592,7 +600,7 @@
                 <th>Booking Date & Time</th>
                 <th>1. Farm Booking Status</th>
                 <th>2. Certificate Approval</th>
-                <th>Execution Actions</th>
+                <th>Execution Actions & WhatsApp</th>
               </tr>
             </thead>
             <tbody id="adminBookingsTableBody"></tbody>
@@ -914,7 +922,7 @@
           </div>
 
           <div class="fin-card" style="background: #f8fafc; border: 2px solid #cbd5e1; cursor:pointer;" onclick="openAdminFilterModal('list_expenses')">
-            <div class="muted small-title" style="font-weight:700; color:#0f172a;">6) Partner & Farm Total (Expense + Buy) 🔍</div>
+            <div class="muted small-title" style="font-weight:700; color:#0f172a;">6) Partner & Farm Total (4 + 5 Buy + Expense) 🔍</div>
             <div style="font-size: 13px; margin-top: 6px; line-height: 1.5;">
               <div>👤 Soham Total: <strong id="ovSohamTotal" style="color:#2563eb;">Rs 0.00</strong></div>
               <div>👤 Jeet Total: <strong id="ovJeetTotal" style="color:#d97706;">Rs 0.00</strong></div>
@@ -957,6 +965,11 @@
       <!-- ERP Segment 5: Registered Users Tab View Screen -->
       <div id="erpUsersTab" class="erp-section">
         <h3>Registered Customer Profiles Directory Database Workspace</h3>
+        
+        <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 15px; flex-wrap: wrap;">
+          <input type="search" id="adminUsersSearchInput" placeholder="🔍 Search Accounts by Name, Email, Phone..." style="max-width: 340px;" oninput="filterAdminUsersTable()">
+        </div>
+
         <div class="table-responsive">
           <table>
             <thead>
@@ -966,7 +979,7 @@
                 <th>Registered Mobile Line</th>
                 <th>Email Authentication ID</th>
                 <th>Secure Entry Key Password</th>
-                <th>Actions Management</th>
+                <th>Actions & WhatsApp</th>
               </tr>
             </thead>
             <tbody id="adminUsersTableBody"></tbody>

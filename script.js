@@ -807,6 +807,86 @@ function renderDailyDryStockTable() {
 }
 
 // =========================================================
+// SEARCH HELPERS FOR ADMIN TABS
+// =========================================================
+function filterAdminOrdersTable() {
+  const query = (document.getElementById("adminOrdersSearchInput")?.value || "").toLowerCase().trim();
+  const rows = document.querySelectorAll("#adminOrdersTableBody tr");
+  rows.forEach(row => {
+    const text = row.textContent.toLowerCase();
+    row.style.display = text.includes(query) ? "" : "none";
+  });
+}
+
+function filterAdminBookingsTable() {
+  const query = (document.getElementById("adminBookingsSearchInput")?.value || "").toLowerCase().trim();
+  const rows = document.querySelectorAll("#adminBookingsTableBody tr");
+  rows.forEach(row => {
+    const text = row.textContent.toLowerCase();
+    row.style.display = text.includes(query) ? "" : "none";
+  });
+}
+
+function filterAdminUsersTable() {
+  const query = (document.getElementById("adminUsersSearchInput")?.value || "").toLowerCase().trim();
+  const rows = document.querySelectorAll("#adminUsersTableBody tr");
+  rows.forEach(row => {
+    const text = row.textContent.toLowerCase();
+    row.style.display = text.includes(query) ? "" : "none";
+  });
+}
+
+// =========================================================
+// DIRECT WHATSAPP MESSAGE SENDER FOR ADMIN
+// =========================================================
+function sendAdminWhatsAppMessage(type, refIdOrIndex) {
+  let targetPhone = "";
+  let messageText = "";
+
+  if (type === 'order') {
+    const o = orderRegistry.find(item => item && item.orderId === refIdOrIndex);
+    if (!o) return;
+    targetPhone = o.phone;
+    messageText = 
+`Hello ${o.name}, 
+Thank you for shopping with *Pure Grow Farm*! 🌱
+Aapka Order Ref (*#${o.orderId}*) successfully receive ho gaya hai. Hum aapke fresh oyster mushroom products safely dispatch kar rahe hain. 
+Any help needed? Contact us at +91 9067891039.
+Thank you for choosing Pure Grow Farm!`;
+
+  } else if (type === 'booking') {
+    const b = bookingsRegistry.find(item => item && item.bookingId === refIdOrIndex);
+    if (!b) return;
+    targetPhone = b.phone;
+    messageText = 
+`Hello ${b.name}, 
+Thank you for registering with *Pure Grow Farm*! 🎓
+Aapka ${b.type} program booking Ref (*#${b.bookingId}*) confirm kar liya gaya hai. Makhiyala farm training hub me aapka swagat hai!
+Thank you,
+Pure Grow Farm`;
+
+  } else if (type === 'user') {
+    const u = usersDatabase[refIdOrIndex];
+    if (!u) return;
+    targetPhone = u.phone;
+    messageText = 
+`Hello ${u.name}, 
+Welcome to *Pure Grow Farm* official portal! 🌱
+Aapka account successfully registered ho gaya hai. Aap hamare store se fresh oyster mushrooms, khakhra, aur training sessions access kar sakte hain.
+Thank you!`;
+  }
+
+  if (!targetPhone) {
+    alert("⚠️ Is user ka valid mobile number available nahi hai!");
+    return;
+  }
+
+  const cleanPhone = targetPhone.replace(/[^0-9]/g, '');
+  const formattedPhone = cleanPhone.length === 10 ? "91" + cleanPhone : cleanPhone;
+  window.open(`https://wa.me/${formattedPhone}?text=${encodeURIComponent(messageText)}`, '_blank');
+}
+
+// =========================================================
 // ADMIN ERP TABLES, METRICS & INLINE COURIER EDIT
 // =========================================================
 function populateAdminDashboardTables() {
@@ -919,9 +999,10 @@ function populateAdminDashboardTables() {
             </td>
 
             <td>
-              <button class="btn" style="padding:6px 10px; font-size:11.5px; background:#0f172a; border-radius:6px;" onclick="openOrderActionsMenu(${idx})">
-                ⚙️ Manage Order
-              </button>
+              <div style="display:flex; flex-direction:column; gap:4px;">
+                <button class="btn" style="padding:5px 8px; font-size:11px; background:#0f172a; border-radius:6px;" onclick="openOrderActionsMenu(${idx})">⚙️ Manage</button>
+                <button class="btn" style="padding:5px 8px; font-size:11px; background:#25d366; border-radius:6px;" onclick="sendAdminWhatsAppMessage('order', '${o.orderId}')">💬 WhatsApp</button>
+              </div>
             </td>
           </tr>
         `;
@@ -1006,6 +1087,7 @@ function populateAdminDashboardTables() {
                   `}
                 `}
                 <button type="button" class="btn" style="padding:3px 6px; min-height:auto; font-size:10px; background:#4b5563;" onclick="adminEditCertificateData(${idx})">✏️ Edit Certificate</button>
+                <button type="button" class="btn" style="padding:4px 8px; font-size:11px; background:#25d366;" onclick="sendAdminWhatsAppMessage('booking', '${b.bookingId}')">💬 WhatsApp</button>
               </div>
             </td>
           </tr>
@@ -1027,7 +1109,10 @@ function populateAdminDashboardTables() {
           <td><code>${u.email}</code></td>
           <td><mark style="background:#f3f4f6; padding:2px 4px; border-radius:4px;">${u.password || '******'}</mark></td>
           <td>
-            <button class="btn" style="padding:4px 8px; min-height:auto; background:var(--danger);" onclick="deleteUserAccount(${idx})">Delete Account</button>
+            <div style="display:flex; gap:4px; flex-wrap:wrap;">
+              <button class="btn" style="padding:4px 8px; min-height:auto; background:var(--danger);" onclick="deleteUserAccount(${idx})">Delete</button>
+              <button class="btn" style="padding:4px 8px; min-height:auto; background:#25d366;" onclick="sendAdminWhatsAppMessage('user', ${idx})">💬 WhatsApp</button>
+            </div>
           </td>
         </tr>
       `).join("");
@@ -1653,7 +1738,7 @@ function computeFinancialLedgerStatements() {
   let sohamNetExp = sohamExpTotal - sohamDmgTotal;
   let jeetNetExp = jeetExpTotal - jeetDmgTotal;
 
-  // 7) Farm Available Balance: 1 + 2 + 3 + 9 (farm data) - 6 (farm data)
+  // 7) Farm Available Balance: 1 + 2 + 3 + 9 (9 me sirf farm ka data: farmDmgTotal) - 6 (6 me sirf farm ka data: farmExpTotal)
   const farmAvailableBalance = (orderTotal + farmBookingTotal + sellTotal + farmDmgTotal) - farmExpTotal;
 
   // 8) Unified Net Profit: 1 + 2 + 3 - 4 - 5

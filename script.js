@@ -1185,6 +1185,15 @@ function openAdminFilterModal(type) {
         <small class="muted">Date: ${d.date} | Notes: ${d.notes || '-'}</small>
       </div>
     `).join("") : `<p class="muted" style="text-align:center;">No damage records.</p>`;
+  } else if (type === 'list_partner_expenses') {
+    titleEl.textContent = "📋 Soham & Jeet Net Expenses List (6 - 9)";
+    htmlContent = `
+      <div style="background:#eef2ff; border:1px solid #c7d2fe; border-radius:8px; padding:12px; font-size:14px; line-height:1.6;">
+        <strong>Net Expense Summary (Card 6 minus Card 9):</strong><br>
+        • Soham Net Expense: <span id="modalSohamNet" style="font-weight:bold; color:#2563eb;">Rs 0.00</span><br>
+        • Jeet Net Expense: <span id="modalJeetNet" style="font-weight:bold; color:#d97706;">Rs 0.00</span>
+      </div>
+    `;
   }
 
   listEl.innerHTML = htmlContent;
@@ -1623,7 +1632,7 @@ function computeFinancialLedgerStatements() {
     else if(e.payer === "Farm") farmExpOnly += amt;
   });
 
-  // Partner wise Combined Totals (Expense + Buy)
+  // 6) Partner & Farm Total (Expense + Buy) as requested: 4 + 5 total
   let sohamExpTotal = sohamExpOnly + sohamBuyTotal;
   let jeetExpTotal = jeetExpOnly + jeetBuyTotal;
   let farmExpTotal = farmExpOnly + farmBuyTotal;
@@ -1635,17 +1644,14 @@ function computeFinancialLedgerStatements() {
   let sohamDmgTotal = 0, jeetDmgTotal = 0, farmDmgTotal = 0;
   damageRows.forEach(d => {
     const amt = Number(d.amount || 0);
-    if(d.payer === "Soham") {
-      sohamDmgTotal += amt;
-      sohamExpTotal += amt;
-    } else if(d.payer === "Jeet") {
-      jeetDmgTotal += amt;
-      jeetExpTotal += amt;
-    } else if(d.payer === "Farm") {
-      farmDmgTotal += amt;
-      farmExpTotal += amt;
-    }
+    if(d.payer === "Soham") sohamDmgTotal += amt;
+    else if(d.payer === "Jeet") jeetDmgTotal += amt;
+    else if(d.payer === "Farm") farmDmgTotal += amt;
   });
+
+  // 10) Soham & Jeet Net Expenses = (6 - 9)
+  let sohamNetExp = sohamExpTotal - sohamDmgTotal;
+  let jeetNetExp = jeetExpTotal - jeetDmgTotal;
 
   let cashBalances = { Soham: 0, Jeet: 0, Farm: 0 };
   
@@ -1676,7 +1682,11 @@ function computeFinancialLedgerStatements() {
     else if (d.payer === "Jeet") cashBalances.Jeet -= amt;
   });
 
-  const netProfit = (orderTotal + farmBookingTotal + sellTotal) - (buyTotal + expenseTotal);
+  // 7) Farm Available Balance: 3 - 6 (6 me sirf farm ka total)
+  const farmAvailableBalance = sellTotal - farmExpTotal;
+
+  // 8) Unified Net Profit: 1 + 2 + 3 - 4 - 5
+  const netProfit = (orderTotal + farmBookingTotal + sellTotal) - buyTotal - expenseTotal;
 
   // Overview DOM Updates
   if(document.getElementById("ovOrderTotal")) document.getElementById("ovOrderTotal").textContent = "Rs " + orderTotal.toFixed(2);
@@ -1695,12 +1705,15 @@ function computeFinancialLedgerStatements() {
   if(document.getElementById("ovJeetExpOnly")) document.getElementById("ovJeetExpOnly").textContent = "Rs " + jeetExpOnly.toFixed(2);
   if(document.getElementById("ovFarmExpOnly")) document.getElementById("ovFarmExpOnly").textContent = "Rs " + farmExpOnly.toFixed(2);
   
-  // 6) Partner & Farm Total (Expense + Buy) Card
+  // 6) Partner & Farm Total (4 + 5 Total: Expense + Buy)
   if(document.getElementById("ovSohamTotal")) document.getElementById("ovSohamTotal").textContent = "Rs " + sohamExpTotal.toFixed(2);
   if(document.getElementById("ovJeetTotal")) document.getElementById("ovJeetTotal").textContent = "Rs " + jeetExpTotal.toFixed(2);
   if(document.getElementById("ovFarmTotal")) document.getElementById("ovFarmTotal").textContent = "Rs " + farmExpTotal.toFixed(2);
 
-  if(document.getElementById("ovFarmAvailableBalance")) document.getElementById("ovFarmAvailableBalance").textContent = "Rs " + cashBalances.Farm.toFixed(2);
+  // 7) Farm Available Balance: 3 - 6 (Farm total)
+  if(document.getElementById("ovFarmAvailableBalance")) document.getElementById("ovFarmAvailableBalance").textContent = "Rs " + farmAvailableBalance.toFixed(2);
+  
+  // 8) Unified Net Profit: 1 + 2 + 3 - 4 - 5
   if(document.getElementById("ovProfit")) document.getElementById("ovProfit").textContent = "Rs " + netProfit.toFixed(2);
   
   // 9) Damage Losses Card with Breakdown
@@ -1708,6 +1721,12 @@ function computeFinancialLedgerStatements() {
   if(document.getElementById("ovSohamDmgCard")) document.getElementById("ovSohamDmgCard").textContent = "Rs " + sohamDmgTotal.toFixed(2);
   if(document.getElementById("ovJeetDmgCard")) document.getElementById("ovJeetDmgCard").textContent = "Rs " + jeetDmgTotal.toFixed(2);
   if(document.getElementById("ovFarmDmgCard")) document.getElementById("ovFarmDmgCard").textContent = "Rs " + farmDmgTotal.toFixed(2);
+
+  // 10) Soham & Jeet Net Expenses: (6 - 9)
+  if(document.getElementById("ovSohamNet")) document.getElementById("ovSohamNet").textContent = "Rs " + sohamNetExp.toFixed(2);
+  if(document.getElementById("ovJeetNet")) document.getElementById("ovJeetNet").textContent = "Rs " + jeetNetExp.toFixed(2);
+  if(document.getElementById("modalSohamNet")) document.getElementById("modalSohamNet").textContent = "Rs " + sohamNetExp.toFixed(2);
+  if(document.getElementById("modalJeetNet")) document.getElementById("modalJeetNet").textContent = "Rs " + jeetNetExp.toFixed(2);
 
   // Sub Tab 1: Expense Top Summary & Table
   if(document.getElementById("subTabExpTotalDisplay")) document.getElementById("subTabExpTotalDisplay").textContent = "Rs " + expenseTotal.toFixed(2);

@@ -1632,7 +1632,7 @@ function computeFinancialLedgerStatements() {
     else if(e.payer === "Farm") farmExpOnly += amt;
   });
 
-  // 6) Partner & Farm Total (Expense + Buy) as requested: 4 + 5 total
+  // 6) Partner & Farm Total (Expense + Buy) = 4 + 5 total
   let sohamExpTotal = sohamExpOnly + sohamBuyTotal;
   let jeetExpTotal = jeetExpOnly + jeetBuyTotal;
   let farmExpTotal = farmExpOnly + farmBuyTotal;
@@ -1644,46 +1644,24 @@ function computeFinancialLedgerStatements() {
   let sohamDmgTotal = 0, jeetDmgTotal = 0, farmDmgTotal = 0;
   damageRows.forEach(d => {
     const amt = Number(d.amount || 0);
-    if(d.payer === "Soham") sohamDmgTotal += amt;
-    else if(d.payer === "Jeet") jeetDmgTotal += amt;
-    else if(d.payer === "Farm") farmDmgTotal += amt;
+    if(d.payer === "Soham") {
+      sohamDmgTotal += amt;
+      sohamExpTotal += amt;
+    } else if(d.payer === "Jeet") {
+      jeetDmgTotal += amt;
+      jeetExpTotal += amt;
+    } else if(d.payer === "Farm") {
+      farmDmgTotal += amt;
+      farmExpTotal += amt;
+    }
   });
 
   // 10) Soham & Jeet Net Expenses = (6 - 9)
   let sohamNetExp = sohamExpTotal - sohamDmgTotal;
   let jeetNetExp = jeetExpTotal - jeetDmgTotal;
 
-  let cashBalances = { Soham: 0, Jeet: 0, Farm: 0 };
-  
-  cashBalances.Farm += orderTotal;
-  cashBalances.Farm += farmBookingTotal;
-
-  const totalCreditedRefunds = orderRegistry
-    .filter(o => o && o.status && o.status.startsWith('Cancelled') && o.refundStage === 'Refund Credited')
-    .reduce((sum, o) => sum + Number(o.total || 0), 0);
-  cashBalances.Farm -= totalCreditedRefunds;
-
-  salesRegistry.forEach(s => { 
-    if(cashBalances[s.collector] !== undefined) cashBalances[s.collector] += Number(s.paidAmount !== undefined ? s.paidAmount : s.total || 0); 
-  });
-  
-  expensesRegistry.filter(e => e.category !== "Damage Received").forEach(e => { 
-    if(cashBalances[e.payer] !== undefined) cashBalances[e.payer] -= Number(e.amount || 0); 
-  });
-  
-  purchasesRegistry.forEach(p => { 
-    if(cashBalances[p.funder] !== undefined) cashBalances[p.funder] -= Number(p.paidAmount !== undefined ? p.paidAmount : p.total || 0); 
-  });
-
-  damageRows.forEach(d => {
-    const amt = Number(d.amount || 0);
-    if (d.payer === "Farm") cashBalances.Farm += amt;
-    else if (d.payer === "Soham") cashBalances.Soham -= amt;
-    else if (d.payer === "Jeet") cashBalances.Jeet -= amt;
-  });
-
-  // 7) Farm Available Balance: 3 - 6 (6 me sirf farm ka total)
-  const farmAvailableBalance = sellTotal - farmExpTotal;
+  // 7) Farm Available Balance: 1 + 2 + 3 - 6 (6 me sirf farm ka total minus hoga)
+  const farmAvailableBalance = (orderTotal + farmBookingTotal + sellTotal) - farmExpTotal;
 
   // 8) Unified Net Profit: 1 + 2 + 3 - 4 - 5
   const netProfit = (orderTotal + farmBookingTotal + sellTotal) - buyTotal - expenseTotal;
@@ -1710,7 +1688,7 @@ function computeFinancialLedgerStatements() {
   if(document.getElementById("ovJeetTotal")) document.getElementById("ovJeetTotal").textContent = "Rs " + jeetExpTotal.toFixed(2);
   if(document.getElementById("ovFarmTotal")) document.getElementById("ovFarmTotal").textContent = "Rs " + farmExpTotal.toFixed(2);
 
-  // 7) Farm Available Balance: 3 - 6 (Farm total)
+  // 7) Farm Available Balance: 1 + 2 + 3 - 6 (Farm total)
   if(document.getElementById("ovFarmAvailableBalance")) document.getElementById("ovFarmAvailableBalance").textContent = "Rs " + farmAvailableBalance.toFixed(2);
   
   // 8) Unified Net Profit: 1 + 2 + 3 - 4 - 5
@@ -1725,8 +1703,6 @@ function computeFinancialLedgerStatements() {
   // 10) Soham & Jeet Net Expenses: (6 - 9)
   if(document.getElementById("ovSohamNet")) document.getElementById("ovSohamNet").textContent = "Rs " + sohamNetExp.toFixed(2);
   if(document.getElementById("ovJeetNet")) document.getElementById("ovJeetNet").textContent = "Rs " + jeetNetExp.toFixed(2);
-  if(document.getElementById("modalSohamNet")) document.getElementById("modalSohamNet").textContent = "Rs " + sohamNetExp.toFixed(2);
-  if(document.getElementById("modalJeetNet")) document.getElementById("modalJeetNet").textContent = "Rs " + jeetNetExp.toFixed(2);
 
   // Sub Tab 1: Expense Top Summary & Table
   if(document.getElementById("subTabExpTotalDisplay")) document.getElementById("subTabExpTotalDisplay").textContent = "Rs " + expenseTotal.toFixed(2);

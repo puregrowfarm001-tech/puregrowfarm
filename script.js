@@ -703,7 +703,6 @@ function renderAdminLiveStockSummary() {
   const khakhraProd = products.find(p => p.type === "khakhra") || { stock: 0 };
   const papadProd = products.find(p => p.type === "papad") || { stock: 0 };
 
-  // Rule: powder stock = dry stock jitna hona chahiye
   const synchronizedPowderStock = dryProd.stock;
 
   container.innerHTML = `
@@ -1582,7 +1581,6 @@ function computeFinancialLedgerStatements() {
   });
 
   // 9) Damage Total & Partner Deduction Logic
-  // Damage ke pese soham ya jeet me se jisne rakhe ho, uske expense/balance me cut ho jana chahiye aur point 6 me reflect ho
   const damageRows = expensesRegistry.filter(e => e.category === "Damage Received");
   const damageTotal = damageRows.reduce((sum, d) => sum + Number(d.amount || 0), 0);
 
@@ -1627,10 +1625,8 @@ function computeFinancialLedgerStatements() {
     else if (d.payer === "Jeet") cashBalances.Jeet -= amt;
   });
 
-  // 8) Profit Calculation (Total Revenue - Total Outflows)
-  const totalRevenue = orderTotal + farmBookingTotal + sellTotal;
-  const totalOutflows = buyTotal + expenseTotal + damageTotal + totalCreditedRefunds;
-  const netProfit = totalRevenue - totalOutflows;
+  // 8) Profit Calculation (Order Total + Farm Booking Total + Sell Total - Buy Total - Expense Total)
+  const netProfit = (orderTotal + farmBookingTotal + sellTotal) - (buyTotal + expenseTotal);
 
   // DOM Elements Update
   if(document.getElementById("ovOrderTotal")) document.getElementById("ovOrderTotal").textContent = "Rs " + orderTotal.toFixed(2);

@@ -46,27 +46,8 @@ let notificationsRegistry = getCleanData('pgf_notifications');
 let currentUser = JSON.parse(localStorage.getItem('pgf_session')) || null;
 
 // =========================================================
-// QUANTITY & GM/KG PARSER HELPER
-// Rule: Agar 0. se ho toh gm, >= 1 ho toh kg. Powder: 1kg = 10 packets, Khakhra/Papad: 1kg = 5 packets.
-// =========================================================
-function parseNormalizedQty(rawQty, productType) {
-  let val = Number(rawQty || 0);
-  if (val <= 0) return 0;
-
-  // Agar value 0. se start hai (jaise 0.5kg = 500gm), toh wo fractional kg hai.
-  // Powder ke liye 1kg = 10 packets
-  if (productType === 'powder') {
-    return val * 10;
-  }
-  // Khakhra & Papad ke liye 1kg = 5 packets
-  if (productType === 'khakhra' || productType === 'papad') {
-    return val * 5;
-  }
-  return val;
-}
-
-// =========================================================
-// STOCK CALCULATION FORMULA: {Buy + DailyDry} - {OrderConfirm + Sell}
+// ACCURATE DYNAMIC LIVE STOCK CALCULATOR WITH POWDER/DRY SEPARATION
+// Formula: {Buy + DailyDry} - {OrderConfirm + Sell}
 // =========================================================
 function calculateDynamicStock(productType) {
   let totalBuyQty = 0;
@@ -74,26 +55,32 @@ function calculateDynamicStock(productType) {
   let totalApprovedOrdersQty = 0;
   let totalSalesQty = 0;
 
-  // 1. Buy (Purchases)
+  // 1. Buy (Purchases) with precise product classification
   purchasesRegistry.forEach(p => {
     if (!p) return;
     const pType = (p.product || "").toLowerCase();
     let q = Number(p.qty || 0);
 
-    if (productType === 'dry' && (pType.includes('dry') || pType.includes('dried'))) {
-      totalBuyQty += q;
+    if (productType === 'dry') {
+      if (pType.includes('dry') || pType.includes('dried')) totalBuyQty += q;
     }
-    else if (productType === 'powder' && (pType.includes('powder') || pType.includes('dry') || pType.includes('dried'))) {
-      totalBuyQty += parseNormalizedQty(q, 'powder');
+    else if (productType === 'powder') {
+      if (pType.includes('powder')) {
+        // Direct powder buy (1 packet or kg unit as entered)
+        totalBuyQty += q;
+      } else if (pType.includes('dry') || pType.includes('dried')) {
+        // Dry buy contributes to powder packets (1kg dry = 10 packets powder)
+        totalBuyQty += (q * 10);
+      }
     }
-    else if (productType === 'khakhra' && pType.includes('khakhra')) {
-      totalBuyQty += parseNormalizedQty(q, 'khakhra');
+    else if (productType === 'khakhra') {
+      if (pType.includes('khakhra')) totalBuyQty += (q * 5); // 1kg = 5 packets
     }
-    else if (productType === 'papad' && pType.includes('papad')) {
-      totalBuyQty += parseNormalizedQty(q, 'papad');
+    else if (productType === 'papad') {
+      if (pType.includes('papad')) totalBuyQty += (q * 5); // 1kg = 5 packets
     }
-    else if (productType === 'green' && (pType.includes('green') || pType.includes('fresh'))) {
-      totalBuyQty += q;
+    else if (productType === 'green') {
+      if (pType.includes('green') || pType.includes('fresh')) totalBuyQty += q;
     }
   });
 
@@ -106,16 +93,16 @@ function calculateDynamicStock(productType) {
   else if (productType === 'powder') {
     dailyDryStockRegistry.forEach(d => {
       if (d) {
-        totalProductionQty += parseNormalizedQty(Number(d.qty || 0), 'powder');
+        totalProductionQty += (Number(d.qty || 0) * 10);
       }
     });
   }
 
-  // 3. Order Confirm (Sirf Approved & Delivered orders, ignore reject/cancel)
+  // 3. Order Confirm (Sirf Approved & Delivered orders, ignore reject/cancel)[cite: 2]
   orderRegistry.forEach(o => {
     if (!o) return;
     const status = (o.status || "").toLowerCase();
-    if (status.includes('reject') || status.includes('cancel')) return;
+    if (status.includes('reject') || status.includes('cancel')) return; // Ignore reject & cancel[cite: 2]
     if (status.includes('approved') || status.includes('delivered') || status.includes('pending')) {
       const prodText = (o.products || "").toLowerCase();
       products.forEach(prod => {
@@ -129,17 +116,13 @@ function calculateDynamicStock(productType) {
     }
   });
 
-  // 4. Sell (Offline Wholesale Sales)
+  // 4. Sell (Offline Wholesale Sales)[cite: 2]
   salesRegistry.forEach(s => {
     if (!s) return;
     const sType = (s.product || "").toLowerCase();
     let q = Number(s.qty || 0);
     if (sType.includes(productType)) {
-      if (productType === 'powder' || productType === 'khakhra' || productType === 'papad') {
-        totalSalesQty += q;
-      } else {
-        totalSalesQty += q;
-      }
+      totalSalesQty += q;
     }
   });
 

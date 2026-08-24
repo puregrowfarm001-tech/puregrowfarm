@@ -46,7 +46,7 @@ let notificationsRegistry = getCleanData('pgf_notifications');
 let currentUser = JSON.parse(localStorage.getItem('pgf_session')) || null;
 
 // =========================================================
-// AUTOMATIC LIVE STOCK CALCULATOR BASED ON USER FORMULA
+// AUTOMATIC LIVE STOCK CALCULATOR WITH PACKET CONVERSIONS
 // Formula: {Buy + DailyProduction} - {Approved Orders + Sales}
 // =========================================================
 function calculateDynamicStock(productType) {
@@ -55,52 +55,71 @@ function calculateDynamicStock(productType) {
   let totalApprovedOrdersQty = 0;
   let totalSalesQty = 0;
 
-  // 1. Buy data sum
+  // 1. Buy data sum with packet multipliers
   purchasesRegistry.forEach(p => {
     if (!p) return;
     const pType = (p.product || "").toLowerCase();
     const qty = Number(p.qty || 0);
-    if (productType === 'dry' && pType.includes('dry')) totalBuyQty += qty;
-    if (productType === 'powder' && pType.includes('powder')) {
-      // 1kg = packets conversion (1kg = 10 packets of 100gm)
-      totalBuyQty += (qty * 10);
+    
+    if (productType === 'dry' && pType.includes('dry')) {
+      totalBuyQty += qty;
     }
-    if (productType === 'khakhra' && pType.includes('khakhra')) totalBuyQty += qty;
-    if (productType === 'papad' && pType.includes('papad')) totalBuyQty += qty;
-    if (productType === 'green' && pType.includes('green')) totalBuyQty += qty;
+    if (productType === 'powder') {
+      if (pType.includes('powder') || pType.includes('dry')) {
+        // 1kg dry/powder = 10 packets of 100gm
+        totalBuyQty += (qty * 10);
+      }
+    }
+    if (productType === 'khakhra') {
+      if (pType.includes('khakhra')) {
+        // 1kg khakhra = 5 packets of 200gm
+        totalBuyQty += (qty * 5);
+      }
+    }
+    if (productType === 'papad') {
+      if (pType.includes('papad')) {
+        // 1kg papad = 5 packets of 200gm
+        totalBuyQty += (qty * 5);
+      }
+    }
+    if (productType === 'green' && pType.includes('green')) {
+      totalBuyQty += qty;
+    }
   });
 
-  // 2. Daily Production sum (Sirf dry ka)
+  // 2. Daily Production sum (Sirf dry ka - powder ke liye dry ke barabar packets banenge)
   if (productType === 'dry') {
     dailyDryStockRegistry.forEach(d => {
       if (d) totalProductionQty += Number(d.qty || 0);
     });
   }
+  if (productType === 'powder') {
+    dailyDryStockRegistry.forEach(d => {
+      if (d) {
+        // Daily dry production ka 1kg = 10 packets powder
+        totalProductionQty += (Number(d.qty || 0) * 10);
+      }
+    });
+  }
 
-  // 3. Approved Orders sum (Not count reject & cancel)
+  // 3. Approved Orders sum (Ignore reject & cancel)
   orderRegistry.forEach(o => {
     if (!o) return;
     const status = (o.status || "").toLowerCase();
-    if (status.includes('reject') || status.includes('cancel')) return; // Ignore rejected & cancelled
-    if (status.includes('approved') || status.includes('delivered') || status.includes('pending')) {
-      // Parse products string e.g. "Dried Oyster Mushroom [x2], Khakhra [x1]"
-      const prodText = (o.products || "").toLowerCase();
-      products.forEach(prod => {
-        if (prod.type === productType) {
-          // Check regex or includes for product name
-          if (prodText.includes(prod.name.toLowerCase()) || prodText.includes(productType)) {
-            // Extract quantity from string if possible, default to 1 per match or parse [xN]
-            const regex = new RegExp(`${prod.name.toLowerCase()}.*?\\[x(\\d+)\\]`);
-            const match = prodText.match(regex);
-            let q = match ? parseInt(match[1]) : 1;
-            totalApprovedOrdersQty += q;
-          }
-        }
-      });
-    }
+    if (status.includes('reject') || status.includes('cancel')) return;
+    
+    const prodText = (o.products || "").toLowerCase();
+    products.forEach(prod => {
+      if (prod.type === productType) {
+        const regex = new RegExp(`${prod.name.toLowerCase()}.*?\\[x(\\d+)\\]`);
+        const match = prodText.match(regex);
+        let q = match ? parseInt(match[1]) : (prodText.includes(productType) ? 1 : 0);
+        totalApprovedOrdersQty += q;
+      }
+    });
   });
 
-  // 4. Sales sum (dry, powder, khakhra, papad)
+  // 4. Sales sum
   salesRegistry.forEach(s => {
     if (!s) return;
     const sType = (s.product || "").toLowerCase();
@@ -110,7 +129,6 @@ function calculateDynamicStock(productType) {
     }
   });
 
-  // Net Stock Formula = (Buy + Production) - (Approved Orders + Sales)
   let netStock = (totalBuyQty + totalProductionQty) - (totalApprovedOrdersQty + totalSalesQty);
   return Math.max(0, netStock);
 }
@@ -146,9 +164,6 @@ function copyToClipboard(text) {
   });
 }
 
-// =========================================================
-// SEPARATE MODAL CONTROLLERS (ORDERS & BOOKINGS)
-// =========================================================
 function openOrdersModal() {
   document.getElementById("userOrdersModal").classList.add("active-modal");
   loadUserPanelData();
@@ -171,9 +186,6 @@ function closeModalOutside(e, modalId) {
   }
 }
 
-// =========================================================
-// PASSWORD STRENGTH CHECKER & EYE TOGGLE
-// =========================================================
 function togglePasswordVisibility(inputId, btn) {
   const input = document.getElementById(inputId);
   if (!input) return;
@@ -210,9 +222,6 @@ function checkPasswordStrength(pwd) {
   }
 }
 
-// =========================================================
-// NOTIFICATIONS ENGINE WITH AUTO-READ DISMISS
-// =========================================================
 function pushNotification(targetRecipient, title, message, targetAction = 'general') {
   const newNotif = {
     id: "NOTIF-" + Date.now(),
@@ -794,17 +803,17 @@ function renderAdminLiveStockSummary() {
     </div>
 
     <div style="background: #f0fdf4; border: 1px solid #bbf7d0; padding: 12px; border-radius: 10px;">
-      <div style="font-size: 12px; color: #166534; font-weight: bold;">🧪 Powder Stock (1kg = Packets)</div>
+      <div style="font-size: 12px; color: #166534; font-weight: bold;">🧪 Powder Stock (1kg = 10 Pockets 100gm)</div>
       <div style="font-size: 20px; font-weight: 900; color: #15803d; margin: 4px 0;">${powderProd.stock} ${powderProd.unit}</div>
     </div>
 
     <div style="background: #fff7ed; border: 1px solid #ffedd5; padding: 12px; border-radius: 10px;">
-      <div style="font-size: 12px; color: #9a3412; font-weight: bold;">🧇 Khakhra Stock</div>
+      <div style="font-size: 12px; color: #9a3412; font-weight: bold;">🧇 Khakhra Stock (1kg = 5 Pockets 200gm)</div>
       <div style="font-size: 20px; font-weight: 900; color: #ea580c; margin: 4px 0;">${khakhraProd.stock} ${khakhraProd.unit}</div>
     </div>
 
     <div style="background: #f0fdf4; border: 1px solid #bbf7d0; padding: 12px; border-radius: 10px;">
-      <div style="font-size: 12px; color: #166534; font-weight: bold;">🫓 Papad Stock</div>
+      <div style="font-size: 12px; color: #166534; font-weight: bold;">🫓 Papad Stock (1kg = 5 Pockets 200gm)</div>
       <div style="font-size: 20px; font-weight: 900; color: #15803d; margin: 4px 0;">${papadProd.stock} ${papadProd.unit}</div>
     </div>
   `;
@@ -1001,9 +1010,6 @@ function printActiveAdminReport() {
   printWindow.document.close();
 }
 
-// =========================================================
-// DIRECT WHATSAPP MESSAGE SENDER FOR ADMIN
-// =========================================================
 function sendAdminWhatsAppMessage(type, refIdOrIndex) {
   let targetPhone = "";
   let messageText = "";
@@ -1051,9 +1057,6 @@ Thank you!`;
   window.open(`https://wa.me/${formattedPhone}?text=${encodeURIComponent(messageText)}`, '_blank');
 }
 
-// =========================================================
-// ADMIN ERP TABLES, METRICS & INLINE COURIER EDIT
-// =========================================================
 function populateAdminDashboardTables() {
   refreshAllProductStocks();
   renderAdminLiveStockSummary();
@@ -1310,9 +1313,6 @@ function populateAdminDashboardTables() {
   }
 }
 
-// =========================================================
-// ADMIN FILTER MODAL POPUP FOR LISTS & PENDING ITEMS
-// =========================================================
 function openAdminFilterModal(type) {
   const modal = document.getElementById("adminFilterPopupModal");
   const titleEl = document.getElementById("adminFilterModalTitle");

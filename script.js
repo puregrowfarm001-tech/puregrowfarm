@@ -1361,7 +1361,7 @@ function openAdminFilterModal(type) {
     titleEl.textContent = "📋 All Purchases (Buy) List";
     htmlContent = purchasesRegistry.length ? purchasesRegistry.map(p => `
       <div style="background:#fff7ed; border:1px solid #fed7aa; border-radius:8px; padding:10px; font-size:13px;">
-        <strong>${p.purId || 'PUR'} - ${p.product}</strong> | Pese Diye: ${p.funder} | Vendor: ${p.vendor} | Qty: ${p.qty} | Total: ₹${p.total} (Paid: ₹${p.paidAmount})<br>
+        <strong>${p.purId || 'PUR'} - ${p.product}</strong> | Pese Diye: ${p.funder} | Vendor: ${p.vendor} | Qty: ${p.qty} | Rate: ₹${p.rate} | Delivery: ₹${p.delivery || 0} | Total: ₹${p.total} (Paid: ₹${p.paidAmount})<br>
         <small class="muted">Date: ${p.date} | Notes: ${p.notes || '-'}</small>
       </div>
     `).join("") : `<p class="muted" style="text-align:center;">No purchase records.</p>`;
@@ -1721,9 +1721,18 @@ function adminEditSale(idx) {
 
 function adminDeleteSale(idx) {
   if (confirm("Kya aap sach me ye Sell entry delete karna chahte hain?")) {
+    const s = salesRegistry[idx];
+    // Return stock when delete sell entry
+    const targetProd = products.find(p => p.type === s.product || p.name.toLowerCase().includes(s.product.toLowerCase()));
+    if (targetProd && !targetProd.bulk) {
+      targetProd.stock = (targetProd.stock || 0) + Number(s.qty || 0);
+      saveProductsToStorage();
+      renderProducts();
+    }
     salesRegistry.splice(idx, 1);
     localStorage.setItem('pgf_sales', JSON.stringify(salesRegistry));
     computeFinancialLedgerStatements();
+    renderAdminLiveStockSummary();
   }
 }
 
@@ -1745,12 +1754,15 @@ function adminEditPurchase(idx) {
   const newRate = prompt("5. Rate (Rs):", p.rate);
   if (newRate !== null && !isNaN(parseFloat(newRate))) p.rate = parseFloat(newRate);
 
-  p.total = p.qty * p.rate;
+  const newDel = prompt("6. Delivery Charge (Rs):", p.delivery || 0);
+  if (newDel !== null && !isNaN(parseFloat(newDel))) p.delivery = parseFloat(newDel);
 
-  const newPaid = prompt(`6. Paid Amount to Vendor (Total Rs ${p.total}):`, p.paidAmount !== undefined ? p.paidAmount : p.total);
+  p.total = (p.qty * p.rate) + p.delivery;
+
+  const newPaid = prompt(`7. Paid Amount to Vendor (Total Rs ${p.total}):`, p.paidAmount !== undefined ? p.paidAmount : p.total);
   if (newPaid !== null && !isNaN(parseFloat(newPaid))) p.paidAmount = parseFloat(newPaid);
 
-  const newNotes = prompt("7. Vendor Notes / Memo:", p.notes || "");
+  const newNotes = prompt("8. Vendor Notes / Memo:", p.notes || "");
   if (newNotes !== null) p.notes = newNotes.trim();
 
   localStorage.setItem('pgf_purchases', JSON.stringify(purchasesRegistry));
@@ -2006,7 +2018,8 @@ function computeFinancialLedgerStatements() {
   if(document.getElementById("subBuyTableBody")) {
     document.getElementById("subBuyTableBody").innerHTML = filteredPurchases.map((p) => {
       const idx = purchasesRegistry.indexOf(p);
-      const totalPayable = Number(p.total || (p.qty * p.rate));
+      const delivery = Number(p.delivery || 0);
+      const totalPayable = Number(p.total || ((p.qty * p.rate) + delivery));
       const paid = Number(p.paidAmount !== undefined ? p.paidAmount : totalPayable);
       const pendingToVendor = Math.max(0, totalPayable - paid);
 
@@ -2018,6 +2031,7 @@ function computeFinancialLedgerStatements() {
           <td><strong>${p.vendor}</strong></td>
           <td>${p.qty}</td>
           <td>Rs ${p.rate}</td>
+          <td>Rs ${delivery.toFixed(2)}</td>
           <td style="color:var(--danger); font-weight:bold;">Rs ${totalPayable.toFixed(2)}</td>
           <td>
             <span style="color:#16a34a; font-weight:bold;">Paid: Rs ${paid.toFixed(2)}</span>
@@ -2029,7 +2043,7 @@ function computeFinancialLedgerStatements() {
           </td>
         </tr>
       `;
-    }).join("") || `<tr><td colspan="9" style="text-align:center; color:var(--muted); padding:14px;">No purchases found for year ${selectedYear}.</td></tr>`;
+    }).join("") || `<tr><td colspan="10" style="text-align:center; color:var(--muted); padding:14px;">No purchases found for year ${selectedYear}.</td></tr>`;
   }
 
   // Sub Tab 4: Damage Top Summary
@@ -2122,7 +2136,7 @@ function saveAdminSale(e) {
   initDefaultDatePickers();
   computeFinancialLedgerStatements();
   renderAdminLiveStockSummary();
-  alert(`✅ Wholesale Sale Entry saved! Total: Rs ${grandTotal}, Received: Rs ${paid}`);
+  alert(`✅ Wholesale Sale Entry saved! Stock automatically reduced by ${qty}. Total: Rs ${grandTotal}, Received: Rs ${paid}`);
 }
 
 function saveAdminPurchase(e) {
@@ -2130,7 +2144,8 @@ function saveAdminPurchase(e) {
   const rawDate = document.getElementById("purLogDate").value;
   const qty = parseFloat(document.getElementById("purQty").value);
   const rate = parseFloat(document.getElementById("purRate").value);
-  const paid = parseFloat(document.getElementById("purPaidAmount").value) || (qty * rate);
+  const delivery = parseFloat(document.getElementById("purDelivery").value) || 0;
+  const paid = parseFloat(document.getElementById("purPaidAmount").value) || ((qty * rate) + delivery);
   const purType = document.getElementById("purProduct").value;
   const funder = document.getElementById("purFunder").value;
   const vendor = document.getElementById("purVendor").value.trim();
@@ -2148,6 +2163,8 @@ function saveAdminPurchase(e) {
     renderProducts();
   }
 
+  const grandTotalPayable = (qty * rate) + delivery;
+
   const data = {
     purId: "PUR-" + Date.now().toString().slice(-4),
     date: rawDate ? new Date(rawDate).toLocaleDateString('en-IN') : new Date().toLocaleDateString('en-IN'),
@@ -2156,7 +2173,8 @@ function saveAdminPurchase(e) {
     vendor: vendor,
     qty: qty,
     rate: rate,
-    total: qty * rate,
+    delivery: delivery,
+    total: grandTotalPayable,
     paidAmount: paid,
     notes: notes
   };
@@ -2164,10 +2182,11 @@ function saveAdminPurchase(e) {
   purchasesRegistry.push(data);
   localStorage.setItem('pgf_purchases', JSON.stringify(purchasesRegistry));
   e.target.reset();
+  if (document.getElementById("purDelivery")) document.getElementById("purDelivery").value = "0";
   initDefaultDatePickers();
   computeFinancialLedgerStatements();
   renderAdminLiveStockSummary();
-  alert(`✅ Inventory Buy recorded! Total: Rs ${qty * rate}, Paid: Rs ${paid}`);
+  alert(`✅ Inventory Buy recorded with Delivery Charge! Total: Rs ${grandTotalPayable}, Paid: Rs ${paid}`);
 }
 
 function saveAdminDamage(e) {

@@ -743,7 +743,7 @@
           </div>
 
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:10px;">
-            <h4>2. Log Manual Wholesale Production Sale (Direct Offline Inflow)</h4>
+            <h4>2. Log Manual Wholesale Production Sale (Direct Offline Inflow) - Stock Automatically Deducted</h4>
             <input type="search" id="searchSellInput" placeholder="🔍 Search Sales by Buyer, Product..." style="max-width:240px;" oninput="filterSubTable('searchSellInput', 'subSellTableBody')">
           </div>
 
@@ -769,7 +769,7 @@
                 <input type="text" id="saleBuyer" placeholder="Client Purchaser Name" required>
                 <input type="tel" id="salePhone" placeholder="Client Contact Number" required>
                 <input type="text" id="saleAddress" placeholder="Client Shipping Address" required>
-                <input type="number" step="0.01" id="saleQty" placeholder="Quantity (Qty)" required>
+                <input type="number" step="0.01" id="saleQty" placeholder="Quantity (Qty) [Stock - hoga]" required>
                 <input type="number" id="saleRate" placeholder="Price per unit (Price)" required>
                 <input type="number" id="saleDelivery" placeholder="Delivery Charge (Rs) [0 for Free]" value="0" min="0">
                 <input type="number" id="salePaidAmount" placeholder="Received Payment Amount (Rs) [Kitna Pesa Aaya]" required>
@@ -811,7 +811,7 @@
           </div>
 
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:10px;">
-            <h4>3. Log Raw Inventory Material Bulk Buy Outflow</h4>
+            <h4>3. Log Raw Inventory Material Bulk Buy Outflow with Delivery Charge Option</h4>
             <input type="search" id="searchBuyInput" placeholder="🔍 Search Purchases by Vendor..." style="max-width:240px;" oninput="filterSubTable('searchBuyInput', 'subBuyTableBody')">
           </div>
 
@@ -839,6 +839,7 @@
                 <input type="text" id="purVendor" placeholder="Kiske Pas Se Liya He (Vendor Name)" required>
                 <input type="number" step="0.01" id="purQty" placeholder="Kitna Liya He (Qty)" required>
                 <input type="number" id="purRate" placeholder="Purchase Rate per unit (Rs)" required>
+                <input type="number" id="purDelivery" placeholder="Delivery Charge (Rs) [Optional]" value="0" min="0">
                 <input type="number" id="purPaidAmount" placeholder="Paid Amount to Vendor (Rs)" required>
                 <input type="text" id="purNotes" placeholder="Vendor Notes / Batch Memo">
                 <button type="submit">Execute Inventory Buy Inflow</button>
@@ -851,9 +852,10 @@
                     <th>Date</th>
                     <th>Resource</th>
                     <th>Pese Diye</th>
-                    <th>Kiske Pas Se Liya</th>
-                    <th>Kitna Liya</th>
+                    <th>Vendor</th>
+                    <th>Qty</th>
                     <th>Rate</th>
+                    <th>Delivery</th>
                     <th>Total Payable</th>
                     <th>Paid / Due</th>
                     <th>Action</th>

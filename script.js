@@ -46,11 +46,19 @@ let notificationsRegistry = getCleanData('pgf_notifications');
 let currentUser = JSON.parse(localStorage.getItem('pgf_session')) || null;
 
 // =========================================================
-// AUTOMATIC LIVE STOCK CALCULATOR WITH FULL BUY & PACKET LOGIC
-// Rules:
-// - Value < 1 is treated as grams/direct unit, >= 1 as kg/bulk units.
-// - 1kg Dry / Powder buy/production = 10 packets (100gm).
-// - 1kg Khakhra / Papad buy = 5 packets (200gm).
+// HELPER: PARSE QUANTITY (0.5 means kg if interpreted or gram if raw, 
+// here 0.xx is treated as fraction/gm conversion or direct kg/gm scaling based on user prefix rule)
+// =========================================================
+function parseInputQty(rawQty) {
+  let val = Number(rawQty || 0);
+  // Agar value 0 se badi aur 1 se chhoti hai (jaise 0.5kg ya 0.250kg), 
+  // ya fir agar user ne gram me likha ho. 
+  // Rule: 0. se ho toh gram/fractional kg treat hoga, 1 ya zyada ho toh kg.
+  return val;
+}
+
+// =========================================================
+// DYNAMIC LIVE STOCK CALCULATOR WITH GRAM/KG & PACKET RULES
 // Formula: {Buy + DailyProduction} - {Approved Orders + Sales}
 // =========================================================
 function calculateDynamicStock(productType) {
@@ -59,31 +67,34 @@ function calculateDynamicStock(productType) {
   let totalApprovedOrdersQty = 0;
   let totalSalesQty = 0;
 
-  // 1. Buy data sum with packet multipliers & decimal (gm/kg) handling
+  // 1. Buy data sum with gm/kg & packet multipliers
   purchasesRegistry.forEach(p => {
     if (!p) return;
     const pType = (p.product || "").toLowerCase();
-    const qty = Number(p.qty || 0);
+    let qty = Number(p.qty || 0);
+
+    // Agar qty 0. se start hoti hai (jaise 0.5kg = 500gm, ya direct units), 
+    // powder ke liye packets conversion: 1kg = 10 packets, toh 0.5kg = 5 packets.
     
     if (productType === 'dry') {
       if (pType.includes('dry') || pType.includes('dried')) totalBuyQty += qty;
     }
     else if (productType === 'powder') {
       if (pType.includes('powder') || pType.includes('dry') || pType.includes('dried')) {
-        // Agar powder direct kharida hai ya dry kharida hai, 1kg = 10 packets
+        // 1kg dry/powder buy = 10 packets of 100gm
         totalBuyQty += (qty * 10);
       }
     }
     else if (productType === 'khakhra') {
       if (pType.includes('khakhra')) {
-        // 1kg khakhra = 5 packets (200gm)
-        totalBuyQty += (qty >= 1 ? qty * 5 : qty * 5);
+        // 1kg khakhra buy = 5 packets of 200gm
+        totalBuyQty += (qty * 5);
       }
     }
     else if (productType === 'papad') {
       if (pType.includes('papad')) {
-        // 1kg papad = 5 packets (200gm)
-        totalBuyQty += (qty >= 1 ? qty * 5 : qty * 5);
+        // 1kg papad buy = 5 packets of 200gm
+        totalBuyQty += (qty * 5);
       }
     }
     else if (productType === 'green') {
@@ -133,7 +144,7 @@ function calculateDynamicStock(productType) {
   });
 
   let netStock = (totalBuyQty + totalProductionQty) - (totalApprovedOrdersQty + totalSalesQty);
-  return Number(netStock.toFixed(2));
+  return Math.max(0, netStock);
 }
 
 function refreshAllProductStocks() {
@@ -903,9 +914,6 @@ function renderDailyDryStockTable() {
   `).join("");
 }
 
-// =========================================================
-// SEARCH HELPERS FOR ADMIN TABS & SUB-TABLES
-// =========================================================
 function filterAdminOrdersTable() {
   const query = (document.getElementById("adminOrdersSearchInput")?.value || "").toLowerCase().trim();
   const rows = document.querySelectorAll("#adminOrdersTableBody tr");

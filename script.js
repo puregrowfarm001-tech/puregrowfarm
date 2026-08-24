@@ -310,6 +310,7 @@ function exitAdminPanel() { handleLogout(); }
 
 function checkUserSession() {
   renderNotificationBadge();
+  renderProducts();
 
   if (currentUser) {
     document.getElementById("authSection").style.display = "none";

@@ -39,7 +39,8 @@ let notificationsRegistry = getCleanData('pgf_notifications');
 let currentUser = JSON.parse(localStorage.getItem('pgf_session')) || null;
 
 // =========================================================
-// CALCULATE DYNAMIC AVAILABLE STOCK FOR EACH VARIANT TYPE
+// LIVE STOCK CALCULATION FORMULA:
+// Available Stock = (Total Buy + Total Daily Production) - (Total Website Orders + Total Admin Sales)
 // =========================================================
 function calculateLiveStockForType(typeKey) {
   let totalBuyQty = 0;
@@ -760,7 +761,7 @@ function renderAdminLiveStockSummary() {
 
   container.innerHTML = `
     <div style="background: #fefce8; border: 1px solid #fef08a; padding: 12px; border-radius: 10px;">
-      <div style="font-size: 12px; color: #854d0e; font-weight: bold;">🌾 Dry Mushroom Stock (Buy + Prod - Orders - Sell)</div>
+      <div style="font-size: 12px; color: #854d0e; font-weight: bold;">🌾 Dry Mushroom Stock</div>
       <div style="font-size: 20px; font-weight: 900; color: #a16207; margin: 4px 0;">${dryProd.stock} kg</div>
     </div>
 
@@ -770,12 +771,12 @@ function renderAdminLiveStockSummary() {
     </div>
 
     <div style="background: #fff7ed; border: 1px solid #ffedd5; padding: 12px; border-radius: 10px;">
-      <div style="font-size: 12px; color: #9a3412; font-weight: bold;">🧇 Khakhra Stock (Buy - Orders - Sell)</div>
+      <div style="font-size: 12px; color: #9a3412; font-weight: bold;">🧇 Khakhra Stock</div>
       <div style="font-size: 20px; font-weight: 900; color: #ea580c; margin: 4px 0;">${khakhraProd.stock} packs</div>
     </div>
 
     <div style="background: #f0fdf4; border: 1px solid #bbf7d0; padding: 12px; border-radius: 10px;">
-      <div style="font-size: 12px; color: #166534; font-weight: bold;">🫓 Papad Stock (Buy - Orders - Sell)</div>
+      <div style="font-size: 12px; color: #166534; font-weight: bold;">🫓 Papad Stock</div>
       <div style="font-size: 20px; font-weight: 900; color: #15803d; margin: 4px 0;">${papadProd.stock} packs</div>
     </div>
   `;
@@ -1559,6 +1560,8 @@ function handleOrderApprove(idx) {
   o.refundStage = "";
   
   localStorage.setItem('pgf_orders', JSON.stringify(orderRegistry));
+  renderProducts();
+  renderAdminLiveStockSummary();
   
   pushNotification(
     o.email, 
@@ -1583,6 +1586,8 @@ function handleOrderReject(idx) {
   o.refundStage = "";
 
   localStorage.setItem('pgf_orders', JSON.stringify(orderRegistry));
+  renderProducts();
+  renderAdminLiveStockSummary();
   pushNotification(o.email, '❌ Order Rejected', `Your Order #${o.orderId} was rejected. Reason: ${reason}.`, 'order');
 
   alert("❌ Option 2: Order Reject ho gaya! (Iska paisa accounting me count nahi hoga)");
@@ -1601,6 +1606,8 @@ function handleOrderCancelRefund(idx) {
   o.refundCreditedDate = "";
 
   localStorage.setItem('pgf_orders', JSON.stringify(orderRegistry));
+  renderProducts();
+  renderAdminLiveStockSummary();
   
   pushNotification(o.email, '⚠️ Order Cancelled', `Aapka Order #${o.orderId} cancel kar diya gaya hai. Reason: ${reason}. Refund aapke UPI ID (${o.userUpiId || 'Bank'}) par process kiya ja raha hai.`, 'order');
 
@@ -2172,7 +2179,7 @@ function saveAdminSale(e) {
   computeFinancialLedgerStatements();
   renderAdminLiveStockSummary();
   renderProducts();
-  alert(`✅ Wholesale Sale Entry saved! Live stock automatically recomputed. Total: Rs ${grandTotal}, Received: Rs ${paid}`);
+  alert(`✅ Wholesale Sale Entry saved! Live stock recomputed via formula. Total: Rs ${grandTotal}, Received: Rs ${paid}`);
 }
 
 function saveAdminPurchase(e) {
@@ -2211,7 +2218,7 @@ function saveAdminPurchase(e) {
   computeFinancialLedgerStatements();
   renderAdminLiveStockSummary();
   renderProducts();
-  alert(`✅ Inventory Buy recorded with Delivery Charge! Total: Rs ${grandTotalPayable}, Paid: Rs ${paid}`);
+  alert(`✅ Inventory Buy recorded! Live stock updated. Total: Rs ${grandTotalPayable}, Paid: Rs ${paid}`);
 }
 
 function saveAdminDamage(e) {
@@ -2316,539 +2323,6 @@ Pure Grow Farm, Makhiyala, Gujarat
   }
   
   document.getElementById("invoiceDialog").showModal();
-}
-
-function renderProducts(list = getLiveProductsWithStock()) {
-  if(!document.getElementById("productsList")) return;
-  document.getElementById("productsList").innerHTML = list.map(product => {
-    const inStock = product.stock > 0;
-
-    return `
-      <article class="product">
-        <img src="${product.image}" alt="${product.name}">
-        <h3>${product.name}</h3>
-        <p class="muted">${product.detail}</p>
-        
-        <div style="margin-bottom: 8px;">
-          ${product.bulk ? 
-            `<span class="badge" style="background: #e0f2fe; color: #0369a1; font-size:11px;">📦 Custom Supply</span>` : 
-            (inStock 
-              ? `<span class="badge badge-confirmed" style="font-size:11px;">🟢 Available: ${product.stock} ${product.unit}</span>` 
-              : `<span class="badge" style="background:#fee2e2; color:#991b1b; font-size:11px;">🔴 Out of Stock</span>`
-            )
-          }
-        </div>
-
-        <div style="margin-top:auto;">
-          <div class="product-actions">
-            <div class="pill">Rs ${product.price} / ${product.unit}</div>
-            ${product.bulk ? 
-              `<button type="button" onclick="window.open('https://wa.me/${farmWhatsapp}')">Contact Bulk</button>` : 
-              `<button type="button" ${inStock ? '' : 'disabled style="background:#9ca3af; cursor:not-allowed;"'} onclick="addToCart(${product.id})">
-                ${inStock ? 'Add Cart' : 'Out of Stock'}
-              </button>`
-            }
-          </div>
-        </div>
-      </article>
-    `;
-  }).join("");
-}
-
-function updateHeaderCartCounter() {
-  const badge = document.getElementById("headerCartCount");
-  if (!badge) return;
-  const totalCount = [...cart.values()].reduce((sum, item) => sum + item.qty, 0);
-  badge.textContent = totalCount;
-}
-
-function addToCart(id) {
-  const liveProducts = getLiveProductsWithStock();
-  const product = liveProducts.find(item => item.id === id);
-  if (!product || product.stock <= 0) {
-    alert("⚠️ Abhi yeh item stock me uplabdh nahi hai!");
-    return;
-  }
-
-  const current = cart.get(id);
-  const currentQty = current ? current.qty : 0;
-
-  if (currentQty + 1 > product.stock) {
-    alert(`⚠️ Stock me sirf ${product.stock} items hi uplabdh hain!`);
-    return;
-  }
-
-  cart.set(id, { ...product, qty: currentQty + 1 });
-  renderCart();
-  updateHeaderCartCounter();
-}
-
-function minusCart(id) {
-  const item = cart.get(id);
-  if (!item) return;
-  if (item.qty === 1) cart.delete(id);
-  else cart.set(id, { ...item, qty: item.qty - 1 });
-  renderCart();
-  updateHeaderCartCounter();
-}
-
-function getTotals() {
-  const subtotal = [...cart.values()].reduce((sum, item) => sum + (item.price * item.qty), 0);
-  const delivery = subtotal > 0 ? (subtotal > 1000 ? 0 : 50) : 0;
-  return { subtotal, delivery, total: subtotal + delivery };
-}
-
-function renderCart() {
-  const bill = getTotals();
-  if(document.getElementById("subtotal")) document.getElementById("subtotal").textContent = `Rs ${bill.subtotal}`;
-  if(document.getElementById("delivery")) document.getElementById("delivery").textContent = `Rs ${bill.delivery}`;
-  if(document.getElementById("total")) document.getElementById("total").textContent = `Rs ${bill.total}`;
-
-  updateHeaderCartCounter();
-
-  if (!cart.size) { 
-    if(document.getElementById("cartItems")) document.getElementById("cartItems").innerHTML = `<p class="muted">Cart selection is empty.</p>`; 
-    if(document.getElementById("paymentMode")) document.getElementById("paymentMode").value = "";
-    if(document.getElementById("paymentId")) {
-      document.getElementById("paymentId").value = "";
-      document.getElementById("paymentId").disabled = true;
-    }
-    if(document.getElementById("confirmOrderBtn")) document.getElementById("confirmOrderBtn").disabled = true;
-    return; 
-  }
-  
-  if(document.getElementById("cartItems")) {
-    document.getElementById("cartItems").innerHTML = [...cart.values()].map(item => `
-      <div class="cart-item">
-        <div><strong>${item.name}</strong><br><span class="muted">Rs ${item.price} x ${item.qty}</span></div>
-        <div class="qty-actions">
-          <button type="button" onclick="minusCart(${item.id})">-</button>
-          <button type="button" onclick="addToCart(${item.id})">+</button>
-        </div>
-      </div>
-    `).join("");
-  }
-  validateOrderForm();
-}
-
-function openProductPayment() {
-  const mode = document.getElementById("paymentMode").value;
-  const bill = getTotals();
-  if(!mode || !cart.size) {
-    document.getElementById("paymentId").value = "";
-    document.getElementById("paymentId").disabled = true;
-    validateOrderForm();
-    return;
-  }
-  
-  document.getElementById("productPaymentHelp").style.display = "block";
-  document.getElementById("productPaymentHelp").textContent = `Launching UPI Payment app link for Rs ${bill.total}.`;
-  
-  window.location.href = `upi://pay?pa=${encodeURIComponent(farmUpiId)}&pn=${encodeURIComponent(farmName)}&am=${bill.total}&cu=INR`;
-  
-  document.getElementById("paymentId").disabled = false;
-  validateOrderForm();
-}
-
-function validateOrderForm() {
-  const address = document.getElementById("address") ? document.getElementById("address").value.trim() : "";
-  const userUpi = document.getElementById("userUpiId") ? document.getElementById("userUpiId").value.trim() : "";
-  const mode = document.getElementById("paymentMode") ? document.getElementById("paymentMode").value : "";
-  const txnId = document.getElementById("paymentId") ? document.getElementById("paymentId").value.trim() : "";
-  
-  const isValid = cart.size > 0 && address.length > 4 && userUpi.length >= 5 && userUpi.includes('@') && mode !== "" && txnId.length >= 6;
-  if(document.getElementById("confirmOrderBtn")) document.getElementById("confirmOrderBtn").disabled = !isValid;
-}
-
-if(document.getElementById("address")) {
-  document.getElementById("address").addEventListener("input", validateOrderForm);
-}
-
-function confirmOrder(e) {
-  e.preventDefault();
-  const bill = getTotals();
-  const currentTimestamp = new Date().toLocaleDateString('en-IN') + " " + new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
-  const generatedOrderId = "PGF-INV-" + Date.now().toString().slice(-5);
-
-  const data = {
-    orderId: generatedOrderId,
-    name: currentUser.name,
-    phone: currentUser.phone,
-    email: currentUser.email,
-    address: document.getElementById("address").value.trim(),
-    userUpiId: document.getElementById("userUpiId").value.trim(),
-    products: [...cart.values()].map(i => `${i.name} [x${i.qty}]`).join(", "),
-    subtotal: bill.subtotal,
-    delivery: bill.delivery,
-    total: bill.total,
-    paymentMode: document.getElementById("paymentMode").value,
-    txnId: document.getElementById("paymentId").value.trim(),
-    dateLogged: currentTimestamp,
-    rawIsoDate: getTodayIsoString(),
-    deliveryDays: "",
-    courierName: "Ekart Logistics",
-    refundCreditedDate: "",
-    status: "Pending Verification"
-  };
-
-  orderRegistry.unshift(data);
-  localStorage.setItem('pgf_orders', JSON.stringify(orderRegistry));
-  renderProducts();
-  renderAdminLiveStockSummary();
-  
-  document.getElementById("invNum").textContent = data.orderId;
-  document.getElementById("invDate").textContent = new Date().toLocaleDateString('en-IN');
-  document.getElementById("invClientName").textContent = data.name;
-  document.getElementById("invClientEmail").textContent = "Email: " + data.email + " | Ph: " + data.phone;
-  document.getElementById("invClientAddr").textContent = "Address: " + data.address + " | User UPI: " + data.userUpiId;
-  
-  document.getElementById("invoiceTableItemsBody").innerHTML = [...cart.values()].map(item => `
-    <tr>
-      <td style="padding:12px 14px; border-bottom:1px solid #e6e9ec; font-weight: 600;">${item.name} (${item.unit})</td>
-      <td style="padding:12px 14px; border-bottom:1px solid #e6e9ec; text-align:right;">Rs ${item.price}</td>
-      <td style="padding:12px 14px; border-bottom:1px solid #e6e9ec; text-align:center;">${item.qty}</td>
-      <td style="padding:12px 14px; border-bottom:1px solid #e6e9ec; text-align:right; font-weight:600; color:var(--accent);">Rs ${item.price * item.qty}</td>
-    </tr>
-  `).join("");
-  
-  document.getElementById("invSub").textContent = "Rs " + bill.subtotal;
-  document.getElementById("invDelivery").textContent = "Rs " + bill.delivery;
-  document.getElementById("invTotal").textContent = "Rs " + bill.total;
-
-  const paidRow = document.getElementById("invPaidRow");
-  const dueRow = document.getElementById("invDueRow");
-  const notesSec = document.getElementById("invNotesSection");
-  if (paidRow) paidRow.style.display = "none";
-  if (dueRow) dueRow.style.display = "none";
-  if (notesSec) notesSec.style.display = "none";
-
-  pushNotification('ADMIN', '🛍️ New Order Placed!', `${data.name} placed order #${data.orderId} for Rs ${data.total}`, 'order');
-  
-  const waMessage = `NEW GOODS ORDER VERIFICATION FLOW:\n----------------------------------------\nInvoice Ref Code: ${data.orderId}\nClient Legal Name: ${data.name}\nClient UPI ID: ${data.userUpiId}\nProducts Mapped: ${data.products}\nTotal Paid Amount: Rs ${data.total}\nPayment Method: ${data.paymentMode}\nTransaction Hash ID Code: ${data.txnId}\n----------------------------------------`;
-  
-  alert("Order submitted! Opening WhatsApp summary.");
-  window.open(`https://wa.me/${farmWhatsapp}?text=${encodeURIComponent(waMessage)}`, '_blank');
-  
-  document.getElementById("invoiceDialog").showModal();
-  
-  cart.clear();
-  renderCart();
-  document.getElementById("orderForm").reset();
-  checkUserSession();
-}
-
-function closeInvoice() { document.getElementById("invoiceDialog").close(); }
-
-function showVisitForm(id) {
-  document.getElementById("studentForm").classList.remove("active");
-  document.getElementById("farmerForm").classList.remove("active");
-  document.getElementById(id).classList.add("active");
-}
-
-function openVisitPayment(formId, amount) {
-  const modeSelectId = formId === "studentForm" ? "spaymentMode" : "fpaymentMode";
-  const helpId = formId === "studentForm" ? "studentPaymentHelp" : "farmerPaymentHelp";
-  const txnInputId = formId === "studentForm" ? "spayment" : "fpayment";
-  const mode = document.getElementById(modeSelectId).value;
-
-  if (!mode) {
-    document.getElementById(txnInputId).value = "";
-    document.getElementById(txnInputId).disabled = true;
-    if(formId === "studentForm") validateStudentForm();
-    else validateFarmerForm();
-    return;
-  }
-  
-  document.getElementById(helpId).style.display = "block";
-  document.getElementById(helpId).textContent = `Launching UPI App for program fee Rs ${amount}.`;
-  
-  window.location.href = `upi://pay?pa=${encodeURIComponent(farmUpiId)}&pn=${encodeURIComponent(farmName)}&am=${amount}&cu=INR`;
-  
-  document.getElementById(txnInputId).disabled = false;
-  if(formId === "studentForm") validateStudentForm();
-  else validateFarmerForm();
-}
-
-function validateStudentForm() {
-  const enroll = document.getElementById("senroll").value.trim();
-  const college = document.getElementById("scollege").value.trim();
-  const course = document.getElementById("scourse").value.trim();
-  const start = document.getElementById("sstart").value;
-  const end = document.getElementById("send").value;
-  const userUpi = document.getElementById("suserUpi") ? document.getElementById("suserUpi").value.trim() : "";
-  const txn = document.getElementById("spayment").value.trim();
-  const isDisabled = document.getElementById("spayment").disabled;
-  
-  const isValid = !isDisabled && enroll !== "" && college !== "" && course !== "" && start !== "" && end !== "" && userUpi.length >= 5 && userUpi.includes('@') && txn.length >= 6;
-  document.getElementById("studentSubmitBtn").disabled = !isValid;
-}
-
-function validateFarmerForm() {
-  const date = document.getElementById("fdate").value;
-  const userUpi = document.getElementById("fuserUpi") ? document.getElementById("fuserUpi").value.trim() : "";
-  const txn = document.getElementById("fpayment").value.trim();
-  const isDisabled = document.getElementById("fpayment").disabled;
-  
-  const isValid = !isDisabled && date !== "" && userUpi.length >= 5 && userUpi.includes('@') && txn.length >= 6;
-  document.getElementById("farmerSubmitBtn").disabled = !isValid;
-}
-
-if(document.getElementById("studentForm")) {
-  ['senroll', 'scollege', 'scourse', 'sstart', 'send', 'suserUpi'].forEach(id => {
-    if(document.getElementById(id)) document.getElementById(id).addEventListener("input", validateStudentForm);
-  });
-}
-if(document.getElementById("farmerForm")) {
-  ['fdate', 'fuserUpi'].forEach(id => {
-    if(document.getElementById(id)) document.getElementById(id).addEventListener("input", validateFarmerForm);
-  });
-}
-
-function submitStudentVisit(e) {
-  e.preventDefault();
-  const currentTimestamp = new Date().toLocaleDateString('en-IN') + " " + new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
-  const data = {
-    bookingId: "PGF-STU-" + Date.now().toString().slice(-4),
-    type: "Student",
-    name: currentUser.name,
-    phone: currentUser.phone,
-    email: currentUser.email,
-    enrollment: document.getElementById("senroll").value.trim(),
-    college: document.getElementById("scollege").value.trim(),
-    course: document.getElementById("scourse").value.trim(),
-    start: document.getElementById("sstart").value,
-    end: document.getElementById("send").value,
-    userUpiId: document.getElementById("suserUpi").value.trim(),
-    fee: 100,
-    paymentMode: document.getElementById("spaymentMode").value,
-    txnId: document.getElementById("spayment").value.trim(),
-    dateLogged: currentTimestamp,
-    status: "Pending Verification",
-    certIssued: false
-  };
-  bookingsRegistry.unshift(data);
-  localStorage.setItem('pgf_bookings', JSON.stringify(bookingsRegistry));
-
-  pushNotification('ADMIN', '🎓 New Student Registration', `${data.name} applied for Internship (#${data.bookingId}).`, 'booking');
-
-  const waText = `NEW STUDENT INTERNSHIP REGISTRATION:\n----------------------------------------\nBooking Ref ID: ${data.bookingId}\nName: ${data.name}\nStudent UPI ID: ${data.userUpiId}\nCollege: ${data.college}\nCourse: ${data.course}\nUTR Tracking Number: ${data.txnId}\n----------------------------------------`;
-  window.open(`https://wa.me/${farmWhatsapp}?text=${encodeURIComponent(waText)}`, '_blank');
-  
-  document.getElementById("studentForm").reset();
-  document.getElementById("spayment").disabled = true;
-  checkUserSession();
-}
-
-function submitFarmerVisit(e) {
-  e.preventDefault();
-  const currentTimestamp = new Date().toLocaleDateString('en-IN') + " " + new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
-  const data = {
-    bookingId: "PGF-FAR-" + Date.now().toString().slice(-4),
-    type: "Farmer",
-    name: currentUser.name,
-    phone: currentUser.phone,
-    email: currentUser.email,
-    date: document.getElementById("fdate").value,
-    userUpiId: document.getElementById("fuserUpi").value.trim(),
-    fee: 699,
-    paymentMode: document.getElementById("fpaymentMode").value,
-    txnId: document.getElementById("fpayment").value.trim(),
-    dateLogged: currentTimestamp,
-    status: "Pending Verification",
-    certIssued: false
-  };
-  bookingsRegistry.unshift(data);
-  localStorage.setItem('pgf_bookings', JSON.stringify(bookingsRegistry));
-
-  pushNotification('ADMIN', '👨‍🌾 New Farmer Training Booking', `${data.name} booked training (#${data.bookingId}) for ${data.date}.`, 'booking');
-
-  const waText = `NEW FARMER TRAINING BOOKING:\n----------------------------------------\nBooking Ref ID: ${data.bookingId}\nName: ${data.name}\nFarmer UPI ID: ${data.userUpiId}\nTraining Date: ${data.date}\nUTR Tracking Number: ${data.txnId}\n----------------------------------------`;
-  window.open(`https://wa.me/${farmWhatsapp}?text=${encodeURIComponent(waText)}`, '_blank');
-  
-  document.getElementById("farmerForm").reset();
-  document.getElementById("fpayment").disabled = true;
-  checkUserSession();
-}
-
-if (document.getElementById("productSearch")) {
-  document.getElementById("productSearch").addEventListener("input", function(e) {
-    const searchTerm = e.target.value.toLowerCase().trim();
-    const liveProducts = getLiveProductsWithStock();
-    const filteredProducts = liveProducts.filter(product => {
-      return product.name.toLowerCase().includes(searchTerm) || 
-             product.detail.toLowerCase().includes(searchTerm);
-    });
-    renderProducts(filteredProducts);
-  });
-}
-
-function downloadCertificatePDF(bookingId) {
-  const targetBooking = bookingsRegistry.find(b => b && b.bookingId === bookingId);
-  if (!targetBooking) return alert("Certificate not found.");
-  if (!targetBooking.certIssued) return alert("Certificate has not been issued yet by Farm Admin.");
-
-  const titleText = targetBooking.type === "Student" ? "Certificate of Internship" : "Certificate of Farming";
-  const descText = targetBooking.type === "Student" 
-    ? `has successfully completed an internship program in Oyster Mushroom Cultivation at Pure Grow Farm, at Makhiyala, Gujarat.`
-    : `has successfully completed the practical farmer training framework module in Oyster Mushroom Cultivation at Pure Grow Farm, at Makhiyala, Gujarat.`;
-  
-  const durationContent = targetBooking.type === "Student" 
-    ? `from <strong>${targetBooking.start || 'N/A'}</strong> to <strong>${targetBooking.end || 'N/A'}</strong>`
-    : `on target session date <strong>${targetBooking.date || 'N/A'}</strong>`;
-
-  const actualApprovedDate = targetBooking.certIssueDate ? targetBooking.certIssueDate : (targetBooking.dateLogged ? targetBooking.dateLogged.split(" ")[0] : new Date().toLocaleDateString('en-IN'));
-
-  const basePath = window.location.href.substring(0, window.location.href.lastIndexOf('/') + 1);
-  const logoUrl = basePath + "mushroom/pgf logo.png";
-  const sohamSignUrl = basePath + "mushroom/soham sign.png";
-  const jeetSignUrl = basePath + "mushroom/jeet sign.png";
-
-  const certificateHTML = `<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=1024, initial-scale=0.4, user-scalable=yes">
-  <title>${titleText} - ${targetBooking.name}</title>
-  <style>
-    @page { size: A4 landscape; margin: 6mm; }
-    * { box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-    body { 
-      margin: 0; 
-      padding: 12px; 
-      font-family: Arial, sans-serif; 
-      background: #f8fafc; 
-      text-align: center;
-      min-width: 980px; 
-    }
-    .certificate-frame { 
-      width: 960px; 
-      background: #fff; 
-      border: 8px solid #1e4620; 
-      padding: 20px; 
-      box-sizing: border-box; 
-      margin: 0 auto; 
-      box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-    }
-    .inner-border { border: 2px solid #d97706; padding: 20px; background: #ffffff; }
-    .cert-header-top { display: flex; justify-content: center; align-items: center; gap: 15px; }
-    .cert-title { font-size: 28px; font-weight: bold; color: #1e4620; text-transform: uppercase; letter-spacing: 1px; font-family: 'Times New Roman', Times, serif; margin: 12px 0 6px 0; }
-    .cert-name { font-size: 24px; font-weight: bold; color: #2b8a3e; border-bottom: 2px solid #d97706; display: inline-block; padding: 0 20px; margin: 6px auto; font-family: 'Times New Roman', Times, serif; }
-    .cert-desc { font-size: 14px; line-height: 1.6; text-align: justify; margin: 12px auto; max-width: 820px; color: #222; }
-    .cert-footer-grid { display: flex; justify-content: space-between; align-items: flex-end; margin-top: 25px; padding: 0 10px; }
-    .sign-img { width: 120px; height: 48px; object-fit: contain; display: block; margin: 0 auto -8px auto; mix-blend-mode: multiply; }
-    .no-print-bar { margin-bottom: 12px; background: #f0fdf4; border: 1px solid #bbf7d0; padding: 10px; border-radius: 8px; width: 960px; margin-left: auto; margin-right: auto; }
-    .no-print-btn { background: #2b8a3e; color: #fff; border: 0; padding: 8px 18px; font-weight: bold; border-radius: 6px; font-size: 14px; cursor: pointer; }
-    @media print { .no-print-bar { display: none !important; } body { padding: 0; background: #fff; min-width: 100%; } .certificate-frame { width: 100%; box-shadow: none; } }
-  </style>
-</head>
-<body>
-  <div class="no-print-bar">
-    <button class="no-print-btn" onclick="window.print()">📥 Click Here to Save / Download PDF</button>
-  </div>
-
-  <div class="certificate-frame">
-    <div class="inner-border">
-      <div class="cert-header-top">
-        <img src="${logoUrl}" alt="Logo" style="width: 60px; height: auto;">
-        <div style="text-align:left;">
-          <h2 style="color: #1e4620; margin: 0; font-size: 20px; font-weight: 800;">PURE GROW FARM</h2>
-          <p style="margin: 2px 0 0 0; font-size: 11px; color:#6b7280;">Makhiyala, Gujarat, 362011 | puregrowfarm001@gmail.com</p>
-        </div>
-      </div>
-      <hr style="border:0; border-top: 2px solid #2b8a3e; margin: 10px 0;">
-      <div class="cert-title">${titleText}</div>
-      <p style="font-style: italic; margin: 3px 0; color: #555; font-size: 13px;">This is to certify that</p>
-      <div class="cert-name">${targetBooking.name.toUpperCase()}</div>
-      <p style="font-style: italic; margin: 5px 0; color: #555; font-size: 13px;">${descText}</p>
-      <p class="cert-desc">
-        The program execution guidelines were conducted ${durationContent}. 
-        During this framework index period, the candidate gained foundational knowledge in mushroom biology, substrate preparation, spawn inoculation, and scientific crop management, demonstrating an exceptional work ethic.
-      </p>
-      
-      <div class="cert-footer-grid">
-        <div style="text-align: center; width: 34%;">
-          <div style="height: 50px; display: flex; align-items: flex-end; justify-content: center;">
-            <img src="${sohamSignUrl}" alt="Soham Gajera Signature" class="sign-img">
-          </div>
-          <div style="border-top: 1.5px solid #333; width: 160px; margin: 0 auto 4px auto;"></div>
-          <div style="font-size: 13px; font-weight: bold; color: #1e4620;">Soham N Gajera</div>
-          <div style="font-size: 10px; color: #475569; margin-top: 2px;">Co-Founder & Managing Director</div>
-        </div>
-
-        <div style="text-align: center; width: 28%;">
-          <img src="${logoUrl}" alt="Stamp" style="width: 55px; height: auto; opacity: 0.95;">
-          <div style="font-size: 9px; font-weight: 800; color: #1e4620; margin-top: 2px; letter-spacing: 0.5px;">PURE GROW FARM</div>
-          <div style="font-size: 11px; color: #334155; margin-top: 3px;">
-            <strong>Approved Date:</strong> ${actualApprovedDate}
-          </div>
-        </div>
-
-        <div style="text-align: center; width: 34%;">
-          <div style="height: 50px; display: flex; align-items: flex-end; justify-content: center;">
-            <img src="${jeetSignUrl}" alt="Jeet Gajera Signature" class="sign-img">
-          </div>
-          <div style="border-top: 1.5px solid #333; width: 160px; margin: 0 auto 4px auto;"></div>
-          <div style="font-size: 13px; font-weight: bold; color: #1e4620;">Jeet A Gajera</div>
-          <div style="font-size: 10px; color: #475569; margin-top: 2px;">Co-Founder & Director<br>(Agriculture & Production)</div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <script>
-    window.addEventListener('load', function() {
-      setTimeout(function() {
-        window.print();
-      }, 500);
-    });
-  <\/script>
-</body>
-</html>`;
-
-  const blob = new Blob([certificateHTML], { type: 'text/html;charset=utf-8' });
-  const blobUrl = URL.createObjectURL(blob);
-  const printWindow = window.open(blobUrl, '_blank');
-  if (!printWindow) window.location.href = blobUrl;
-}
-
-function printDivInvoice() {
-  const basePath = window.location.origin + window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/') + 1);
-  const absoluteLogoUrl = basePath + "mushroom/pgf logo.png";
-
-  const containerClone = document.getElementById('invoiceCaptureFrame').cloneNode(true);
-  const logoImg = containerClone.querySelector('#invoiceBrandLogo');
-  if (logoImg) {
-    logoImg.src = absoluteLogoUrl;
-  }
-
-  const invoiceHTML = `
-    <!DOCTYPE html>
-    <html>
-      <head>
-        <title>Pure Grow Farm - Invoice</title>
-        <style>
-          @page { size: A4; margin: 10mm; }
-          body { font-family: sans-serif; padding: 20px; background: #fff; color: #222; }
-          table { width: 100%; border-collapse: collapse; margin-bottom: 25px; font-size: 14px; }
-          th, td { border: 1px solid #e6e9ec; padding: 12px 14px; text-align: left; }
-          th { background: #2b8a3e !important; color: white !important; -webkit-print-color-adjust: exact; font-weight: bold; }
-        </style>
-      </head>
-      <body>
-        ${containerClone.innerHTML}
-        <script>
-          window.onload = function() {
-            setTimeout(function() { window.print(); }, 400);
-          };
-        <\/script>
-      </body>
-    </html>
-  `;
-
-  const blob = new Blob([invoiceHTML], { type: 'text/html;charset=utf-8' });
-  const blobUrl = URL.createObjectURL(blob);
-  const printWin = window.open(blobUrl, '_blank');
-  if (!printWin) window.location.href = blobUrl;
 }
 
 renderProducts();

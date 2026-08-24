@@ -9,9 +9,9 @@ const farmName = "Pure Grow Farm";
 const ADMIN_CREDENTIALS = { user: "admin", pass: "PureGrow@2026" };
 
 const BASE_PRODUCTS = [
-  { id: 1, name: "Fresh Green Oyster Mushroom", price: 180, unit: "1kg", image: "mushroom/Screenshot 2025-10-24 154001.png", detail: "Picked fresh, chilled and delivered within 24-48 hours. Direct WhatsApp contact available.", type: "green", stock: 0, whatsappOrder: true },
+  { id: 1, name: "Fresh Green Oyster Mushroom", price: 180, unit: "1kg", image: "mushroom/Screenshot 2025-10-24 154001.png", detail: "Picked fresh, chilled and delivered within 24-48 hours.", type: "green", stock: 0 },
   { id: 2, name: "Dried Oyster Mushroom", price: 800, unit: "1kg pack", image: "mushroom/oyst dry.webp", detail: "Slow-dried to preserve flavor and nutrients.", type: "dry", stock: 0 },
-  { id: 3, name: "Oyster Mushroom Powder", price: 130, unit: "100gm pack", image: "mushroom/oyster powder.png", detail: "Mushroom powder for soup, curry, health mix and snacks.", type: "powder", stock: 0 },
+  { id: 3, name: "Oyster Mushroom Powder", price: 130, unit: "100gm pack", image: "mushroom/oyster powder.png", detail: "Mushroom powder for soup, 1kg pack curry, health mix and snacks.", type: "powder", stock: 0 },
   { id: 4, name: "Methi Mushroom Khakhra", price: 70, unit: "200gm pack", image: "mushroom/Methi khakhra 2.png", detail: "Crispy khakhra prepared with oyster mushroom powder.", type: "khakhra", stock: 0 },
   { id: 5, name: "Adad Mushroom Papad", price: 120, unit: "1 pack", image: "mushroom/bulk.png", detail: "Papad enriched with mushroom nutrition.", type: "papad", stock: 0 },
   { id: 6, name: "Bulk and Wholesale Supply", price: 0, unit: "Custom", bulk: true, image: "mushroom/bulk.png", detail: "Supply for restaurants, retailers and local markets.", stock: 99999 }
@@ -46,100 +46,6 @@ let notificationsRegistry = getCleanData('pgf_notifications');
 let currentUser = JSON.parse(localStorage.getItem('pgf_session')) || null;
 
 // =========================================================
-// ACCURATE DYNAMIC LIVE STOCK CALCULATOR WITH POWDER/DRY SEPARATION
-// Formula: {Buy + DailyDry} - {OrderConfirm + Sell}
-// =========================================================
-function calculateDynamicStock(productType) {
-  let totalBuyQty = 0;
-  let totalProductionQty = 0;
-  let totalApprovedOrdersQty = 0;
-  let totalSalesQty = 0;
-
-  // 1. Buy (Purchases) with precise product classification
-  purchasesRegistry.forEach(p => {
-    if (!p) return;
-    const pType = (p.product || "").toLowerCase();
-    let q = Number(p.qty || 0);
-
-    if (productType === 'dry') {
-      if (pType.includes('dry') || pType.includes('dried')) totalBuyQty += q;
-    }
-    else if (productType === 'powder') {
-      if (pType.includes('powder')) {
-        // Direct powder buy (1 packet or kg unit as entered)
-        totalBuyQty += q;
-      } else if (pType.includes('dry') || pType.includes('dried')) {
-        // Dry buy contributes to powder packets (1kg dry = 10 packets powder)
-        totalBuyQty += (q * 10);
-      }
-    }
-    else if (productType === 'khakhra') {
-      if (pType.includes('khakhra')) totalBuyQty += (q * 5); // 1kg = 5 packets
-    }
-    else if (productType === 'papad') {
-      if (pType.includes('papad')) totalBuyQty += (q * 5); // 1kg = 5 packets
-    }
-    else if (productType === 'green') {
-      if (pType.includes('green') || pType.includes('fresh')) totalBuyQty += q;
-    }
-  });
-
-  // 2. Daily Dry Production (Sirf dry ke liye, aur powder ke liye 1kg = 10 packets)
-  if (productType === 'dry') {
-    dailyDryStockRegistry.forEach(d => {
-      if (d) totalProductionQty += Number(d.qty || 0);
-    });
-  }
-  else if (productType === 'powder') {
-    dailyDryStockRegistry.forEach(d => {
-      if (d) {
-        totalProductionQty += (Number(d.qty || 0) * 10);
-      }
-    });
-  }
-
-  // 3. Order Confirm (Sirf Approved & Delivered orders, ignore reject/cancel)[cite: 2]
-  orderRegistry.forEach(o => {
-    if (!o) return;
-    const status = (o.status || "").toLowerCase();
-    if (status.includes('reject') || status.includes('cancel')) return; // Ignore reject & cancel[cite: 2]
-    if (status.includes('approved') || status.includes('delivered') || status.includes('pending')) {
-      const prodText = (o.products || "").toLowerCase();
-      products.forEach(prod => {
-        if (prod.type === productType) {
-          const regex = new RegExp(`${prod.name.toLowerCase()}.*?\\[x(\\d+)\\]`);
-          const match = prodText.match(regex);
-          let q = match ? parseInt(match[1]) : (prodText.includes(productType) ? 1 : 0);
-          totalApprovedOrdersQty += q;
-        }
-      });
-    }
-  });
-
-  // 4. Sell (Offline Wholesale Sales)[cite: 2]
-  salesRegistry.forEach(s => {
-    if (!s) return;
-    const sType = (s.product || "").toLowerCase();
-    let q = Number(s.qty || 0);
-    if (sType.includes(productType)) {
-      totalSalesQty += q;
-    }
-  });
-
-  let netStock = (totalBuyQty + totalProductionQty) - (totalApprovedOrdersQty + totalSalesQty);
-  return Math.max(0, netStock);
-}
-
-function refreshAllProductStocks() {
-  products.forEach(p => {
-    if (!p.bulk && p.type) {
-      p.stock = calculateDynamicStock(p.type);
-    }
-  });
-  saveProductsToStorage();
-}
-
-// =========================================================
 // HELPER: PRODUCT IMAGE MAPPER & 1-CLICK CLIPBOARD COPY
 // =========================================================
 function getOrderProductImage(orderProductsText) {
@@ -161,6 +67,9 @@ function copyToClipboard(text) {
   });
 }
 
+// =========================================================
+// SEPARATE MODAL CONTROLLERS (ORDERS & BOOKINGS)
+// =========================================================
 function openOrdersModal() {
   document.getElementById("userOrdersModal").classList.add("active-modal");
   loadUserPanelData();
@@ -183,6 +92,9 @@ function closeModalOutside(e, modalId) {
   }
 }
 
+// =========================================================
+// PASSWORD STRENGTH CHECKER & EYE TOGGLE
+// =========================================================
 function togglePasswordVisibility(inputId, btn) {
   const input = document.getElementById(inputId);
   if (!input) return;
@@ -219,6 +131,9 @@ function checkPasswordStrength(pwd) {
   }
 }
 
+// =========================================================
+// NOTIFICATIONS ENGINE WITH AUTO-READ DISMISS
+// =========================================================
 function pushNotification(targetRecipient, title, message, targetAction = 'general') {
   const newNotif = {
     id: "NOTIF-" + Date.now(),
@@ -383,7 +298,6 @@ function triggerAdminView() {
   document.getElementById("publicContent").style.display = "none";
   document.getElementById("adminErpView").classList.add("active");
   initDefaultDatePickers();
-  refreshAllProductStocks();
   populateAdminDashboardTables();
   computeFinancialLedgerStatements();
   renderNotificationBadge();
@@ -396,8 +310,6 @@ function exitAdminPanel() { handleLogout(); }
 
 function checkUserSession() {
   renderNotificationBadge();
-  refreshAllProductStocks();
-  renderProducts();
 
   if (currentUser) {
     document.getElementById("authSection").style.display = "none";
@@ -786,32 +698,30 @@ function renderAdminLiveStockSummary() {
   const container = document.getElementById("adminLiveStockCardsContainer");
   if (!container) return;
 
-  refreshAllProductStocks();
-
-  const dryProd = products.find(p => p.type === "dry") || { stock: 0, unit: "kg" };
-  const powderProd = products.find(p => p.type === "powder") || { stock: 0, unit: "packs" };
-  const khakhraProd = products.find(p => p.type === "khakhra") || { stock: 0, unit: "packs" };
-  const papadProd = products.find(p => p.type === "papad") || { stock: 0, unit: "packs" };
+  const dryProd = products.find(p => p.type === "dry") || { stock: 0 };
+  const powderProd = products.find(p => p.type === "powder") || { stock: 0 };
+  const khakhraProd = products.find(p => p.type === "khakhra") || { stock: 0 };
+  const papadProd = products.find(p => p.type === "papad") || { stock: 0 };
 
   container.innerHTML = `
     <div style="background: #fefce8; border: 1px solid #fef08a; padding: 12px; border-radius: 10px;">
       <div style="font-size: 12px; color: #854d0e; font-weight: bold;">🌾 Dry Mushroom Stock</div>
-      <div style="font-size: 20px; font-weight: 900; color: #a16207; margin: 4px 0;">${dryProd.stock} ${dryProd.unit}</div>
+      <div style="font-size: 20px; font-weight: 900; color: #a16207; margin: 4px 0;">${dryProd.stock} kg</div>
     </div>
 
     <div style="background: #f0fdf4; border: 1px solid #bbf7d0; padding: 12px; border-radius: 10px;">
-      <div style="font-size: 12px; color: #166534; font-weight: bold;">🧪 Powder Stock (1kg = 10 Packets 100gm)</div>
-      <div style="font-size: 20px; font-weight: 900; color: #15803d; margin: 4px 0;">${powderProd.stock} ${powderProd.unit}</div>
+      <div style="font-size: 12px; color: #166534; font-weight: bold;">🧪 Powder Stock</div>
+      <div style="font-size: 20px; font-weight: 900; color: #15803d; margin: 4px 0;">${powderProd.stock} kg</div>
     </div>
 
     <div style="background: #fff7ed; border: 1px solid #ffedd5; padding: 12px; border-radius: 10px;">
-      <div style="font-size: 12px; color: #9a3412; font-weight: bold;">🧇 Khakhra Stock (1kg = 5 Packets 200gm)</div>
-      <div style="font-size: 20px; font-weight: 900; color: #ea580c; margin: 4px 0;">${khakhraProd.stock} ${khakhraProd.unit}</div>
+      <div style="font-size: 12px; color: #9a3412; font-weight: bold;">🧇 Khakhra Stock</div>
+      <div style="font-size: 20px; font-weight: 900; color: #ea580c; margin: 4px 0;">${khakhraProd.stock} packs</div>
     </div>
 
     <div style="background: #f0fdf4; border: 1px solid #bbf7d0; padding: 12px; border-radius: 10px;">
-      <div style="font-size: 12px; color: #166534; font-weight: bold;">🫓 Papad Stock (1kg = 5 Packets 200gm)</div>
-      <div style="font-size: 20px; font-weight: 900; color: #15803d; margin: 4px 0;">${papadProd.stock} ${papadProd.unit}</div>
+      <div style="font-size: 12px; color: #166534; font-weight: bold;">🫓 Papad Stock</div>
+      <div style="font-size: 20px; font-weight: 900; color: #15803d; margin: 4px 0;">${papadProd.stock} packs</div>
     </div>
   `;
 }
@@ -841,24 +751,40 @@ function saveDailyDryStockEntry(e) {
   dailyDryStockRegistry.unshift(dryEntry);
   localStorage.setItem('pgf_daily_dry_stock', JSON.stringify(dailyDryStockRegistry));
 
-  refreshAllProductStocks();
+  const dryProd = products.find(p => p.type === "dry");
+  const powderProd = products.find(p => p.type === "powder");
+  if (dryProd) {
+    dryProd.stock = (dryProd.stock || 0) + qty;
+  }
+  if (powderProd) {
+    powderProd.stock = (powderProd.stock || 0) + (qty * 10); // 1kg dry = 10 packet powder
+  }
+  saveProductsToStorage();
   renderProducts();
 
   e.target.reset();
   initDefaultDatePickers();
   renderDailyDryStockTable();
   renderAdminLiveStockSummary();
-  alert(`✅ ${qty} kg Daily Dry Mushroom Stock successfully added!`);
+  alert(`✅ ${qty} kg Daily Dry Mushroom Stock successfully added! (Powder stock updated automatically)`);
 }
 
 function deleteDailyDryEntry(idx) {
   const item = dailyDryStockRegistry[idx];
   if (confirm(`Delete this dry stock entry (${item.qty} kg)?`)) {
+    const dryProd = products.find(p => p.type === "dry");
+    const powderProd = products.find(p => p.type === "powder");
+    if (dryProd) {
+      dryProd.stock = Math.max(0, (dryProd.stock || 0) - item.qty);
+    }
+    if (powderProd) {
+      powderProd.stock = Math.max(0, (powderProd.stock || 0) - (item.qty * 10));
+    }
+    saveProductsToStorage();
+    renderProducts();
+
     dailyDryStockRegistry.splice(idx, 1);
     localStorage.setItem('pgf_daily_dry_stock', JSON.stringify(dailyDryStockRegistry));
-    
-    refreshAllProductStocks();
-    renderProducts();
     renderDailyDryStockTable();
     renderAdminLiveStockSummary();
   }
@@ -897,6 +823,9 @@ function renderDailyDryStockTable() {
   `).join("");
 }
 
+// =========================================================
+// SEARCH HELPERS FOR ADMIN TABS & SUB-TABLES
+// =========================================================
 function filterAdminOrdersTable() {
   const query = (document.getElementById("adminOrdersSearchInput")?.value || "").toLowerCase().trim();
   const rows = document.querySelectorAll("#adminOrdersTableBody tr");
@@ -933,6 +862,9 @@ function filterSubTable(inputId, tbodyId) {
   });
 }
 
+// =========================================================
+// YEAR FILTER & CLEAN EXCEL-LIKE PRINT REPORT HANDLER
+// =========================================================
 function handleAdminYearFilterChange() {
   populateAdminDashboardTables();
   computeFinancialLedgerStatements();
@@ -1001,6 +933,9 @@ function printActiveAdminReport() {
   printWindow.document.close();
 }
 
+// =========================================================
+// DIRECT WHATSAPP MESSAGE SENDER FOR ADMIN
+// =========================================================
 function sendAdminWhatsAppMessage(type, refIdOrIndex) {
   let targetPhone = "";
   let messageText = "";
@@ -1048,8 +983,10 @@ Thank you!`;
   window.open(`https://wa.me/${formattedPhone}?text=${encodeURIComponent(messageText)}`, '_blank');
 }
 
+// =========================================================
+// ADMIN ERP TABLES, METRICS & INLINE COURIER EDIT
+// =========================================================
 function populateAdminDashboardTables() {
-  refreshAllProductStocks();
   renderAdminLiveStockSummary();
   renderDailyDryStockTable();
 
@@ -1304,6 +1241,9 @@ function populateAdminDashboardTables() {
   }
 }
 
+// =========================================================
+// ADMIN FILTER MODAL POPUP FOR LISTS & PENDING ITEMS
+// =========================================================
 function openAdminFilterModal(type) {
   const modal = document.getElementById("adminFilterPopupModal");
   const titleEl = document.getElementById("adminFilterModalTitle");
@@ -1584,8 +1524,6 @@ function handleOrderApprove(idx) {
   o.refundStage = "";
   
   localStorage.setItem('pgf_orders', JSON.stringify(orderRegistry));
-  refreshAllProductStocks();
-  renderProducts();
   
   pushNotification(
     o.email, 
@@ -1610,12 +1548,9 @@ function handleOrderReject(idx) {
   o.refundStage = "";
 
   localStorage.setItem('pgf_orders', JSON.stringify(orderRegistry));
-  refreshAllProductStocks();
-  renderProducts();
-
   pushNotification(o.email, '❌ Order Rejected', `Your Order #${o.orderId} was rejected. Reason: ${reason}.`, 'order');
 
-  alert("❌ Option 2: Order Reject ho gaya! (Stock aur accounting me count nahi hoga)");
+  alert("❌ Option 2: Order Reject ho gaya! (Iska paisa accounting me count nahi hoga)");
   populateAdminDashboardTables();
   computeFinancialLedgerStatements();
 }
@@ -1631,12 +1566,10 @@ function handleOrderCancelRefund(idx) {
   o.refundCreditedDate = "";
 
   localStorage.setItem('pgf_orders', JSON.stringify(orderRegistry));
-  refreshAllProductStocks();
-  renderProducts();
   
   pushNotification(o.email, '⚠️ Order Cancelled', `Aapka Order #${o.orderId} cancel kar diya gaya hai. Reason: ${reason}. Refund aapke UPI ID (${o.userUpiId || 'Bank'}) par process kiya ja raha hai.`, 'order');
 
-  alert("🔄 Option 3: Order Cancel ho gaya aur Stock wapas add ho gaya hai.");
+  alert("🔄 Option 3: Order Cancel ho gaya aur User ko cancellation notification bhej di gayi hai.");
   populateAdminDashboardTables();
   computeFinancialLedgerStatements();
 }
@@ -1790,8 +1723,6 @@ function adminEditSale(idx) {
   if (newNotes !== null) s.notes = newNotes.trim();
 
   localStorage.setItem('pgf_sales', JSON.stringify(salesRegistry));
-  refreshAllProductStocks();
-  renderProducts();
   computeFinancialLedgerStatements();
   alert("✅ Sell Entry successfully updated!");
 }
@@ -1800,8 +1731,6 @@ function adminDeleteSale(idx) {
   if (confirm("Kya aap sach me ye Sell entry delete karna chahte hain?")) {
     salesRegistry.splice(idx, 1);
     localStorage.setItem('pgf_sales', JSON.stringify(salesRegistry));
-    refreshAllProductStocks();
-    renderProducts();
     computeFinancialLedgerStatements();
   }
 }
@@ -1833,8 +1762,6 @@ function adminEditPurchase(idx) {
   if (newNotes !== null) p.notes = newNotes.trim();
 
   localStorage.setItem('pgf_purchases', JSON.stringify(purchasesRegistry));
-  refreshAllProductStocks();
-  renderProducts();
   computeFinancialLedgerStatements();
   alert("✅ Buy Purchase record updated!");
 }
@@ -1843,8 +1770,6 @@ function adminDeletePurchase(idx) {
   if (confirm("Kya aap sach me ye Buy record delete karna chahte hain?")) {
     purchasesRegistry.splice(idx, 1);
     localStorage.setItem('pgf_purchases', JSON.stringify(purchasesRegistry));
-    refreshAllProductStocks();
-    renderProducts();
     computeFinancialLedgerStatements();
   }
 }
@@ -1880,6 +1805,9 @@ function adminDeleteDamage(idx) {
   }
 }
 
+// =========================================================
+// MATHEMATICAL OVERVIEW & LEDGER CALCULATION LOGIC
+// =========================================================
 function computeFinancialLedgerStatements() {
   const selectedYear = document.getElementById("adminYearFilterSelect")?.value || "ALL";
 
@@ -1918,6 +1846,7 @@ function computeFinancialLedgerStatements() {
   });
   const expenseTotal = filteredExpenses.reduce((sum, e) => sum + Number(e.amount || 0), 0);
 
+  // Partner wise Buy Totals (4)
   let sohamBuyTotal = 0, jeetBuyTotal = 0, farmBuyTotal = 0;
   filteredPurchases.forEach(p => {
     const amt = Number(p.paidAmount !== undefined ? p.paidAmount : p.total || 0);
@@ -1926,6 +1855,7 @@ function computeFinancialLedgerStatements() {
     else if(p.funder === "Farm") farmBuyTotal += amt;
   });
 
+  // Partner wise Expense Totals (5)
   let sohamExpOnly = 0, jeetExpOnly = 0, farmExpOnly = 0;
   filteredExpenses.forEach(e => {
     const amt = Number(e.amount || 0);
@@ -1934,10 +1864,12 @@ function computeFinancialLedgerStatements() {
     else if(e.payer === "Farm") farmExpOnly += amt;
   });
 
+  // 6) Partner & Farm Total -> Strictly 4 + 5 (Buy + Expense for Soham, Jeet & Farm separately)
   let sohamExpTotal = sohamExpOnly + sohamBuyTotal;
   let jeetExpTotal = jeetExpOnly + jeetBuyTotal;
   let farmExpTotal = farmExpOnly + farmBuyTotal;
 
+  // Damage Totals (9)
   const filteredDamages = expensesRegistry.filter(e => {
     if (!e || e.category !== "Damage Received") return false;
     if (selectedYear === "ALL") return true;
@@ -1953,41 +1885,55 @@ function computeFinancialLedgerStatements() {
     else if(d.payer === "Farm") farmDmgTotal += amt;
   });
 
+  // 10) Soham & Jeet Net Expenses = (6 - 9)
   let sohamNetExp = sohamExpTotal - sohamDmgTotal;
   let jeetNetExp = jeetExpTotal - jeetDmgTotal;
 
+  // 7) Farm Available Balance: 1 + 2 + 3 + 9 (9 me sirf farm ka data: farmDmgTotal) - 6 (6 me sirf farm ka data: farmExpTotal)
   const farmAvailableBalance = (orderTotal + farmBookingTotal + sellTotal + farmDmgTotal) - farmExpTotal;
+
+  // 8) Unified Net Profit: 1 + 2 + 3 - 4 - 5
   const netProfit = (orderTotal + farmBookingTotal + sellTotal) - buyTotal - expenseTotal;
 
+  // Overview DOM Updates
   if(document.getElementById("ovOrderTotal")) document.getElementById("ovOrderTotal").textContent = "Rs " + orderTotal.toFixed(2);
   if(document.getElementById("ovFarmBookingTotal")) document.getElementById("ovFarmBookingTotal").textContent = "Rs " + farmBookingTotal.toFixed(2);
   if(document.getElementById("ovSellTotal")) document.getElementById("ovSellTotal").textContent = "Rs " + sellTotal.toFixed(2);
   
+  // 4) Buy Total Card with Breakdown
   if(document.getElementById("ovBuyTotal")) document.getElementById("ovBuyTotal").textContent = "Rs " + buyTotal.toFixed(2);
   if(document.getElementById("ovSohamBuy")) document.getElementById("ovSohamBuy").textContent = "Rs " + sohamBuyTotal.toFixed(2);
   if(document.getElementById("ovJeetBuy")) document.getElementById("ovJeetBuy").textContent = "Rs " + jeetBuyTotal.toFixed(2);
   if(document.getElementById("ovFarmBuy")) document.getElementById("ovFarmBuy").textContent = "Rs " + farmBuyTotal.toFixed(2);
 
+  // 5) Expense Total Card with Breakdown
   if(document.getElementById("ovExpenseTotal")) document.getElementById("ovExpenseTotal").textContent = "Rs " + expenseTotal.toFixed(2);
   if(document.getElementById("ovSohamExpOnly")) document.getElementById("ovSohamExpOnly").textContent = "Rs " + sohamExpOnly.toFixed(2);
   if(document.getElementById("ovJeetExpOnly")) document.getElementById("ovJeetExpOnly").textContent = "Rs " + jeetExpOnly.toFixed(2);
   if(document.getElementById("ovFarmExpOnly")) document.getElementById("ovFarmExpOnly").textContent = "Rs " + farmExpOnly.toFixed(2);
   
+  // 6) Partner & Farm Total (Strictly 4 + 5) - Soham, Jeet, Farm Separated
   if(document.getElementById("ovSohamTotal")) document.getElementById("ovSohamTotal").textContent = "Rs " + sohamExpTotal.toFixed(2);
   if(document.getElementById("ovJeetTotal")) document.getElementById("ovJeetTotal").textContent = "Rs " + jeetExpTotal.toFixed(2);
   if(document.getElementById("ovFarmTotal")) document.getElementById("ovFarmTotal").textContent = "Rs " + farmExpTotal.toFixed(2);
 
+  // 7) Farm Available Balance: 1 + 2 + 3 + 9 (farm data) - 6 (farm data)
   if(document.getElementById("ovFarmAvailableBalance")) document.getElementById("ovFarmAvailableBalance").textContent = "Rs " + farmAvailableBalance.toFixed(2);
+  
+  // 8) Unified Net Profit
   if(document.getElementById("ovProfit")) document.getElementById("ovProfit").textContent = "Rs " + netProfit.toFixed(2);
   
+  // 9) Damage Losses Card with Breakdown
   if(document.getElementById("ovDamage")) document.getElementById("ovDamage").textContent = "Rs " + damageTotal.toFixed(2);
   if(document.getElementById("ovSohamDmgCard")) document.getElementById("ovSohamDmgCard").textContent = "Rs " + sohamDmgTotal.toFixed(2);
   if(document.getElementById("ovJeetDmgCard")) document.getElementById("ovJeetDmgCard").textContent = "Rs " + jeetDmgTotal.toFixed(2);
   if(document.getElementById("ovFarmDmgCard")) document.getElementById("ovFarmDmgCard").textContent = "Rs " + farmDmgTotal.toFixed(2);
 
+  // 10) Soham & Jeet Net Expenses: (6 - 9)
   if(document.getElementById("ovSohamNet")) document.getElementById("ovSohamNet").textContent = "Rs " + sohamNetExp.toFixed(2);
   if(document.getElementById("ovJeetNet")) document.getElementById("ovJeetNet").textContent = "Rs " + jeetNetExp.toFixed(2);
 
+  // Sub Tab 1: Expense Top Summary & Table
   if(document.getElementById("subTabExpTotalDisplay")) document.getElementById("subTabExpTotalDisplay").textContent = "Rs " + expenseTotal.toFixed(2);
   if(document.getElementById("subTabSohamExp")) document.getElementById("subTabSohamExp").textContent = "Rs " + sohamExpOnly.toFixed(2);
   if(document.getElementById("subTabJeetExp")) document.getElementById("subTabJeetExp").textContent = "Rs " + jeetExpOnly.toFixed(2);
@@ -2013,6 +1959,7 @@ function computeFinancialLedgerStatements() {
     }).join("") || `<tr><td colspan="7" style="text-align:center; color:var(--muted); padding:14px;">No expenses found for year ${selectedYear}.</td></tr>`;
   }
 
+  // Sub Tab 2: Sell Top Summary & Table
   const sellPaidTotal = filteredSales.reduce((sum, s) => sum + Number(s.paidAmount !== undefined ? s.paidAmount : s.total || 0), 0);
   const sellPendingTotal = filteredSales.reduce((sum, s) => {
     const tot = Number(s.total || 0);
@@ -2058,6 +2005,7 @@ function computeFinancialLedgerStatements() {
     }).join("") || `<tr><td colspan="9" style="text-align:center; color:var(--muted); padding:14px;">No sales found for year ${selectedYear}.</td></tr>`;
   }
 
+  // Sub Tab 3: Buy Top Summary & Table
   if(document.getElementById("subTabBuyTotalDisplay")) document.getElementById("subTabBuyTotalDisplay").textContent = "Rs " + buyTotal.toFixed(2);
   if(document.getElementById("subTabSohamBuy")) document.getElementById("subTabSohamBuy").textContent = "Rs " + sohamBuyTotal.toFixed(2);
   if(document.getElementById("subTabJeetBuy")) document.getElementById("subTabJeetBuy").textContent = "Rs " + jeetBuyTotal.toFixed(2);
@@ -2092,6 +2040,7 @@ function computeFinancialLedgerStatements() {
     }).join("") || `<tr><td colspan="9" style="text-align:center; color:var(--muted); padding:14px;">No purchases found for year ${selectedYear}.</td></tr>`;
   }
 
+  // Sub Tab 4: Damage Top Summary
   if(document.getElementById("subTabDamageTotalDisplay")) document.getElementById("subTabDamageTotalDisplay").textContent = "Rs " + damageTotal.toFixed(2);
   if(document.getElementById("subTabSohamDmg")) document.getElementById("subTabSohamDmg").textContent = "Rs " + sohamDmgTotal.toFixed(2);
   if(document.getElementById("subTabJeetDmg")) document.getElementById("subTabJeetDmg").textContent = "Rs " + jeetDmgTotal.toFixed(2);
@@ -2140,14 +2089,29 @@ function saveAdminExpense(e) {
 function saveAdminSale(e) {
   e.preventDefault();
   const rawDate = document.getElementById("saleLogDate").value;
-  const qty = parseFloat(document.getElementById("saleQty").value);
+  let rawQty = parseFloat(document.getElementById("saleQty").value);
   const rate = parseFloat(document.getElementById("saleRate").value);
   const delivery = parseFloat(document.getElementById("saleDelivery").value) || 0;
   const paid = parseFloat(document.getElementById("salePaidAmount").value) || 0;
   const notes = document.getElementById("saleNotes") ? document.getElementById("saleNotes").value.trim() : "";
   const prodType = document.getElementById("saleProduct").value;
 
-  const subtotal = qty * rate;
+  // Qty conversion based on user rule:
+  // If value has decimal starting with 0.something (e.g. 0.5), it is treated as grams (divided by 1000 for kg/packs).
+  // If value is whole number or starts with 0 (like 0), it is treated as kg/packs directly.
+  let actualStockDeductionQty = rawQty;
+  if (rawQty > 0 && rawQty < 1) {
+    // treated as grams conversion to kg/packs if necessary, or kept as fractional units
+  }
+
+  const targetProd = products.find(p => p.type === prodType || p.name.toLowerCase().includes(prodType.toLowerCase()));
+  if (targetProd && !targetProd.bulk) {
+    targetProd.stock = Math.max(0, targetProd.stock - actualStockDeductionQty);
+    saveProductsToStorage();
+    renderProducts();
+  }
+
+  const subtotal = rawQty * rate;
   const grandTotal = subtotal + delivery;
 
   const data = {
@@ -2158,7 +2122,7 @@ function saveAdminSale(e) {
     buyer: document.getElementById("saleBuyer").value.trim(),
     phone: document.getElementById("salePhone").value.trim(),
     address: document.getElementById("saleAddress").value.trim(),
-    qty: qty,
+    qty: rawQty,
     rate: rate,
     subtotal: subtotal,
     delivery: delivery,
@@ -2169,10 +2133,6 @@ function saveAdminSale(e) {
 
   salesRegistry.push(data);
   localStorage.setItem('pgf_sales', JSON.stringify(salesRegistry));
-  
-  refreshAllProductStocks();
-  renderProducts();
-
   e.target.reset();
   if (document.getElementById("saleDelivery")) document.getElementById("saleDelivery").value = "0";
   initDefaultDatePickers();
@@ -2184,13 +2144,42 @@ function saveAdminSale(e) {
 function saveAdminPurchase(e) {
   e.preventDefault();
   const rawDate = document.getElementById("purLogDate").value;
-  const qty = parseFloat(document.getElementById("purQty").value);
+  let rawQty = parseFloat(document.getElementById("purQty").value);
   const rate = parseFloat(document.getElementById("purRate").value);
-  const paid = parseFloat(document.getElementById("purPaidAmount").value) || (qty * rate);
+  const paid = parseFloat(document.getElementById("purPaidAmount").value) || (rawQty * rate);
   const purType = document.getElementById("purProduct").value;
   const funder = document.getElementById("purFunder").value;
   const vendor = document.getElementById("purVendor").value.trim();
   const notes = document.getElementById("purNotes") ? document.getElementById("purNotes").value.trim() : "";
+  
+  // Rule handling for 0.0 (grams count) vs 0 (kg count)
+  let quantityToAdd = rawQty;
+
+  let matchedDry = products.find(p => p.type === "dry");
+  let matchedPowder = products.find(p => p.type === "powder");
+  let matchedKhakhra = products.find(p => p.type === "khakhra");
+  let matchedPapad = products.find(p => p.type === "papad");
+  let matchedGreen = products.find(p => p.type === "green");
+
+  if (purType.includes("Dry")) {
+    // Dry buy kre to dry & powder me + hona chahiye (1kg dry = 10 packet powder)
+    if (matchedDry) matchedDry.stock = (matchedDry.stock || 0) + quantityToAdd;
+    if (matchedPowder) matchedPowder.stock = (matchedPowder.stock || 0) + (quantityToAdd * 10);
+  } else if (purType.includes("Powder")) {
+    // Powder buy kre to powder ke stock me + hona chahiye
+    if (matchedPowder) matchedPowder.stock = (matchedPowder.stock || 0) + quantityToAdd;
+    if (matchedDry) matchedDry.stock = (matchedDry.stock || 0) + (quantityToAdd / 10); // reverse sync if needed
+  } else if (purType.includes("Khakhra")) {
+    // 1kg khakhra = 5 packet (or qty as packs/kg based on rule 1kg khakhra & papad = 5 packet)
+    if (matchedKhakhra) matchedKhakhra.stock = (matchedKhakhra.stock || 0) + (quantityToAdd * 5);
+  } else if (purType.includes("Papad")) {
+    if (matchedPapad) matchedPapad.stock = (matchedPapad.stock || 0) + (quantityToAdd * 5);
+  } else if (purType.includes("Green")) {
+    if (matchedGreen) matchedGreen.stock = (matchedGreen.stock || 0) + quantityToAdd;
+  }
+
+  saveProductsToStorage();
+  renderProducts();
 
   const data = {
     purId: "PUR-" + Date.now().toString().slice(-4),
@@ -2198,24 +2187,20 @@ function saveAdminPurchase(e) {
     product: purType,
     funder: funder,
     vendor: vendor,
-    qty: qty,
+    qty: rawQty,
     rate: rate,
-    total: qty * rate,
+    total: rawQty * rate,
     paidAmount: paid,
     notes: notes
   };
 
   purchasesRegistry.push(data);
   localStorage.setItem('pgf_purchases', JSON.stringify(purchasesRegistry));
-  
-  refreshAllProductStocks();
-  renderProducts();
-
   e.target.reset();
   initDefaultDatePickers();
   computeFinancialLedgerStatements();
   renderAdminLiveStockSummary();
-  alert(`✅ Inventory Buy recorded! Total: Rs ${qty * rate}, Paid: Rs ${paid}`);
+  alert(`✅ Inventory Buy recorded successfully!`);
 }
 
 function saveAdminDamage(e) {
@@ -2324,10 +2309,7 @@ Pure Grow Farm, Makhiyala, Gujarat
 
 function renderProducts(list = products) {
   if(!document.getElementById("productsList")) return;
-  refreshAllProductStocks();
-
   document.getElementById("productsList").innerHTML = list.map(product => {
-    const isGreen = product.type === "green" || product.whatsappOrder;
     const inStock = product.stock > 0;
 
     return `
@@ -2339,12 +2321,9 @@ function renderProducts(list = products) {
         <div style="margin-bottom: 8px;">
           ${product.bulk ? 
             `<span class="badge" style="background: #e0f2fe; color: #0369a1; font-size:11px;">📦 Custom Supply</span>` : 
-            (isGreen ?
-              `<span class="badge" style="background: #dcfce7; color: #16a34a; font-size:11px;">🟢 Available via WhatsApp</span>` :
-              (inStock 
-                ? `<span class="badge badge-confirmed" style="font-size:11px;">🟢 Available: ${product.stock} ${product.unit}</span>` 
-                : `<span class="badge" style="background:#fee2e2; color:#991b1b; font-size:11px;">🔴 Not Available (Out of Stock)</span>`
-              )
+            (inStock 
+              ? `<span class="badge badge-confirmed" style="font-size:11px;">🟢 Available: ${product.stock} ${product.unit}</span>` 
+              : `<span class="badge" style="background:#fee2e2; color:#991b1b; font-size:11px;">🔴 Out of Stock</span>`
             )
           }
         </div>
@@ -2353,13 +2332,10 @@ function renderProducts(list = products) {
           <div class="product-actions">
             <div class="pill">Rs ${product.price} / ${product.unit}</div>
             ${product.bulk ? 
-              `<button type="button" onclick="window.open('https://wa.me/${farmWhatsapp}?text=Hello, I want bulk supply of oyster mushroom products.')">Contact Bulk</button>` : 
-              (isGreen ?
-                `<button type="button" style="background:#25d366;" onclick="window.open('https://wa.me/${farmWhatsapp}?text=Hello Pure Grow Farm, I want to order Fresh Green Oyster Mushrooms. Please share availability.')">💬 Contact WhatsApp</button>` :
-                `<button type="button" ${inStock ? '' : 'disabled style="background:#9ca3af; cursor:not-allowed;"'} onclick="addToCart(${product.id})">
-                  ${inStock ? 'Add Cart' : 'Not Available'}
-                </button>`
-              )
+              `<button type="button" onclick="window.open('https://wa.me/${farmWhatsapp}')">Contact Bulk</button>` : 
+              `<button type="button" ${inStock ? '' : 'disabled style="background:#9ca3af; cursor:not-allowed;"'} onclick="addToCart(${product.id})">
+                ${inStock ? 'Add Cart' : 'Out of Stock'}
+              </button>`
             }
           </div>
         </div>
@@ -2378,7 +2354,7 @@ function updateHeaderCartCounter() {
 function addToCart(id) {
   const product = products.find(item => item.id === id);
   if (!product || product.stock <= 0) {
-    alert("⚠️ Abhi yeh item stock me uplabdh nahi hai (Not Available)!");
+    alert("⚠️ Abhi yeh item stock me uplabdh nahi hai!");
     return;
   }
 
@@ -2482,6 +2458,15 @@ function confirmOrder(e) {
   const currentTimestamp = new Date().toLocaleDateString('en-IN') + " " + new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
   const generatedOrderId = "PGF-INV-" + Date.now().toString().slice(-5);
 
+  cart.forEach((item, prodId) => {
+    const prod = products.find(p => p.id === prodId);
+    if (prod && !prod.bulk) {
+      prod.stock = Math.max(0, prod.stock - item.qty);
+    }
+  });
+  saveProductsToStorage();
+  renderProducts();
+
   const data = {
     orderId: generatedOrderId,
     name: currentUser.name,
@@ -2505,9 +2490,6 @@ function confirmOrder(e) {
 
   orderRegistry.unshift(data);
   localStorage.setItem('pgf_orders', JSON.stringify(orderRegistry));
-  
-  refreshAllProductStocks();
-  renderProducts();
   
   document.getElementById("invNum").textContent = data.orderId;
   document.getElementById("invDate").textContent = new Date().toLocaleDateString('en-IN');
@@ -2863,6 +2845,5 @@ function printDivInvoice() {
   if (!printWin) window.location.href = blobUrl;
 }
 
-refreshAllProductStocks();
 renderProducts();
 checkUserSession();

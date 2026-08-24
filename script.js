@@ -46,20 +46,29 @@ let notificationsRegistry = getCleanData('pgf_notifications');
 let currentUser = JSON.parse(localStorage.getItem('pgf_session')) || null;
 
 // =========================================================
-// HELPER: PARSE QUANTITY (0.5 means kg if interpreted or gram if raw, 
-// here 0.xx is treated as fraction/gm conversion or direct kg/gm scaling based on user prefix rule)
+// QUANTITY & GM/KG PARSER HELPER
+// Rule: Agar < 1 (jaise 0.5) ho toh gram/fractional treat hoga, >= 1 ho toh kg.
 // =========================================================
-function parseInputQty(rawQty) {
+function parseNormalizedQty(rawQty, productType) {
   let val = Number(rawQty || 0);
-  // Agar value 0 se badi aur 1 se chhoti hai (jaise 0.5kg ya 0.250kg), 
-  // ya fir agar user ne gram me likha ho. 
-  // Rule: 0. se ho toh gram/fractional kg treat hoga, 1 ya zyada ho toh kg.
+  if (val <= 0) return 0;
+
+  // Agar product packets me hai (powder, khakhra, papad) aur input kg me diya gaya hai:
+  if (productType === 'powder') {
+    // 1kg = 10 packets. Agar val < 1 hai (jaise 0.5kg = 500gm = 5 packets), 
+    // ya fir agar seedha packets me enter kiya ho. 
+    // Yahan hum standard 1kg = 10 packets multiplier lagate hain.
+    return val * 10;
+  }
+  if (productType === 'khakhra' || productType === 'papad') {
+    // 1kg = 5 packets
+    return val * 5;
+  }
   return val;
 }
 
 // =========================================================
-// DYNAMIC LIVE STOCK CALCULATOR WITH GRAM/KG & PACKET RULES
-// Formula: {Buy + DailyProduction} - {Approved Orders + Sales}
+// STOCK CALCULATION FORMULA: {Buy + DailyDry} - {OrderConfirm + Sell}
 // =========================================================
 function calculateDynamicStock(productType) {
   let totalBuyQty = 0;
@@ -67,42 +76,30 @@ function calculateDynamicStock(productType) {
   let totalApprovedOrdersQty = 0;
   let totalSalesQty = 0;
 
-  // 1. Buy data sum with gm/kg & packet multipliers
+  // 1. Buy (Purchases)
   purchasesRegistry.forEach(p => {
     if (!p) return;
     const pType = (p.product || "").toLowerCase();
-    let qty = Number(p.qty || 0);
+    let q = Number(p.qty || 0);
 
-    // Agar qty 0. se start hoti hai (jaise 0.5kg = 500gm, ya direct units), 
-    // powder ke liye packets conversion: 1kg = 10 packets, toh 0.5kg = 5 packets.
-    
-    if (productType === 'dry') {
-      if (pType.includes('dry') || pType.includes('dried')) totalBuyQty += qty;
+    if (productType === 'dry' && (pType.includes('dry') || pType.includes('dried'))) {
+      totalBuyQty += q;
     }
-    else if (productType === 'powder') {
-      if (pType.includes('powder') || pType.includes('dry') || pType.includes('dried')) {
-        // 1kg dry/powder buy = 10 packets of 100gm
-        totalBuyQty += (qty * 10);
-      }
+    else if (productType === 'powder' && (pType.includes('powder') || pType.includes('dry') || pType.includes('dried'))) {
+      totalBuyQty += parseNormalizedQty(q, 'powder');
     }
-    else if (productType === 'khakhra') {
-      if (pType.includes('khakhra')) {
-        // 1kg khakhra buy = 5 packets of 200gm
-        totalBuyQty += (qty * 5);
-      }
+    else if (productType === 'khakhra' && pType.includes('khakhra')) {
+      totalBuyQty += parseNormalizedQty(q, 'khakhra');
     }
-    else if (productType === 'papad') {
-      if (pType.includes('papad')) {
-        // 1kg papad buy = 5 packets of 200gm
-        totalBuyQty += (qty * 5);
-      }
+    else if (productType === 'papad' && pType.includes('papad')) {
+      totalBuyQty += parseNormalizedQty(q, 'papad');
     }
-    else if (productType === 'green') {
-      if (pType.includes('green') || pType.includes('fresh')) totalBuyQty += qty;
+    else if (productType === 'green' && (pType.includes('green') || pType.includes('fresh'))) {
+      totalBuyQty += q;
     }
   });
 
-  // 2. Daily Production sum (Sirf dry ka, aur powder ke liye dry ke packets linkage: 1kg = 10 packets)
+  // 2. Daily Dry Production (Sirf dry ke liye, aur powder ke liye 1kg = 10 packets)
   if (productType === 'dry') {
     dailyDryStockRegistry.forEach(d => {
       if (d) totalProductionQty += Number(d.qty || 0);
@@ -111,35 +108,41 @@ function calculateDynamicStock(productType) {
   else if (productType === 'powder') {
     dailyDryStockRegistry.forEach(d => {
       if (d) {
-        totalProductionQty += (Number(d.qty || 0) * 10);
+        totalProductionQty += parseNormalizedQty(Number(d.qty || 0), 'powder');
       }
     });
   }
 
-  // 3. Approved Orders sum (Ignore reject & cancel)
+  // 3. Order Confirm (Approved & Delivered orders, ignore reject/cancel)
   orderRegistry.forEach(o => {
     if (!o) return;
     const status = (o.status || "").toLowerCase();
     if (status.includes('reject') || status.includes('cancel')) return;
-    
-    const prodText = (o.products || "").toLowerCase();
-    products.forEach(prod => {
-      if (prod.type === productType) {
-        const regex = new RegExp(`${prod.name.toLowerCase()}.*?\\[x(\\d+)\\]`);
-        const match = prodText.match(regex);
-        let q = match ? parseInt(match[1]) : (prodText.includes(productType) ? 1 : 0);
-        totalApprovedOrdersQty += q;
-      }
-    });
+    if (status.includes('approved') || status.includes('delivered') || status.includes('pending')) {
+      const prodText = (o.products || "").toLowerCase();
+      products.forEach(prod => {
+        if (prod.type === productType) {
+          const regex = new RegExp(`${prod.name.toLowerCase()}.*?\\[x(\\d+)\\]`);
+          const match = prodText.match(regex);
+          let q = match ? parseInt(match[1]) : (prodText.includes(productType) ? 1 : 0);
+          totalApprovedOrdersQty += q;
+        }
+      });
+    }
   });
 
-  // 4. Sales sum
+  // 4. Sell (Offline Wholesale Sales)
   salesRegistry.forEach(s => {
     if (!s) return;
     const sType = (s.product || "").toLowerCase();
-    const q = Number(s.qty || 0);
+    let q = Number(s.qty || 0);
     if (sType.includes(productType)) {
-      totalSalesQty += q;
+      if (productType === 'powder' || productType === 'khakhra' || productType === 'papad') {
+        // Agar sale me kg me likha ho toh packets me convert karein, ya agar packets ho toh direct add karein
+        totalSalesQty += (q < 1 && q > 0) ? parseNormalizedQty(q, productType) : q;
+      } else {
+        totalSalesQty += q;
+      }
     }
   });
 

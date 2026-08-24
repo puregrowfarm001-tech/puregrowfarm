@@ -88,22 +88,29 @@ function getLiveProductsWithStock() {
     if (prod.bulk) {
       return { ...prod, stock: 99999 };
     }
-    let baseStockKg = 0;
+    let stockVal = 0;
+    let unitText = "1kg pack";
+
     if (prod.type === 'dry') {
-      baseStockKg = calculateLiveStockForType('dry');
-      return { ...prod, stock: baseStockKg, unit: "1kg pack" };
+      stockVal = calculateLiveStockForType('dry');
+      unitText = "1kg pack";
     } else if (prod.type === 'powder') {
-      baseStockKg = calculateLiveStockForType('powder') || calculateLiveStockForType('dry');
-      // 1 kg dry stock = 10 packs of 100gm powder
-      return { ...prod, stock: baseStockKg * 10, unit: "100gm pack" };
+      let dryBaseKg = calculateLiveStockForType('powder') || calculateLiveStockForType('dry');
+      stockVal = dryBaseKg * 10; // 1kg dry = 10 packets of 100gm powder
+      unitText = "100gm pack";
     } else if (prod.type === 'khakhra') {
-      return { ...prod, stock: calculateLiveStockForType('khakhra'), unit: "200gm pack" };
+      let khakhraBaseKg = calculateLiveStockForType('khakhra');
+      stockVal = khakhraBaseKg * 5; // 1kg/unit buy = 5 packets of 200gm
+      unitText = "200gm pack";
     } else if (prod.type === 'papad') {
-      return { ...prod, stock: calculateLiveStockForType('papad'), unit: "1 pack" };
+      stockVal = calculateLiveStockForType('papad');
+      unitText = "1 pack";
     } else if (prod.type === 'green') {
-      return { ...prod, stock: calculateLiveStockForType('green'), unit: "1kg" };
+      stockVal = calculateLiveStockForType('green');
+      unitText = "1kg";
     }
-    return { ...prod, stock: 0 };
+
+    return { ...prod, stock: stockVal, unit: unitText };
   });
 }
 
@@ -755,79 +762,8 @@ function deleteUserAccount(idx) {
 }
 
 // =========================================================
-// LIVE STOCK CALCULATION: (Total Buy + Total Daily Production) - (Total Website Orders + Total Admin Sales)
+// LIVE STOCK SUMMARY (DRY, POWDER, KHAKHRA & PAPAD)
 // =========================================================
-function calculateLiveStockForType(typeKey) {
-  let totalBuyQty = 0;
-  purchasesRegistry.forEach(p => {
-    if (p && p.product && p.product.toLowerCase().includes(typeKey.toLowerCase())) {
-      totalBuyQty += Number(p.qty || 0);
-    }
-  });
-
-  let totalProductionQty = 0;
-  if (typeKey === 'dry' || typeKey === 'powder') {
-    dailyDryStockRegistry.forEach(d => {
-      totalProductionQty += Number(d.qty || 0);
-    });
-  }
-
-  let totalOrdersQty = 0;
-  orderRegistry.forEach(o => {
-    if (o && (o.status === 'Approved' || o.status === 'Delivered' || o.status === 'Pending Verification') && o.products) {
-      const prodText = o.products.toLowerCase();
-      if (prodText.includes(typeKey.toLowerCase())) {
-        const match = o.products.match(new RegExp(`\\[x(\\d+)\\]`, 'i'));
-        if (match && match[1]) {
-          totalOrdersQty += parseInt(match[1], 10);
-        } else {
-          totalOrdersQty += 1;
-        }
-      }
-    }
-  });
-
-  let totalSalesQty = 0;
-  salesRegistry.forEach(s => {
-    if (s && s.product && s.product.toLowerCase().includes(typeKey.toLowerCase())) {
-      totalSalesQty += Number(s.qty || 0);
-    }
-  });
-
-  let computedStock = (totalBuyQty + totalProductionQty) - (totalOrdersQty + totalSalesQty);
-  return Math.max(0, computedStock);
-}
-
-function getLiveProductsWithStock() {
-  return BASE_PRODUCTS.map(prod => {
-    if (prod.bulk) {
-      return { ...prod, stock: 99999 };
-    }
-    let stockVal = 0;
-    let unitText = "1kg pack";
-
-    if (prod.type === 'dry') {
-      stockVal = calculateLiveStockForType('dry');
-      unitText = "1kg pack";
-    } else if (prod.type === 'powder') {
-      stockVal = calculateLiveStockForType('powder') || calculateLiveStockForType('dry');
-      stockVal = stockVal * 10; // 1kg dry = 10 packs of 100gm powder
-      unitText = "100gm pack";
-    } else if (prod.type === 'khakhra') {
-      stockVal = calculateLiveStockForType('khakhra');
-      unitText = "200gm pack";
-    } else if (prod.type === 'papad') {
-      stockVal = calculateLiveStockForType('papad');
-      unitText = "1 pack";
-    } else if (prod.type === 'green') {
-      stockVal = calculateLiveStockForType('green');
-      unitText = "1kg";
-    }
-
-    return { ...prod, stock: stockVal, unit: unitText };
-  });
-}
-
 function renderAdminLiveStockSummary() {
   const container = document.getElementById("adminLiveStockCardsContainer");
   if (!container) return;
@@ -840,7 +776,7 @@ function renderAdminLiveStockSummary() {
 
   container.innerHTML = `
     <div style="background: #fefce8; border: 1px solid #fef08a; padding: 12px; border-radius: 10px;">
-      <div style="font-size: 12px; color: #854d0e; font-weight: bold;">🌾 Dry Mushroom Stock (1kg pack)</div>
+      <div style="font-size: 12px; color: #854d0e; font-weight: bold;">🌾 Dry Mushroom Stock</div>
       <div style="font-size: 20px; font-weight: 900; color: #a16207; margin: 4px 0;">${dryProd.stock} kg</div>
     </div>
 
@@ -850,7 +786,7 @@ function renderAdminLiveStockSummary() {
     </div>
 
     <div style="background: #fff7ed; border: 1px solid #ffedd5; padding: 12px; border-radius: 10px;">
-      <div style="font-size: 12px; color: #9a3412; font-weight: bold;">🧇 Khakhra Stock</div>
+      <div style="font-size: 12px; color: #9a3412; font-weight: bold;">🧇 Khakhra Stock (200gm pack)</div>
       <div style="font-size: 20px; font-weight: 900; color: #ea580c; margin: 4px 0;">${khakhraProd.stock} packs</div>
     </div>
 
@@ -2259,7 +2195,7 @@ function saveAdminSale(e) {
   computeFinancialLedgerStatements();
   renderAdminLiveStockSummary();
   renderProducts();
-  alert(`✅ Wholesale Sale Entry saved! Stock successfully recomputed via formula.`);
+  alert(`✅ Wholesale Sale Entry saved! Live stock recomputed.`);
 }
 
 function saveAdminPurchase(e) {

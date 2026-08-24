@@ -9,9 +9,9 @@ const farmName = "Pure Grow Farm";
 const ADMIN_CREDENTIALS = { user: "admin", pass: "PureGrow@2026" };
 
 const BASE_PRODUCTS = [
-  { id: 1, name: "Fresh Green Oyster Mushroom", price: 180, unit: "1kg", image: "mushroom/Screenshot 2025-10-24 154001.png", detail: "Picked fresh, chilled and delivered within 24-48 hours.", type: "green", stock: 0 },
+  { id: 1, name: "Fresh Green Oyster Mushroom", price: 180, unit: "1kg", image: "mushroom/Screenshot 2025-10-24 154001.png", detail: "Picked fresh, chilled and delivered within 24-48 hours. Direct WhatsApp contact available.", type: "green", stock: 0, whatsappOrder: true },
   { id: 2, name: "Dried Oyster Mushroom", price: 800, unit: "1kg pack", image: "mushroom/oyst dry.webp", detail: "Slow-dried to preserve flavor and nutrients.", type: "dry", stock: 0 },
-  { id: 3, name: "Oyster Mushroom Powder", price: 130, unit: "100gm pack", image: "mushroom/oyster powder.png", detail: "Mushroom powder for soup, 1kg pack curry, health mix and snacks.", type: "powder", stock: 0 },
+  { id: 3, name: "Oyster Mushroom Powder", price: 130, unit: "100gm pack", image: "mushroom/oyster powder.png", detail: "Mushroom powder for soup, curry, health mix and snacks.", type: "powder", stock: 0 },
   { id: 4, name: "Methi Mushroom Khakhra", price: 70, unit: "200gm pack", image: "mushroom/Methi khakhra 2.png", detail: "Crispy khakhra prepared with oyster mushroom powder.", type: "khakhra", stock: 0 },
   { id: 5, name: "Adad Mushroom Papad", price: 120, unit: "1 pack", image: "mushroom/bulk.png", detail: "Papad enriched with mushroom nutrition.", type: "papad", stock: 0 },
   { id: 6, name: "Bulk and Wholesale Supply", price: 0, unit: "Custom", bulk: true, image: "mushroom/bulk.png", detail: "Supply for restaurants, retailers and local markets.", stock: 99999 }
@@ -44,6 +44,85 @@ let dailyDryStockRegistry = getCleanData('pgf_daily_dry_stock');
 let notificationsRegistry = getCleanData('pgf_notifications');
 
 let currentUser = JSON.parse(localStorage.getItem('pgf_session')) || null;
+
+// =========================================================
+// AUTOMATIC LIVE STOCK CALCULATOR BASED ON USER FORMULA
+// Formula: {Buy + DailyProduction} - {Approved Orders + Sales}
+// =========================================================
+function calculateDynamicStock(productType) {
+  let totalBuyQty = 0;
+  let totalProductionQty = 0;
+  let totalApprovedOrdersQty = 0;
+  let totalSalesQty = 0;
+
+  // 1. Buy data sum
+  purchasesRegistry.forEach(p => {
+    if (!p) return;
+    const pType = (p.product || "").toLowerCase();
+    const qty = Number(p.qty || 0);
+    if (productType === 'dry' && pType.includes('dry')) totalBuyQty += qty;
+    if (productType === 'powder' && pType.includes('powder')) {
+      // 1kg = packets conversion (1kg = 10 packets of 100gm)
+      totalBuyQty += (qty * 10);
+    }
+    if (productType === 'khakhra' && pType.includes('khakhra')) totalBuyQty += qty;
+    if (productType === 'papad' && pType.includes('papad')) totalBuyQty += qty;
+    if (productType === 'green' && pType.includes('green')) totalBuyQty += qty;
+  });
+
+  // 2. Daily Production sum (Sirf dry ka)
+  if (productType === 'dry') {
+    dailyDryStockRegistry.forEach(d => {
+      if (d) totalProductionQty += Number(d.qty || 0);
+    });
+  }
+
+  // 3. Approved Orders sum (Not count reject & cancel)
+  orderRegistry.forEach(o => {
+    if (!o) return;
+    const status = (o.status || "").toLowerCase();
+    if (status.includes('reject') || status.includes('cancel')) return; // Ignore rejected & cancelled
+    if (status.includes('approved') || status.includes('delivered') || status.includes('pending')) {
+      // Parse products string e.g. "Dried Oyster Mushroom [x2], Khakhra [x1]"
+      const prodText = (o.products || "").toLowerCase();
+      products.forEach(prod => {
+        if (prod.type === productType) {
+          // Check regex or includes for product name
+          if (prodText.includes(prod.name.toLowerCase()) || prodText.includes(productType)) {
+            // Extract quantity from string if possible, default to 1 per match or parse [xN]
+            const regex = new RegExp(`${prod.name.toLowerCase()}.*?\\[x(\\d+)\\]`);
+            const match = prodText.match(regex);
+            let q = match ? parseInt(match[1]) : 1;
+            totalApprovedOrdersQty += q;
+          }
+        }
+      });
+    }
+  });
+
+  // 4. Sales sum (dry, powder, khakhra, papad)
+  salesRegistry.forEach(s => {
+    if (!s) return;
+    const sType = (s.product || "").toLowerCase();
+    const q = Number(s.qty || 0);
+    if (sType.includes(productType)) {
+      totalSalesQty += q;
+    }
+  });
+
+  // Net Stock Formula = (Buy + Production) - (Approved Orders + Sales)
+  let netStock = (totalBuyQty + totalProductionQty) - (totalApprovedOrdersQty + totalSalesQty);
+  return Math.max(0, netStock);
+}
+
+function refreshAllProductStocks() {
+  products.forEach(p => {
+    if (!p.bulk && p.type) {
+      p.stock = calculateDynamicStock(p.type);
+    }
+  });
+  saveProductsToStorage();
+}
 
 // =========================================================
 // HELPER: PRODUCT IMAGE MAPPER & 1-CLICK CLIPBOARD COPY
@@ -298,6 +377,7 @@ function triggerAdminView() {
   document.getElementById("publicContent").style.display = "none";
   document.getElementById("adminErpView").classList.add("active");
   initDefaultDatePickers();
+  refreshAllProductStocks();
   populateAdminDashboardTables();
   computeFinancialLedgerStatements();
   renderNotificationBadge();
@@ -310,6 +390,8 @@ function exitAdminPanel() { handleLogout(); }
 
 function checkUserSession() {
   renderNotificationBadge();
+  refreshAllProductStocks();
+  renderProducts();
 
   if (currentUser) {
     document.getElementById("authSection").style.display = "none";
@@ -692,41 +774,38 @@ function deleteUserAccount(idx) {
 }
 
 // =========================================================
-// LIVE STOCK SUMMARY (DRY, POWDER = 1kg dry = 10 packets powder, KHAKHRA = 1kg khakhra = 5 packets khakhra & PAPAD)
+// LIVE STOCK SUMMARY (DRY, POWDER, KHAKHRA & PAPAD)
 // =========================================================
 function renderAdminLiveStockSummary() {
   const container = document.getElementById("adminLiveStockCardsContainer");
   if (!container) return;
 
-  const dryProd = products.find(p => p.type === "dry") || { stock: 0 };
-  const powderProd = products.find(p => p.type === "powder") || { stock: 0 };
-  const khakhraProd = products.find(p => p.type === "khakhra") || { stock: 0 };
-  const papadProd = products.find(p => p.type === "papad") || { stock: 0 };
+  refreshAllProductStocks();
 
-  // Formula implementation: 1kg dry = 10 packets powder (100gm)
-  const calculatedPowderStock = (dryProd.stock || 0) * 10;
-  // Formula implementation: 1kg khakhra = 5 packets khakhra (200gm)
-  const calculatedKhakhraStock = (khakhraProd.stock || 0) * 5;
+  const dryProd = products.find(p => p.type === "dry") || { stock: 0, unit: "kg" };
+  const powderProd = products.find(p => p.type === "powder") || { stock: 0, unit: "packs" };
+  const khakhraProd = products.find(p => p.type === "khakhra") || { stock: 0, unit: "packs" };
+  const papadProd = products.find(p => p.type === "papad") || { stock: 0, unit: "packs" };
 
   container.innerHTML = `
     <div style="background: #fefce8; border: 1px solid #fef08a; padding: 12px; border-radius: 10px;">
       <div style="font-size: 12px; color: #854d0e; font-weight: bold;">🌾 Dry Mushroom Stock</div>
-      <div style="font-size: 20px; font-weight: 900; color: #a16207; margin: 4px 0;">${dryProd.stock} kg</div>
+      <div style="font-size: 20px; font-weight: 900; color: #a16207; margin: 4px 0;">${dryProd.stock} ${dryProd.unit}</div>
     </div>
 
     <div style="background: #f0fdf4; border: 1px solid #bbf7d0; padding: 12px; border-radius: 10px;">
-      <div style="font-size: 12px; color: #166534; font-weight: bold;">🧪 Powder Stock (1kg dry = 10 pkts)</div>
-      <div style="font-size: 20px; font-weight: 900; color: #15803d; margin: 4px 0;">${calculatedPowderStock} packets</div>
+      <div style="font-size: 12px; color: #166534; font-weight: bold;">🧪 Powder Stock (1kg = Packets)</div>
+      <div style="font-size: 20px; font-weight: 900; color: #15803d; margin: 4px 0;">${powderProd.stock} ${powderProd.unit}</div>
     </div>
 
     <div style="background: #fff7ed; border: 1px solid #ffedd5; padding: 12px; border-radius: 10px;">
-      <div style="font-size: 12px; color: #9a3412; font-weight: bold;">🧇 Khakhra Stock (1kg = 5 pkts)</div>
-      <div style="font-size: 20px; font-weight: 900; color: #ea580c; margin: 4px 0;">${calculatedKhakhraStock} packets</div>
+      <div style="font-size: 12px; color: #9a3412; font-weight: bold;">🧇 Khakhra Stock</div>
+      <div style="font-size: 20px; font-weight: 900; color: #ea580c; margin: 4px 0;">${khakhraProd.stock} ${khakhraProd.unit}</div>
     </div>
 
     <div style="background: #f0fdf4; border: 1px solid #bbf7d0; padding: 12px; border-radius: 10px;">
       <div style="font-size: 12px; color: #166534; font-weight: bold;">🫓 Papad Stock</div>
-      <div style="font-size: 20px; font-weight: 900; color: #15803d; margin: 4px 0;">${papadProd.stock} packs</div>
+      <div style="font-size: 20px; font-weight: 900; color: #15803d; margin: 4px 0;">${papadProd.stock} ${papadProd.unit}</div>
     </div>
   `;
 }
@@ -756,12 +835,8 @@ function saveDailyDryStockEntry(e) {
   dailyDryStockRegistry.unshift(dryEntry);
   localStorage.setItem('pgf_daily_dry_stock', JSON.stringify(dailyDryStockRegistry));
 
-  const dryProd = products.find(p => p.type === "dry");
-  if (dryProd) {
-    dryProd.stock = (dryProd.stock || 0) + qty;
-    saveProductsToStorage();
-    renderProducts();
-  }
+  refreshAllProductStocks();
+  renderProducts();
 
   e.target.reset();
   initDefaultDatePickers();
@@ -773,14 +848,11 @@ function saveDailyDryStockEntry(e) {
 function deleteDailyDryEntry(idx) {
   const item = dailyDryStockRegistry[idx];
   if (confirm(`Delete this dry stock entry (${item.qty} kg)?`)) {
-    const dryProd = products.find(p => p.type === "dry");
-    if (dryProd) {
-      dryProd.stock = Math.max(0, (dryProd.stock || 0) - item.qty);
-      saveProductsToStorage();
-      renderProducts();
-    }
     dailyDryStockRegistry.splice(idx, 1);
     localStorage.setItem('pgf_daily_dry_stock', JSON.stringify(dailyDryStockRegistry));
+    
+    refreshAllProductStocks();
+    renderProducts();
     renderDailyDryStockTable();
     renderAdminLiveStockSummary();
   }
@@ -983,6 +1055,7 @@ Thank you!`;
 // ADMIN ERP TABLES, METRICS & INLINE COURIER EDIT
 // =========================================================
 function populateAdminDashboardTables() {
+  refreshAllProductStocks();
   renderAdminLiveStockSummary();
   renderDailyDryStockTable();
 
@@ -1520,6 +1593,8 @@ function handleOrderApprove(idx) {
   o.refundStage = "";
   
   localStorage.setItem('pgf_orders', JSON.stringify(orderRegistry));
+  refreshAllProductStocks();
+  renderProducts();
   
   pushNotification(
     o.email, 
@@ -1544,9 +1619,12 @@ function handleOrderReject(idx) {
   o.refundStage = "";
 
   localStorage.setItem('pgf_orders', JSON.stringify(orderRegistry));
+  refreshAllProductStocks();
+  renderProducts();
+
   pushNotification(o.email, '❌ Order Rejected', `Your Order #${o.orderId} was rejected. Reason: ${reason}.`, 'order');
 
-  alert("❌ Option 2: Order Reject ho gaya! (Iska paisa accounting me count nahi hoga)");
+  alert("❌ Option 2: Order Reject ho gaya! (Stock aur accounting me count nahi hoga)");
   populateAdminDashboardTables();
   computeFinancialLedgerStatements();
 }
@@ -1562,10 +1640,12 @@ function handleOrderCancelRefund(idx) {
   o.refundCreditedDate = "";
 
   localStorage.setItem('pgf_orders', JSON.stringify(orderRegistry));
+  refreshAllProductStocks();
+  renderProducts();
   
   pushNotification(o.email, '⚠️ Order Cancelled', `Aapka Order #${o.orderId} cancel kar diya gaya hai. Reason: ${reason}. Refund aapke UPI ID (${o.userUpiId || 'Bank'}) par process kiya ja raha hai.`, 'order');
 
-  alert("🔄 Option 3: Order Cancel ho gaya aur User ko cancellation notification bhej di gayi hai.");
+  alert("🔄 Option 3: Order Cancel ho gaya aur Stock wapas add ho gaya hai.");
   populateAdminDashboardTables();
   computeFinancialLedgerStatements();
 }
@@ -1719,6 +1799,8 @@ function adminEditSale(idx) {
   if (newNotes !== null) s.notes = newNotes.trim();
 
   localStorage.setItem('pgf_sales', JSON.stringify(salesRegistry));
+  refreshAllProductStocks();
+  renderProducts();
   computeFinancialLedgerStatements();
   alert("✅ Sell Entry successfully updated!");
 }
@@ -1727,6 +1809,8 @@ function adminDeleteSale(idx) {
   if (confirm("Kya aap sach me ye Sell entry delete karna chahte hain?")) {
     salesRegistry.splice(idx, 1);
     localStorage.setItem('pgf_sales', JSON.stringify(salesRegistry));
+    refreshAllProductStocks();
+    renderProducts();
     computeFinancialLedgerStatements();
   }
 }
@@ -1749,19 +1833,17 @@ function adminEditPurchase(idx) {
   const newRate = prompt("5. Rate (Rs):", p.rate);
   if (newRate !== null && !isNaN(parseFloat(newRate))) p.rate = parseFloat(newRate);
 
-  const newDel = prompt("6. Delivery Charge (Rs):", p.delivery || 0);
-  if (newDel !== null && !isNaN(parseFloat(newDel))) p.delivery = parseFloat(newDel);
+  p.total = p.qty * p.rate;
 
-  p.subtotal = p.qty * p.rate;
-  p.total = p.subtotal + p.delivery;
-
-  const newPaid = prompt(`7. Paid Amount to Vendor (Total Rs ${p.total}):`, p.paidAmount !== undefined ? p.paidAmount : p.total);
+  const newPaid = prompt(`6. Paid Amount to Vendor (Total Rs ${p.total}):`, p.paidAmount !== undefined ? p.paidAmount : p.total);
   if (newPaid !== null && !isNaN(parseFloat(newPaid))) p.paidAmount = parseFloat(newPaid);
 
-  const newNotes = prompt("8. Vendor Notes / Memo:", p.notes || "");
+  const newNotes = prompt("7. Vendor Notes / Memo:", p.notes || "");
   if (newNotes !== null) p.notes = newNotes.trim();
 
   localStorage.setItem('pgf_purchases', JSON.stringify(purchasesRegistry));
+  refreshAllProductStocks();
+  renderProducts();
   computeFinancialLedgerStatements();
   alert("✅ Buy Purchase record updated!");
 }
@@ -1770,6 +1852,8 @@ function adminDeletePurchase(idx) {
   if (confirm("Kya aap sach me ye Buy record delete karna chahte hain?")) {
     purchasesRegistry.splice(idx, 1);
     localStorage.setItem('pgf_purchases', JSON.stringify(purchasesRegistry));
+    refreshAllProductStocks();
+    renderProducts();
     computeFinancialLedgerStatements();
   }
 }
@@ -1846,7 +1930,6 @@ function computeFinancialLedgerStatements() {
   });
   const expenseTotal = filteredExpenses.reduce((sum, e) => sum + Number(e.amount || 0), 0);
 
-  // Partner wise Buy Totals (4)
   let sohamBuyTotal = 0, jeetBuyTotal = 0, farmBuyTotal = 0;
   filteredPurchases.forEach(p => {
     const amt = Number(p.paidAmount !== undefined ? p.paidAmount : p.total || 0);
@@ -1855,7 +1938,6 @@ function computeFinancialLedgerStatements() {
     else if(p.funder === "Farm") farmBuyTotal += amt;
   });
 
-  // Partner wise Expense Totals (5)
   let sohamExpOnly = 0, jeetExpOnly = 0, farmExpOnly = 0;
   filteredExpenses.forEach(e => {
     const amt = Number(e.amount || 0);
@@ -1864,12 +1946,10 @@ function computeFinancialLedgerStatements() {
     else if(e.payer === "Farm") farmExpOnly += amt;
   });
 
-  // 6) Partner & Farm Total -> Strictly 4 + 5 (Buy + Expense for Soham, Jeet & Farm separately)
   let sohamExpTotal = sohamExpOnly + sohamBuyTotal;
   let jeetExpTotal = jeetExpOnly + jeetBuyTotal;
   let farmExpTotal = farmExpOnly + farmBuyTotal;
 
-  // Damage Totals (9)
   const filteredDamages = expensesRegistry.filter(e => {
     if (!e || e.category !== "Damage Received") return false;
     if (selectedYear === "ALL") return true;
@@ -1885,55 +1965,41 @@ function computeFinancialLedgerStatements() {
     else if(d.payer === "Farm") farmDmgTotal += amt;
   });
 
-  // 10) Soham & Jeet Net Expenses = (6 - 9)
   let sohamNetExp = sohamExpTotal - sohamDmgTotal;
   let jeetNetExp = jeetExpTotal - jeetDmgTotal;
 
-  // 7) Farm Available Balance: 1 + 2 + 3 + 9 (9 me sirf farm ka data: farmDmgTotal) - 6 (6 me sirf farm ka data: farmExpTotal)
   const farmAvailableBalance = (orderTotal + farmBookingTotal + sellTotal + farmDmgTotal) - farmExpTotal;
-
-  // 8) Unified Net Profit: 1 + 2 + 3 - 4 - 5
   const netProfit = (orderTotal + farmBookingTotal + sellTotal) - buyTotal - expenseTotal;
 
-  // Overview DOM Updates
   if(document.getElementById("ovOrderTotal")) document.getElementById("ovOrderTotal").textContent = "Rs " + orderTotal.toFixed(2);
   if(document.getElementById("ovFarmBookingTotal")) document.getElementById("ovFarmBookingTotal").textContent = "Rs " + farmBookingTotal.toFixed(2);
   if(document.getElementById("ovSellTotal")) document.getElementById("ovSellTotal").textContent = "Rs " + sellTotal.toFixed(2);
   
-  // 4) Buy Total Card with Breakdown
   if(document.getElementById("ovBuyTotal")) document.getElementById("ovBuyTotal").textContent = "Rs " + buyTotal.toFixed(2);
   if(document.getElementById("ovSohamBuy")) document.getElementById("ovSohamBuy").textContent = "Rs " + sohamBuyTotal.toFixed(2);
   if(document.getElementById("ovJeetBuy")) document.getElementById("ovJeetBuy").textContent = "Rs " + jeetBuyTotal.toFixed(2);
   if(document.getElementById("ovFarmBuy")) document.getElementById("ovFarmBuy").textContent = "Rs " + farmBuyTotal.toFixed(2);
 
-  // 5) Expense Total Card with Breakdown
   if(document.getElementById("ovExpenseTotal")) document.getElementById("ovExpenseTotal").textContent = "Rs " + expenseTotal.toFixed(2);
   if(document.getElementById("ovSohamExpOnly")) document.getElementById("ovSohamExpOnly").textContent = "Rs " + sohamExpOnly.toFixed(2);
   if(document.getElementById("ovJeetExpOnly")) document.getElementById("ovJeetExpOnly").textContent = "Rs " + jeetExpOnly.toFixed(2);
   if(document.getElementById("ovFarmExpOnly")) document.getElementById("ovFarmExpOnly").textContent = "Rs " + farmExpOnly.toFixed(2);
   
-  // 6) Partner & Farm Total (Strictly 4 + 5) - Soham, Jeet, Farm Separated
   if(document.getElementById("ovSohamTotal")) document.getElementById("ovSohamTotal").textContent = "Rs " + sohamExpTotal.toFixed(2);
   if(document.getElementById("ovJeetTotal")) document.getElementById("ovJeetTotal").textContent = "Rs " + jeetExpTotal.toFixed(2);
   if(document.getElementById("ovFarmTotal")) document.getElementById("ovFarmTotal").textContent = "Rs " + farmExpTotal.toFixed(2);
 
-  // 7) Farm Available Balance: 1 + 2 + 3 + 9 (farm data) - 6 (farm data)
   if(document.getElementById("ovFarmAvailableBalance")) document.getElementById("ovFarmAvailableBalance").textContent = "Rs " + farmAvailableBalance.toFixed(2);
-  
-  // 8) Unified Net Profit
   if(document.getElementById("ovProfit")) document.getElementById("ovProfit").textContent = "Rs " + netProfit.toFixed(2);
   
-  // 9) Damage Losses Card with Breakdown
   if(document.getElementById("ovDamage")) document.getElementById("ovDamage").textContent = "Rs " + damageTotal.toFixed(2);
   if(document.getElementById("ovSohamDmgCard")) document.getElementById("ovSohamDmgCard").textContent = "Rs " + sohamDmgTotal.toFixed(2);
   if(document.getElementById("ovJeetDmgCard")) document.getElementById("ovJeetDmgCard").textContent = "Rs " + jeetDmgTotal.toFixed(2);
   if(document.getElementById("ovFarmDmgCard")) document.getElementById("ovFarmDmgCard").textContent = "Rs " + farmDmgTotal.toFixed(2);
 
-  // 10) Soham & Jeet Net Expenses: (6 - 9)
   if(document.getElementById("ovSohamNet")) document.getElementById("ovSohamNet").textContent = "Rs " + sohamNetExp.toFixed(2);
   if(document.getElementById("ovJeetNet")) document.getElementById("ovJeetNet").textContent = "Rs " + jeetNetExp.toFixed(2);
 
-  // Sub Tab 1: Expense Top Summary & Table
   if(document.getElementById("subTabExpTotalDisplay")) document.getElementById("subTabExpTotalDisplay").textContent = "Rs " + expenseTotal.toFixed(2);
   if(document.getElementById("subTabSohamExp")) document.getElementById("subTabSohamExp").textContent = "Rs " + sohamExpOnly.toFixed(2);
   if(document.getElementById("subTabJeetExp")) document.getElementById("subTabJeetExp").textContent = "Rs " + jeetExpOnly.toFixed(2);
@@ -1959,7 +2025,6 @@ function computeFinancialLedgerStatements() {
     }).join("") || `<tr><td colspan="7" style="text-align:center; color:var(--muted); padding:14px;">No expenses found for year ${selectedYear}.</td></tr>`;
   }
 
-  // Sub Tab 2: Sell Top Summary & Table
   const sellPaidTotal = filteredSales.reduce((sum, s) => sum + Number(s.paidAmount !== undefined ? s.paidAmount : s.total || 0), 0);
   const sellPendingTotal = filteredSales.reduce((sum, s) => {
     const tot = Number(s.total || 0);
@@ -2005,7 +2070,6 @@ function computeFinancialLedgerStatements() {
     }).join("") || `<tr><td colspan="9" style="text-align:center; color:var(--muted); padding:14px;">No sales found for year ${selectedYear}.</td></tr>`;
   }
 
-  // Sub Tab 3: Buy Top Summary & Table
   if(document.getElementById("subTabBuyTotalDisplay")) document.getElementById("subTabBuyTotalDisplay").textContent = "Rs " + buyTotal.toFixed(2);
   if(document.getElementById("subTabSohamBuy")) document.getElementById("subTabSohamBuy").textContent = "Rs " + sohamBuyTotal.toFixed(2);
   if(document.getElementById("subTabJeetBuy")) document.getElementById("subTabJeetBuy").textContent = "Rs " + jeetBuyTotal.toFixed(2);
@@ -2014,9 +2078,7 @@ function computeFinancialLedgerStatements() {
   if(document.getElementById("subBuyTableBody")) {
     document.getElementById("subBuyTableBody").innerHTML = filteredPurchases.map((p) => {
       const idx = purchasesRegistry.indexOf(p);
-      const sub = Number(p.subtotal || (p.qty * p.rate) || p.total);
-      const del = Number(p.delivery || 0);
-      const totalPayable = Number(p.total || (sub + del));
+      const totalPayable = Number(p.total || (p.qty * p.rate));
       const paid = Number(p.paidAmount !== undefined ? p.paidAmount : totalPayable);
       const pendingToVendor = Math.max(0, totalPayable - paid);
 
@@ -2028,7 +2090,6 @@ function computeFinancialLedgerStatements() {
           <td><strong>${p.vendor}</strong></td>
           <td>${p.qty}</td>
           <td>Rs ${p.rate}</td>
-          <td>Rs ${del.toFixed(2)}</td>
           <td style="color:var(--danger); font-weight:bold;">Rs ${totalPayable.toFixed(2)}</td>
           <td>
             <span style="color:#16a34a; font-weight:bold;">Paid: Rs ${paid.toFixed(2)}</span>
@@ -2040,10 +2101,9 @@ function computeFinancialLedgerStatements() {
           </td>
         </tr>
       `;
-    }).join("") || `<tr><td colspan="10" style="text-align:center; color:var(--muted); padding:14px;">No purchases found for year ${selectedYear}.</td></tr>`;
+    }).join("") || `<tr><td colspan="9" style="text-align:center; color:var(--muted); padding:14px;">No purchases found for year ${selectedYear}.</td></tr>`;
   }
 
-  // Sub Tab 4: Damage Top Summary
   if(document.getElementById("subTabDamageTotalDisplay")) document.getElementById("subTabDamageTotalDisplay").textContent = "Rs " + damageTotal.toFixed(2);
   if(document.getElementById("subTabSohamDmg")) document.getElementById("subTabSohamDmg").textContent = "Rs " + sohamDmgTotal.toFixed(2);
   if(document.getElementById("subTabJeetDmg")) document.getElementById("subTabJeetDmg").textContent = "Rs " + jeetDmgTotal.toFixed(2);
@@ -2099,13 +2159,6 @@ function saveAdminSale(e) {
   const notes = document.getElementById("saleNotes") ? document.getElementById("saleNotes").value.trim() : "";
   const prodType = document.getElementById("saleProduct").value;
 
-  const targetProd = products.find(p => p.type === prodType || p.name.toLowerCase().includes(prodType.toLowerCase()));
-  if (targetProd && !targetProd.bulk) {
-    targetProd.stock = Math.max(0, targetProd.stock - qty);
-    saveProductsToStorage();
-    renderProducts();
-  }
-
   const subtotal = qty * rate;
   const grandTotal = subtotal + delivery;
 
@@ -2128,6 +2181,10 @@ function saveAdminSale(e) {
 
   salesRegistry.push(data);
   localStorage.setItem('pgf_sales', JSON.stringify(salesRegistry));
+  
+  refreshAllProductStocks();
+  renderProducts();
+
   e.target.reset();
   if (document.getElementById("saleDelivery")) document.getElementById("saleDelivery").value = "0";
   initDefaultDatePickers();
@@ -2141,26 +2198,11 @@ function saveAdminPurchase(e) {
   const rawDate = document.getElementById("purLogDate").value;
   const qty = parseFloat(document.getElementById("purQty").value);
   const rate = parseFloat(document.getElementById("purRate").value);
-  const delivery = parseFloat(document.getElementById("purDelivery")?.value) || 0;
-  const subtotal = qty * rate;
-  const grandTotal = subtotal + delivery;
-  const paid = parseFloat(document.getElementById("purPaidAmount").value) || grandTotal;
+  const paid = parseFloat(document.getElementById("purPaidAmount").value) || (qty * rate);
   const purType = document.getElementById("purProduct").value;
   const funder = document.getElementById("purFunder").value;
   const vendor = document.getElementById("purVendor").value.trim();
   const notes = document.getElementById("purNotes") ? document.getElementById("purNotes").value.trim() : "";
-  
-  let matchedProd = null;
-  if (purType.includes("Dry")) matchedProd = products.find(p => p.type === "dry");
-  else if (purType.includes("Khakhra")) matchedProd = products.find(p => p.type === "khakhra");
-  else if (purType.includes("Papad")) matchedProd = products.find(p => p.type === "papad");
-  else if (purType.includes("Green")) matchedProd = products.find(p => p.type === "green");
-
-  if (matchedProd) {
-    matchedProd.stock = (matchedProd.stock || 0) + qty;
-    saveProductsToStorage();
-    renderProducts();
-  }
 
   const data = {
     purId: "PUR-" + Date.now().toString().slice(-4),
@@ -2170,21 +2212,22 @@ function saveAdminPurchase(e) {
     vendor: vendor,
     qty: qty,
     rate: rate,
-    subtotal: subtotal,
-    delivery: delivery,
-    total: grandTotal,
+    total: qty * rate,
     paidAmount: paid,
     notes: notes
   };
 
   purchasesRegistry.push(data);
   localStorage.setItem('pgf_purchases', JSON.stringify(purchasesRegistry));
+  
+  refreshAllProductStocks();
+  renderProducts();
+
   e.target.reset();
-  if (document.getElementById("purDelivery")) document.getElementById("purDelivery").value = "0";
   initDefaultDatePickers();
   computeFinancialLedgerStatements();
   renderAdminLiveStockSummary();
-  alert(`✅ Inventory Buy recorded! Total: Rs ${grandTotal}, Paid: Rs ${paid}`);
+  alert(`✅ Inventory Buy recorded! Total: Rs ${qty * rate}, Paid: Rs ${paid}`);
 }
 
 function saveAdminDamage(e) {
@@ -2293,7 +2336,10 @@ Pure Grow Farm, Makhiyala, Gujarat
 
 function renderProducts(list = products) {
   if(!document.getElementById("productsList")) return;
+  refreshAllProductStocks();
+
   document.getElementById("productsList").innerHTML = list.map(product => {
+    const isGreen = product.type === "green" || product.whatsappOrder;
     const inStock = product.stock > 0;
 
     return `
@@ -2305,9 +2351,12 @@ function renderProducts(list = products) {
         <div style="margin-bottom: 8px;">
           ${product.bulk ? 
             `<span class="badge" style="background: #e0f2fe; color: #0369a1; font-size:11px;">📦 Custom Supply</span>` : 
-            (inStock 
-              ? `<span class="badge badge-confirmed" style="font-size:11px;">🟢 Available: ${product.stock} ${product.unit}</span>` 
-              : `<span class="badge" style="background:#fee2e2; color:#991b1b; font-size:11px;">🔴 Out of Stock</span>`
+            (isGreen ?
+              `<span class="badge" style="background: #dcfce7; color: #16a34a; font-size:11px;">🟢 Available via WhatsApp</span>` :
+              (inStock 
+                ? `<span class="badge badge-confirmed" style="font-size:11px;">🟢 Available: ${product.stock} ${product.unit}</span>` 
+                : `<span class="badge" style="background:#fee2e2; color:#991b1b; font-size:11px;">🔴 Not Available (Out of Stock)</span>`
+              )
             )
           }
         </div>
@@ -2316,10 +2365,13 @@ function renderProducts(list = products) {
           <div class="product-actions">
             <div class="pill">Rs ${product.price} / ${product.unit}</div>
             ${product.bulk ? 
-              `<button type="button" onclick="window.open('https://wa.me/${farmWhatsapp}')">Contact Bulk</button>` : 
-              `<button type="button" ${inStock ? '' : 'disabled style="background:#9ca3af; cursor:not-allowed;"'} onclick="addToCart(${product.id})">
-                ${inStock ? 'Add Cart' : 'Out of Stock'}
-              </button>`
+              `<button type="button" onclick="window.open('https://wa.me/${farmWhatsapp}?text=Hello, I want bulk supply of oyster mushroom products.')">Contact Bulk</button>` : 
+              (isGreen ?
+                `<button type="button" style="background:#25d366;" onclick="window.open('https://wa.me/${farmWhatsapp}?text=Hello Pure Grow Farm, I want to order Fresh Green Oyster Mushrooms. Please share availability.')">💬 Contact WhatsApp</button>` :
+                `<button type="button" ${inStock ? '' : 'disabled style="background:#9ca3af; cursor:not-allowed;"'} onclick="addToCart(${product.id})">
+                  ${inStock ? 'Add Cart' : 'Not Available'}
+                </button>`
+              )
             }
           </div>
         </div>
@@ -2338,7 +2390,7 @@ function updateHeaderCartCounter() {
 function addToCart(id) {
   const product = products.find(item => item.id === id);
   if (!product || product.stock <= 0) {
-    alert("⚠️ Abhi yeh item stock me uplabdh nahi hai!");
+    alert("⚠️ Abhi yeh item stock me uplabdh nahi hai (Not Available)!");
     return;
   }
 
@@ -2442,15 +2494,6 @@ function confirmOrder(e) {
   const currentTimestamp = new Date().toLocaleDateString('en-IN') + " " + new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
   const generatedOrderId = "PGF-INV-" + Date.now().toString().slice(-5);
 
-  cart.forEach((item, prodId) => {
-    const prod = products.find(p => p.id === prodId);
-    if (prod && !prod.bulk) {
-      prod.stock = Math.max(0, prod.stock - item.qty);
-    }
-  });
-  saveProductsToStorage();
-  renderProducts();
-
   const data = {
     orderId: generatedOrderId,
     name: currentUser.name,
@@ -2474,6 +2517,9 @@ function confirmOrder(e) {
 
   orderRegistry.unshift(data);
   localStorage.setItem('pgf_orders', JSON.stringify(orderRegistry));
+  
+  refreshAllProductStocks();
+  renderProducts();
   
   document.getElementById("invNum").textContent = data.orderId;
   document.getElementById("invDate").textContent = new Date().toLocaleDateString('en-IN');
@@ -2829,5 +2875,6 @@ function printDivInvoice() {
   if (!printWin) window.location.href = blobUrl;
 }
 
+refreshAllProductStocks();
 renderProducts();
 checkUserSession();

@@ -47,6 +47,10 @@ let currentUser = JSON.parse(localStorage.getItem('pgf_session')) || null;
 
 // =========================================================
 // AUTOMATIC LIVE STOCK CALCULATOR WITH FULL BUY & PACKET LOGIC
+// Rules:
+// - Value < 1 is treated as grams/direct unit, >= 1 as kg/bulk units.
+// - 1kg Dry / Powder buy/production = 10 packets (100gm).
+// - 1kg Khakhra / Papad buy = 5 packets (200gm).
 // Formula: {Buy + DailyProduction} - {Approved Orders + Sales}
 // =========================================================
 function calculateDynamicStock(productType) {
@@ -55,7 +59,7 @@ function calculateDynamicStock(productType) {
   let totalApprovedOrdersQty = 0;
   let totalSalesQty = 0;
 
-  // 1. Buy data sum (purchasesRegistry check for exact or partial matches)
+  // 1. Buy data sum with packet multipliers & decimal (gm/kg) handling
   purchasesRegistry.forEach(p => {
     if (!p) return;
     const pType = (p.product || "").toLowerCase();
@@ -66,20 +70,20 @@ function calculateDynamicStock(productType) {
     }
     else if (productType === 'powder') {
       if (pType.includes('powder') || pType.includes('dry') || pType.includes('dried')) {
-        // 1kg dry/powder buy = 10 packets of 100gm powder
+        // Agar powder direct kharida hai ya dry kharida hai, 1kg = 10 packets
         totalBuyQty += (qty * 10);
       }
     }
     else if (productType === 'khakhra') {
       if (pType.includes('khakhra')) {
-        // 1kg khakhra buy = 5 packets of 200gm
-        totalBuyQty += (qty * 5);
+        // 1kg khakhra = 5 packets (200gm)
+        totalBuyQty += (qty >= 1 ? qty * 5 : qty * 5);
       }
     }
     else if (productType === 'papad') {
       if (pType.includes('papad')) {
-        // 1kg papad buy = 5 packets of 200gm
-        totalBuyQty += (qty * 5);
+        // 1kg papad = 5 packets (200gm)
+        totalBuyQty += (qty >= 1 ? qty * 5 : qty * 5);
       }
     }
     else if (productType === 'green') {
@@ -87,7 +91,7 @@ function calculateDynamicStock(productType) {
     }
   });
 
-  // 2. Daily Production sum (Sirf dry ka, aur powder ke liye dry ke packets linkage)
+  // 2. Daily Production sum (Sirf dry ka, aur powder ke liye dry ke packets linkage: 1kg = 10 packets)
   if (productType === 'dry') {
     dailyDryStockRegistry.forEach(d => {
       if (d) totalProductionQty += Number(d.qty || 0);
@@ -96,7 +100,6 @@ function calculateDynamicStock(productType) {
   else if (productType === 'powder') {
     dailyDryStockRegistry.forEach(d => {
       if (d) {
-        // Daily dry production ka 1kg = 10 packets powder
         totalProductionQty += (Number(d.qty || 0) * 10);
       }
     });
@@ -130,7 +133,7 @@ function calculateDynamicStock(productType) {
   });
 
   let netStock = (totalBuyQty + totalProductionQty) - (totalApprovedOrdersQty + totalSalesQty);
-  return Math.max(0, netStock);
+  return Number(netStock.toFixed(2));
 }
 
 function refreshAllProductStocks() {

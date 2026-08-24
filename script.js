@@ -46,7 +46,7 @@ let notificationsRegistry = getCleanData('pgf_notifications');
 let currentUser = JSON.parse(localStorage.getItem('pgf_session')) || null;
 
 // =========================================================
-// AUTOMATIC LIVE STOCK CALCULATOR WITH PACKET CONVERSIONS
+// AUTOMATIC LIVE STOCK CALCULATOR WITH FULL BUY & PACKET LOGIC
 // Formula: {Buy + DailyProduction} - {Approved Orders + Sales}
 // =========================================================
 function calculateDynamicStock(productType) {
@@ -55,45 +55,45 @@ function calculateDynamicStock(productType) {
   let totalApprovedOrdersQty = 0;
   let totalSalesQty = 0;
 
-  // 1. Buy data sum with packet multipliers
+  // 1. Buy data sum (purchasesRegistry check for exact or partial matches)
   purchasesRegistry.forEach(p => {
     if (!p) return;
     const pType = (p.product || "").toLowerCase();
     const qty = Number(p.qty || 0);
     
-    if (productType === 'dry' && pType.includes('dry')) {
-      totalBuyQty += qty;
+    if (productType === 'dry') {
+      if (pType.includes('dry') || pType.includes('dried')) totalBuyQty += qty;
     }
-    if (productType === 'powder') {
-      if (pType.includes('powder') || pType.includes('dry')) {
-        // 1kg dry/powder = 10 packets of 100gm
+    else if (productType === 'powder') {
+      if (pType.includes('powder') || pType.includes('dry') || pType.includes('dried')) {
+        // 1kg dry/powder buy = 10 packets of 100gm powder
         totalBuyQty += (qty * 10);
       }
     }
-    if (productType === 'khakhra') {
+    else if (productType === 'khakhra') {
       if (pType.includes('khakhra')) {
-        // 1kg khakhra = 5 packets of 200gm
+        // 1kg khakhra buy = 5 packets of 200gm
         totalBuyQty += (qty * 5);
       }
     }
-    if (productType === 'papad') {
+    else if (productType === 'papad') {
       if (pType.includes('papad')) {
-        // 1kg papad = 5 packets of 200gm
+        // 1kg papad buy = 5 packets of 200gm
         totalBuyQty += (qty * 5);
       }
     }
-    if (productType === 'green' && pType.includes('green')) {
-      totalBuyQty += qty;
+    else if (productType === 'green') {
+      if (pType.includes('green') || pType.includes('fresh')) totalBuyQty += qty;
     }
   });
 
-  // 2. Daily Production sum (Sirf dry ka - powder ke liye dry ke barabar packets banenge)
+  // 2. Daily Production sum (Sirf dry ka, aur powder ke liye dry ke packets linkage)
   if (productType === 'dry') {
     dailyDryStockRegistry.forEach(d => {
       if (d) totalProductionQty += Number(d.qty || 0);
     });
   }
-  if (productType === 'powder') {
+  else if (productType === 'powder') {
     dailyDryStockRegistry.forEach(d => {
       if (d) {
         // Daily dry production ka 1kg = 10 packets powder
@@ -803,17 +803,17 @@ function renderAdminLiveStockSummary() {
     </div>
 
     <div style="background: #f0fdf4; border: 1px solid #bbf7d0; padding: 12px; border-radius: 10px;">
-      <div style="font-size: 12px; color: #166534; font-weight: bold;">🧪 Powder Stock (1kg = 10 Pockets 100gm)</div>
+      <div style="font-size: 12px; color: #166534; font-weight: bold;">🧪 Powder Stock (1kg = 10 Packets 100gm)</div>
       <div style="font-size: 20px; font-weight: 900; color: #15803d; margin: 4px 0;">${powderProd.stock} ${powderProd.unit}</div>
     </div>
 
     <div style="background: #fff7ed; border: 1px solid #ffedd5; padding: 12px; border-radius: 10px;">
-      <div style="font-size: 12px; color: #9a3412; font-weight: bold;">🧇 Khakhra Stock (1kg = 5 Pockets 200gm)</div>
+      <div style="font-size: 12px; color: #9a3412; font-weight: bold;">🧇 Khakhra Stock (1kg = 5 Packets 200gm)</div>
       <div style="font-size: 20px; font-weight: 900; color: #ea580c; margin: 4px 0;">${khakhraProd.stock} ${khakhraProd.unit}</div>
     </div>
 
     <div style="background: #f0fdf4; border: 1px solid #bbf7d0; padding: 12px; border-radius: 10px;">
-      <div style="font-size: 12px; color: #166534; font-weight: bold;">🫓 Papad Stock (1kg = 5 Pockets 200gm)</div>
+      <div style="font-size: 12px; color: #166534; font-weight: bold;">🫓 Papad Stock (1kg = 5 Packets 200gm)</div>
       <div style="font-size: 20px; font-weight: 900; color: #15803d; margin: 4px 0;">${papadProd.stock} ${papadProd.unit}</div>
     </div>
   `;
@@ -939,9 +939,6 @@ function filterSubTable(inputId, tbodyId) {
   });
 }
 
-// =========================================================
-// YEAR FILTER & CLEAN EXCEL-LIKE PRINT REPORT HANDLER
-// =========================================================
 function handleAdminYearFilterChange() {
   populateAdminDashboardTables();
   computeFinancialLedgerStatements();
@@ -1889,9 +1886,6 @@ function adminDeleteDamage(idx) {
   }
 }
 
-// =========================================================
-// MATHEMATICAL OVERVIEW & LEDGER CALCULATION LOGIC
-// =========================================================
 function computeFinancialLedgerStatements() {
   const selectedYear = document.getElementById("adminYearFilterSelect")?.value || "ALL";
 

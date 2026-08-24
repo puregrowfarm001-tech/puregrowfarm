@@ -692,16 +692,17 @@ function deleteUserAccount(idx) {
 }
 
 // =========================================================
-// LIVE STOCK SUMMARY (DRY, POWDER, KHAKHRA & PAPAD)
+// LIVE STOCK SUMMARY (DRY, POWDER = DRY, KHAKHRA & PAPAD)
 // =========================================================
 function renderAdminLiveStockSummary() {
   const container = document.getElementById("adminLiveStockCardsContainer");
   if (!container) return;
 
   const dryProd = products.find(p => p.type === "dry") || { stock: 0 };
-  const powderProd = products.find(p => p.type === "powder") || { stock: 0 };
   const khakhraProd = products.find(p => p.type === "khakhra") || { stock: 0 };
   const papadProd = products.find(p => p.type === "papad") || { stock: 0 };
+
+  const synchronizedPowderStock = dryProd.stock;
 
   container.innerHTML = `
     <div style="background: #fefce8; border: 1px solid #fef08a; padding: 12px; border-radius: 10px;">
@@ -710,8 +711,8 @@ function renderAdminLiveStockSummary() {
     </div>
 
     <div style="background: #f0fdf4; border: 1px solid #bbf7d0; padding: 12px; border-radius: 10px;">
-      <div style="font-size: 12px; color: #166534; font-weight: bold;">🧪 Powder Stock</div>
-      <div style="font-size: 20px; font-weight: 900; color: #15803d; margin: 4px 0;">${powderProd.stock} kg</div>
+      <div style="font-size: 12px; color: #166534; font-weight: bold;">🧪 Powder Stock (Sync to Dry)</div>
+      <div style="font-size: 20px; font-weight: 900; color: #15803d; margin: 4px 0;">${synchronizedPowderStock} kg</div>
     </div>
 
     <div style="background: #fff7ed; border: 1px solid #ffedd5; padding: 12px; border-radius: 10px;">
@@ -752,37 +753,28 @@ function saveDailyDryStockEntry(e) {
   localStorage.setItem('pgf_daily_dry_stock', JSON.stringify(dailyDryStockRegistry));
 
   const dryProd = products.find(p => p.type === "dry");
-  const powderProd = products.find(p => p.type === "powder");
   if (dryProd) {
     dryProd.stock = (dryProd.stock || 0) + qty;
+    saveProductsToStorage();
+    renderProducts();
   }
-  if (powderProd) {
-    powderProd.stock = (powderProd.stock || 0) + (qty * 10); // 1kg dry = 10 packet powder
-  }
-  saveProductsToStorage();
-  renderProducts();
 
   e.target.reset();
   initDefaultDatePickers();
   renderDailyDryStockTable();
   renderAdminLiveStockSummary();
-  alert(`✅ ${qty} kg Daily Dry Mushroom Stock successfully added! (Powder stock updated automatically)`);
+  alert(`✅ ${qty} kg Daily Dry Mushroom Stock successfully added!`);
 }
 
 function deleteDailyDryEntry(idx) {
   const item = dailyDryStockRegistry[idx];
   if (confirm(`Delete this dry stock entry (${item.qty} kg)?`)) {
     const dryProd = products.find(p => p.type === "dry");
-    const powderProd = products.find(p => p.type === "powder");
     if (dryProd) {
       dryProd.stock = Math.max(0, (dryProd.stock || 0) - item.qty);
+      saveProductsToStorage();
+      renderProducts();
     }
-    if (powderProd) {
-      powderProd.stock = Math.max(0, (powderProd.stock || 0) - (item.qty * 10));
-    }
-    saveProductsToStorage();
-    renderProducts();
-
     dailyDryStockRegistry.splice(idx, 1);
     localStorage.setItem('pgf_daily_dry_stock', JSON.stringify(dailyDryStockRegistry));
     renderDailyDryStockTable();
@@ -2089,29 +2081,21 @@ function saveAdminExpense(e) {
 function saveAdminSale(e) {
   e.preventDefault();
   const rawDate = document.getElementById("saleLogDate").value;
-  let rawQty = parseFloat(document.getElementById("saleQty").value);
+  const qty = parseFloat(document.getElementById("saleQty").value);
   const rate = parseFloat(document.getElementById("saleRate").value);
   const delivery = parseFloat(document.getElementById("saleDelivery").value) || 0;
   const paid = parseFloat(document.getElementById("salePaidAmount").value) || 0;
   const notes = document.getElementById("saleNotes") ? document.getElementById("saleNotes").value.trim() : "";
   const prodType = document.getElementById("saleProduct").value;
 
-  // Qty conversion based on user rule:
-  // If value has decimal starting with 0.something (e.g. 0.5), it is treated as grams (divided by 1000 for kg/packs).
-  // If value is whole number or starts with 0 (like 0), it is treated as kg/packs directly.
-  let actualStockDeductionQty = rawQty;
-  if (rawQty > 0 && rawQty < 1) {
-    // treated as grams conversion to kg/packs if necessary, or kept as fractional units
-  }
-
   const targetProd = products.find(p => p.type === prodType || p.name.toLowerCase().includes(prodType.toLowerCase()));
   if (targetProd && !targetProd.bulk) {
-    targetProd.stock = Math.max(0, targetProd.stock - actualStockDeductionQty);
+    targetProd.stock = Math.max(0, targetProd.stock - qty);
     saveProductsToStorage();
     renderProducts();
   }
 
-  const subtotal = rawQty * rate;
+  const subtotal = qty * rate;
   const grandTotal = subtotal + delivery;
 
   const data = {
@@ -2122,7 +2106,7 @@ function saveAdminSale(e) {
     buyer: document.getElementById("saleBuyer").value.trim(),
     phone: document.getElementById("salePhone").value.trim(),
     address: document.getElementById("saleAddress").value.trim(),
-    qty: rawQty,
+    qty: qty,
     rate: rate,
     subtotal: subtotal,
     delivery: delivery,
@@ -2144,42 +2128,25 @@ function saveAdminSale(e) {
 function saveAdminPurchase(e) {
   e.preventDefault();
   const rawDate = document.getElementById("purLogDate").value;
-  let rawQty = parseFloat(document.getElementById("purQty").value);
+  const qty = parseFloat(document.getElementById("purQty").value);
   const rate = parseFloat(document.getElementById("purRate").value);
-  const paid = parseFloat(document.getElementById("purPaidAmount").value) || (rawQty * rate);
+  const paid = parseFloat(document.getElementById("purPaidAmount").value) || (qty * rate);
   const purType = document.getElementById("purProduct").value;
   const funder = document.getElementById("purFunder").value;
   const vendor = document.getElementById("purVendor").value.trim();
   const notes = document.getElementById("purNotes") ? document.getElementById("purNotes").value.trim() : "";
   
-  // Rule handling for 0.0 (grams count) vs 0 (kg count)
-  let quantityToAdd = rawQty;
+  let matchedProd = null;
+  if (purType.includes("Dry")) matchedProd = products.find(p => p.type === "dry");
+  else if (purType.includes("Khakhra")) matchedProd = products.find(p => p.type === "khakhra");
+  else if (purType.includes("Papad")) matchedProd = products.find(p => p.type === "papad");
+  else if (purType.includes("Green")) matchedProd = products.find(p => p.type === "green");
 
-  let matchedDry = products.find(p => p.type === "dry");
-  let matchedPowder = products.find(p => p.type === "powder");
-  let matchedKhakhra = products.find(p => p.type === "khakhra");
-  let matchedPapad = products.find(p => p.type === "papad");
-  let matchedGreen = products.find(p => p.type === "green");
-
-  if (purType.includes("Dry")) {
-    // Dry buy kre to dry & powder me + hona chahiye (1kg dry = 10 packet powder)
-    if (matchedDry) matchedDry.stock = (matchedDry.stock || 0) + quantityToAdd;
-    if (matchedPowder) matchedPowder.stock = (matchedPowder.stock || 0) + (quantityToAdd * 10);
-  } else if (purType.includes("Powder")) {
-    // Powder buy kre to powder ke stock me + hona chahiye
-    if (matchedPowder) matchedPowder.stock = (matchedPowder.stock || 0) + quantityToAdd;
-    if (matchedDry) matchedDry.stock = (matchedDry.stock || 0) + (quantityToAdd / 10); // reverse sync if needed
-  } else if (purType.includes("Khakhra")) {
-    // 1kg khakhra = 5 packet (or qty as packs/kg based on rule 1kg khakhra & papad = 5 packet)
-    if (matchedKhakhra) matchedKhakhra.stock = (matchedKhakhra.stock || 0) + (quantityToAdd * 5);
-  } else if (purType.includes("Papad")) {
-    if (matchedPapad) matchedPapad.stock = (matchedPapad.stock || 0) + (quantityToAdd * 5);
-  } else if (purType.includes("Green")) {
-    if (matchedGreen) matchedGreen.stock = (matchedGreen.stock || 0) + quantityToAdd;
+  if (matchedProd) {
+    matchedProd.stock = (matchedProd.stock || 0) + qty;
+    saveProductsToStorage();
+    renderProducts();
   }
-
-  saveProductsToStorage();
-  renderProducts();
 
   const data = {
     purId: "PUR-" + Date.now().toString().slice(-4),
@@ -2187,9 +2154,9 @@ function saveAdminPurchase(e) {
     product: purType,
     funder: funder,
     vendor: vendor,
-    qty: rawQty,
+    qty: qty,
     rate: rate,
-    total: rawQty * rate,
+    total: qty * rate,
     paidAmount: paid,
     notes: notes
   };
@@ -2200,7 +2167,7 @@ function saveAdminPurchase(e) {
   initDefaultDatePickers();
   computeFinancialLedgerStatements();
   renderAdminLiveStockSummary();
-  alert(`✅ Inventory Buy recorded successfully!`);
+  alert(`✅ Inventory Buy recorded! Total: Rs ${qty * rate}, Paid: Rs ${paid}`);
 }
 
 function saveAdminDamage(e) {

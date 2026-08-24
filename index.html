@@ -647,7 +647,7 @@
             <div class="db-card">
               <form onsubmit="saveDailyDryStockEntry(event)">
                 <label>Select Production Date: <input type="date" id="dryLogDate" required></label>
-                <input type="number" step="0.01" id="dryLogQty" placeholder="Weight of Dry Mushroom (kg)" required>
+                <input type="number" step="any" id="dryLogQty" placeholder="Weight of Dry Mushroom (kg)" required>
                 <input type="text" id="dryLogNotes" placeholder="Context / Batch Description (e.g. Polyhouse 1 Dry Yield)" required>
                 <button type="submit" style="background:#ca8a04;">+ Add Daily Dry Stock</button>
               </form>
@@ -754,7 +754,7 @@
                 <label>Mushroom Catalog Stock Variant Type:
                   <select id="saleProduct" required>
                     <option value="Dry">Dry Dehydrated Mushroom Pack Lot</option>
-                    <option value="Powder">Fine Ground Spore Mushroom Powder Lot</option>
+                    <option value="Powder">Oyster Mushroom Powder Lot</option>
                     <option value="Khakhra">Methi Mushroom Khakhra Lot</option>
                     <option value="Papad">Adad Mushroom Papad Lot</option>
                     <option value="Green">Fresh Green Oyster Mushroom Bulk Lot</option>
@@ -821,8 +821,8 @@
                 <label>Select Purchase Date: <input type="date" id="purLogDate" required></label>
                 <label>Procurement Resource Inward Lot:
                   <select id="purProduct" required>
-                    <option value="Dry">Dry Bulk Base Inward Lots (Adds to Dry & Powder)</option>
-                    <option value="Powder">Mushroom Powder Lot (Adds to Powder & Dry)</option>
+                    <option value="Dry">Dry Bulk Base Inward Lots</option>
+                    <option value="Powder">Oyster Mushroom Powder Lot</option>
                     <option value="Khakhra">Khakhra Production Raw Multi-Lots</option>
                     <option value="Papad">Papad Production Raw Multi-Lots</option>
                     <option value="Green">Green Mushroom Base Inward Spores</option>
@@ -840,6 +840,7 @@
                 <input type="text" id="purVendor" placeholder="Kiske Pas Se Liya He (Vendor Name)" required>
                 <input type="number" step="any" id="purQty" placeholder="Kitna Liya He (0.0 for gm, 0 for kg)" required>
                 <input type="number" id="purRate" placeholder="Purchase Rate per unit (Rs)" required>
+                <input type="number" id="purDelivery" placeholder="Delivery Charge (Rs) [0 for Free]" value="0" min="0">
                 <input type="number" id="purPaidAmount" placeholder="Paid Amount to Vendor (Rs)" required>
                 <input type="text" id="purNotes" placeholder="Vendor Notes / Batch Memo">
                 <button type="submit">Execute Inventory Buy Inflow</button>
@@ -855,6 +856,7 @@
                     <th>Kiske Pas Se Liya</th>
                     <th>Kitna Liya</th>
                     <th>Rate</th>
+                    <th>Delivery</th>
                     <th>Total Payable</th>
                     <th>Paid / Due</th>
                     <th>Action</th>

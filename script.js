@@ -9,20 +9,13 @@ const farmName = "Pure Grow Farm";
 const ADMIN_CREDENTIALS = { user: "admin", pass: "PureGrow@2026" };
 
 const BASE_PRODUCTS = [
-  { id: 1, name: "Fresh Green Oyster Mushroom", price: 180, unit: "1kg", image: "mushroom/Screenshot 2025-10-24 154001.png", detail: "Picked fresh, chilled and delivered within 24-48 hours.", type: "green", stock: 0 },
-  { id: 2, name: "Dried Oyster Mushroom", price: 800, unit: "1kg pack", image: "mushroom/oyst dry.webp", detail: "Slow-dried to preserve flavor and nutrients.", type: "dry", stock: 0 },
-  { id: 3, name: "Oyster Mushroom Powder", price: 130, unit: "100gm pack", image: "mushroom/oyster powder.png", detail: "Mushroom powder for soup, 1kg pack curry, health mix and snacks.", type: "powder", stock: 0 },
-  { id: 4, name: "Methi Mushroom Khakhra", price: 70, unit: "200gm pack", image: "mushroom/Methi khakhra 2.png", detail: "Crispy khakhra prepared with oyster mushroom powder.", type: "khakhra", stock: 0 },
-  { id: 5, name: "Adad Mushroom Papad", price: 120, unit: "1 pack", image: "mushroom/bulk.png", detail: "Papad enriched with mushroom nutrition.", type: "papad", stock: 0 },
-  { id: 6, name: "Bulk and Wholesale Supply", price: 0, unit: "Custom", bulk: true, image: "mushroom/bulk.png", detail: "Supply for restaurants, retailers and local markets.", stock: 99999 }
+  { id: 1, name: "Fresh Green Oyster Mushroom", price: 180, unit: "1kg", image: "mushroom/Screenshot 2025-10-24 154001.png", detail: "Picked fresh, chilled and delivered within 24-48 hours.", type: "green" },
+  { id: 2, name: "Dried Oyster Mushroom", price: 800, unit: "1kg pack", image: "mushroom/oyst dry.webp", detail: "Slow-dried to preserve flavor and nutrients.", type: "dry" },
+  { id: 3, name: "Oyster Mushroom Powder", price: 130, unit: "100gm pack", image: "mushroom/oyster powder.png", detail: "Mushroom powder for soup, 1kg pack curry, health mix and snacks.", type: "powder" },
+  { id: 4, name: "Methi Mushroom Khakhra", price: 70, unit: "200gm pack", image: "mushroom/Methi khakhra 2.png", detail: "Crispy khakhra prepared with oyster mushroom powder.", type: "khakhra" },
+  { id: 5, name: "Adad Mushroom Papad", price: 120, unit: "1 pack", image: "mushroom/bulk.png", detail: "Papad enriched with mushroom nutrition.", type: "papad" },
+  { id: 6, name: "Bulk and Wholesale Supply", price: 0, unit: "Custom", bulk: true, image: "mushroom/bulk.png", detail: "Supply for restaurants, retailers and local markets." }
 ];
-
-let products = JSON.parse(localStorage.getItem('pgf_live_products')) || BASE_PRODUCTS;
-const cart = new Map();
-
-function saveProductsToStorage() {
-  localStorage.setItem('pgf_live_products', JSON.stringify(products));
-}
 
 function getCleanData(key) {
   try {
@@ -44,6 +37,66 @@ let dailyDryStockRegistry = getCleanData('pgf_daily_dry_stock');
 let notificationsRegistry = getCleanData('pgf_notifications');
 
 let currentUser = JSON.parse(localStorage.getItem('pgf_session')) || null;
+
+// =========================================================
+// CALCULATE DYNAMIC AVAILABLE STOCK FOR EACH VARIANT TYPE
+// =========================================================
+function calculateLiveStockForType(typeKey) {
+  let totalBuyQty = 0;
+  purchasesRegistry.forEach(p => {
+    if (p && p.product && p.product.toLowerCase().includes(typeKey.toLowerCase())) {
+      totalBuyQty += Number(p.qty || 0);
+    }
+  });
+
+  let totalProductionQty = 0;
+  if (typeKey === 'dry' || typeKey === 'powder') {
+    dailyDryStockRegistry.forEach(d => {
+      totalProductionQty += Number(d.qty || 0);
+    });
+  }
+
+  let totalOrdersQty = 0;
+  orderRegistry.forEach(o => {
+    if (o && (o.status === 'Approved' || o.status === 'Delivered' || o.status === 'Pending Verification') && o.products) {
+      const prodText = o.products.toLowerCase();
+      if (prodText.includes(typeKey.toLowerCase())) {
+        const match = o.products.match(new RegExp(`\\[x(\\d+)\\]`, 'i'));
+        if (match && match[1]) {
+          totalOrdersQty += parseInt(match[1], 10);
+        } else {
+          totalOrdersQty += 1;
+        }
+      }
+    }
+  });
+
+  let totalSalesQty = 0;
+  salesRegistry.forEach(s => {
+    if (s && s.product && s.product.toLowerCase().includes(typeKey.toLowerCase())) {
+      totalSalesQty += Number(s.qty || 0);
+    }
+  });
+
+  let computedStock = (totalBuyQty + totalProductionQty) - (totalOrdersQty + totalSalesQty);
+  return Math.max(0, computedStock);
+}
+
+function getLiveProductsWithStock() {
+  return BASE_PRODUCTS.map(prod => {
+    if (prod.bulk) {
+      return { ...prod, stock: 99999 };
+    }
+    let calculatedStock = 0;
+    if (prod.type === 'dry') calculatedStock = calculateLiveStockForType('dry');
+    else if (prod.type === 'powder') calculatedStock = calculateLiveStockForType('powder') || calculateLiveStockForType('dry');
+    else if (prod.type === 'khakhra') calculatedStock = calculateLiveStockForType('khakhra');
+    else if (prod.type === 'papad') calculatedStock = calculateLiveStockForType('papad');
+    else if (prod.type === 'green') calculatedStock = calculateLiveStockForType('green');
+
+    return { ...prod, stock: calculatedStock };
+  });
+}
 
 // =========================================================
 // HELPER: PRODUCT IMAGE MAPPER & 1-CLICK CLIPBOARD COPY
@@ -699,15 +752,15 @@ function renderAdminLiveStockSummary() {
   const container = document.getElementById("adminLiveStockCardsContainer");
   if (!container) return;
 
-  const dryProd = products.find(p => p.type === "dry") || { stock: 0 };
-  const khakhraProd = products.find(p => p.type === "khakhra") || { stock: 0 };
-  const papadProd = products.find(p => p.type === "papad") || { stock: 0 };
-
+  const liveProducts = getLiveProductsWithStock();
+  const dryProd = liveProducts.find(p => p.type === "dry") || { stock: 0 };
+  const khakhraProd = liveProducts.find(p => p.type === "khakhra") || { stock: 0 };
+  const papadProd = liveProducts.find(p => p.type === "papad") || { stock: 0 };
   const synchronizedPowderStock = dryProd.stock;
 
   container.innerHTML = `
     <div style="background: #fefce8; border: 1px solid #fef08a; padding: 12px; border-radius: 10px;">
-      <div style="font-size: 12px; color: #854d0e; font-weight: bold;">🌾 Dry Mushroom Stock</div>
+      <div style="font-size: 12px; color: #854d0e; font-weight: bold;">🌾 Dry Mushroom Stock (Buy + Prod - Orders - Sell)</div>
       <div style="font-size: 20px; font-weight: 900; color: #a16207; margin: 4px 0;">${dryProd.stock} kg</div>
     </div>
 
@@ -717,12 +770,12 @@ function renderAdminLiveStockSummary() {
     </div>
 
     <div style="background: #fff7ed; border: 1px solid #ffedd5; padding: 12px; border-radius: 10px;">
-      <div style="font-size: 12px; color: #9a3412; font-weight: bold;">🧇 Khakhra Stock</div>
+      <div style="font-size: 12px; color: #9a3412; font-weight: bold;">🧇 Khakhra Stock (Buy - Orders - Sell)</div>
       <div style="font-size: 20px; font-weight: 900; color: #ea580c; margin: 4px 0;">${khakhraProd.stock} packs</div>
     </div>
 
     <div style="background: #f0fdf4; border: 1px solid #bbf7d0; padding: 12px; border-radius: 10px;">
-      <div style="font-size: 12px; color: #166534; font-weight: bold;">🫓 Papad Stock</div>
+      <div style="font-size: 12px; color: #166534; font-weight: bold;">🫓 Papad Stock (Buy - Orders - Sell)</div>
       <div style="font-size: 20px; font-weight: 900; color: #15803d; margin: 4px 0;">${papadProd.stock} packs</div>
     </div>
   `;
@@ -753,33 +806,22 @@ function saveDailyDryStockEntry(e) {
   dailyDryStockRegistry.unshift(dryEntry);
   localStorage.setItem('pgf_daily_dry_stock', JSON.stringify(dailyDryStockRegistry));
 
-  const dryProd = products.find(p => p.type === "dry");
-  if (dryProd) {
-    dryProd.stock = (dryProd.stock || 0) + qty;
-    saveProductsToStorage();
-    renderProducts();
-  }
-
   e.target.reset();
   initDefaultDatePickers();
   renderDailyDryStockTable();
   renderAdminLiveStockSummary();
+  renderProducts();
   alert(`✅ ${qty} kg Daily Dry Mushroom Stock successfully added!`);
 }
 
 function deleteDailyDryEntry(idx) {
   const item = dailyDryStockRegistry[idx];
   if (confirm(`Delete this dry stock entry (${item.qty} kg)?`)) {
-    const dryProd = products.find(p => p.type === "dry");
-    if (dryProd) {
-      dryProd.stock = Math.max(0, (dryProd.stock || 0) - item.qty);
-      saveProductsToStorage();
-      renderProducts();
-    }
     dailyDryStockRegistry.splice(idx, 1);
     localStorage.setItem('pgf_daily_dry_stock', JSON.stringify(dailyDryStockRegistry));
     renderDailyDryStockTable();
     renderAdminLiveStockSummary();
+    renderProducts();
   }
 }
 
@@ -1717,22 +1759,18 @@ function adminEditSale(idx) {
 
   localStorage.setItem('pgf_sales', JSON.stringify(salesRegistry));
   computeFinancialLedgerStatements();
+  renderAdminLiveStockSummary();
+  renderProducts();
   alert("✅ Sell Entry successfully updated!");
 }
 
 function adminDeleteSale(idx) {
   if (confirm("Kya aap sach me ye Sell entry delete karna chahte hain?")) {
-    const s = salesRegistry[idx];
-    const targetProd = products.find(p => p.type === s.product || p.name.toLowerCase().includes(s.product.toLowerCase()));
-    if (targetProd && !targetProd.bulk) {
-      targetProd.stock = (targetProd.stock || 0) + Number(s.qty || 0);
-      saveProductsToStorage();
-      renderProducts();
-    }
     salesRegistry.splice(idx, 1);
     localStorage.setItem('pgf_sales', JSON.stringify(salesRegistry));
     computeFinancialLedgerStatements();
     renderAdminLiveStockSummary();
+    renderProducts();
   }
 }
 
@@ -1767,6 +1805,8 @@ function adminEditPurchase(idx) {
 
   localStorage.setItem('pgf_purchases', JSON.stringify(purchasesRegistry));
   computeFinancialLedgerStatements();
+  renderAdminLiveStockSummary();
+  renderProducts();
   alert("✅ Buy Purchase record updated!");
 }
 
@@ -1775,6 +1815,8 @@ function adminDeletePurchase(idx) {
     purchasesRegistry.splice(idx, 1);
     localStorage.setItem('pgf_purchases', JSON.stringify(purchasesRegistry));
     computeFinancialLedgerStatements();
+    renderAdminLiveStockSummary();
+    renderProducts();
   }
 }
 
@@ -2102,13 +2144,6 @@ function saveAdminSale(e) {
   const notes = document.getElementById("saleNotes") ? document.getElementById("saleNotes").value.trim() : "";
   const prodType = document.getElementById("saleProduct").value;
 
-  const targetProd = products.find(p => p.type === prodType || p.name.toLowerCase().includes(prodType.toLowerCase()));
-  if (targetProd && !targetProd.bulk) {
-    targetProd.stock = Math.max(0, targetProd.stock - qty);
-    saveProductsToStorage();
-    renderProducts();
-  }
-
   const subtotal = qty * rate;
   const grandTotal = subtotal + delivery;
 
@@ -2136,7 +2171,8 @@ function saveAdminSale(e) {
   initDefaultDatePickers();
   computeFinancialLedgerStatements();
   renderAdminLiveStockSummary();
-  alert(`✅ Wholesale Sale Entry saved! Stock automatically reduced by ${qty}. Total: Rs ${grandTotal}, Received: Rs ${paid}`);
+  renderProducts();
+  alert(`✅ Wholesale Sale Entry saved! Live stock automatically recomputed. Total: Rs ${grandTotal}, Received: Rs ${paid}`);
 }
 
 function saveAdminPurchase(e) {
@@ -2151,18 +2187,6 @@ function saveAdminPurchase(e) {
   const vendor = document.getElementById("purVendor").value.trim();
   const notes = document.getElementById("purNotes") ? document.getElementById("purNotes").value.trim() : "";
   
-  let matchedProd = null;
-  if (purType.includes("Dry")) matchedProd = products.find(p => p.type === "dry");
-  else if (purType.includes("Khakhra")) matchedProd = products.find(p => p.type === "khakhra");
-  else if (purType.includes("Papad")) matchedProd = products.find(p => p.type === "papad");
-  else if (purType.includes("Green")) matchedProd = products.find(p => p.type === "green");
-
-  if (matchedProd) {
-    matchedProd.stock = (matchedProd.stock || 0) + qty;
-    saveProductsToStorage();
-    renderProducts();
-  }
-
   const grandTotalPayable = (qty * rate) + delivery;
 
   const data = {
@@ -2186,6 +2210,7 @@ function saveAdminPurchase(e) {
   initDefaultDatePickers();
   computeFinancialLedgerStatements();
   renderAdminLiveStockSummary();
+  renderProducts();
   alert(`✅ Inventory Buy recorded with Delivery Charge! Total: Rs ${grandTotalPayable}, Paid: Rs ${paid}`);
 }
 
@@ -2293,7 +2318,7 @@ Pure Grow Farm, Makhiyala, Gujarat
   document.getElementById("invoiceDialog").showModal();
 }
 
-function renderProducts(list = products) {
+function renderProducts(list = getLiveProductsWithStock()) {
   if(!document.getElementById("productsList")) return;
   document.getElementById("productsList").innerHTML = list.map(product => {
     const inStock = product.stock > 0;
@@ -2338,7 +2363,8 @@ function updateHeaderCartCounter() {
 }
 
 function addToCart(id) {
-  const product = products.find(item => item.id === id);
+  const liveProducts = getLiveProductsWithStock();
+  const product = liveProducts.find(item => item.id === id);
   if (!product || product.stock <= 0) {
     alert("⚠️ Abhi yeh item stock me uplabdh nahi hai!");
     return;
@@ -2444,15 +2470,6 @@ function confirmOrder(e) {
   const currentTimestamp = new Date().toLocaleDateString('en-IN') + " " + new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
   const generatedOrderId = "PGF-INV-" + Date.now().toString().slice(-5);
 
-  cart.forEach((item, prodId) => {
-    const prod = products.find(p => p.id === prodId);
-    if (prod && !prod.bulk) {
-      prod.stock = Math.max(0, prod.stock - item.qty);
-    }
-  });
-  saveProductsToStorage();
-  renderProducts();
-
   const data = {
     orderId: generatedOrderId,
     name: currentUser.name,
@@ -2476,6 +2493,8 @@ function confirmOrder(e) {
 
   orderRegistry.unshift(data);
   localStorage.setItem('pgf_orders', JSON.stringify(orderRegistry));
+  renderProducts();
+  renderAdminLiveStockSummary();
   
   document.getElementById("invNum").textContent = data.orderId;
   document.getElementById("invDate").textContent = new Date().toLocaleDateString('en-IN');
@@ -2654,7 +2673,8 @@ function submitFarmerVisit(e) {
 if (document.getElementById("productSearch")) {
   document.getElementById("productSearch").addEventListener("input", function(e) {
     const searchTerm = e.target.value.toLowerCase().trim();
-    const filteredProducts = products.filter(product => {
+    const liveProducts = getLiveProductsWithStock();
+    const filteredProducts = liveProducts.filter(product => {
       return product.name.toLowerCase().includes(searchTerm) || 
              product.detail.toLowerCase().includes(searchTerm);
     });

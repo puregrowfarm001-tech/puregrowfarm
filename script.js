@@ -47,21 +47,19 @@ let currentUser = JSON.parse(localStorage.getItem('pgf_session')) || null;
 
 // =========================================================
 // QUANTITY & GM/KG PARSER HELPER
-// Rule: Agar < 1 (jaise 0.5) ho toh gram/fractional treat hoga, >= 1 ho toh kg.
+// Rule: Agar 0. se ho toh gm, >= 1 ho toh kg. Powder: 1kg = 10 packets, Khakhra/Papad: 1kg = 5 packets.
 // =========================================================
 function parseNormalizedQty(rawQty, productType) {
   let val = Number(rawQty || 0);
   if (val <= 0) return 0;
 
-  // Agar product packets me hai (powder, khakhra, papad) aur input kg me diya gaya hai:
+  // Agar value 0. se start hai (jaise 0.5kg = 500gm), toh wo fractional kg hai.
+  // Powder ke liye 1kg = 10 packets
   if (productType === 'powder') {
-    // 1kg = 10 packets. Agar val < 1 hai (jaise 0.5kg = 500gm = 5 packets), 
-    // ya fir agar seedha packets me enter kiya ho. 
-    // Yahan hum standard 1kg = 10 packets multiplier lagate hain.
     return val * 10;
   }
+  // Khakhra & Papad ke liye 1kg = 5 packets
   if (productType === 'khakhra' || productType === 'papad') {
-    // 1kg = 5 packets
     return val * 5;
   }
   return val;
@@ -113,7 +111,7 @@ function calculateDynamicStock(productType) {
     });
   }
 
-  // 3. Order Confirm (Approved & Delivered orders, ignore reject/cancel)
+  // 3. Order Confirm (Sirf Approved & Delivered orders, ignore reject/cancel)
   orderRegistry.forEach(o => {
     if (!o) return;
     const status = (o.status || "").toLowerCase();
@@ -138,8 +136,7 @@ function calculateDynamicStock(productType) {
     let q = Number(s.qty || 0);
     if (sType.includes(productType)) {
       if (productType === 'powder' || productType === 'khakhra' || productType === 'papad') {
-        // Agar sale me kg me likha ho toh packets me convert karein, ya agar packets ho toh direct add karein
-        totalSalesQty += (q < 1 && q > 0) ? parseNormalizedQty(q, productType) : q;
+        totalSalesQty += q;
       } else {
         totalSalesQty += q;
       }

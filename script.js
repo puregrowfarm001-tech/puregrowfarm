@@ -9,13 +9,20 @@ const farmName = "Pure Grow Farm";
 const ADMIN_CREDENTIALS = { user: "admin", pass: "PureGrow@2026" };
 
 const BASE_PRODUCTS = [
-  { id: 1, name: "Fresh Green Oyster Mushroom", price: 180, unit: "1kg", image: "mushroom/Screenshot 2025-10-24 154001.png", detail: "Picked fresh, chilled and delivered within 24-48 hours.", type: "green" },
-  { id: 2, name: "Dried Oyster Mushroom", price: 800, unit: "1kg pack", image: "mushroom/oyst dry.webp", detail: "Slow-dried to preserve flavor and nutrients.", type: "dry" },
-  { id: 3, name: "Oyster Mushroom Powder", price: 130, unit: "100gm pack", image: "mushroom/oyster powder.png", detail: "Mushroom powder for soup, 100gm pack curry, health mix and snacks.", type: "powder" },
-  { id: 4, name: "Methi Mushroom Khakhra", price: 70, unit: "200gm pack", image: "mushroom/Methi khakhra 2.png", detail: "Crispy khakhra prepared with oyster mushroom powder.", type: "khakhra" },
-  { id: 5, name: "Adad Mushroom Papad", price: 120, unit: "1 pack", image: "mushroom/bulk.png", detail: "Papad enriched with mushroom nutrition.", type: "papad" },
-  { id: 6, name: "Bulk and Wholesale Supply", price: 0, unit: "Custom", bulk: true, image: "mushroom/bulk.png", detail: "Supply for restaurants, retailers and local markets." }
+  { id: 1, name: "Fresh Green Oyster Mushroom", price: 180, unit: "1kg", image: "mushroom/Screenshot 2025-10-24 154001.png", detail: "Picked fresh, chilled and delivered within 24-48 hours.", type: "green", stock: 0 },
+  { id: 2, name: "Dried Oyster Mushroom", price: 800, unit: "1kg pack", image: "mushroom/oyst dry.webp", detail: "Slow-dried to preserve flavor and nutrients.", type: "dry", stock: 0 },
+  { id: 3, name: "Oyster Mushroom Powder", price: 130, unit: "100gm pack", image: "mushroom/oyster powder.png", detail: "Mushroom powder for soup, 1kg pack curry, health mix and snacks.", type: "powder", stock: 0 },
+  { id: 4, name: "Methi Mushroom Khakhra", price: 70, unit: "200gm pack", image: "mushroom/Methi khakhra 2.png", detail: "Crispy khakhra prepared with oyster mushroom powder.", type: "khakhra", stock: 0 },
+  { id: 5, name: "Adad Mushroom Papad", price: 120, unit: "1 pack", image: "mushroom/bulk.png", detail: "Papad enriched with mushroom nutrition.", type: "papad", stock: 0 },
+  { id: 6, name: "Bulk and Wholesale Supply", price: 0, unit: "Custom", bulk: true, image: "mushroom/bulk.png", detail: "Supply for restaurants, retailers and local markets.", stock: 99999 }
 ];
+
+let products = JSON.parse(localStorage.getItem('pgf_live_products')) || BASE_PRODUCTS;
+const cart = new Map();
+
+function saveProductsToStorage() {
+  localStorage.setItem('pgf_live_products', JSON.stringify(products));
+}
 
 function getCleanData(key) {
   try {
@@ -37,82 +44,6 @@ let dailyDryStockRegistry = getCleanData('pgf_daily_dry_stock');
 let notificationsRegistry = getCleanData('pgf_notifications');
 
 let currentUser = JSON.parse(localStorage.getItem('pgf_session')) || null;
-
-// =========================================================
-// EXACT FORMULA LOGIC:
-// Available Stock = (Total Buy + Total Daily Production) - (Total Website Orders + Total Admin Sales)
-// =========================================================
-function calculateLiveStockForType(typeKey) {
-  let totalBuyQty = 0;
-  purchasesRegistry.forEach(p => {
-    if (p && p.product && p.product.toLowerCase().includes(typeKey.toLowerCase())) {
-      totalBuyQty += Number(p.qty || 0);
-    }
-  });
-
-  let totalProductionQty = 0;
-  if (typeKey === 'dry' || typeKey === 'powder') {
-    dailyDryStockRegistry.forEach(d => {
-      totalProductionQty += Number(d.qty || 0);
-    });
-  }
-
-  let totalOrdersQty = 0;
-  orderRegistry.forEach(o => {
-    if (o && (o.status === 'Approved' || o.status === 'Delivered' || o.status === 'Pending Verification') && o.products) {
-      const prodText = o.products.toLowerCase();
-      if (prodText.includes(typeKey.toLowerCase())) {
-        const match = o.products.match(new RegExp(`\\[x(\\d+)\\]`, 'i'));
-        if (match && match[1]) {
-          totalOrdersQty += parseInt(match[1], 10);
-        } else {
-          totalOrdersQty += 1;
-        }
-      }
-    }
-  });
-
-  let totalSalesQty = 0;
-  salesRegistry.forEach(s => {
-    if (s && s.product && s.product.toLowerCase().includes(typeKey.toLowerCase())) {
-      totalSalesQty += Number(s.qty || 0);
-    }
-  });
-
-  let computedStock = (totalBuyQty + totalProductionQty) - (totalOrdersQty + totalSalesQty);
-  return Math.max(0, computedStock);
-}
-
-function getLiveProductsWithStock() {
-  return BASE_PRODUCTS.map(prod => {
-    if (prod.bulk) {
-      return { ...prod, stock: 99999 };
-    }
-    let stockVal = 0;
-    let unitText = "1kg pack";
-
-    if (prod.type === 'dry') {
-      stockVal = calculateLiveStockForType('dry');
-      unitText = "1kg pack";
-    } else if (prod.type === 'powder') {
-      let dryBaseKg = calculateLiveStockForType('powder') || calculateLiveStockForType('dry');
-      stockVal = dryBaseKg * 10; // 1kg dry = 10 packs of 100gm powder
-      unitText = "100gm pack";
-    } else if (prod.type === 'khakhra') {
-      let khakhraBaseKg = calculateLiveStockForType('khakhra');
-      stockVal = khakhraBaseKg * 5; // 1kg buy = 5 packs of 200gm
-      unitText = "200gm pack";
-    } else if (prod.type === 'papad') {
-      stockVal = calculateLiveStockForType('papad');
-      unitText = "1 pack";
-    } else if (prod.type === 'green') {
-      stockVal = calculateLiveStockForType('green');
-      unitText = "1kg";
-    }
-
-    return { ...prod, stock: stockVal, unit: unitText };
-  });
-}
 
 // =========================================================
 // HELPER: PRODUCT IMAGE MAPPER & 1-CLICK CLIPBOARD COPY
@@ -379,7 +310,6 @@ function exitAdminPanel() { handleLogout(); }
 
 function checkUserSession() {
   renderNotificationBadge();
-  renderProducts();
 
   if (currentUser) {
     document.getElementById("authSection").style.display = "none";
@@ -762,17 +692,21 @@ function deleteUserAccount(idx) {
 }
 
 // =========================================================
-// LIVE STOCK SUMMARY (DRY, POWDER, KHAKHRA & PAPAD)
+// LIVE STOCK SUMMARY (DRY, POWDER = 1kg dry = 10 packets powder, KHAKHRA = 1kg khakhra = 5 packets khakhra & PAPAD)
 // =========================================================
 function renderAdminLiveStockSummary() {
   const container = document.getElementById("adminLiveStockCardsContainer");
   if (!container) return;
 
-  const liveProds = getLiveProductsWithStock();
-  const dryProd = liveProds.find(p => p.type === "dry") || { stock: 0 };
-  const powderProd = liveProds.find(p => p.type === "powder") || { stock: 0 };
-  const khakhraProd = liveProds.find(p => p.type === "khakhra") || { stock: 0 };
-  const papadProd = liveProds.find(p => p.type === "papad") || { stock: 0 };
+  const dryProd = products.find(p => p.type === "dry") || { stock: 0 };
+  const powderProd = products.find(p => p.type === "powder") || { stock: 0 };
+  const khakhraProd = products.find(p => p.type === "khakhra") || { stock: 0 };
+  const papadProd = products.find(p => p.type === "papad") || { stock: 0 };
+
+  // Formula implementation: 1kg dry = 10 packets powder (100gm)
+  const calculatedPowderStock = (dryProd.stock || 0) * 10;
+  // Formula implementation: 1kg khakhra = 5 packets khakhra (200gm)
+  const calculatedKhakhraStock = (khakhraProd.stock || 0) * 5;
 
   container.innerHTML = `
     <div style="background: #fefce8; border: 1px solid #fef08a; padding: 12px; border-radius: 10px;">
@@ -781,13 +715,13 @@ function renderAdminLiveStockSummary() {
     </div>
 
     <div style="background: #f0fdf4; border: 1px solid #bbf7d0; padding: 12px; border-radius: 10px;">
-      <div style="font-size: 12px; color: #166534; font-weight: bold;">🧪 Powder Stock (100gm pack)</div>
-      <div style="font-size: 20px; font-weight: 900; color: #15803d; margin: 4px 0;">${powderProd.stock} packs</div>
+      <div style="font-size: 12px; color: #166534; font-weight: bold;">🧪 Powder Stock (1kg dry = 10 pkts)</div>
+      <div style="font-size: 20px; font-weight: 900; color: #15803d; margin: 4px 0;">${calculatedPowderStock} packets</div>
     </div>
 
     <div style="background: #fff7ed; border: 1px solid #ffedd5; padding: 12px; border-radius: 10px;">
-      <div style="font-size: 12px; color: #9a3412; font-weight: bold;">🧇 Khakhra Stock (200gm pack)</div>
-      <div style="font-size: 20px; font-weight: 900; color: #ea580c; margin: 4px 0;">${khakhraProd.stock} packs</div>
+      <div style="font-size: 12px; color: #9a3412; font-weight: bold;">🧇 Khakhra Stock (1kg = 5 pkts)</div>
+      <div style="font-size: 20px; font-weight: 900; color: #ea580c; margin: 4px 0;">${calculatedKhakhraStock} packets</div>
     </div>
 
     <div style="background: #f0fdf4; border: 1px solid #bbf7d0; padding: 12px; border-radius: 10px;">
@@ -822,22 +756,33 @@ function saveDailyDryStockEntry(e) {
   dailyDryStockRegistry.unshift(dryEntry);
   localStorage.setItem('pgf_daily_dry_stock', JSON.stringify(dailyDryStockRegistry));
 
+  const dryProd = products.find(p => p.type === "dry");
+  if (dryProd) {
+    dryProd.stock = (dryProd.stock || 0) + qty;
+    saveProductsToStorage();
+    renderProducts();
+  }
+
   e.target.reset();
   initDefaultDatePickers();
   renderDailyDryStockTable();
   renderAdminLiveStockSummary();
-  renderProducts();
   alert(`✅ ${qty} kg Daily Dry Mushroom Stock successfully added!`);
 }
 
 function deleteDailyDryEntry(idx) {
   const item = dailyDryStockRegistry[idx];
   if (confirm(`Delete this dry stock entry (${item.qty} kg)?`)) {
+    const dryProd = products.find(p => p.type === "dry");
+    if (dryProd) {
+      dryProd.stock = Math.max(0, (dryProd.stock || 0) - item.qty);
+      saveProductsToStorage();
+      renderProducts();
+    }
     dailyDryStockRegistry.splice(idx, 1);
     localStorage.setItem('pgf_daily_dry_stock', JSON.stringify(dailyDryStockRegistry));
     renderDailyDryStockTable();
     renderAdminLiveStockSummary();
-    renderProducts();
   }
 }
 
@@ -1420,7 +1365,7 @@ function openAdminFilterModal(type) {
     titleEl.textContent = "📋 All Purchases (Buy) List";
     htmlContent = purchasesRegistry.length ? purchasesRegistry.map(p => `
       <div style="background:#fff7ed; border:1px solid #fed7aa; border-radius:8px; padding:10px; font-size:13px;">
-        <strong>${p.purId || 'PUR'} - ${p.product}</strong> | Pese Diye: ${p.funder} | Vendor: ${p.vendor} | Qty: ${p.qty} | Rate: ₹${p.rate} | Delivery: ₹${p.delivery || 0} | Total: ₹${p.total} (Paid: ₹${p.paidAmount})<br>
+        <strong>${p.purId || 'PUR'} - ${p.product}</strong> | Pese Diye: ${p.funder} | Vendor: ${p.vendor} | Qty: ${p.qty} | Total: ₹${p.total} (Paid: ₹${p.paidAmount})<br>
         <small class="muted">Date: ${p.date} | Notes: ${p.notes || '-'}</small>
       </div>
     `).join("") : `<p class="muted" style="text-align:center;">No purchase records.</p>`;
@@ -1575,8 +1520,6 @@ function handleOrderApprove(idx) {
   o.refundStage = "";
   
   localStorage.setItem('pgf_orders', JSON.stringify(orderRegistry));
-  renderProducts();
-  renderAdminLiveStockSummary();
   
   pushNotification(
     o.email, 
@@ -1601,8 +1544,6 @@ function handleOrderReject(idx) {
   o.refundStage = "";
 
   localStorage.setItem('pgf_orders', JSON.stringify(orderRegistry));
-  renderProducts();
-  renderAdminLiveStockSummary();
   pushNotification(o.email, '❌ Order Rejected', `Your Order #${o.orderId} was rejected. Reason: ${reason}.`, 'order');
 
   alert("❌ Option 2: Order Reject ho gaya! (Iska paisa accounting me count nahi hoga)");
@@ -1621,8 +1562,6 @@ function handleOrderCancelRefund(idx) {
   o.refundCreditedDate = "";
 
   localStorage.setItem('pgf_orders', JSON.stringify(orderRegistry));
-  renderProducts();
-  renderAdminLiveStockSummary();
   
   pushNotification(o.email, '⚠️ Order Cancelled', `Aapka Order #${o.orderId} cancel kar diya gaya hai. Reason: ${reason}. Refund aapke UPI ID (${o.userUpiId || 'Bank'}) par process kiya ja raha hai.`, 'order');
 
@@ -1781,8 +1720,6 @@ function adminEditSale(idx) {
 
   localStorage.setItem('pgf_sales', JSON.stringify(salesRegistry));
   computeFinancialLedgerStatements();
-  renderAdminLiveStockSummary();
-  renderProducts();
   alert("✅ Sell Entry successfully updated!");
 }
 
@@ -1791,8 +1728,6 @@ function adminDeleteSale(idx) {
     salesRegistry.splice(idx, 1);
     localStorage.setItem('pgf_sales', JSON.stringify(salesRegistry));
     computeFinancialLedgerStatements();
-    renderAdminLiveStockSummary();
-    renderProducts();
   }
 }
 
@@ -1817,8 +1752,8 @@ function adminEditPurchase(idx) {
   const newDel = prompt("6. Delivery Charge (Rs):", p.delivery || 0);
   if (newDel !== null && !isNaN(parseFloat(newDel))) p.delivery = parseFloat(newDel);
 
-  p.total = (p.qty * p.rate) + newDel;
-  p.delivery = newDel;
+  p.subtotal = p.qty * p.rate;
+  p.total = p.subtotal + p.delivery;
 
   const newPaid = prompt(`7. Paid Amount to Vendor (Total Rs ${p.total}):`, p.paidAmount !== undefined ? p.paidAmount : p.total);
   if (newPaid !== null && !isNaN(parseFloat(newPaid))) p.paidAmount = parseFloat(newPaid);
@@ -1828,8 +1763,6 @@ function adminEditPurchase(idx) {
 
   localStorage.setItem('pgf_purchases', JSON.stringify(purchasesRegistry));
   computeFinancialLedgerStatements();
-  renderAdminLiveStockSummary();
-  renderProducts();
   alert("✅ Buy Purchase record updated!");
 }
 
@@ -1838,8 +1771,6 @@ function adminDeletePurchase(idx) {
     purchasesRegistry.splice(idx, 1);
     localStorage.setItem('pgf_purchases', JSON.stringify(purchasesRegistry));
     computeFinancialLedgerStatements();
-    renderAdminLiveStockSummary();
-    renderProducts();
   }
 }
 
@@ -2083,8 +2014,9 @@ function computeFinancialLedgerStatements() {
   if(document.getElementById("subBuyTableBody")) {
     document.getElementById("subBuyTableBody").innerHTML = filteredPurchases.map((p) => {
       const idx = purchasesRegistry.indexOf(p);
-      const delivery = Number(p.delivery || 0);
-      const totalPayable = Number(p.total || ((p.qty * p.rate) + delivery));
+      const sub = Number(p.subtotal || (p.qty * p.rate) || p.total);
+      const del = Number(p.delivery || 0);
+      const totalPayable = Number(p.total || (sub + del));
       const paid = Number(p.paidAmount !== undefined ? p.paidAmount : totalPayable);
       const pendingToVendor = Math.max(0, totalPayable - paid);
 
@@ -2096,7 +2028,7 @@ function computeFinancialLedgerStatements() {
           <td><strong>${p.vendor}</strong></td>
           <td>${p.qty}</td>
           <td>Rs ${p.rate}</td>
-          <td>Rs ${delivery.toFixed(2)}</td>
+          <td>Rs ${del.toFixed(2)}</td>
           <td style="color:var(--danger); font-weight:bold;">Rs ${totalPayable.toFixed(2)}</td>
           <td>
             <span style="color:#16a34a; font-weight:bold;">Paid: Rs ${paid.toFixed(2)}</span>
@@ -2167,6 +2099,13 @@ function saveAdminSale(e) {
   const notes = document.getElementById("saleNotes") ? document.getElementById("saleNotes").value.trim() : "";
   const prodType = document.getElementById("saleProduct").value;
 
+  const targetProd = products.find(p => p.type === prodType || p.name.toLowerCase().includes(prodType.toLowerCase()));
+  if (targetProd && !targetProd.bulk) {
+    targetProd.stock = Math.max(0, targetProd.stock - qty);
+    saveProductsToStorage();
+    renderProducts();
+  }
+
   const subtotal = qty * rate;
   const grandTotal = subtotal + delivery;
 
@@ -2194,8 +2133,7 @@ function saveAdminSale(e) {
   initDefaultDatePickers();
   computeFinancialLedgerStatements();
   renderAdminLiveStockSummary();
-  renderProducts();
-  alert(`✅ Wholesale Sale Entry saved! Live stock recomputed.`);
+  alert(`✅ Wholesale Sale Entry saved! Total: Rs ${grandTotal}, Received: Rs ${paid}`);
 }
 
 function saveAdminPurchase(e) {
@@ -2203,14 +2141,26 @@ function saveAdminPurchase(e) {
   const rawDate = document.getElementById("purLogDate").value;
   const qty = parseFloat(document.getElementById("purQty").value);
   const rate = parseFloat(document.getElementById("purRate").value);
-  const delivery = parseFloat(document.getElementById("purDelivery")?.value || 0);
-  const paid = parseFloat(document.getElementById("purPaidAmount").value) || ((qty * rate) + delivery);
+  const delivery = parseFloat(document.getElementById("purDelivery")?.value) || 0;
+  const subtotal = qty * rate;
+  const grandTotal = subtotal + delivery;
+  const paid = parseFloat(document.getElementById("purPaidAmount").value) || grandTotal;
   const purType = document.getElementById("purProduct").value;
   const funder = document.getElementById("purFunder").value;
   const vendor = document.getElementById("purVendor").value.trim();
   const notes = document.getElementById("purNotes") ? document.getElementById("purNotes").value.trim() : "";
   
-  const grandTotalPayable = (qty * rate) + delivery;
+  let matchedProd = null;
+  if (purType.includes("Dry")) matchedProd = products.find(p => p.type === "dry");
+  else if (purType.includes("Khakhra")) matchedProd = products.find(p => p.type === "khakhra");
+  else if (purType.includes("Papad")) matchedProd = products.find(p => p.type === "papad");
+  else if (purType.includes("Green")) matchedProd = products.find(p => p.type === "green");
+
+  if (matchedProd) {
+    matchedProd.stock = (matchedProd.stock || 0) + qty;
+    saveProductsToStorage();
+    renderProducts();
+  }
 
   const data = {
     purId: "PUR-" + Date.now().toString().slice(-4),
@@ -2220,8 +2170,9 @@ function saveAdminPurchase(e) {
     vendor: vendor,
     qty: qty,
     rate: rate,
+    subtotal: subtotal,
     delivery: delivery,
-    total: grandTotalPayable,
+    total: grandTotal,
     paidAmount: paid,
     notes: notes
   };
@@ -2233,8 +2184,7 @@ function saveAdminPurchase(e) {
   initDefaultDatePickers();
   computeFinancialLedgerStatements();
   renderAdminLiveStockSummary();
-  renderProducts();
-  alert(`✅ Inventory Buy recorded with Delivery Charge! Live stock updated.`);
+  alert(`✅ Inventory Buy recorded! Total: Rs ${grandTotal}, Paid: Rs ${paid}`);
 }
 
 function saveAdminDamage(e) {
@@ -2341,11 +2291,9 @@ Pure Grow Farm, Makhiyala, Gujarat
   document.getElementById("invoiceDialog").showModal();
 }
 
-function renderProducts(list = getLiveProductsWithStock()) {
-  const container = document.getElementById("productsList");
-  if(!container) return;
-  
-  container.innerHTML = list.map(product => {
+function renderProducts(list = products) {
+  if(!document.getElementById("productsList")) return;
+  document.getElementById("productsList").innerHTML = list.map(product => {
     const inStock = product.stock > 0;
 
     return `
@@ -2388,8 +2336,7 @@ function updateHeaderCartCounter() {
 }
 
 function addToCart(id) {
-  const liveProducts = getLiveProductsWithStock();
-  const product = liveProducts.find(item => item.id === id);
+  const product = products.find(item => item.id === id);
   if (!product || product.stock <= 0) {
     alert("⚠️ Abhi yeh item stock me uplabdh nahi hai!");
     return;
@@ -2406,7 +2353,6 @@ function addToCart(id) {
   cart.set(id, { ...product, qty: currentQty + 1 });
   renderCart();
   updateHeaderCartCounter();
-  alert(`✅ Added to cart successfully!`);
 }
 
 function minusCart(id) {
@@ -2496,6 +2442,15 @@ function confirmOrder(e) {
   const currentTimestamp = new Date().toLocaleDateString('en-IN') + " " + new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
   const generatedOrderId = "PGF-INV-" + Date.now().toString().slice(-5);
 
+  cart.forEach((item, prodId) => {
+    const prod = products.find(p => p.id === prodId);
+    if (prod && !prod.bulk) {
+      prod.stock = Math.max(0, prod.stock - item.qty);
+    }
+  });
+  saveProductsToStorage();
+  renderProducts();
+
   const data = {
     orderId: generatedOrderId,
     name: currentUser.name,
@@ -2519,8 +2474,6 @@ function confirmOrder(e) {
 
   orderRegistry.unshift(data);
   localStorage.setItem('pgf_orders', JSON.stringify(orderRegistry));
-  renderProducts();
-  renderAdminLiveStockSummary();
   
   document.getElementById("invNum").textContent = data.orderId;
   document.getElementById("invDate").textContent = new Date().toLocaleDateString('en-IN');
@@ -2564,6 +2517,317 @@ function confirmOrder(e) {
 }
 
 function closeInvoice() { document.getElementById("invoiceDialog").close(); }
+
+function showVisitForm(id) {
+  document.getElementById("studentForm").classList.remove("active");
+  document.getElementById("farmerForm").classList.remove("active");
+  document.getElementById(id).classList.add("active");
+}
+
+function openVisitPayment(formId, amount) {
+  const modeSelectId = formId === "studentForm" ? "spaymentMode" : "fpaymentMode";
+  const helpId = formId === "studentForm" ? "studentPaymentHelp" : "farmerPaymentHelp";
+  const txnInputId = formId === "studentForm" ? "spayment" : "fpayment";
+  const mode = document.getElementById(modeSelectId).value;
+
+  if (!mode) {
+    document.getElementById(txnInputId).value = "";
+    document.getElementById(txnInputId).disabled = true;
+    if(formId === "studentForm") validateStudentForm();
+    else validateFarmerForm();
+    return;
+  }
+  
+  document.getElementById(helpId).style.display = "block";
+  document.getElementById(helpId).textContent = `Launching UPI App for program fee Rs ${amount}.`;
+  
+  window.location.href = `upi://pay?pa=${encodeURIComponent(farmUpiId)}&pn=${encodeURIComponent(farmName)}&am=${amount}&cu=INR`;
+  
+  document.getElementById(txnInputId).disabled = false;
+  if(formId === "studentForm") validateStudentForm();
+  else validateFarmerForm();
+}
+
+function validateStudentForm() {
+  const enroll = document.getElementById("senroll").value.trim();
+  const college = document.getElementById("scollege").value.trim();
+  const course = document.getElementById("scourse").value.trim();
+  const start = document.getElementById("sstart").value;
+  const end = document.getElementById("send").value;
+  const userUpi = document.getElementById("suserUpi") ? document.getElementById("suserUpi").value.trim() : "";
+  const txn = document.getElementById("spayment").value.trim();
+  const isDisabled = document.getElementById("spayment").disabled;
+  
+  const isValid = !isDisabled && enroll !== "" && college !== "" && course !== "" && start !== "" && end !== "" && userUpi.length >= 5 && userUpi.includes('@') && txn.length >= 6;
+  document.getElementById("studentSubmitBtn").disabled = !isValid;
+}
+
+function validateFarmerForm() {
+  const date = document.getElementById("fdate").value;
+  const userUpi = document.getElementById("fuserUpi") ? document.getElementById("fuserUpi").value.trim() : "";
+  const txn = document.getElementById("fpayment").value.trim();
+  const isDisabled = document.getElementById("fpayment").disabled;
+  
+  const isValid = !isDisabled && date !== "" && userUpi.length >= 5 && userUpi.includes('@') && txn.length >= 6;
+  document.getElementById("farmerSubmitBtn").disabled = !isValid;
+}
+
+if(document.getElementById("studentForm")) {
+  ['senroll', 'scollege', 'scourse', 'sstart', 'send', 'suserUpi'].forEach(id => {
+    if(document.getElementById(id)) document.getElementById(id).addEventListener("input", validateStudentForm);
+  });
+}
+if(document.getElementById("farmerForm")) {
+  ['fdate', 'fuserUpi'].forEach(id => {
+    if(document.getElementById(id)) document.getElementById(id).addEventListener("input", validateFarmerForm);
+  });
+}
+
+function submitStudentVisit(e) {
+  e.preventDefault();
+  const currentTimestamp = new Date().toLocaleDateString('en-IN') + " " + new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+  const data = {
+    bookingId: "PGF-STU-" + Date.now().toString().slice(-4),
+    type: "Student",
+    name: currentUser.name,
+    phone: currentUser.phone,
+    email: currentUser.email,
+    enrollment: document.getElementById("senroll").value.trim(),
+    college: document.getElementById("scollege").value.trim(),
+    course: document.getElementById("scourse").value.trim(),
+    start: document.getElementById("sstart").value,
+    end: document.getElementById("send").value,
+    userUpiId: document.getElementById("suserUpi").value.trim(),
+    fee: 100,
+    paymentMode: document.getElementById("spaymentMode").value,
+    txnId: document.getElementById("spayment").value.trim(),
+    dateLogged: currentTimestamp,
+    status: "Pending Verification",
+    certIssued: false
+  };
+  bookingsRegistry.unshift(data);
+  localStorage.setItem('pgf_bookings', JSON.stringify(bookingsRegistry));
+
+  pushNotification('ADMIN', '🎓 New Student Registration', `${data.name} applied for Internship (#${data.bookingId}).`, 'booking');
+
+  const waText = `NEW STUDENT INTERNSHIP REGISTRATION:\n----------------------------------------\nBooking Ref ID: ${data.bookingId}\nName: ${data.name}\nStudent UPI ID: ${data.userUpiId}\nCollege: ${data.college}\nCourse: ${data.course}\nUTR Tracking Number: ${data.txnId}\n----------------------------------------`;
+  window.open(`https://wa.me/${farmWhatsapp}?text=${encodeURIComponent(waText)}`, '_blank');
+  
+  document.getElementById("studentForm").reset();
+  document.getElementById("spayment").disabled = true;
+  checkUserSession();
+}
+
+function submitFarmerVisit(e) {
+  e.preventDefault();
+  const currentTimestamp = new Date().toLocaleDateString('en-IN') + " " + new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+  const data = {
+    bookingId: "PGF-FAR-" + Date.now().toString().slice(-4),
+    type: "Farmer",
+    name: currentUser.name,
+    phone: currentUser.phone,
+    email: currentUser.email,
+    date: document.getElementById("fdate").value,
+    userUpiId: document.getElementById("fuserUpi").value.trim(),
+    fee: 699,
+    paymentMode: document.getElementById("fpaymentMode").value,
+    txnId: document.getElementById("fpayment").value.trim(),
+    dateLogged: currentTimestamp,
+    status: "Pending Verification",
+    certIssued: false
+  };
+  bookingsRegistry.unshift(data);
+  localStorage.setItem('pgf_bookings', JSON.stringify(bookingsRegistry));
+
+  pushNotification('ADMIN', '👨‍🌾 New Farmer Training Booking', `${data.name} booked training (#${data.bookingId}) for ${data.date}.`, 'booking');
+
+  const waText = `NEW FARMER TRAINING BOOKING:\n----------------------------------------\nBooking Ref ID: ${data.bookingId}\nName: ${data.name}\nFarmer UPI ID: ${data.userUpiId}\nTraining Date: ${data.date}\nUTR Tracking Number: ${data.txnId}\n----------------------------------------`;
+  window.open(`https://wa.me/${farmWhatsapp}?text=${encodeURIComponent(waText)}`, '_blank');
+  
+  document.getElementById("farmerForm").reset();
+  document.getElementById("fpayment").disabled = true;
+  checkUserSession();
+}
+
+if (document.getElementById("productSearch")) {
+  document.getElementById("productSearch").addEventListener("input", function(e) {
+    const searchTerm = e.target.value.toLowerCase().trim();
+    const filteredProducts = products.filter(product => {
+      return product.name.toLowerCase().includes(searchTerm) || 
+             product.detail.toLowerCase().includes(searchTerm);
+    });
+    renderProducts(filteredProducts);
+  });
+}
+
+function downloadCertificatePDF(bookingId) {
+  const targetBooking = bookingsRegistry.find(b => b && b.bookingId === bookingId);
+  if (!targetBooking) return alert("Certificate not found.");
+  if (!targetBooking.certIssued) return alert("Certificate has not been issued yet by Farm Admin.");
+
+  const titleText = targetBooking.type === "Student" ? "Certificate of Internship" : "Certificate of Farming";
+  const descText = targetBooking.type === "Student" 
+    ? `has successfully completed an internship program in Oyster Mushroom Cultivation at Pure Grow Farm, at Makhiyala, Gujarat.`
+    : `has successfully completed the practical farmer training framework module in Oyster Mushroom Cultivation at Pure Grow Farm, at Makhiyala, Gujarat.`;
+  
+  const durationContent = targetBooking.type === "Student" 
+    ? `from <strong>${targetBooking.start || 'N/A'}</strong> to <strong>${targetBooking.end || 'N/A'}</strong>`
+    : `on target session date <strong>${targetBooking.date || 'N/A'}</strong>`;
+
+  const actualApprovedDate = targetBooking.certIssueDate ? targetBooking.certIssueDate : (targetBooking.dateLogged ? targetBooking.dateLogged.split(" ")[0] : new Date().toLocaleDateString('en-IN'));
+
+  const basePath = window.location.href.substring(0, window.location.href.lastIndexOf('/') + 1);
+  const logoUrl = basePath + "mushroom/pgf logo.png";
+  const sohamSignUrl = basePath + "mushroom/soham sign.png";
+  const jeetSignUrl = basePath + "mushroom/jeet sign.png";
+
+  const certificateHTML = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=1024, initial-scale=0.4, user-scalable=yes">
+  <title>${titleText} - ${targetBooking.name}</title>
+  <style>
+    @page { size: A4 landscape; margin: 6mm; }
+    * { box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    body { 
+      margin: 0; 
+      padding: 12px; 
+      font-family: Arial, sans-serif; 
+      background: #f8fafc; 
+      text-align: center;
+      min-width: 980px; 
+    }
+    .certificate-frame { 
+      width: 960px; 
+      background: #fff; 
+      border: 8px solid #1e4620; 
+      padding: 20px; 
+      box-sizing: border-box; 
+      margin: 0 auto; 
+      box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    }
+    .inner-border { border: 2px solid #d97706; padding: 20px; background: #ffffff; }
+    .cert-header-top { display: flex; justify-content: center; align-items: center; gap: 15px; }
+    .cert-title { font-size: 28px; font-weight: bold; color: #1e4620; text-transform: uppercase; letter-spacing: 1px; font-family: 'Times New Roman', Times, serif; margin: 12px 0 6px 0; }
+    .cert-name { font-size: 24px; font-weight: bold; color: #2b8a3e; border-bottom: 2px solid #d97706; display: inline-block; padding: 0 20px; margin: 6px auto; font-family: 'Times New Roman', Times, serif; }
+    .cert-desc { font-size: 14px; line-height: 1.6; text-align: justify; margin: 12px auto; max-width: 820px; color: #222; }
+    .cert-footer-grid { display: flex; justify-content: space-between; align-items: flex-end; margin-top: 25px; padding: 0 10px; }
+    .sign-img { width: 120px; height: 48px; object-fit: contain; display: block; margin: 0 auto -8px auto; mix-blend-mode: multiply; }
+    .no-print-bar { margin-bottom: 12px; background: #f0fdf4; border: 1px solid #bbf7d0; padding: 10px; border-radius: 8px; width: 960px; margin-left: auto; margin-right: auto; }
+    .no-print-btn { background: #2b8a3e; color: #fff; border: 0; padding: 8px 18px; font-weight: bold; border-radius: 6px; font-size: 14px; cursor: pointer; }
+    @media print { .no-print-bar { display: none !important; } body { padding: 0; background: #fff; min-width: 100%; } .certificate-frame { width: 100%; box-shadow: none; } }
+  </style>
+</head>
+<body>
+  <div class="no-print-bar">
+    <button class="no-print-btn" onclick="window.print()">📥 Click Here to Save / Download PDF</button>
+  </div>
+
+  <div class="certificate-frame">
+    <div class="inner-border">
+      <div class="cert-header-top">
+        <img src="${logoUrl}" alt="Logo" style="width: 60px; height: auto;">
+        <div style="text-align:left;">
+          <h2 style="color: #1e4620; margin: 0; font-size: 20px; font-weight: 800;">PURE GROW FARM</h2>
+          <p style="margin: 2px 0 0 0; font-size: 11px; color:#6b7280;">Makhiyala, Gujarat, 362011 | puregrowfarm001@gmail.com</p>
+        </div>
+      </div>
+      <hr style="border:0; border-top: 2px solid #2b8a3e; margin: 10px 0;">
+      <div class="cert-title">${titleText}</div>
+      <p style="font-style: italic; margin: 3px 0; color: #555; font-size: 13px;">This is to certify that</p>
+      <div class="cert-name">${targetBooking.name.toUpperCase()}</div>
+      <p style="font-style: italic; margin: 5px 0; color: #555; font-size: 13px;">${descText}</p>
+      <p class="cert-desc">
+        The program execution guidelines were conducted ${durationContent}. 
+        During this framework index period, the candidate gained foundational knowledge in mushroom biology, substrate preparation, spawn inoculation, and scientific crop management, demonstrating an exceptional work ethic.
+      </p>
+      
+      <div class="cert-footer-grid">
+        <div style="text-align: center; width: 34%;">
+          <div style="height: 50px; display: flex; align-items: flex-end; justify-content: center;">
+            <img src="${sohamSignUrl}" alt="Soham Gajera Signature" class="sign-img">
+          </div>
+          <div style="border-top: 1.5px solid #333; width: 160px; margin: 0 auto 4px auto;"></div>
+          <div style="font-size: 13px; font-weight: bold; color: #1e4620;">Soham N Gajera</div>
+          <div style="font-size: 10px; color: #475569; margin-top: 2px;">Co-Founder & Managing Director</div>
+        </div>
+
+        <div style="text-align: center; width: 28%;">
+          <img src="${logoUrl}" alt="Stamp" style="width: 55px; height: auto; opacity: 0.95;">
+          <div style="font-size: 9px; font-weight: 800; color: #1e4620; margin-top: 2px; letter-spacing: 0.5px;">PURE GROW FARM</div>
+          <div style="font-size: 11px; color: #334155; margin-top: 3px;">
+            <strong>Approved Date:</strong> ${actualApprovedDate}
+          </div>
+        </div>
+
+        <div style="text-align: center; width: 34%;">
+          <div style="height: 50px; display: flex; align-items: flex-end; justify-content: center;">
+            <img src="${jeetSignUrl}" alt="Jeet Gajera Signature" class="sign-img">
+          </div>
+          <div style="border-top: 1.5px solid #333; width: 160px; margin: 0 auto 4px auto;"></div>
+          <div style="font-size: 13px; font-weight: bold; color: #1e4620;">Jeet A Gajera</div>
+          <div style="font-size: 10px; color: #475569; margin-top: 2px;">Co-Founder & Director<br>(Agriculture & Production)</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    window.addEventListener('load', function() {
+      setTimeout(function() {
+        window.print();
+      }, 500);
+    });
+  <\/script>
+</body>
+</html>`;
+
+  const blob = new Blob([certificateHTML], { type: 'text/html;charset=utf-8' });
+  const blobUrl = URL.createObjectURL(blob);
+  const printWindow = window.open(blobUrl, '_blank');
+  if (!printWindow) window.location.href = blobUrl;
+}
+
+function printDivInvoice() {
+  const basePath = window.location.origin + window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/') + 1);
+  const absoluteLogoUrl = basePath + "mushroom/pgf logo.png";
+
+  const containerClone = document.getElementById('invoiceCaptureFrame').cloneNode(true);
+  const logoImg = containerClone.querySelector('#invoiceBrandLogo');
+  if (logoImg) {
+    logoImg.src = absoluteLogoUrl;
+  }
+
+  const invoiceHTML = `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <title>Pure Grow Farm - Invoice</title>
+        <style>
+          @page { size: A4; margin: 10mm; }
+          body { font-family: sans-serif; padding: 20px; background: #fff; color: #222; }
+          table { width: 100%; border-collapse: collapse; margin-bottom: 25px; font-size: 14px; }
+          th, td { border: 1px solid #e6e9ec; padding: 12px 14px; text-align: left; }
+          th { background: #2b8a3e !important; color: white !important; -webkit-print-color-adjust: exact; font-weight: bold; }
+        </style>
+      </head>
+      <body>
+        ${containerClone.innerHTML}
+        <script>
+          window.onload = function() {
+            setTimeout(function() { window.print(); }, 400);
+          };
+        <\/script>
+      </body>
+    </html>
+  `;
+
+  const blob = new Blob([invoiceHTML], { type: 'text/html;charset=utf-8' });
+  const blobUrl = URL.createObjectURL(blob);
+  const printWin = window.open(blobUrl, '_blank');
+  if (!printWin) window.location.href = blobUrl;
+}
 
 renderProducts();
 checkUserSession();

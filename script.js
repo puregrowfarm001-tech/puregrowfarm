@@ -11,7 +11,7 @@ const ADMIN_CREDENTIALS = { user: "admin", pass: "PureGrow@2026" };
 const BASE_PRODUCTS = [
   { id: 1, name: "Fresh Green Oyster Mushroom", price: 180, unit: "1kg", image: "mushroom/Screenshot 2025-10-24 154001.png", detail: "Picked fresh, chilled and delivered within 24-48 hours.", type: "green" },
   { id: 2, name: "Dried Oyster Mushroom", price: 800, unit: "1kg pack", image: "mushroom/oyst dry.webp", detail: "Slow-dried to preserve flavor and nutrients.", type: "dry" },
-  { id: 3, name: "Oyster Mushroom Powder", price: 130, unit: "100gm pack", image: "mushroom/oyster powder.png", detail: "Mushroom powder for soup, 1kg pack curry, health mix and snacks.", type: "powder" },
+  { id: 3, name: "Oyster Mushroom Powder", price: 130, unit: "100gm pack", image: "mushroom/oyster powder.png", detail: "Mushroom powder for soup, 100gm pack curry, health mix and snacks.", type: "powder" },
   { id: 4, name: "Methi Mushroom Khakhra", price: 70, unit: "200gm pack", image: "mushroom/Methi khakhra 2.png", detail: "Crispy khakhra prepared with oyster mushroom powder.", type: "khakhra" },
   { id: 5, name: "Adad Mushroom Papad", price: 120, unit: "1 pack", image: "mushroom/bulk.png", detail: "Papad enriched with mushroom nutrition.", type: "papad" },
   { id: 6, name: "Bulk and Wholesale Supply", price: 0, unit: "Custom", bulk: true, image: "mushroom/bulk.png", detail: "Supply for restaurants, retailers and local markets." }
@@ -39,7 +39,7 @@ let notificationsRegistry = getCleanData('pgf_notifications');
 let currentUser = JSON.parse(localStorage.getItem('pgf_session')) || null;
 
 // =========================================================
-// LIVE STOCK CALCULATION FORMULA:
+// EXACT FORMULA LOGIC:
 // Available Stock = (Total Buy + Total Daily Production) - (Total Website Orders + Total Admin Sales)
 // =========================================================
 function calculateLiveStockForType(typeKey) {
@@ -88,14 +88,22 @@ function getLiveProductsWithStock() {
     if (prod.bulk) {
       return { ...prod, stock: 99999 };
     }
-    let calculatedStock = 0;
-    if (prod.type === 'dry') calculatedStock = calculateLiveStockForType('dry');
-    else if (prod.type === 'powder') calculatedStock = calculateLiveStockForType('powder') || calculateLiveStockForType('dry');
-    else if (prod.type === 'khakhra') calculatedStock = calculateLiveStockForType('khakhra');
-    else if (prod.type === 'papad') calculatedStock = calculateLiveStockForType('papad');
-    else if (prod.type === 'green') calculatedStock = calculateLiveStockForType('green');
-
-    return { ...prod, stock: calculatedStock };
+    let baseStockKg = 0;
+    if (prod.type === 'dry') {
+      baseStockKg = calculateLiveStockForType('dry');
+      return { ...prod, stock: baseStockKg, unit: "1kg pack" };
+    } else if (prod.type === 'powder') {
+      baseStockKg = calculateLiveStockForType('powder') || calculateLiveStockForType('dry');
+      // 1 kg dry stock = 10 packs of 100gm powder
+      return { ...prod, stock: baseStockKg * 10, unit: "100gm pack" };
+    } else if (prod.type === 'khakhra') {
+      return { ...prod, stock: calculateLiveStockForType('khakhra'), unit: "200gm pack" };
+    } else if (prod.type === 'papad') {
+      return { ...prod, stock: calculateLiveStockForType('papad'), unit: "1 pack" };
+    } else if (prod.type === 'green') {
+      return { ...prod, stock: calculateLiveStockForType('green'), unit: "1kg" };
+    }
+    return { ...prod, stock: 0 };
   });
 }
 
@@ -747,27 +755,98 @@ function deleteUserAccount(idx) {
 }
 
 // =========================================================
-// LIVE STOCK SUMMARY (DRY, POWDER = DRY, KHAKHRA & PAPAD)
+// LIVE STOCK CALCULATION: (Total Buy + Total Daily Production) - (Total Website Orders + Total Admin Sales)
 // =========================================================
+function calculateLiveStockForType(typeKey) {
+  let totalBuyQty = 0;
+  purchasesRegistry.forEach(p => {
+    if (p && p.product && p.product.toLowerCase().includes(typeKey.toLowerCase())) {
+      totalBuyQty += Number(p.qty || 0);
+    }
+  });
+
+  let totalProductionQty = 0;
+  if (typeKey === 'dry' || typeKey === 'powder') {
+    dailyDryStockRegistry.forEach(d => {
+      totalProductionQty += Number(d.qty || 0);
+    });
+  }
+
+  let totalOrdersQty = 0;
+  orderRegistry.forEach(o => {
+    if (o && (o.status === 'Approved' || o.status === 'Delivered' || o.status === 'Pending Verification') && o.products) {
+      const prodText = o.products.toLowerCase();
+      if (prodText.includes(typeKey.toLowerCase())) {
+        const match = o.products.match(new RegExp(`\\[x(\\d+)\\]`, 'i'));
+        if (match && match[1]) {
+          totalOrdersQty += parseInt(match[1], 10);
+        } else {
+          totalOrdersQty += 1;
+        }
+      }
+    }
+  });
+
+  let totalSalesQty = 0;
+  salesRegistry.forEach(s => {
+    if (s && s.product && s.product.toLowerCase().includes(typeKey.toLowerCase())) {
+      totalSalesQty += Number(s.qty || 0);
+    }
+  });
+
+  let computedStock = (totalBuyQty + totalProductionQty) - (totalOrdersQty + totalSalesQty);
+  return Math.max(0, computedStock);
+}
+
+function getLiveProductsWithStock() {
+  return BASE_PRODUCTS.map(prod => {
+    if (prod.bulk) {
+      return { ...prod, stock: 99999 };
+    }
+    let stockVal = 0;
+    let unitText = "1kg pack";
+
+    if (prod.type === 'dry') {
+      stockVal = calculateLiveStockForType('dry');
+      unitText = "1kg pack";
+    } else if (prod.type === 'powder') {
+      stockVal = calculateLiveStockForType('powder') || calculateLiveStockForType('dry');
+      stockVal = stockVal * 10; // 1kg dry = 10 packs of 100gm powder
+      unitText = "100gm pack";
+    } else if (prod.type === 'khakhra') {
+      stockVal = calculateLiveStockForType('khakhra');
+      unitText = "200gm pack";
+    } else if (prod.type === 'papad') {
+      stockVal = calculateLiveStockForType('papad');
+      unitText = "1 pack";
+    } else if (prod.type === 'green') {
+      stockVal = calculateLiveStockForType('green');
+      unitText = "1kg";
+    }
+
+    return { ...prod, stock: stockVal, unit: unitText };
+  });
+}
+
 function renderAdminLiveStockSummary() {
   const container = document.getElementById("adminLiveStockCardsContainer");
   if (!container) return;
 
-  const liveProducts = getLiveProductsWithStock();
-  const dryProd = liveProducts.find(p => p.type === "dry") || { stock: 0 };
-  const khakhraProd = liveProducts.find(p => p.type === "khakhra") || { stock: 0 };
-  const papadProd = liveProducts.find(p => p.type === "papad") || { stock: 0 };
-  const synchronizedPowderStock = dryProd.stock;
+  const liveProds = getLiveProductsWithStock();
+  const dryProd = liveProds.find(p => p.type === "dry") || { stock: 0 };
+  const powderProd = liveProds.find(p => p.type === "powder") || { stock: 0 };
+  const khakhraProd = liveProds.find(p => p.type === "khakhra") || { stock: 0 };
+  const papadProd = liveProds.find(p => p.type === "papad") || { stock: 0 };
 
   container.innerHTML = `
     <div style="background: #fefce8; border: 1px solid #fef08a; padding: 12px; border-radius: 10px;">
-      <div style="font-size: 12px; color: #854d0e; font-weight: bold;">🌾 Dry Mushroom Stock</div>
+      <div style="font-size: 12px; color: #854d0e; font-weight: bold;">🌾 Dry Mushroom Stock (1kg pack)</div>
       <div style="font-size: 20px; font-weight: 900; color: #a16207; margin: 4px 0;">${dryProd.stock} kg</div>
     </div>
 
     <div style="background: #f0fdf4; border: 1px solid #bbf7d0; padding: 12px; border-radius: 10px;">
-      <div style="font-size: 12px; color: #166534; font-weight: bold;">🧪 Powder Stock (Sync to Dry)</div>
-      <div style="font-size: 20px; font-weight: 900; color: #15803d; margin: 4px 0;">${synchronizedPowderStock} kg</div>
+      <div style="font-size: 12px; color: #166534; font-weight: bold;">🧪 Powder Stock (100gm pack)</div>
+      <div style="font-size: 20px; font-weight: 900; color: #15803d; margin: 4px 0;">${powderProd.stock} packs</div>
     </div>
 
     <div style="background: #fff7ed; border: 1px solid #ffedd5; padding: 12px; border-radius: 10px;">
@@ -1802,7 +1881,8 @@ function adminEditPurchase(idx) {
   const newDel = prompt("6. Delivery Charge (Rs):", p.delivery || 0);
   if (newDel !== null && !isNaN(parseFloat(newDel))) p.delivery = parseFloat(newDel);
 
-  p.total = (p.qty * p.rate) + p.delivery;
+  p.total = (p.qty * p.rate) + newDel;
+  p.delivery = newDel;
 
   const newPaid = prompt(`7. Paid Amount to Vendor (Total Rs ${p.total}):`, p.paidAmount !== undefined ? p.paidAmount : p.total);
   if (newPaid !== null && !isNaN(parseFloat(newPaid))) p.paidAmount = parseFloat(newPaid);
@@ -2179,7 +2259,7 @@ function saveAdminSale(e) {
   computeFinancialLedgerStatements();
   renderAdminLiveStockSummary();
   renderProducts();
-  alert(`✅ Wholesale Sale Entry saved! Live stock recomputed via formula. Total: Rs ${grandTotal}, Received: Rs ${paid}`);
+  alert(`✅ Wholesale Sale Entry saved! Stock successfully recomputed via formula.`);
 }
 
 function saveAdminPurchase(e) {
@@ -2187,7 +2267,7 @@ function saveAdminPurchase(e) {
   const rawDate = document.getElementById("purLogDate").value;
   const qty = parseFloat(document.getElementById("purQty").value);
   const rate = parseFloat(document.getElementById("purRate").value);
-  const delivery = parseFloat(document.getElementById("purDelivery").value) || 0;
+  const delivery = parseFloat(document.getElementById("purDelivery")?.value || 0);
   const paid = parseFloat(document.getElementById("purPaidAmount").value) || ((qty * rate) + delivery);
   const purType = document.getElementById("purProduct").value;
   const funder = document.getElementById("purFunder").value;
@@ -2218,7 +2298,7 @@ function saveAdminPurchase(e) {
   computeFinancialLedgerStatements();
   renderAdminLiveStockSummary();
   renderProducts();
-  alert(`✅ Inventory Buy recorded! Live stock updated. Total: Rs ${grandTotalPayable}, Paid: Rs ${paid}`);
+  alert(`✅ Inventory Buy recorded with Delivery Charge! Live stock updated.`);
 }
 
 function saveAdminDamage(e) {
@@ -2324,6 +2404,227 @@ Pure Grow Farm, Makhiyala, Gujarat
   
   document.getElementById("invoiceDialog").showModal();
 }
+
+function renderProducts(list = getLiveProductsWithStock()) {
+  if(!document.getElementById("productsList")) return;
+  document.getElementById("productsList").innerHTML = list.map(product => {
+    const inStock = product.stock > 0;
+
+    return `
+      <article class="product">
+        <img src="${product.image}" alt="${product.name}">
+        <h3>${product.name}</h3>
+        <p class="muted">${product.detail}</p>
+        
+        <div style="margin-bottom: 8px;">
+          ${product.bulk ? 
+            `<span class="badge" style="background: #e0f2fe; color: #0369a1; font-size:11px;">📦 Custom Supply</span>` : 
+            (inStock 
+              ? `<span class="badge badge-confirmed" style="font-size:11px;">🟢 Available: ${product.stock} ${product.unit}</span>` 
+              : `<span class="badge" style="background:#fee2e2; color:#991b1b; font-size:11px;">🔴 Out of Stock</span>`
+            )
+          }
+        </div>
+
+        <div style="margin-top:auto;">
+          <div class="product-actions">
+            <div class="pill">Rs ${product.price} / ${product.unit}</div>
+            ${product.bulk ? 
+              `<button type="button" onclick="window.open('https://wa.me/${farmWhatsapp}')">Contact Bulk</button>` : 
+              `<button type="button" ${inStock ? '' : 'disabled style="background:#9ca3af; cursor:not-allowed;"'} onclick="addToCart(${product.id})">
+                ${inStock ? 'Add Cart' : 'Out of Stock'}
+              </button>`
+            }
+          </div>
+        </div>
+      </article>
+    `;
+  }).join("");
+}
+
+function updateHeaderCartCounter() {
+  const badge = document.getElementById("headerCartCount");
+  if (!badge) return;
+  const totalCount = [...cart.values()].reduce((sum, item) => sum + item.qty, 0);
+  badge.textContent = totalCount;
+}
+
+function addToCart(id) {
+  const liveProducts = getLiveProductsWithStock();
+  const product = liveProducts.find(item => item.id === id);
+  if (!product || product.stock <= 0) {
+    alert("⚠️ Abhi yeh item stock me uplabdh nahi hai!");
+    return;
+  }
+
+  const current = cart.get(id);
+  const currentQty = current ? current.qty : 0;
+
+  if (currentQty + 1 > product.stock) {
+    alert(`⚠️ Stock me sirf ${product.stock} items hi uplabdh hain!`);
+    return;
+  }
+
+  cart.set(id, { ...product, qty: currentQty + 1 });
+  renderCart();
+  updateHeaderCartCounter();
+}
+
+function minusCart(id) {
+  const item = cart.get(id);
+  if (!item) return;
+  if (item.qty === 1) cart.delete(id);
+  else cart.set(id, { ...item, qty: item.qty - 1 });
+  renderCart();
+  updateHeaderCartCounter();
+}
+
+function getTotals() {
+  const subtotal = [...cart.values()].reduce((sum, item) => sum + (item.price * item.qty), 0);
+  const delivery = subtotal > 0 ? (subtotal > 1000 ? 0 : 50) : 0;
+  return { subtotal, delivery, total: subtotal + delivery };
+}
+
+function renderCart() {
+  const bill = getTotals();
+  if(document.getElementById("subtotal")) document.getElementById("subtotal").textContent = `Rs ${bill.subtotal}`;
+  if(document.getElementById("delivery")) document.getElementById("delivery").textContent = `Rs ${bill.delivery}`;
+  if(document.getElementById("total")) document.getElementById("total").textContent = `Rs ${bill.total}`;
+
+  updateHeaderCartCounter();
+
+  if (!cart.size) { 
+    if(document.getElementById("cartItems")) document.getElementById("cartItems").innerHTML = `<p class="muted">Cart selection is empty.</p>`; 
+    if(document.getElementById("paymentMode")) document.getElementById("paymentMode").value = "";
+    if(document.getElementById("paymentId")) {
+      document.getElementById("paymentId").value = "";
+      document.getElementById("paymentId").disabled = true;
+    }
+    if(document.getElementById("confirmOrderBtn")) document.getElementById("confirmOrderBtn").disabled = true;
+    return; 
+  }
+  
+  if(document.getElementById("cartItems")) {
+    document.getElementById("cartItems").innerHTML = [...cart.values()].map(item => `
+      <div class="cart-item">
+        <div><strong>${item.name}</strong><br><span class="muted">Rs ${item.price} x ${item.qty}</span></div>
+        <div class="qty-actions">
+          <button type="button" onclick="minusCart(${item.id})">-</button>
+          <button type="button" onclick="addToCart(${item.id})">+</button>
+        </div>
+      </div>
+    `).join("");
+  }
+  validateOrderForm();
+}
+
+function openProductPayment() {
+  const mode = document.getElementById("paymentMode").value;
+  const bill = getTotals();
+  if(!mode || !cart.size) {
+    document.getElementById("paymentId").value = "";
+    document.getElementById("paymentId").disabled = true;
+    validateOrderForm();
+    return;
+  }
+  
+  document.getElementById("productPaymentHelp").style.display = "block";
+  document.getElementById("productPaymentHelp").textContent = `Launching UPI Payment app link for Rs ${bill.total}.`;
+  
+  window.location.href = `upi://pay?pa=${encodeURIComponent(farmUpiId)}&pn=${encodeURIComponent(farmName)}&am=${bill.total}&cu=INR`;
+  
+  document.getElementById("paymentId").disabled = false;
+  validateOrderForm();
+}
+
+function validateOrderForm() {
+  const address = document.getElementById("address") ? document.getElementById("address").value.trim() : "";
+  const userUpi = document.getElementById("userUpiId") ? document.getElementById("userUpiId").value.trim() : "";
+  const mode = document.getElementById("paymentMode") ? document.getElementById("paymentMode").value : "";
+  const txnId = document.getElementById("paymentId") ? document.getElementById("paymentId").value.trim() : "";
+  
+  const isValid = cart.size > 0 && address.length > 4 && userUpi.length >= 5 && userUpi.includes('@') && mode !== "" && txnId.length >= 6;
+  if(document.getElementById("confirmOrderBtn")) document.getElementById("confirmOrderBtn").disabled = !isValid;
+}
+
+if(document.getElementById("address")) {
+  document.getElementById("address").addEventListener("input", validateOrderForm);
+}
+
+function confirmOrder(e) {
+  e.preventDefault();
+  const bill = getTotals();
+  const currentTimestamp = new Date().toLocaleDateString('en-IN') + " " + new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+  const generatedOrderId = "PGF-INV-" + Date.now().toString().slice(-5);
+
+  const data = {
+    orderId: generatedOrderId,
+    name: currentUser.name,
+    phone: currentUser.phone,
+    email: currentUser.email,
+    address: document.getElementById("address").value.trim(),
+    userUpiId: document.getElementById("userUpiId").value.trim(),
+    products: [...cart.values()].map(i => `${i.name} [x${i.qty}]`).join(", "),
+    subtotal: bill.subtotal,
+    delivery: bill.delivery,
+    total: bill.total,
+    paymentMode: document.getElementById("paymentMode").value,
+    txnId: document.getElementById("paymentId").value.trim(),
+    dateLogged: currentTimestamp,
+    rawIsoDate: getTodayIsoString(),
+    deliveryDays: "",
+    courierName: "Ekart Logistics",
+    refundCreditedDate: "",
+    status: "Pending Verification"
+  };
+
+  orderRegistry.unshift(data);
+  localStorage.setItem('pgf_orders', JSON.stringify(orderRegistry));
+  renderProducts();
+  renderAdminLiveStockSummary();
+  
+  document.getElementById("invNum").textContent = data.orderId;
+  document.getElementById("invDate").textContent = new Date().toLocaleDateString('en-IN');
+  document.getElementById("invClientName").textContent = data.name;
+  document.getElementById("invClientEmail").textContent = "Email: " + data.email + " | Ph: " + data.phone;
+  document.getElementById("invClientAddr").textContent = "Address: " + data.address + " | User UPI: " + data.userUpiId;
+  
+  document.getElementById("invoiceTableItemsBody").innerHTML = [...cart.values()].map(item => `
+    <tr>
+      <td style="padding:12px 14px; border-bottom:1px solid #e6e9ec; font-weight: 600;">${item.name} (${item.unit})</td>
+      <td style="padding:12px 14px; border-bottom:1px solid #e6e9ec; text-align:right;">Rs ${item.price}</td>
+      <td style="padding:12px 14px; border-bottom:1px solid #e6e9ec; text-align:center;">${item.qty}</td>
+      <td style="padding:12px 14px; border-bottom:1px solid #e6e9ec; text-align:right; font-weight:600; color:var(--accent);">Rs ${item.price * item.qty}</td>
+    </tr>
+  `).join("");
+  
+  document.getElementById("invSub").textContent = "Rs " + bill.subtotal;
+  document.getElementById("invDelivery").textContent = "Rs " + bill.delivery;
+  document.getElementById("invTotal").textContent = "Rs " + bill.total;
+
+  const paidRow = document.getElementById("invPaidRow");
+  const dueRow = document.getElementById("invDueRow");
+  const notesSec = document.getElementById("invNotesSection");
+  if (paidRow) paidRow.style.display = "none";
+  if (dueRow) dueRow.style.display = "none";
+  if (notesSec) notesSec.style.display = "none";
+
+  pushNotification('ADMIN', '🛍️ New Order Placed!', `${data.name} placed order #${data.orderId} for Rs ${data.total}`, 'order');
+  
+  const waMessage = `NEW GOODS ORDER VERIFICATION FLOW:\n----------------------------------------\nInvoice Ref Code: ${data.orderId}\nClient Legal Name: ${data.name}\nClient UPI ID: ${data.userUpiId}\nProducts Mapped: ${data.products}\nTotal Paid Amount: Rs ${data.total}\nPayment Method: ${data.paymentMode}\nTransaction Hash ID Code: ${data.txnId}\n----------------------------------------`;
+  
+  alert("Order submitted! Opening WhatsApp summary.");
+  window.open(`https://wa.me/${farmWhatsapp}?text=${encodeURIComponent(waMessage)}`, '_blank');
+  
+  document.getElementById("invoiceDialog").showModal();
+  
+  cart.clear();
+  renderCart();
+  document.getElementById("orderForm").reset();
+  checkUserSession();
+}
+
+function closeInvoice() { document.getElementById("invoiceDialog").close(); }
 
 renderProducts();
 checkUserSession();

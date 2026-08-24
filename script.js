@@ -1722,7 +1722,6 @@ function adminEditSale(idx) {
 function adminDeleteSale(idx) {
   if (confirm("Kya aap sach me ye Sell entry delete karna chahte hain?")) {
     const s = salesRegistry[idx];
-    // Return stock when delete sell entry
     const targetProd = products.find(p => p.type === s.product || p.name.toLowerCase().includes(s.product.toLowerCase()));
     if (targetProd && !targetProd.bulk) {
       targetProd.stock = (targetProd.stock || 0) + Number(s.qty || 0);

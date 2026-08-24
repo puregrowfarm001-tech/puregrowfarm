@@ -96,11 +96,11 @@ function getLiveProductsWithStock() {
       unitText = "1kg pack";
     } else if (prod.type === 'powder') {
       let dryBaseKg = calculateLiveStockForType('powder') || calculateLiveStockForType('dry');
-      stockVal = dryBaseKg * 10; // 1kg dry = 10 packets of 100gm powder
+      stockVal = dryBaseKg * 10; // 1kg dry = 10 packs of 100gm powder
       unitText = "100gm pack";
     } else if (prod.type === 'khakhra') {
       let khakhraBaseKg = calculateLiveStockForType('khakhra');
-      stockVal = khakhraBaseKg * 5; // 1kg/unit buy = 5 packets of 200gm
+      stockVal = khakhraBaseKg * 5; // 1kg buy = 5 packs of 200gm
       unitText = "200gm pack";
     } else if (prod.type === 'papad') {
       stockVal = calculateLiveStockForType('papad');
@@ -2342,8 +2342,10 @@ Pure Grow Farm, Makhiyala, Gujarat
 }
 
 function renderProducts(list = getLiveProductsWithStock()) {
-  if(!document.getElementById("productsList")) return;
-  document.getElementById("productsList").innerHTML = list.map(product => {
+  const container = document.getElementById("productsList");
+  if(!container) return;
+  
+  container.innerHTML = list.map(product => {
     const inStock = product.stock > 0;
 
     return `
@@ -2404,6 +2406,7 @@ function addToCart(id) {
   cart.set(id, { ...product, qty: currentQty + 1 });
   renderCart();
   updateHeaderCartCounter();
+  alert(`✅ Added to cart successfully!`);
 }
 
 function minusCart(id) {

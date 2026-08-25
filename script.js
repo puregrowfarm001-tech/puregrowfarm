@@ -2399,6 +2399,7 @@ function renderProducts(list = products) {
     }
 
     const isGreen = product.type === "green";
+    const isSpecialInquiry = product.bulk || isGreen;
 
     return `
       <article class="product">
@@ -2407,8 +2408,8 @@ function renderProducts(list = products) {
         <p class="muted">${product.detail}</p>
         
         <div style="margin-bottom: 8px;">
-          ${product.bulk || isGreen ? 
-            `<span class="badge" style="background: #e0f2fe; color: #0369a1; font-size:11px;">🌱 Fresh Harvest Inquiry</span>` : 
+          ${isSpecialInquiry ? 
+            `<span class="badge" style="background: #e0f2fe; color: #0369a1; font-size:11px;">🌱 Fresh Harvest & Bulk Inquiry</span>` : 
             (isAvailable 
               ? `<span class="badge badge-confirmed" style="font-size:11px;">🟢 Available: ${typeof currentStock === 'number' ? currentStock.toFixed(product.type === 'dry' ? 2 : 0) : currentStock} ${product.unit}</span>` 
               : `<span class="badge" style="background:#fee2e2; color:#991b1b; font-size:11px;">🔴 Out of Stock</span>`
@@ -2419,8 +2420,8 @@ function renderProducts(list = products) {
         <div style="margin-top:auto;">
           <div class="product-actions">
             <div class="pill">Rs ${product.price} / ${product.unit}</div>
-            ${product.bulk || isGreen ? 
-              `<button type="button" style="background:#25d366;" onclick="window.open('https://wa.me/${farmWhatsapp}?text=${encodeURIComponent("Hello Pure Grow Farm, I want to order Fresh Green Oyster Mushrooms. Please share availability details.")}')">💬 Contact WhatsApp</button>` : 
+            ${isSpecialInquiry ? 
+              `<button type="button" style="background:#25d366; width:100%;" onclick="window.open('https://wa.me/${farmWhatsapp}?text=${encodeURIComponent("Hello Pure Grow Farm, I want to inquire about " + product.name + ". Please share details.")}')">💬 Contact WhatsApp</button>` : 
               `<button type="button" ${isAvailable ? '' : 'disabled style="background:#9ca3af; cursor:not-allowed;"'} onclick="addToCart(${product.id})">
                 ${isAvailable ? 'Add Cart' : 'Out of Stock'}
               </button>`

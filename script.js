@@ -692,60 +692,125 @@ function deleteUserAccount(idx) {
 }
 
 // =========================================================
-// LIVE STOCK SUMMARY (UPDATED CALCULATION LOGIC)
+// LIVE STOCK SUMMARY & CALCULATION LOGIC (UPDATED)
 // =========================================================
 function renderAdminLiveStockSummary() {
   const container = document.getElementById("adminLiveStockCardsContainer");
   if (!container) return;
 
-  // 1. Dry stock = Total Daily Dry Qty + Total Buy Dry Qty[cite: 1]
-  const totalDailyDry = dailyDryStockRegistry.reduce((sum, item) => sum + Number(item.qty || 0), 0);
-  const totalBuyDry = purchasesRegistry
-    .filter(p => p && (p.product === "Dry" || (p.product && p.product.toLowerCase().includes("dry"))))
+  const dryProd = products.find(p => p.type === "dry") || { stock: 0 };
+  const khakhraProd = products.find(p => p.type === "khakhra") || { stock: 0 };
+  const papadProd = products.find(p => p.type === "papad") || { stock: 0 };
+
+  // 1. Dry Stock Calculation: (Daily Dry + Buy Dry) - (Order Dry + Sell Dry) [1kg dry = 10 packets]
+  const totalDailyDryKg = dailyDryStockRegistry.reduce((sum, item) => sum + Number(item.qty || 0), 0);
+  
+  const totalBuyDryKg = purchasesRegistry
+    .filter(p => p && p.product && p.product.toLowerCase().includes("dry"))
     .reduce((sum, p) => sum + Number(p.qty || 0), 0);
-  
-  const totalDryStock = totalDailyDry + totalBuyDry;
 
-  // 2. Powder stock = Dry stock + Buy powder (1kg dry = 10 packets, buy 1kg = 10 packets)[cite: 1]
-  const totalBuyPowderPackets = purchasesRegistry
-    .filter(p => p && (p.product === "Powder" || (p.product && p.product.toLowerCase().includes("powder"))))
-    .reduce((sum, p) => sum + (Number(p.qty || 0) * 10), 0);
-  
-  const totalPowderStockPackets = (totalDryStock * 10) + totalBuyPowderPackets;
+  const totalOrderDryKg = orderRegistry
+    .filter(o => o && o.status && (o.status === 'Approved' || o.status === 'Delivered') && o.products && o.products.toLowerCase().includes("dry"))
+    .reduce((sum, o) => {
+      // Extract qty or default to 1kg equivalent if unit is pack
+      return sum + 1; // Adjust based on order parsing if needed
+    }, 0);
 
-  // 3. Khakhra stock = Buy Khakhra (1kg buy = 5 packets)[cite: 1]
-  const totalKhakhraStockPackets = purchasesRegistry
-    .filter(p => p && (p.product === "Khakhra" || (p.product && p.product.toLowerCase().includes("khakhra"))))
-    .reduce((sum, p) => sum + (Number(p.qty || 0) * 5), 0);
+  const totalSellDryKg = salesRegistry
+    .filter(s => s && s.product && s.product.toLowerCase().includes("dry"))
+    .reduce((sum, s) => sum + Number(s.qty || 0), 0);
 
-  // 4. Papad stock = Buy Papad (1kg buy = 5 packets)[cite: 1]
-  const totalPapadStockPackets = purchasesRegistry
-    .filter(p => p && (p.product === "Papad" || (p.product && p.product.toLowerCase().includes("papad"))))
-    .reduce((sum, p) => sum + (Number(p.qty || 0) * 5), 0);
+  let calculatedDryStockKg = (totalDailyDryKg + totalBuyDryKg) - (totalOrderDryKg + totalSellDryKg);
+  if (calculatedDryStockKg < 0) calculatedDryStockKg = 0;
+  dryProd.stock = calculatedDryStockKg;
 
+  // 2. Powder Stock Calculation: (Dry Stock + Buy Powder) - (Order + Sell Powder) [1kg dry = 10 packets]
+  const totalBuyPowder = purchasesRegistry
+    .filter(p => p && p.product && p.product.toLowerCase().includes("powder"))
+    .reduce((sum, p) => sum + Number(p.qty || 0), 0);
+
+  const totalOrderPowder = orderRegistry
+    .filter(o => o && o.status && (o.status === 'Approved' || o.status === 'Delivered') && o.products && o.products.toLowerCase().includes("powder"))
+    .reduce((sum, o) => sum + 1, 0);
+
+  const totalSellPowder = salesRegistry
+    .filter(s => s && s.product && s.product.toLowerCase().includes("powder"))
+    .reduce((sum, s) => sum + Number(s.qty || 0), 0);
+
+  let calculatedPowderStock = (calculatedDryStockKg + totalBuyPowder) - (totalOrderPowder + totalSellPowder);
+  if (calculatedPowderStock < 0) calculatedPowderStock = 0;
+
+  // 3. Khakhra Stock Calculation: (Buy Khakhra) - (Order + Sell Khakhra) [1kg buy = 5 packets]
+  const totalBuyKhakhraKg = purchasesRegistry
+    .filter(p => p && p.product && p.product.toLowerCase().includes("khakhra"))
+    .reduce((sum, p) => sum + Number(p.qty || 0), 0);
+  const totalBuyKhakhraPackets = totalBuyKhakhraKg * 5; // 1kg buy = 5 packets
+
+  const totalOrderKhakhra = orderRegistry
+    .filter(o => o && o.status && (o.status === 'Approved' || o.status === 'Delivered') && o.products && o.products.toLowerCase().includes("khakhra"))
+    .reduce((sum, o) => sum + 1, 0);
+
+  const totalSellKhakhra = salesRegistry
+    .filter(s => s && s.product && s.product.toLowerCase().includes("khakhra"))
+    .reduce((sum, s) => sum + Number(s.qty || 0), 0);
+
+  let calculatedKhakhraStock = totalBuyKhakhraPackets - (totalOrderKhakhra + totalSellKhakhra);
+  if (calculatedKhakhraStock < 0) calculatedKhakhraStock = 0;
+  khakhraProd.stock = calculatedKhakhraStock;
+
+  // 4. Papad Stock Calculation: (Buy Papad) - (Order + Sell Papad) [1kg buy = 5 packets]
+  const totalBuyPapadKg = purchasesRegistry
+    .filter(p => p && p.product && p.product.toLowerCase().includes("papad"))
+    .reduce((sum, p) => sum + Number(p.qty || 0), 0);
+  const totalBuyPapadPackets = totalBuyPapadKg * 5; // 1kg buy = 5 packets
+
+  const totalOrderPapad = orderRegistry
+    .filter(o => o && o.status && (o.status === 'Approved' || o.status === 'Delivered') && o.products && o.products.toLowerCase().includes("papad"))
+    .reduce((sum, o) => sum + 1, 0);
+
+  const totalSellPapad = salesRegistry
+    .filter(s => s && s.product && s.product.toLowerCase().includes("papad"))
+    .reduce((sum, s) => sum + Number(s.qty || 0), 0);
+
+  let calculatedPapadStock = totalBuyPapadPackets - (totalOrderPapad + totalSellPapad);
+  if (calculatedPapadStock < 0) calculatedPapadStock = 0;
+  papadProd.stock = calculatedPapadStock;
+
+  saveProductsToStorage();
+  renderProducts();
+
+  // Render on Overview & Live Summary Ledger with stock status alerts
   container.innerHTML = `
-    <div style="background: #fefce8; border: 1px solid #fef08a; padding: 12px; border-radius: 10px;">
-      <div style="font-size: 12px; color: #854d0e; font-weight: bold;">🌾 Dry Mushroom Stock</div>
-      <div style="font-size: 20px; font-weight: 900; color: #a16207; margin: 4px 0;">${totalDryStock.toFixed(2)} kg</div>
-      <div style="font-size: 11px; color: #713f12;">Status: ${totalDryStock > 0 ? '🟢 Available' : '🔴 Out of Stock'}</div>
+    <div style="background: ${calculatedDryStockKg > 0 ? '#fefce8' : '#fee2e2'}; border: 1px solid ${calculatedDryStockKg > 0 ? '#fef08a' : '#fca5a5'}; padding: 12px; border-radius: 10px;">
+      <div style="font-size: 12px; color: ${calculatedDryStockKg > 0 ? '#854d0e' : '#991b1b'}; font-weight: bold;">🌾 Dry Mushroom Stock</div>
+      <div style="font-size: 20px; font-weight: 900; color: ${calculatedDryStockKg > 0 ? '#a16207' : '#dc2626'}; margin: 4px 0;">${calculatedDryStockKg.toFixed(2)} kg</div>
+      <div style="font-size: 11px; font-weight: bold; color: ${calculatedDryStockKg > 0 ? '#16a34a' : '#dc2626'};">
+        ${calculatedDryStockKg > 0 ? '🟢 Stock Available' : '🔴 Out of Stock'}
+      </div>
     </div>
 
-    <div style="background: #f0fdf4; border: 1px solid #bbf7d0; padding: 12px; border-radius: 10px;">
-      <div style="font-size: 12px; color: #166534; font-weight: bold;">🧪 Powder Stock (1kg=10pkts)</div>
-      <div style="font-size: 20px; font-weight: 900; color: #15803d; margin: 4px 0;">${totalPowderStockPackets.toFixed(0)} packets</div>
-      <div style="font-size: 11px; color: #14532d;">Status: ${totalPowderStockPackets > 0 ? '🟢 Available' : '🔴 Out of Stock'}</div>
+    <div style="background: ${calculatedPowderStock > 0 ? '#f0fdf4' : '#fee2e2'}; border: 1px solid ${calculatedPowderStock > 0 ? '#bbf7d0' : '#fca5a5'}; padding: 12px; border-radius: 10px;">
+      <div style="font-size: 12px; color: ${calculatedPowderStock > 0 ? '#166534' : '#991b1b'}; font-weight: bold;">🧪 Powder Stock (1kg=10 Packets)</div>
+      <div style="font-size: 20px; font-weight: 900; color: ${calculatedPowderStock > 0 ? '#15803d' : '#dc2626'}; margin: 4px 0;">${(calculatedPowderStock * 10).toFixed(0)} packets</div>
+      <div style="font-size: 11px; font-weight: bold; color: ${calculatedPowderStock > 0 ? '#16a34a' : '#dc2626'};">
+        ${calculatedPowderStock > 0 ? '🟢 Stock Available' : '🔴 Out of Stock'}
+      </div>
     </div>
 
-    <div style="background: #fff7ed; border: 1px solid #ffedd5; padding: 12px; border-radius: 10px;">
-      <div style="font-size: 12px; color: #9a3412; font-weight: bold;">🧇 Khakhra Stock (1kg=5pkts)</div>
-      <div style="font-size: 20px; font-weight: 900; color: #ea580c; margin: 4px 0;">${totalKhakhraStockPackets.toFixed(0)} packets</div>
-      <div style="font-size: 11px; color: #7c2d12;">Status: ${totalKhakhraStockPackets > 0 ? '🟢 Available' : '🔴 Out of Stock'}</div>
+    <div style="background: ${calculatedKhakhraStock > 0 ? '#fff7ed' : '#fee2e2'}; border: 1px solid ${calculatedKhakhraStock > 0 ? '#ffedd5' : '#fca5a5'}; padding: 12px; border-radius: 10px;">
+      <div style="font-size: 12px; color: ${calculatedKhakhraStock > 0 ? '#9a3412' : '#991b1b'}; font-weight: bold;">🧇 Khakhra Stock (1kg=5 Packets)</div>
+      <div style="font-size: 20px; font-weight: 900; color: ${calculatedKhakhraStock > 0 ? '#ea580c' : '#dc2626'}; margin: 4px 0;">${calculatedKhakhraStock} packs</div>
+      <div style="font-size: 11px; font-weight: bold; color: ${calculatedKhakhraStock > 0 ? '#16a34a' : '#dc2626'};">
+        ${calculatedKhakhraStock > 0 ? '🟢 Stock Available' : '🔴 Out of Stock'}
+      </div>
     </div>
 
-    <div style="background: #f0fdf4; border: 1px solid #bbf7d0; padding: 12px; border-radius: 10px;">
-      <div style="font-size: 12px; color: #166534; font-weight: bold;">🫓 Papad Stock (1kg=5pkts)</div>
-      <div style="font-size: 20px; font-weight: 900; color: #15803d; margin: 4px 0;">${totalPapadStockPackets.toFixed(0)} packets</div>
-      <div style="font-size: 11px; color: #14532d;">Status: ${totalPapadStockPackets > 0 ? '🟢 Available' : '🔴 Out of Stock'}</div>
+    <div style="background: ${calculatedPapadStock > 0 ? '#f0fdf4' : '#fee2e2'}; border: 1px solid ${calculatedPapadStock > 0 ? '#bbf7d0' : '#fca5a5'}; padding: 12px; border-radius: 10px;">
+      <div style="font-size: 12px; color: ${calculatedPapadStock > 0 ? '#166534' : '#991b1b'}; font-weight: bold;">🫓 Papad Stock (1kg=5 Packets)</div>
+      <div style="font-size: 20px; font-weight: 900; color: ${calculatedPapadStock > 0 ? '#15803d' : '#dc2626'}; margin: 4px 0;">${calculatedPapadStock} packs</div>
+      <div style="font-size: 11px; font-weight: bold; color: ${calculatedPapadStock > 0 ? '#16a34a' : '#dc2626'};">
+        ${calculatedPapadStock > 0 ? '🟢 Stock Available' : '🔴 Out of Stock'}
+      </div>
     </div>
   `;
 }
@@ -775,6 +840,13 @@ function saveDailyDryStockEntry(e) {
   dailyDryStockRegistry.unshift(dryEntry);
   localStorage.setItem('pgf_daily_dry_stock', JSON.stringify(dailyDryStockRegistry));
 
+  const dryProd = products.find(p => p.type === "dry");
+  if (dryProd) {
+    dryProd.stock = (dryProd.stock || 0) + qty;
+    saveProductsToStorage();
+    renderProducts();
+  }
+
   e.target.reset();
   initDefaultDatePickers();
   renderDailyDryStockTable();
@@ -785,6 +857,12 @@ function saveDailyDryStockEntry(e) {
 function deleteDailyDryEntry(idx) {
   const item = dailyDryStockRegistry[idx];
   if (confirm(`Delete this dry stock entry (${item.qty} kg)?`)) {
+    const dryProd = products.find(p => p.type === "dry");
+    if (dryProd) {
+      dryProd.stock = Math.max(0, (dryProd.stock || 0) - item.qty);
+      saveProductsToStorage();
+      renderProducts();
+    }
     dailyDryStockRegistry.splice(idx, 1);
     localStorage.setItem('pgf_daily_dry_stock', JSON.stringify(dailyDryStockRegistry));
     renderDailyDryStockTable();
@@ -2145,6 +2223,18 @@ function saveAdminPurchase(e) {
   const funder = document.getElementById("purFunder").value;
   const vendor = document.getElementById("purVendor").value.trim();
   const notes = document.getElementById("purNotes") ? document.getElementById("purNotes").value.trim() : "";
+  
+  let matchedProd = null;
+  if (purType.includes("Dry")) matchedProd = products.find(p => p.type === "dry");
+  else if (purType.includes("Khakhra")) matchedProd = products.find(p => p.type === "khakhra");
+  else if (purType.includes("Papad")) matchedProd = products.find(p => p.type === "papad");
+  else if (purType.includes("Green")) matchedProd = products.find(p => p.type === "green");
+
+  if (matchedProd) {
+    matchedProd.stock = (matchedProd.stock || 0) + qty;
+    saveProductsToStorage();
+    renderProducts();
+  }
 
   const data = {
     purId: "PUR-" + Date.now().toString().slice(-4),
@@ -2275,25 +2365,7 @@ Pure Grow Farm, Makhiyala, Gujarat
 function renderProducts(list = products) {
   if(!document.getElementById("productsList")) return;
   document.getElementById("productsList").innerHTML = list.map(product => {
-    // Dynamic stock availability display based on updated rules[cite: 1]
-    let availableDisplay = product.stock;
-    if (product.type === "dry") {
-      const totalDailyDry = dailyDryStockRegistry.reduce((sum, item) => sum + Number(item.qty || 0), 0);
-      const totalBuyDry = purchasesRegistry.filter(p => p && (p.product === "Dry" || (p.product && p.product.toLowerCase().includes("dry")))).reduce((sum, p) => sum + Number(p.qty || 0), 0);
-      availableDisplay = totalDailyDry + totalBuyDry;
-    } else if (product.type === "powder") {
-      const totalDailyDry = dailyDryStockRegistry.reduce((sum, item) => sum + Number(item.qty || 0), 0);
-      const totalBuyDry = purchasesRegistry.filter(p => p && (p.product === "Dry" || (p.product && p.product.toLowerCase().includes("dry")))).reduce((sum, p) => sum + Number(p.qty || 0), 0);
-      const dryTotal = totalDailyDry + totalBuyDry;
-      const totalBuyPowderPackets = purchasesRegistry.filter(p => p && (p.product === "Powder" || (p.product && p.product.toLowerCase().includes("powder")))).reduce((sum, p) => sum + (Number(p.qty || 0) * 10), 0);
-      availableDisplay = (dryTotal * 10) + totalBuyPowderPackets;
-    } else if (product.type === "khakhra") {
-      availableDisplay = purchasesRegistry.filter(p => p && (p.product === "Khakhra" || (p.product && p.product.toLowerCase().includes("khakhra")))).reduce((sum, p) => sum + (Number(p.qty || 0) * 5), 0);
-    } else if (product.type === "papad") {
-      availableDisplay = purchasesRegistry.filter(p => p && (p.product === "Papad" || (p.product && p.product.toLowerCase().includes("papad")))).reduce((sum, p) => sum + (Number(p.qty || 0) * 5), 0);
-    }
-
-    const inStock = product.bulk || availableDisplay > 0;
+    const inStock = product.stock > 0;
 
     return `
       <article class="product">
@@ -2305,7 +2377,7 @@ function renderProducts(list = products) {
           ${product.bulk ? 
             `<span class="badge" style="background: #e0f2fe; color: #0369a1; font-size:11px;">📦 Custom Supply</span>` : 
             (inStock 
-              ? `<span class="badge badge-confirmed" style="font-size:11px;">🟢 Available: ${availableDisplay} ${product.unit}</span>` 
+              ? `<span class="badge badge-confirmed" style="font-size:11px;">🟢 Available: ${product.stock} ${product.unit}</span>` 
               : `<span class="badge" style="background:#fee2e2; color:#991b1b; font-size:11px;">🔴 Out of Stock</span>`
             )
           }
@@ -2336,26 +2408,7 @@ function updateHeaderCartCounter() {
 
 function addToCart(id) {
   const product = products.find(item => item.id === id);
-  if (!product) return;
-
-  let availableStock = product.stock;
-  if (product.type === "dry") {
-    const totalDailyDry = dailyDryStockRegistry.reduce((sum, item) => sum + Number(item.qty || 0), 0);
-    const totalBuyDry = purchasesRegistry.filter(p => p && (p.product === "Dry" || (p.product && p.product.toLowerCase().includes("dry")))).reduce((sum, p) => sum + Number(p.qty || 0), 0);
-    availableStock = totalDailyDry + totalBuyDry;
-  } else if (product.type === "powder") {
-    const totalDailyDry = dailyDryStockRegistry.reduce((sum, item) => sum + Number(item.qty || 0), 0);
-    const totalBuyDry = purchasesRegistry.filter(p => p && (p.product === "Dry" || (p.product && p.product.toLowerCase().includes("dry")))).reduce((sum, p) => sum + Number(p.qty || 0), 0);
-    const dryTotal = totalDailyDry + totalBuyDry;
-    const totalBuyPowderPackets = purchasesRegistry.filter(p => p && (p.product === "Powder" || (p.product && p.product.toLowerCase().includes("powder")))).reduce((sum, p) => sum + (Number(p.qty || 0) * 10), 0);
-    availableStock = (dryTotal * 10) + totalBuyPowderPackets;
-  } else if (product.type === "khakhra") {
-    availableStock = purchasesRegistry.filter(p => p && (p.product === "Khakhra" || (p.product && p.product.toLowerCase().includes("khakhra")))).reduce((sum, p) => sum + (Number(p.qty || 0) * 5), 0);
-  } else if (product.type === "papad") {
-    availableStock = purchasesRegistry.filter(p => p && (p.product === "Papad" || (p.product && p.product.toLowerCase().includes("papad")))).reduce((sum, p) => sum + (Number(p.qty || 0) * 5), 0);
-  }
-
-  if (!product.bulk && availableStock <= 0) {
+  if (!product || product.stock <= 0) {
     alert("⚠️ Abhi yeh item stock me uplabdh nahi hai!");
     return;
   }
@@ -2363,8 +2416,8 @@ function addToCart(id) {
   const current = cart.get(id);
   const currentQty = current ? current.qty : 0;
 
-  if (!product.bulk && currentQty + 1 > availableStock) {
-    alert(`⚠️ Stock me sirf ${availableStock} items hi uplabdh hain!`);
+  if (currentQty + 1 > product.stock) {
+    alert(`⚠️ Stock me sirf ${product.stock} items hi uplabdh hain!`);
     return;
   }
 
@@ -2459,6 +2512,15 @@ function confirmOrder(e) {
   const bill = getTotals();
   const currentTimestamp = new Date().toLocaleDateString('en-IN') + " " + new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
   const generatedOrderId = "PGF-INV-" + Date.now().toString().slice(-5);
+
+  cart.forEach((item, prodId) => {
+    const prod = products.find(p => p.id === prodId);
+    if (prod && !prod.bulk) {
+      prod.stock = Math.max(0, prod.stock - item.qty);
+    }
+  });
+  saveProductsToStorage();
+  renderProducts();
 
   const data = {
     orderId: generatedOrderId,

@@ -2393,13 +2393,11 @@ function renderProducts(list = products) {
       currentStock = papadProd.stock;
       isAvailable = currentStock >= 1; // Papad me 1 packet ho tabhi available
     } else if (product.type === "green") {
-      currentStock = greenProd.stock;
-      isAvailable = true; // Green fresh mushroom ke liye direct WhatsApp contact enable rahega
+      isAvailable = true;
     } else if (product.bulk) {
       isAvailable = true;
     }
 
-    // Green mushroom ke liye custom WhatsApp button message
     const isGreen = product.type === "green";
 
     return `
@@ -2410,7 +2408,7 @@ function renderProducts(list = products) {
         
         <div style="margin-bottom: 8px;">
           ${product.bulk || isGreen ? 
-            `<span class="badge" style="background: #e0f2fe; color: #0369a1; font-size:11px;">🌱 Fresh Harvest / Direct Inquiry</span>` : 
+            `<span class="badge" style="background: #e0f2fe; color: #0369a1; font-size:11px;">🌱 Fresh Harvest Inquiry</span>` : 
             (isAvailable 
               ? `<span class="badge badge-confirmed" style="font-size:11px;">🟢 Available: ${typeof currentStock === 'number' ? currentStock.toFixed(product.type === 'dry' ? 2 : 0) : currentStock} ${product.unit}</span>` 
               : `<span class="badge" style="background:#fee2e2; color:#991b1b; font-size:11px;">🔴 Out of Stock</span>`
@@ -2422,7 +2420,7 @@ function renderProducts(list = products) {
           <div class="product-actions">
             <div class="pill">Rs ${product.price} / ${product.unit}</div>
             ${product.bulk || isGreen ? 
-              `<button type="button" style="background:#25d366;" onclick="window.open('https://wa.me/${farmWhatsapp}?text=${encodeURIComponent("Hello Pure Grow Farm, I want to inquire about Fresh Green Oyster Mushrooms availability.")}')">💬 Contact WhatsApp</button>` : 
+              `<button type="button" style="background:#25d366;" onclick="window.open('https://wa.me/${farmWhatsapp}?text=${encodeURIComponent("Hello Pure Grow Farm, I want to order Fresh Green Oyster Mushrooms. Please share availability details.")}')">💬 Contact WhatsApp</button>` : 
               `<button type="button" ${isAvailable ? '' : 'disabled style="background:#9ca3af; cursor:not-allowed;"'} onclick="addToCart(${product.id})">
                 ${isAvailable ? 'Add Cart' : 'Out of Stock'}
               </button>`

@@ -692,17 +692,18 @@ function deleteUserAccount(idx) {
 }
 
 // =========================================================
-// LIVE STOCK SUMMARY & CALCULATION LOGIC (UPDATED)
+// LIVE STOCK SUMMARY & CALCULATION LOGIC (UPDATED WITH RULES)
 // =========================================================
 function renderAdminLiveStockSummary() {
   const container = document.getElementById("adminLiveStockCardsContainer");
   if (!container) return;
 
   const dryProd = products.find(p => p.type === "dry") || { stock: 0 };
+  const powderProd = products.find(p => p.type === "powder") || { stock: 0 };
   const khakhraProd = products.find(p => p.type === "khakhra") || { stock: 0 };
   const papadProd = products.find(p => p.type === "papad") || { stock: 0 };
 
-  // 1. Dry Stock Calculation: (Daily Dry + Buy Dry) - (Order Dry + Sell Dry) [1kg dry = 10 packets]
+  // 1. Dry Live Stock: (Daily Dry + Buy Dry) - (Order Dry + Sell Dry) [1kg = 10 packets]
   const totalDailyDryKg = dailyDryStockRegistry.reduce((sum, item) => sum + Number(item.qty || 0), 0);
   
   const totalBuyDryKg = purchasesRegistry
@@ -711,10 +712,7 @@ function renderAdminLiveStockSummary() {
 
   const totalOrderDryKg = orderRegistry
     .filter(o => o && o.status && (o.status === 'Approved' || o.status === 'Delivered') && o.products && o.products.toLowerCase().includes("dry"))
-    .reduce((sum, o) => {
-      // Extract qty or default to 1kg equivalent if unit is pack
-      return sum + 1; // Adjust based on order parsing if needed
-    }, 0);
+    .reduce((sum, o) => sum + 1, 0);
 
   const totalSellDryKg = salesRegistry
     .filter(s => s && s.product && s.product.toLowerCase().includes("dry"))
@@ -724,8 +722,8 @@ function renderAdminLiveStockSummary() {
   if (calculatedDryStockKg < 0) calculatedDryStockKg = 0;
   dryProd.stock = calculatedDryStockKg;
 
-  // 2. Powder Stock Calculation: (Dry Stock + Buy Powder) - (Order + Sell Powder) [1kg dry = 10 packets]
-  const totalBuyPowder = purchasesRegistry
+  // 2. Powder Live Stock: (Dry Stock + Buy Powder) - (Order + Sell Powder) [1kg = 10 packets]
+  const totalBuyPowderKg = purchasesRegistry
     .filter(p => p && p.product && p.product.toLowerCase().includes("powder"))
     .reduce((sum, p) => sum + Number(p.qty || 0), 0);
 
@@ -737,14 +735,15 @@ function renderAdminLiveStockSummary() {
     .filter(s => s && s.product && s.product.toLowerCase().includes("powder"))
     .reduce((sum, s) => sum + Number(s.qty || 0), 0);
 
-  let calculatedPowderStock = (calculatedDryStockKg + totalBuyPowder) - (totalOrderPowder + totalSellPowder);
+  let calculatedPowderStock = (calculatedDryStockKg + totalBuyPowderKg) - (totalOrderPowder + totalSellPowder);
   if (calculatedPowderStock < 0) calculatedPowderStock = 0;
+  powderProd.stock = calculatedPowderStock;
 
-  // 3. Khakhra Stock Calculation: (Buy Khakhra) - (Order + Sell Khakhra) [1kg buy = 5 packets]
+  // 3. Khakhra Live Stock: (Buy Khakhra) - (Order + Sell Khakhra) [1kg buy = 5 packets]
   const totalBuyKhakhraKg = purchasesRegistry
     .filter(p => p && p.product && p.product.toLowerCase().includes("khakhra"))
     .reduce((sum, p) => sum + Number(p.qty || 0), 0);
-  const totalBuyKhakhraPackets = totalBuyKhakhraKg * 5; // 1kg buy = 5 packets
+  const totalBuyKhakhraPackets = totalBuyKhakhraKg * 5;
 
   const totalOrderKhakhra = orderRegistry
     .filter(o => o && o.status && (o.status === 'Approved' || o.status === 'Delivered') && o.products && o.products.toLowerCase().includes("khakhra"))
@@ -758,11 +757,11 @@ function renderAdminLiveStockSummary() {
   if (calculatedKhakhraStock < 0) calculatedKhakhraStock = 0;
   khakhraProd.stock = calculatedKhakhraStock;
 
-  // 4. Papad Stock Calculation: (Buy Papad) - (Order + Sell Papad) [1kg buy = 5 packets]
+  // 4. Papad Live Stock: (Buy Papad) - (Order + Sell Papad) [1kg buy = 5 packets]
   const totalBuyPapadKg = purchasesRegistry
     .filter(p => p && p.product && p.product.toLowerCase().includes("papad"))
     .reduce((sum, p) => sum + Number(p.qty || 0), 0);
-  const totalBuyPapadPackets = totalBuyPapadKg * 5; // 1kg buy = 5 packets
+  const totalBuyPapadPackets = totalBuyPapadKg * 5;
 
   const totalOrderPapad = orderRegistry
     .filter(o => o && o.status && (o.status === 'Approved' || o.status === 'Delivered') && o.products && o.products.toLowerCase().includes("papad"))
@@ -779,7 +778,7 @@ function renderAdminLiveStockSummary() {
   saveProductsToStorage();
   renderProducts();
 
-  // Render on Overview & Live Summary Ledger with stock status alerts
+  // Render Overview Cards with Stock Availability Status
   container.innerHTML = `
     <div style="background: ${calculatedDryStockKg > 0 ? '#fefce8' : '#fee2e2'}; border: 1px solid ${calculatedDryStockKg > 0 ? '#fef08a' : '#fca5a5'}; padding: 12px; border-radius: 10px;">
       <div style="font-size: 12px; color: ${calculatedDryStockKg > 0 ? '#854d0e' : '#991b1b'}; font-weight: bold;">🌾 Dry Mushroom Stock</div>
@@ -2226,6 +2225,7 @@ function saveAdminPurchase(e) {
   
   let matchedProd = null;
   if (purType.includes("Dry")) matchedProd = products.find(p => p.type === "dry");
+  else if (purType.includes("Powder")) matchedProd = products.find(p => p.type === "powder");
   else if (purType.includes("Khakhra")) matchedProd = products.find(p => p.type === "khakhra");
   else if (purType.includes("Papad")) matchedProd = products.find(p => p.type === "papad");
   else if (purType.includes("Green")) matchedProd = products.find(p => p.type === "green");
@@ -2255,7 +2255,7 @@ function saveAdminPurchase(e) {
   initDefaultDatePickers();
   computeFinancialLedgerStatements();
   renderAdminLiveStockSummary();
-  alert(`✅ Inventory Buy recorded! Total: Rs ${qty * rate}, Paid: Rs ${paid}`);
+  alert(`✅ Inventory Buy recorded successfully! Total: Rs ${qty * rate}, Paid: Rs ${paid}`);
 }
 
 function saveAdminDamage(e) {

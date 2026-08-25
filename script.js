@@ -2370,7 +2370,6 @@ Pure Grow Farm, Makhiyala, Gujarat
 function renderProducts(list = products) {
   if(!document.getElementById("productsList")) return;
   
-  // Admin live stock values sync karein user ke liye
   const dryProd = products.find(p => p.type === "dry") || { stock: 0 };
   const powderProd = products.find(p => p.type === "powder") || { stock: 0 };
   const khakhraProd = products.find(p => p.type === "khakhra") || { stock: 0 };
@@ -2381,12 +2380,11 @@ function renderProducts(list = products) {
     let currentStock = product.stock;
     let isAvailable = false;
 
-    // Type ke mutabiq exact availability condition check
     if (product.type === "dry") {
       currentStock = dryProd.stock;
       isAvailable = currentStock >= 1; // Dry me 1kg ho tabhi available
     } else if (product.type === "powder") {
-      currentStock = powderProd.stock * 10; // 1kg = 10 packets conversion
+      currentStock = powderProd.stock * 10;
       isAvailable = currentStock >= 1; // Powder me 1 packet ho tabhi available
     } else if (product.type === "khakhra") {
       currentStock = khakhraProd.stock;
@@ -2396,10 +2394,13 @@ function renderProducts(list = products) {
       isAvailable = currentStock >= 1; // Papad me 1 packet ho tabhi available
     } else if (product.type === "green") {
       currentStock = greenProd.stock;
-      isAvailable = currentStock >= 1;
+      isAvailable = true; // Green fresh mushroom ke liye direct WhatsApp contact enable rahega
     } else if (product.bulk) {
       isAvailable = true;
     }
+
+    // Green mushroom ke liye custom WhatsApp button message
+    const isGreen = product.type === "green";
 
     return `
       <article class="product">
@@ -2408,8 +2409,8 @@ function renderProducts(list = products) {
         <p class="muted">${product.detail}</p>
         
         <div style="margin-bottom: 8px;">
-          ${product.bulk ? 
-            `<span class="badge" style="background: #e0f2fe; color: #0369a1; font-size:11px;">📦 Custom Supply</span>` : 
+          ${product.bulk || isGreen ? 
+            `<span class="badge" style="background: #e0f2fe; color: #0369a1; font-size:11px;">🌱 Fresh Harvest / Direct Inquiry</span>` : 
             (isAvailable 
               ? `<span class="badge badge-confirmed" style="font-size:11px;">🟢 Available: ${typeof currentStock === 'number' ? currentStock.toFixed(product.type === 'dry' ? 2 : 0) : currentStock} ${product.unit}</span>` 
               : `<span class="badge" style="background:#fee2e2; color:#991b1b; font-size:11px;">🔴 Out of Stock</span>`
@@ -2420,8 +2421,8 @@ function renderProducts(list = products) {
         <div style="margin-top:auto;">
           <div class="product-actions">
             <div class="pill">Rs ${product.price} / ${product.unit}</div>
-            ${product.bulk ? 
-              `<button type="button" onclick="window.open('https://wa.me/${farmWhatsapp}')">Contact Bulk</button>` : 
+            ${product.bulk || isGreen ? 
+              `<button type="button" style="background:#25d366;" onclick="window.open('https://wa.me/${farmWhatsapp}?text=${encodeURIComponent("Hello Pure Grow Farm, I want to inquire about Fresh Green Oyster Mushrooms availability.")}')">💬 Contact WhatsApp</button>` : 
               `<button type="button" ${isAvailable ? '' : 'disabled style="background:#9ca3af; cursor:not-allowed;"'} onclick="addToCart(${product.id})">
                 ${isAvailable ? 'Add Cart' : 'Out of Stock'}
               </button>`

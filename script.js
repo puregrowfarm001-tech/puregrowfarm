@@ -2147,7 +2147,40 @@ function computeFinancialLedgerStatements() {
 
 function saveAdminExpense(e) {
   e.preventDefault();
+
+  // Rule: Check available balance before logging an expense
+  const selectedYear = document.getElementById("adminYearFilterSelect")?.value || "ALL";
+  
+  const filteredOrders = orderRegistry.filter(o => o && (o.status === 'Approved' || o.status === 'Delivered') && (selectedYear === "ALL" || (o.rawIsoDate || o.dateLogged || "").includes(selectedYear)));
+  const orderTotal = filteredOrders.reduce((sum, o) => sum + Number(o.total || 0), 0);
+
+  const filteredBookings = bookingsRegistry.filter(b => b && b.name && (b.status === "Confirmed" || b.status === "Approved") && (selectedYear === "ALL" || (b.date || b.dateLogged || "").includes(selectedYear)));
+  const farmBookingTotal = filteredBookings.reduce((sum, b) => sum + Number(b.fee || 0), 0);
+
+  const filteredSales = salesRegistry.filter(s => s && (selectedYear === "ALL" || (s.date || "").includes(selectedYear)));
+  const sellTotal = filteredSales.reduce((sum, s) => sum + Number(s.paidAmount !== undefined ? s.paidAmount : s.total || 0), 0);
+
+  const filteredPurchases = purchasesRegistry.filter(p => p && (selectedYear === "ALL" || (p.date || "").includes(selectedYear)));
+  const filteredExpenses = expensesRegistry.filter(e => e && e.category !== "Damage Received" && (selectedYear === "ALL" || (e.date || "").includes(selectedYear)));
+  const filteredDamages = expensesRegistry.filter(e => e && e.category === "Damage Received" && (selectedYear === "ALL" || (e.date || "").includes(selectedYear)));
+
+  let farmExpTotal = 0;
+  filteredPurchases.forEach(p => { if(p.funder === "Farm") farmExpTotal += Number(p.paidAmount !== undefined ? p.paidAmount : p.total || 0); });
+  filteredExpenses.forEach(e => { if(e.payer === "Farm") farmExpTotal += Number(e.amount || 0); });
+
+  let farmDmgTotal = 0;
+  filteredDamages.forEach(d => { if(d.payer === "Farm") farmDmgTotal += Number(d.amount || 0); });
+
+  const farmAvailableBalance = (orderTotal + farmBookingTotal + sellTotal + farmDmgTotal) - farmExpTotal;
+
   const rawDate = document.getElementById("expLogDate").value;
+  const amountVal = parseFloat(document.getElementById("expAmount").value);
+
+  if (amountVal > farmAvailableBalance) {
+    alert(`⚠️ Expense Failed! Farm ke paas sufficient balance available nahi hai.\n\n• Current Farm Balance: Rs ${farmAvailableBalance.toFixed(2)}\n• Required Expense Amount: Rs ${amountVal.toFixed(2)}`);
+    return;
+  }
+
   const data = {
     expId: "EXP-" + Date.now().toString().slice(-4),
     date: rawDate ? new Date(rawDate).toLocaleDateString('en-IN') : new Date().toLocaleDateString('en-IN'),
@@ -2155,14 +2188,16 @@ function saveAdminExpense(e) {
     payer: document.getElementById("expPayer").value,
     mode: document.getElementById("expMode").value,
     desc: document.getElementById("expDesc").value.trim(),
-    amount: parseFloat(document.getElementById("expAmount").value),
+    amount: amountVal,
     notes: document.getElementById("expNotes") ? document.getElementById("expNotes").value.trim() : ""
   };
+
   expensesRegistry.push(data);
   localStorage.setItem('pgf_expenses', JSON.stringify(expensesRegistry));
   e.target.reset();
   initDefaultDatePickers();
   computeFinancialLedgerStatements();
+  alert(`✅ Expense logged successfully! Amount: Rs ${amountVal}`);
 }
 
 function saveAdminSale(e) {
@@ -2175,8 +2210,40 @@ function saveAdminSale(e) {
   const notes = document.getElementById("saleNotes") ? document.getElementById("saleNotes").value.trim() : "";
   const prodType = document.getElementById("saleProduct").value;
 
-  const targetProd = products.find(p => p.type === prodType || p.name.toLowerCase().includes(prodType.toLowerCase()));
-  if (targetProd && !targetProd.bulk) {
+  // 1. Calculate current live stock available for this product type before allowing sale
+  const dryProd = products.find(p => p.type === "dry") || { stock: 0 };
+  const powderProd = products.find(p => p.type === "powder") || { stock: 0 };
+  const khakhraProd = products.find(p => p.type === "khakhra") || { stock: 0 };
+  const papadProd = products.find(p => p.type === "papad") || { stock: 0 };
+
+  let currentAvailableStock = 0;
+  let unitName = "units";
+
+  if (prodType === "Dry") {
+    currentAvailableStock = dryProd.stock;
+    unitName = "kg";
+  } else if (prodType === "Powder") {
+    currentAvailableStock = powderProd.stock * 10; // 1kg dry = 10 packets
+    unitName = "packets";
+  } else if (prodType === "Khakhra") {
+    currentAvailableStock = khakhraProd.stock;
+    unitName = "packs";
+  } else if (prodType === "Papad") {
+    currentAvailableStock = papadProd.stock;
+    unitName = "packs";
+  } else if (prodType === "Green") {
+    currentAvailableStock = 9999; // Green fresh harvest inquiry
+    unitName = "units";
+  }
+
+  // 2. Validate if stock is sufficient to sell
+  if (qty > currentAvailableStock) {
+    alert(`⚠️ Sale Failed! Stock me sufficient quantity available nahi hai.\n\n• Selected Product: ${prodType}\n• Available Stock: ${currentAvailableStock.toFixed(2)} ${unitName}\n• Requested Sale Qty: ${qty} ${unitName}`);
+    return;
+  }
+
+  const targetProd = products.find(p => p.type === prodType.toLowerCase() || p.name.toLowerCase().includes(prodType.toLowerCase()));
+  if (targetProd && !targetProd.bulk && prodType !== "Powder") {
     targetProd.stock = Math.max(0, targetProd.stock - qty);
     saveProductsToStorage();
     renderProducts();
@@ -2209,11 +2276,43 @@ function saveAdminSale(e) {
   initDefaultDatePickers();
   computeFinancialLedgerStatements();
   renderAdminLiveStockSummary();
-  alert(`✅ Wholesale Sale Entry saved! Total: Rs ${grandTotal}, Received: Rs ${paid}`);
+  alert(`✅ Wholesale Sale Entry saved successfully! Total: Rs ${grandTotal}, Received: Rs ${paid}`);
 }
 
 function saveAdminPurchase(e) {
   e.preventDefault();
+
+  // Rule: Check if Farm has enough available balance before allowing a buy/purchase outflow
+  const selectedYear = document.getElementById("adminYearFilterSelect")?.value || "ALL";
+  
+  // Calculate current available balance dynamically
+  const filteredOrders = orderRegistry.filter(o => o && (o.status === 'Approved' || o.status === 'Delivered') && (selectedYear === "ALL" || (o.rawIsoDate || o.dateLogged || "").includes(selectedYear)));
+  const orderTotal = filteredOrders.reduce((sum, o) => sum + Number(o.total || 0), 0);
+
+  const filteredBookings = bookingsRegistry.filter(b => b && b.name && (b.status === "Confirmed" || b.status === "Approved") && (selectedYear === "ALL" || (b.date || b.dateLogged || "").includes(selectedYear)));
+  const farmBookingTotal = filteredBookings.reduce((sum, b) => sum + Number(b.fee || 0), 0);
+
+  const filteredSales = salesRegistry.filter(s => s && (selectedYear === "ALL" || (s.date || "").includes(selectedYear)));
+  const sellTotal = filteredSales.reduce((sum, s) => sum + Number(s.paidAmount !== undefined ? s.paidAmount : s.total || 0), 0);
+
+  const filteredPurchases = purchasesRegistry.filter(p => p && (selectedYear === "ALL" || (p.date || "").includes(selectedYear)));
+  const buyTotal = filteredPurchases.reduce((sum, p) => sum + Number(p.paidAmount !== undefined ? p.paidAmount : p.total || 0), 0);
+
+  const filteredExpenses = expensesRegistry.filter(e => e && e.category !== "Damage Received" && (selectedYear === "ALL" || (e.date || "").includes(selectedYear)));
+  const expenseTotal = filteredExpenses.reduce((sum, e) => sum + Number(e.amount || 0), 0);
+
+  const filteredDamages = expensesRegistry.filter(e => e && e.category === "Damage Received" && (selectedYear === "ALL" || (e.date || "").includes(selectedYear)));
+  const damageTotal = filteredDamages.reduce((sum, d) => sum + Number(d.amount || 0), 0);
+
+  let farmExpTotal = 0;
+  filteredPurchases.forEach(p => { if(p.funder === "Farm") farmExpTotal += Number(p.paidAmount !== undefined ? p.paidAmount : p.total || 0); });
+  filteredExpenses.forEach(e => { if(e.payer === "Farm") farmExpTotal += Number(e.amount || 0); });
+
+  let farmDmgTotal = 0;
+  filteredDamages.forEach(d => { if(d.payer === "Farm") farmDmgTotal += Number(d.amount || 0); });
+
+  const farmAvailableBalance = (orderTotal + farmBookingTotal + sellTotal + farmDmgTotal) - farmExpTotal;
+
   const rawDate = document.getElementById("purLogDate").value;
   const qty = parseFloat(document.getElementById("purQty").value);
   const rate = parseFloat(document.getElementById("purRate").value);
@@ -2221,6 +2320,13 @@ function saveAdminPurchase(e) {
   const subtotal = qty * rate;
   const grandTotal = subtotal + delivery;
   const paid = parseFloat(document.getElementById("purPaidAmount").value) || grandTotal;
+
+  // Check if balance is sufficient for this purchase payment
+  if (paid > farmAvailableBalance) {
+    alert(`⚠️ Transaction Failed! Farm ke paas sufficient balance available nahi hai.\n\n• Current Farm Balance: Rs ${farmAvailableBalance.toFixed(2)}\n• Required Purchase Amount: Rs ${paid.toFixed(2)}`);
+    return;
+  }
+
   const purType = document.getElementById("purProduct").value;
   const funder = document.getElementById("purFunder").value;
   const vendor = document.getElementById("purVendor").value.trim();
@@ -2260,7 +2366,7 @@ function saveAdminPurchase(e) {
   initDefaultDatePickers();
   computeFinancialLedgerStatements();
   renderAdminLiveStockSummary();
-  alert(`✅ Inventory Buy recorded successfully! Total (incl. Delivery): Rs ${grandTotal}, Paid: Rs ${paid}`);
+  alert(`✅ Inventory Buy recorded successfully! Total: Rs ${grandTotal}, Paid: Rs ${paid}`);
 }
 
 function saveAdminDamage(e) {

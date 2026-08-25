@@ -2217,7 +2217,10 @@ function saveAdminPurchase(e) {
   const rawDate = document.getElementById("purLogDate").value;
   const qty = parseFloat(document.getElementById("purQty").value);
   const rate = parseFloat(document.getElementById("purRate").value);
-  const paid = parseFloat(document.getElementById("purPaidAmount").value) || (qty * rate);
+  const delivery = parseFloat(document.getElementById("purDelivery")?.value) || 0;
+  const subtotal = qty * rate;
+  const grandTotal = subtotal + delivery;
+  const paid = parseFloat(document.getElementById("purPaidAmount").value) || grandTotal;
   const purType = document.getElementById("purProduct").value;
   const funder = document.getElementById("purFunder").value;
   const vendor = document.getElementById("purVendor").value.trim();
@@ -2244,18 +2247,20 @@ function saveAdminPurchase(e) {
     vendor: vendor,
     qty: qty,
     rate: rate,
-    total: qty * rate,
+    delivery: delivery,
+    total: grandTotal,
     paidAmount: paid,
     notes: notes
   };
 
-  purchasesRegistry.push(data);
+  purchasesRegistry.unshift(data);
   localStorage.setItem('pgf_purchases', JSON.stringify(purchasesRegistry));
   e.target.reset();
+  if (document.getElementById("purDelivery")) document.getElementById("purDelivery").value = "0";
   initDefaultDatePickers();
   computeFinancialLedgerStatements();
   renderAdminLiveStockSummary();
-  alert(`✅ Inventory Buy recorded successfully! Total: Rs ${qty * rate}, Paid: Rs ${paid}`);
+  alert(`✅ Inventory Buy recorded successfully! Total (incl. Delivery): Rs ${grandTotal}, Paid: Rs ${paid}`);
 }
 
 function saveAdminDamage(e) {

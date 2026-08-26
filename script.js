@@ -310,6 +310,9 @@ async function triggerAdminView() {
       courierName: o.courier_name,
       trackingStage: o.tracking_stage || o.trackingStage,
       currentLocation: o.current_location || o.currentLocation,
+      deliveredDate: o.delivered_date || o.deliveredDate,
+      cancelledDate: o.cancelled_date || o.cancelledDate,
+      paymentDate: o.payment_date || o.paymentDate || o.date_logged,
       refundCreditedDate: o.refund_credited_date,
       status: o.status
     }));
@@ -496,10 +499,13 @@ function loadUserPanelData() {
 
       const stage = o.trackingStage || (isDelivered ? 'Delivered' : (isApproved ? 'Packed' : 'Placed'));
       const orderPlacedDate = o.dateLogged || new Date().toLocaleDateString('en-IN');
+      const paymentDateStr = o.paymentDate || orderPlacedDate;
       const courier = o.courierName || "Ekart Logistics";
       const awb = o.trackingNumber || ("FMPC" + Math.floor(1000000000 + Math.random() * 9000000000));
       const loc = o.currentLocation || "Farm Facility";
       const arrivalDeliveryDate = o.deliveryDays || "2-4 Business Days";
+      const exactDeliveredDate = o.deliveredDate || orderPlacedDate;
+      const exactCancelledDate = o.cancelledDate || orderPlacedDate;
       const refundCompletedDate = o.refundCreditedDate || orderPlacedDate;
       const prodImg = getOrderProductImage(o.products);
 
@@ -507,33 +513,33 @@ function loadUserPanelData() {
       const curLevel = stageMap[stage] || (isDelivered ? 5 : (isApproved ? 2 : 1));
 
       let statusDotColor = "#16a34a";
-      let statusText = "Delivered on " + (arrivalDeliveryDate !== "2-4 Business Days" ? arrivalDeliveryDate : orderPlacedDate);
-      let subtitleText = `Delivered to your address via ${courier}`;
+      let statusText = "Delivered on " + (isDelivered ? exactDeliveredDate : arrivalDeliveryDate);
+      let subtitleText = `Delivered via ${courier} | Current Location: ${loc}`;
 
       if (isPending) {
         statusDotColor = "#eab308";
         statusText = "Verification Pending";
-        subtitleText = "Admin is reviewing payment";
+        subtitleText = `Payment made on ${paymentDateStr} - Reviewing`;
       } else if (isCancelled) {
         if (o.refundStage === 'Refund Credited') {
           statusDotColor = "#16a34a";
           statusText = "Refund Completed " + refundCompletedDate;
-          subtitleText = `Refund of ₹${o.total} credited to UPI`;
+          subtitleText = `Cancelled on ${exactCancelledDate} | Refund credited to UPI`;
         } else {
           statusDotColor = "#ea580c";
-          statusText = "Cancelled / " + (o.refundStage || 'Refund Initiated');
-          subtitleText = "Your order was cancelled by Farm Admin.";
+          statusText = "Cancelled on " + exactCancelledDate;
+          subtitleText = `Live Status: Cancelled | ${o.refundStage || 'Refund Initiated'}`;
         }
       } else if (isRejected) {
         statusDotColor = "#ef4444";
         statusText = "Order Rejected";
         subtitleText = "Payment Not Verified / Invalid UTR";
       } else {
-        if (stage === 'Placed') { statusText = "Order Placed " + orderPlacedDate; subtitleText = "Your order has been placed."; }
-        else if (stage === 'Packed') { statusText = "Seller Packed & Ready"; subtitleText = `Dispatched with ${courier} (Location: ${loc})`; }
-        else if (stage === 'Shipped') { statusText = "Shipped via " + courier; subtitleText = `AWB: ${awb} (Location: ${loc})`; }
-        else if (stage === 'OutForDelivery') { statusText = "Out For Delivery"; subtitleText = `Arriving Today via ${courier}`; }
-        else if (stage === 'Delivered') { statusText = "Delivered " + (arrivalDeliveryDate !== "2-4 Business Days" ? arrivalDeliveryDate : orderPlacedDate); subtitleText = "Delivered safely to your doorstep"; }
+        if (stage === 'Placed') { statusText = "Order Placed " + orderPlacedDate; subtitleText = `Payment Date: ${paymentDateStr} | Status: Order Placed at Farm Desk`; }
+        else if (stage === 'Packed') { statusText = "Seller Packed & Ready"; subtitleText = `Dispatched with ${courier} | 📍 Location: ${loc}`; }
+        else if (stage === 'Shipped') { statusText = "Shipped via " + courier; subtitleText = `AWB: ${awb} | 📍 Live Location: ${loc}`; }
+        else if (stage === 'OutForDelivery') { statusText = "Out For Delivery"; subtitleText = `Arriving Today via ${courier} | 📍 Location: ${loc}`; }
+        else if (stage === 'Delivered') { statusText = "Delivered on " + exactDeliveredDate; subtitleText = `Delivered safely to doorstep via ${courier}`; }
       }
 
       return `
@@ -544,7 +550,7 @@ function loadUserPanelData() {
               <div>
                 <strong style="font-size: 13.5px; color: #1e293b; display: block; line-height: 1.3;">${o.products}</strong>
                 <span style="font-size: 11.5px; color: #64748b; margin-top: 2px; display: block;">
-                  Ref: ${o.orderId}<br>Total: <strong style="color: #0f172a;">₹${o.total}</strong>
+                  Ref: ${o.orderId} | Paid Date: <strong>${paymentDateStr}</strong><br>Total: <strong style="color: #0f172a;">₹${o.total}</strong>
                 </span>
               </div>
             </div>
@@ -563,23 +569,30 @@ function loadUserPanelData() {
           <div id="order-details-${o.orderId}" style="display: none; padding: 14px 16px; background: #f8fafc; border-top: 1px solid #f1f5f9;">
             <div style="background:#fff; padding: 12px; border-radius: 8px; border: 1px solid #e2e8f0; font-size:13px; margin-bottom: 12px; line-height:1.6;">
               <div><strong>📅 Order Placed Date:</strong> <span style="color:#0284c7; font-weight:bold;">${orderPlacedDate}</span></div>
+              <div><strong>💳 Payment Date & Time:</strong> <span style="color:#16a34a; font-weight:bold;">${paymentDateStr}</span></div>
               <div><strong>Shipping Address:</strong> <span style="color:#475569;">${o.address || 'N/A'}</span></div>
               <div><strong>Contact Number:</strong> <span style="color:#475569;">${o.phone || 'N/A'}</span></div>
               <div style="margin-top:4px;"><strong>Payment Mode:</strong> <span class="badge" style="background:#eef2ff; color:#3730a3;">${o.paymentMode || 'UPI'}</span> | <strong>Txn ID:</strong> <code>${o.txnId || 'N/A'}</code> | <strong>Your UPI:</strong> <code style="color:var(--accent); font-weight:bold;">${o.userUpiId || 'N/A'}</code></div>
               
-              ${isApproved && !isCancelled && !isRejected ? `
+              ${isDelivered ? `
                 <div style="margin-top:8px; background:#f0fdf4; padding:10px 12px; border-radius:6px; border:1px solid #bbf7d0; color:#15803d; font-size:13px; line-height:1.5;">
-                  <strong>🚚 Target Delivery Date (Kab Pahuchega):</strong> <span style="font-weight:800; font-size:14px; text-decoration:underline;">${arrivalDeliveryDate}</span><br>
-                  <strong>📦 Dispatched Courier:</strong> <span>${courier}</span> (AWB Tracking Code: <code>${awb}</code>)<br>
-                  <strong>📍 Live Current Location (Order Kaha Hai):</strong> <span style="color:#0284c7; font-weight:bold;">${loc}</span>
+                  <strong>🎉 Successfully Delivered On:</strong> <span style="font-weight:800; font-size:14px; text-decoration:underline;">${exactDeliveredDate}</span><br>
+                  <strong>📦 Courier Partner:</strong> <span>${courier}</span> (AWB: <code>${awb}</code>)<br>
+                  <strong>📍 Final Destination Location:</strong> <span>${loc}</span>
                 </div>
-              ` : ''}
+              ` : (isApproved && !isCancelled && !isRejected ? `
+                <div style="margin-top:8px; background:#f0fdf4; padding:10px 12px; border-radius:6px; border:1px solid #bbf7d0; color:#15803d; font-size:13px; line-height:1.5;">
+                  <strong>🚚 Expected Delivery Date:</strong> <span style="font-weight:800; font-size:14px; text-decoration:underline;">${arrivalDeliveryDate}</span><br>
+                  <strong>📦 Dispatched Courier:</strong> <span>${courier}</span> (AWB: <code>${awb}</code>)<br>
+                  <strong>📍 Live Current Location (Order Kaha Hai):</strong> <span style="color:#0284c7; font-weight:bold; font-size:14px;">${loc}</span>
+                </div>
+              ` : '')}
             </div>
 
             ${isPending ? `
               <div style="background: #fffbeb; border: 1px solid #fcd34d; border-radius: 8px; padding: 10px; font-size: 13px; color: #92400e;">
                 ⏳ <strong>Status: Verification Pending</strong><br>
-                <span style="font-size:12px;">Admin jaise hi payment verify karke approve karega, live delivery date, current location aur courier tracking activate ho jayegi.</span>
+                <span style="font-size:12px;">Admin payment verify kar raha hai. Payment Date: <strong>${paymentDateStr}</strong>. Approve hote hi live tracking aur current location activate ho jayegi.</span>
               </div>
             ` : ''}
 
@@ -588,34 +601,36 @@ function loadUserPanelData() {
                 <div class="vertical-timeline">
                   <div class="timeline-step ${curLevel >= 1 ? 'completed' : ''}">
                     <div class="timeline-dot"></div>
-                    <div class="timeline-title">Order Confirmed <span>${orderPlacedDate}</span></div>
-                    <div class="timeline-desc">Your Order was placed on ${orderPlacedDate}.</div>
+                    <div class="timeline-title">Order Confirmed & Paid <span>(${paymentDateStr})</span></div>
+                    <div class="timeline-desc">Payment confirmed on ${paymentDateStr}. Order placed successfully.</div>
                   </div>
 
                   <div class="timeline-step ${curLevel >= 2 ? 'completed' : ''}">
                     <div class="timeline-dot"></div>
                     <div class="timeline-title">Seller Processed & Packed</div>
-                    <div class="timeline-desc">Seller has packed your order at Farm Hub.</div>
-                    <div class="timeline-desc" style="color:#0284c7; font-size:12px;">Dispatched with delivery partner: <strong>${courier}</strong> (📍 ${loc})</div>
+                    <div class="timeline-desc">Packed at Farm Hub. Dispatched via <strong>${courier}</strong>.</div>
+                    <div class="timeline-desc" style="color:#0284c7; font-size:12px;">📍 Current Live Status Location: <strong>${loc}</strong></div>
                   </div>
 
                   <div class="timeline-step ${curLevel >= 3 ? 'completed' : ''}">
                     <div class="timeline-dot"></div>
-                    <div class="timeline-title">Shipped</div>
-                    <div class="timeline-desc"><strong>${courier} - ${awb}</strong></div>
-                    <div class="timeline-desc">Your item has been shipped. (📍 Current Location Hub: ${loc})</div>
+                    <div class="timeline-title">Shipped (In Transit)</div>
+                    <div class="timeline-desc"><strong>${courier} - AWB: ${awb}</strong></div>
+                    <div class="timeline-desc" style="color:#0284c7; font-size:12px;">📍 Current Live Location Hub: <strong>${loc}</strong></div>
                   </div>
 
                   <div class="timeline-step ${curLevel >= 4 ? 'completed' : ''}">
                     <div class="timeline-dot"></div>
                     <div class="timeline-title">Out For Delivery</div>
-                    <div class="timeline-desc">Your item is out for delivery with ${courier} executive. (📍 ${loc})</div>
+                    <div class="timeline-desc">Out for delivery with ${courier} executive. (📍 ${loc})</div>
                   </div>
 
                   <div class="timeline-step ${curLevel >= 5 ? 'completed' : ''}">
                     <div class="timeline-dot"></div>
-                    <div class="timeline-title">Delivered <span>(Arriving Date: ${arrivalDeliveryDate})</span></div>
-                    <div class="timeline-desc">Item safely delivered to your doorstep.</div>
+                    <div class="timeline-title" style="${isDelivered ? 'color:#16a34a; font-weight:bold;' : ''}">
+                      ${isDelivered ? `Delivered Safely (${exactDeliveredDate})` : `Arriving By (${arrivalDeliveryDate})`}
+                    </div>
+                    <div class="timeline-desc">${isDelivered ? `Successfully delivered to your doorstep on ${exactDeliveredDate}.` : 'Item will arrive at your address soon.'}</div>
                   </div>
                 </div>
               </div>
@@ -625,28 +640,28 @@ function loadUserPanelData() {
               <div style="background: #ffffff; padding: 16px; border-radius: 8px; border: 1px solid ${o.refundStage === 'Refund Credited' ? '#86efac' : '#fed7aa'};">
                 <div style="background:${o.refundStage === 'Refund Credited' ? '#f0fdf4' : '#fff7ed'}; padding:12px; border-radius:8px; border-left:4px solid ${o.refundStage === 'Refund Credited' ? '#16a34a' : '#ea580c'}; margin-bottom:12px;">
                   <strong style="color:${o.refundStage === 'Refund Credited' ? '#15803d' : '#c2410c'}; font-size:14px;">
-                    ${o.refundStage === 'Refund Credited' ? `✅ Refund Completed on ${refundCompletedDate}` : `Refund Status: ${o.refundStage || 'Refund Initiated'}`}
+                    ${o.refundStage === 'Refund Credited' ? `✅ Refund Completed on ${refundCompletedDate}` : `Order Cancelled on ${exactCancelledDate}`}
                   </strong>
                   <p style="margin: 4px 0 0 0; font-size: 12.5px; color:${o.refundStage === 'Refund Credited' ? '#166534' : '#7c2d12'};">
                     ${o.refundStage === 'Refund Credited' 
                       ? `• Refund of <strong>₹${o.total}</strong> has been transferred successfully on <strong>${refundCompletedDate}</strong> to your UPI ID: <strong>${o.userUpiId || 'Linked Bank'}</strong>.` 
-                      : `• Refund of ₹${o.total} for your order will be credited directly to your UPI ID: <strong>${o.userUpiId || 'Registered Account'}</strong>.`}
+                      : `• Order was cancelled on <strong>${exactCancelledDate}</strong>. Refund of ₹${o.total} will be credited to your UPI ID: <strong>${o.userUpiId || 'Registered Account'}</strong>.`}
                   </p>
                 </div>
 
                 <div class="vertical-timeline">
                   <div class="timeline-step completed cancelled-line">
                     <div class="timeline-dot"></div>
-                    <div class="timeline-title">Order Placed <span>${orderPlacedDate}</span></div>
-                    <div class="timeline-desc">Your Order was placed on ${orderPlacedDate}.</div>
+                    <div class="timeline-title">Order Placed & Paid <span>(${paymentDateStr})</span></div>
+                    <div class="timeline-desc">Payment was logged on ${paymentDateStr}.</div>
                   </div>
                   
                   <div class="timeline-step ${o.refundStage === 'Refund Credited' ? 'completed' : 'cancelled'}">
                     <div class="timeline-dot" style="${o.refundStage === 'Refund Credited' ? 'background:#16a34a;' : ''}"></div>
                     <div class="timeline-title" style="color:${o.refundStage === 'Refund Credited' ? '#16a34a' : '#ef4444'};">
-                      ${o.refundStage === 'Refund Credited' ? `Refund Completed (${refundCompletedDate})` : 'Order Cancelled'}
+                      ${o.refundStage === 'Refund Credited' ? `Refund Completed (${refundCompletedDate})` : `Order Cancelled (${exactCancelledDate})`}
                     </div>
-                    <div class="timeline-desc">${o.refundStage === 'Refund Credited' ? `Full refund of ₹${o.total} credited to your UPI.` : `Reason: ${o.status.replace('Cancelled (Reason: ', '').replace(')', '')}`}</div>
+                    <div class="timeline-desc">${o.refundStage === 'Refund Credited' ? `Full refund of ₹${o.total} credited to your UPI.` : `Live Status: Cancelled on ${exactCancelledDate}. Reason: ${o.status.replace('Cancelled (Reason: ', '').replace(')', '')}`}</div>
                   </div>
                 </div>
               </div>
@@ -655,7 +670,7 @@ function loadUserPanelData() {
             ${isRejected ? `
               <div style="background: #fef2f2; border: 1px solid #f87171; border-radius: 8px; padding: 12px;">
                 <strong style="color: #991b1b; font-size: 14px;">❌ Order Rejected</strong>
-                <p style="margin: 4px 0 0 0; font-size: 12px; color: #7f1d1d;"><strong>Reason:</strong> ${o.status.replace('Rejected (Reason: ', '').replace(')', '')}</p>
+                <p style="margin: 4px 0 0 0; font-size: 12px; color: #7f1d1d;"><strong>Payment Date:</strong> ${paymentDateStr} | <strong>Reason:</strong> ${o.status.replace('Rejected (Reason: ', '').replace(')', '')}</p>
               </div>
             ` : ''}
 
@@ -1134,13 +1149,15 @@ function populateAdminDashboardTables() {
         const courier = o.courierName || 'Ekart Logistics';
         const refundDate = o.refundCreditedDate || getTodayIsoString();
         const displayDateTime = o.dateLogged || new Date().toLocaleDateString('en-IN');
+        const paymentDate = o.paymentDate || displayDateTime;
         const userUpi = o.userUpiId || "N/A";
 
         return `
           <tr>
             <td><strong>${o.orderId}</strong></td>
             <td style="white-space: nowrap;">
-              <span style="color:#0284c7; font-weight:bold; font-size:12px;">📅 ${displayDateTime}</span>
+              <span style="color:#0284c7; font-weight:bold; font-size:12px;">📅 Placed: ${displayDateTime}</span><br>
+              <span style="color:#16a34a; font-weight:bold; font-size:11px;">💳 Paid: ${paymentDate}</span>
             </td>
             <td>
               <strong>${o.name}</strong><br>
@@ -1163,6 +1180,7 @@ function populateAdminDashboardTables() {
                 ${status}
               </span>
               ${isCancelled ? `<br><small style="color:${o.refundStage === 'Refund Credited' ? '#16a34a' : '#ea580c'}; font-weight:bold;">Refund: ${o.refundStage || 'Initiated'} ${o.refundCreditedDate ? `(${o.refundCreditedDate})` : ''}</small>` : ''}
+              ${isDelivered && o.deliveredDate ? `<br><small style="color:#16a34a; font-weight:bold;">Delivered: ${o.deliveredDate}</small>` : ''}
             </td>
             
             <td style="min-width: 280px;">
@@ -1179,8 +1197,8 @@ function populateAdminDashboardTables() {
                   </div>
 
                   <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; gap:4px;">
-                    <span style="font-weight:bold; color:#0284c7; white-space:nowrap;">📍 Location:</span>
-                    <input type="text" value="${loc}" placeholder="Order Kaha Hai (e.g. Surat Hub)" style="padding:2px 6px; font-size:11px; font-weight:bold; color:#334155; border:1px solid #94a3b8; border-radius:4px; width:140px; text-align:right;" onchange="updateOrderLocationDirect(${idx}, this.value)">
+                    <span style="font-weight:bold; color:#0284c7; white-space:nowrap;">📍 Location (Kaha he):</span>
+                    <input type="text" value="${loc}" placeholder="Order Location (e.g. Surat Hub)" style="padding:2px 6px; font-size:11px; font-weight:bold; color:#334155; border:1px solid #94a3b8; border-radius:4px; width:130px; text-align:right;" onchange="updateOrderLocationDirect(${idx}, this.value)">
                   </div>
 
                   <div style="display:flex; gap:3px; flex-wrap:wrap;">
@@ -1562,7 +1580,7 @@ async function updateOrderLocationDirect(idx, newLocation) {
     .update({ current_location: orderRegistry[idx].currentLocation })
     .eq('order_id', orderRegistry[idx].orderId);
 
-  pushNotification(orderRegistry[idx].email, '📍 Live Order Location Update', `Your Order #${orderRegistry[idx].orderId} current location: ${newLocation}.`, 'order');
+  pushNotification(orderRegistry[idx].email, '📍 Live Order Location Update', `Your Order #${orderRegistry[idx].orderId} is currently at: ${newLocation}.`, 'order');
 }
 
 async function updateExpectedDeliveryDate(idx, newDate) {
@@ -1642,12 +1660,12 @@ async function handleOrderApprove(idx) {
   const finalDeliveryDate = inputDeliveryDate.trim() || defaultDeliveryDate;
 
   const defaultCourier = o.courierName || "Ekart Logistics";
-  const inputCourier = prompt("Order kis Courier partner se dispatch hoga? (e.g. Ekart, Delhivery, BlueDart, DTDC):", defaultCourier);
+  const inputCourier = prompt("Order kis Courier partner se dispatch hoga? (e.g. Ekart, Delhivery, BlueDart):", defaultCourier);
   if (inputCourier === null) return;
   const finalCourier = inputCourier.trim() || defaultCourier;
 
   const defaultLocation = o.currentLocation || "Pure Grow Farm Central Hub, Makhiyala";
-  const inputLocation = prompt("Order ki abhi ki live location kya hai? (e.g. Rajkot Dispatch Hub / Out for Delivery):", defaultLocation);
+  const inputLocation = prompt("Order ki abhi ki live location kya hai? (e.g. Rajkot Sorting Hub / Out for Delivery):", defaultLocation);
   if (inputLocation === null) return;
   const finalLocation = inputLocation.trim() || defaultLocation;
 
@@ -1709,8 +1727,10 @@ async function handleOrderCancelRefund(idx) {
   let reason = prompt("Order Cancel karne ka reason likhein (User ko message jayega):", "Item Out of Stock / Unserviceable Pincode");
   if (reason === null) return;
 
+  const cancelDate = getTodayIsoString();
   o.status = `Cancelled (Reason: ${reason})`;
   o.trackingStage = "Cancelled";
+  o.cancelledDate = cancelDate;
   o.refundStage = "Refund Initiated";
   o.refundCreditedDate = "";
 
@@ -1718,11 +1738,12 @@ async function handleOrderCancelRefund(idx) {
     .from('pgf_orders')
     .update({ 
       status: o.status,
+      cancelled_date: o.cancelledDate,
       refund_credited_date: o.refundCreditedDate
     })
     .eq('order_id', o.orderId);
   
-  pushNotification(o.email, '⚠️ Order Cancelled', `Aapka Order #${o.orderId} cancel kar diya gaya hai. Reason: ${reason}. Refund aapke UPI ID (${o.userUpiId || 'Bank'}) par process kiya ja raha hai.`, 'order');
+  pushNotification(o.email, '⚠️ Order Cancelled', `Aapka Order #${o.orderId} cancel kar diya gaya hai on ${cancelDate}. Reason: ${reason}. Refund aapke UPI ID par process kiya ja raha hai.`, 'order');
 
   alert("🔄 Order Cancelled & Synced to Cloud!");
   populateAdminDashboardTables();
@@ -1732,6 +1753,8 @@ async function handleOrderCancelRefund(idx) {
 async function setOrderStageDirect(idx, newStage) {
   const o = orderRegistry[idx];
   o.trackingStage = newStage;
+
+  let updateFields = { tracking_stage: newStage };
 
   if (newStage === 'Placed') {
     o.currentLocation = "Farm Order Desk";
@@ -1744,23 +1767,25 @@ async function setOrderStageDirect(idx, newStage) {
   } else if (newStage === 'Delivered') {
     o.currentLocation = "Delivered safely to Customer Doorstep";
     o.status = "Delivered";
+    o.deliveredDate = getTodayIsoString();
+    updateFields.status = "Delivered";
+    updateFields.delivered_date = o.deliveredDate;
   }
+
+  updateFields.current_location = o.currentLocation;
 
   localStorage.setItem('pgf_orders', JSON.stringify(orderRegistry));
   
   await _supabase
     .from('pgf_orders')
-    .update({ 
-      status: o.status,
-      current_location: o.currentLocation 
-    })
+    .update(updateFields)
     .eq('order_id', o.orderId);
 
   pushNotification(o.email, '🚚 Order Shipment Update', `Order #${o.orderId} stage updated to: ${newStage}. (📍 Location: ${o.currentLocation})`, 'order');
   populateAdminDashboardTables();
 }
 
-function setRefundStageDirect(idx, newRefStage) {
+async function setRefundStageDirect(idx, newRefStage) {
   const o = orderRegistry[idx];
   o.refundStage = newRefStage;
   
@@ -1770,9 +1795,14 @@ function setRefundStageDirect(idx, newRefStage) {
 
   localStorage.setItem('pgf_orders', JSON.stringify(orderRegistry));
   
+  await _supabase
+    .from('pgf_orders')
+    .update({ refund_credited_date: selectedDate })
+    .eq('order_id', o.orderId);
+
   if (newRefStage === 'Refund Credited') {
     pushNotification(o.email, '💰 Refund Completed', `₹${o.total} has been successfully credited on ${selectedDate} to your UPI ID: ${o.userUpiId || 'Bank Account'}.`, 'order');
-    alert(`💸 Refund of ₹${o.total} marked as Credited on ${selectedDate}! Farm Cash Vault se paisa deduct ho gaya.`);
+    alert(`💸 Refund of ₹${o.total} marked as Credited on ${selectedDate}!`);
   } else {
     pushNotification(o.email, '💰 Refund Status Update', `Refund for Order #${o.orderId} status: ${newRefStage}.`, 'order');
   }
@@ -2721,6 +2751,7 @@ async function confirmOrder(e) {
   e.preventDefault();
   const bill = getTotals();
   const currentTimestamp = new Date().toLocaleDateString('en-IN') + " " + new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+  const paymentDateStr = new Date().toLocaleDateString('en-IN');
   const generatedOrderId = "PGF-INV-" + Date.now().toString().slice(-5);
 
   cart.forEach((item, prodId) => {
@@ -2746,6 +2777,7 @@ async function confirmOrder(e) {
     payment_mode: document.getElementById("paymentMode").value,
     txn_id: document.getElementById("paymentId").value.trim(),
     date_logged: currentTimestamp,
+    payment_date: paymentDateStr,
     raw_iso_date: getTodayIsoString(),
     delivery_days: "",
     courier_name: "Ekart Logistics",
@@ -2775,6 +2807,7 @@ async function confirmOrder(e) {
     paymentMode: data.payment_mode,
     txnId: data.txn_id,
     dateLogged: data.date_logged,
+    paymentDate: data.payment_date,
     rawIsoDate: data.raw_iso_date,
     currentLocation: data.current_location,
     status: data.status
@@ -2799,7 +2832,7 @@ async function confirmOrder(e) {
   document.getElementById("invDelivery").textContent = "Rs " + bill.delivery;
   document.getElementById("invTotal").textContent = "Rs " + bill.total;
 
-  const waMessage = `NEW GOODS ORDER VERIFICATION FLOW:\n----------------------------------------\nInvoice Ref Code: ${data.order_id}\nClient Legal Name: ${data.name}\nClient UPI ID: ${data.user_upi_id}\nProducts Mapped: ${data.products}\nTotal Paid Amount: Rs ${data.total}\nPayment Method: ${data.payment_mode}\nTransaction Hash ID Code: ${data.txn_id}\n----------------------------------------`;
+  const waMessage = `NEW GOODS ORDER VERIFICATION FLOW:\n----------------------------------------\nInvoice Ref Code: ${data.order_id}\nClient Legal Name: ${data.name}\nClient UPI ID: ${data.user_upi_id}\nProducts Mapped: ${data.products}\nTotal Paid Amount: Rs ${data.total}\nPayment Method: ${data.payment_mode}\nTransaction Hash ID Code: ${data.txn_id}\nPayment Date: ${paymentDateStr}\n----------------------------------------`;
   
   alert("Order successfully synced to Cloud & Submitted!");
   

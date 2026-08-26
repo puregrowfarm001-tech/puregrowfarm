@@ -260,12 +260,16 @@
 
     <!-- User Dashboard Workspace -->
     <section id="dashboardWorkspace" class="user-dashboard" style="display:none;">
-      <h2>Welcome Back, <span id="userDashboardName">Grower</span>!</h2>
-      <p class="muted">Access your dedicated farm records, orders tracking, and training certificates directly below.</p>
-      
-      <div style="display:flex; gap:12px; flex-wrap:wrap; margin-top:15px;">
-        <button type="button" class="btn" style="background:#16a34a;" onclick="openOrdersModal()">📦 My Orders History</button>
-        <button type="button" class="btn" style="background:#0284c7;" onclick="openBookingsModal()">🎓 My Farm & Training Bookings</button>
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+        <div>
+          <h2>Welcome Back, <span id="userDashboardName">Grower</span>!</h2>
+          <p class="muted" style="margin: 0;">Access your dedicated farm records, orders tracking, and training certificates directly below.</p>
+        </div>
+        
+        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+          <button type="button" class="btn" style="background:#16a34a;" onclick="openOrdersModal()">📦 My Orders History</button>
+          <button type="button" class="btn" style="background:#0284c7;" onclick="openBookingsModal()">🎓 My Farm & Training Bookings</button>
+        </div>
       </div>
     </section>
 

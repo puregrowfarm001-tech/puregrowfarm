@@ -1605,10 +1605,15 @@ async function updateExpectedDeliveryDate(idx, newDate) {
   populateAdminDashboardTables();
 }
 
-function updateOrderRefundDate(idx, newDate) {
+async function updateOrderRefundDate(idx, newDate) {
   if (!newDate) return;
   orderRegistry[idx].refundCreditedDate = newDate.trim();
   localStorage.setItem('pgf_orders', JSON.stringify(orderRegistry));
+
+  await _supabase
+    .from('pgf_orders')
+    .update({ refund_credited_date: orderRegistry[idx].refundCreditedDate })
+    .eq('order_id', orderRegistry[idx].orderId);
 }
 
 function adminEditOrderDetails(idx) {
@@ -1690,6 +1695,7 @@ async function handleOrderApprove(idx) {
     .from('pgf_orders')
     .update({
       status: o.status,
+      tracking_stage: o.trackingStage,
       delivery_days: o.deliveryDays,
       courier_name: o.courierName,
       current_location: o.currentLocation
@@ -1740,14 +1746,16 @@ async function handleOrderCancelRefund(idx) {
   o.trackingStage = "Cancelled";
   o.cancelledDate = cancelDate;
   o.refundStage = "Refund Initiated";
-  o.refundCreditedDate = "";
+  o.currentLocation = "Order Cancelled - Refund Processing";
 
   await _supabase
     .from('pgf_orders')
     .update({ 
       status: o.status,
+      tracking_stage: o.trackingStage,
       cancelled_date: o.cancelledDate,
-      refund_credited_date: o.refundCreditedDate
+      refund_stage: o.refundStage,
+      current_location: o.currentLocation
     })
     .eq('order_id', o.orderId);
   
@@ -1805,7 +1813,10 @@ async function setRefundStageDirect(idx, newRefStage) {
   
   await _supabase
     .from('pgf_orders')
-    .update({ refund_credited_date: selectedDate })
+    .update({ 
+      refund_stage: o.refundStage,
+      refund_credited_date: selectedDate 
+    })
     .eq('order_id', o.orderId);
 
   if (newRefStage === 'Refund Credited') {

@@ -1,3 +1,12 @@
+const SUPABASE_URL = 'https://prukoxvmwuzaacctjxph.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_3xW-grMnyyVpoFdRy5sgLg_kQoUMHyd';
+
+const { createClient } = supabase;
+const _supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+
+
+
 // =========================================================
 // CONFIGURATION & GLOBAL CONSTANTS
 // =========================================================
@@ -2647,7 +2656,7 @@ if(document.getElementById("address")) {
   document.getElementById("address").addEventListener("input", validateOrderForm);
 }
 
-function confirmOrder(e) {
+async function confirmOrder(e) {
   e.preventDefault();
   const bill = getTotals();
   const currentTimestamp = new Date().toLocaleDateString('en-IN') + " " + new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
@@ -2663,34 +2672,58 @@ function confirmOrder(e) {
   renderProducts();
 
   const data = {
-    orderId: generatedOrderId,
+    order_id: generatedOrderId,
     name: currentUser.name,
     phone: currentUser.phone,
     email: currentUser.email,
     address: document.getElementById("address").value.trim(),
-    userUpiId: document.getElementById("userUpiId").value.trim(),
+    user_upi_id: document.getElementById("userUpiId").value.trim(),
     products: [...cart.values()].map(i => `${i.name} [x${i.qty}]`).join(", "),
     subtotal: bill.subtotal,
     delivery: bill.delivery,
     total: bill.total,
-    paymentMode: document.getElementById("paymentMode").value,
-    txnId: document.getElementById("paymentId").value.trim(),
-    dateLogged: currentTimestamp,
-    rawIsoDate: getTodayIsoString(),
-    deliveryDays: "",
-    courierName: "Ekart Logistics",
-    refundCreditedDate: "",
+    payment_mode: document.getElementById("paymentMode").value,
+    txn_id: document.getElementById("paymentId").value.trim(),
+    date_logged: currentTimestamp,
+    raw_iso_date: getTodayIsoString(),
+    delivery_days: "",
+    courier_name: "Ekart Logistics",
+    refund_credited_date: "",
     status: "Pending Verification"
   };
 
-  orderRegistry.unshift(data);
-  localStorage.setItem('pgf_orders', JSON.stringify(orderRegistry));
-  
-  document.getElementById("invNum").textContent = data.orderId;
+  // Supabase Database me save karein
+  const { error } = await _supabase.from('pgf_orders').insert([data]);
+  if (error) {
+    console.error("Cloud Error:", error);
+    alert("Order save karne me error aayi: " + error.message);
+    return;
+  }
+
+  // Local array me bhi push kar lein taaki UI turant update ho jaye
+  orderRegistry.unshift({
+    orderId: data.order_id,
+    name: data.name,
+    phone: data.phone,
+    email: data.email,
+    address: data.address,
+    userUpiId: data.user_upi_id,
+    products: data.products,
+    subtotal: data.subtotal,
+    delivery: data.delivery,
+    total: data.total,
+    paymentMode: data.payment_mode,
+    txnId: data.txn_id,
+    dateLogged: data.date_logged,
+    rawIsoDate: data.raw_iso_date,
+    status: data.status
+  });
+
+  document.getElementById("invNum").textContent = data.order_id;
   document.getElementById("invDate").textContent = new Date().toLocaleDateString('en-IN');
   document.getElementById("invClientName").textContent = data.name;
   document.getElementById("invClientEmail").textContent = "Email: " + data.email + " | Ph: " + data.phone;
-  document.getElementById("invClientAddr").textContent = "Address: " + data.address + " | User UPI: " + data.userUpiId;
+  document.getElementById("invClientAddr").textContent = "Address: " + data.address + " | User UPI: " + data.user_upi_id;
   
   document.getElementById("invoiceTableItemsBody").innerHTML = [...cart.values()].map(item => `
     <tr>
@@ -2705,18 +2738,9 @@ function confirmOrder(e) {
   document.getElementById("invDelivery").textContent = "Rs " + bill.delivery;
   document.getElementById("invTotal").textContent = "Rs " + bill.total;
 
-  const paidRow = document.getElementById("invPaidRow");
-  const dueRow = document.getElementById("invDueRow");
-  const notesSec = document.getElementById("invNotesSection");
-  if (paidRow) paidRow.style.display = "none";
-  if (dueRow) dueRow.style.display = "none";
-  if (notesSec) notesSec.style.display = "none";
-
-  pushNotification('ADMIN', '🛍️ New Order Placed!', `${data.name} placed order #${data.orderId} for Rs ${data.total}`, 'order');
+  const waMessage = `NEW GOODS ORDER VERIFICATION FLOW:\n----------------------------------------\nInvoice Ref Code: ${data.order_id}\nClient Legal Name: ${data.name}\nClient UPI ID: ${data.user_upi_id}\nProducts Mapped: ${data.products}\nTotal Paid Amount: Rs ${data.total}\nPayment Method: ${data.payment_mode}\nTransaction Hash ID Code: ${data.txn_id}\n----------------------------------------`;
   
-  const waMessage = `NEW GOODS ORDER VERIFICATION FLOW:\n----------------------------------------\nInvoice Ref Code: ${data.orderId}\nClient Legal Name: ${data.name}\nClient UPI ID: ${data.userUpiId}\nProducts Mapped: ${data.products}\nTotal Paid Amount: Rs ${data.total}\nPayment Method: ${data.paymentMode}\nTransaction Hash ID Code: ${data.txnId}\n----------------------------------------`;
-  
-  alert("Order submitted! Opening WhatsApp summary.");
+  alert("Order successfully synced to Cloud & Submitted!");
   window.open(`https://wa.me/${farmWhatsapp}?text=${encodeURIComponent(waMessage)}`, '_blank');
   
   document.getElementById("invoiceDialog").showModal();
@@ -2726,7 +2750,6 @@ function confirmOrder(e) {
   document.getElementById("orderForm").reset();
   checkUserSession();
 }
-
 function closeInvoice() { document.getElementById("invoiceDialog").close(); }
 
 function showVisitForm(id) {
@@ -2794,11 +2817,12 @@ if(document.getElementById("farmerForm")) {
   });
 }
 
-function submitStudentVisit(e) {
+async function submitStudentVisit(e) {
   e.preventDefault();
   const currentTimestamp = new Date().toLocaleDateString('en-IN') + " " + new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+  
   const data = {
-    bookingId: "PGF-STU-" + Date.now().toString().slice(-4),
+    booking_id: "PGF-STU-" + Date.now().toString().slice(-4),
     type: "Student",
     name: currentUser.name,
     phone: currentUser.phone,
@@ -2806,69 +2830,100 @@ function submitStudentVisit(e) {
     enrollment: document.getElementById("senroll").value.trim(),
     college: document.getElementById("scollege").value.trim(),
     course: document.getElementById("scourse").value.trim(),
-    start: document.getElementById("sstart").value,
-    end: document.getElementById("send").value,
-    userUpiId: document.getElementById("suserUpi").value.trim(),
+    start_date: document.getElementById("sstart").value,
+    end_date: document.getElementById("send").value,
+    user_upi_id: document.getElementById("suserUpi").value.trim(),
     fee: 100,
-    paymentMode: document.getElementById("spaymentMode").value,
-    txnId: document.getElementById("spayment").value.trim(),
-    dateLogged: currentTimestamp,
+    payment_mode: document.getElementById("spaymentMode").value,
+    txn_id: document.getElementById("spayment").value.trim(),
+    date_logged: currentTimestamp,
     status: "Pending Verification",
-    certIssued: false
+    cert_issued: false
   };
-  bookingsRegistry.unshift(data);
-  localStorage.setItem('pgf_bookings', JSON.stringify(bookingsRegistry));
 
-  pushNotification('ADMIN', '🎓 New Student Registration', `${data.name} applied for Internship (#${data.bookingId}).`, 'booking');
+  const { error } = await _supabase.from('pgf_bookings').insert([data]);
+  if (error) {
+    alert("Registration Error: " + error.message);
+    return;
+  }
 
-  const waText = `NEW STUDENT INTERNSHIP REGISTRATION:\n----------------------------------------\nBooking Ref ID: ${data.bookingId}\nName: ${data.name}\nStudent UPI ID: ${data.userUpiId}\nCollege: ${data.college}\nCourse: ${data.course}\nUTR Tracking Number: ${data.txnId}\n----------------------------------------`;
-  window.open(`https://wa.me/${farmWhatsapp}?text=${encodeURIComponent(waText)}`, '_blank');
-  
+  bookingsRegistry.unshift({
+    bookingId: data.booking_id,
+    type: data.type,
+    name: data.name,
+    phone: data.phone,
+    email: data.email,
+    enrollment: data.enrollment,
+    college: data.college,
+    course: data.course,
+    start: data.start_date,
+    end: data.end_date,
+    userUpiId: data.user_upi_id,
+    fee: data.fee,
+    paymentMode: data.payment_mode,
+    txnId: data.txn_id,
+    dateLogged: data.date_logged,
+    status: data.status,
+    certIssued: data.cert_issued
+  });
+
+  alert("✅ Student Internship Registration saved to Cloud Database!");
   document.getElementById("studentForm").reset();
   document.getElementById("spayment").disabled = true;
   checkUserSession();
 }
 
-function submitFarmerVisit(e) {
+async function submitFarmerVisit(e) {
   e.preventDefault();
   const currentTimestamp = new Date().toLocaleDateString('en-IN') + " " + new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+  
   const data = {
-    bookingId: "PGF-FAR-" + Date.now().toString().slice(-4),
+    booking_id: "PGF-FAR-" + Date.now().toString().slice(-4),
     type: "Farmer",
     name: currentUser.name,
     phone: currentUser.phone,
     email: currentUser.email,
-    date: document.getElementById("fdate").value,
-    userUpiId: document.getElementById("fuserUpi").value.trim(),
+    session_date: document.getElementById("fdate").value,
+    user_upi_id: document.getElementById("fuserUpi").value.trim(),
     fee: 699,
-    paymentMode: document.getElementById("fpaymentMode").value,
-    txnId: document.getElementById("fpayment").value.trim(),
-    dateLogged: currentTimestamp,
+    payment_mode: document.getElementById("fpaymentMode").value,
+    txn_id: document.getElementById("fpayment").value.trim(),
+    date_logged: currentTimestamp,
     status: "Pending Verification",
-    certIssued: false
+    cert_issued: false
   };
-  bookingsRegistry.unshift(data);
-  localStorage.setItem('pgf_bookings', JSON.stringify(bookingsRegistry));
 
-  pushNotification('ADMIN', '👨‍🌾 New Farmer Training Booking', `${data.name} booked training (#${data.bookingId}) for ${data.date}.`, 'booking');
+  // Supabase Database me save karna
+  const { error } = await _supabase.from('pgf_bookings').insert([data]);
+  if (error) {
+    alert("Farmer Registration Error: " + error.message);
+    return;
+  }
 
-  const waText = `NEW FARMER TRAINING BOOKING:\n----------------------------------------\nBooking Ref ID: ${data.bookingId}\nName: ${data.name}\nFarmer UPI ID: ${data.userUpiId}\nTraining Date: ${data.date}\nUTR Tracking Number: ${data.txnId}\n----------------------------------------`;
+  // Local array me push karna taaki admin/user panel turant update ho jaye
+  bookingsRegistry.unshift({
+    bookingId: data.booking_id,
+    type: data.type,
+    name: data.name,
+    phone: data.phone,
+    email: data.email,
+    date: data.session_date,
+    userUpiId: data.user_upi_id,
+    fee: data.fee,
+    paymentMode: data.payment_mode,
+    txnId: data.txn_id,
+    dateLogged: data.date_logged,
+    status: data.status,
+    certIssued: data.cert_issued
+  });
+
+  const waText = `NEW FARMER TRAINING BOOKING:\n----------------------------------------\nBooking Ref ID: ${data.booking_id}\nName: ${data.name}\nFarmer UPI ID: ${data.user_upi_id}\nTraining Date: ${data.session_date}\nUTR Tracking Number: ${data.txn_id}\n----------------------------------------`;
   window.open(`https://wa.me/${farmWhatsapp}?text=${encodeURIComponent(waText)}`, '_blank');
   
+  alert("✅ Farmer Training Booking saved to Cloud Database!");
   document.getElementById("farmerForm").reset();
   document.getElementById("fpayment").disabled = true;
   checkUserSession();
-}
-
-if (document.getElementById("productSearch")) {
-  document.getElementById("productSearch").addEventListener("input", function(e) {
-    const searchTerm = e.target.value.toLowerCase().trim();
-    const filteredProducts = products.filter(product => {
-      return product.name.toLowerCase().includes(searchTerm) || 
-             product.detail.toLowerCase().includes(searchTerm);
-    });
-    renderProducts(filteredProducts);
-  });
 }
 
 function downloadCertificatePDF(bookingId) {

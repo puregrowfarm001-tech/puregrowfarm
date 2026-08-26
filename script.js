@@ -2741,7 +2741,11 @@ async function confirmOrder(e) {
   const waMessage = `NEW GOODS ORDER VERIFICATION FLOW:\n----------------------------------------\nInvoice Ref Code: ${data.order_id}\nClient Legal Name: ${data.name}\nClient UPI ID: ${data.user_upi_id}\nProducts Mapped: ${data.products}\nTotal Paid Amount: Rs ${data.total}\nPayment Method: ${data.payment_mode}\nTransaction Hash ID Code: ${data.txn_id}\n----------------------------------------`;
   
   alert("Order successfully synced to Cloud & Submitted!");
-  window.open(`https://wa.me/${farmWhatsapp}?text=${encodeURIComponent(waMessage)}`, '_blank');
+  
+  // WhatsApp link ko turant open karne ke liye safe trigger
+  setTimeout(() => {
+    window.open(`https://wa.me/${farmWhatsapp}?text=${encodeURIComponent(waMessage)}`, '_blank');
+  }, 300);
   
   document.getElementById("invoiceDialog").showModal();
   

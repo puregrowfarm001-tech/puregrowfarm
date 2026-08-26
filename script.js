@@ -1543,7 +1543,7 @@ function openAdminFilterModal(type) {
   listEl.innerHTML = htmlContent;
 }
 
-function openOrderActionsMenu(idx) {
+async function openOrderActionsMenu(idx) {
   const o = orderRegistry[idx];
   const choice = prompt(
     `👉 Select an action for Order #${o.orderId} (${o.name}):\n\n` +
@@ -1558,11 +1558,11 @@ function openOrderActionsMenu(idx) {
   if (!choice) return;
 
   if (choice.trim() === "1") {
-    handleOrderApprove(idx);
+    await handleOrderApprove(idx);
   } else if (choice.trim() === "2") {
-    handleOrderReject(idx);
+    await handleOrderReject(idx);
   } else if (choice.trim() === "3") {
-    handleOrderCancelRefund(idx);
+    await handleOrderCancelRefund(idx);
   } else if (choice.trim() === "4") {
     adminEditOrderDetails(idx);
   } else {

@@ -1791,6 +1791,27 @@ async function confirmBookingSlot(idx) {
   computeFinancialLedgerStatements();
 }
 
+async function rejectTrainingBooking(idx) {
+  const target = bookingsRegistry[idx];
+  let reason = prompt("Reject karne ka reason likhein:", "Payment unverified");
+  if(reason === null) return;
+  
+  target.status = `Rejected (Reason: ${reason})`;
+  target.certIssued = false;
+
+  // Supabase Database me update karne ke liye yeh line jodein:
+  await _supabase
+    .from('pgf_bookings')
+    .update({ status: target.status, cert_issued: false })
+    .eq('booking_id', target.bookingId);
+
+  localStorage.setItem('pgf_bookings', JSON.stringify(bookingsRegistry));
+  pushNotification(target.email, '❌ Farm Booking Rejected', `Your booking #${target.bookingId} was rejected. Reason: ${reason}.`, 'booking');
+  alert("❌ Booking Rejected & Cloud Updated!");
+  populateAdminDashboardTables();
+  computeFinancialLedgerStatements();
+}
+
 async function issueUserCertificate(idx) {
   const target = bookingsRegistry[idx];
   if (confirm(`Kya aap ${target.name} ke liye certificate approve karna chahte hain?`)) {

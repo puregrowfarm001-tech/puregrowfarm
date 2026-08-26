@@ -4,12 +4,6 @@ const SUPABASE_ANON_KEY = 'sb_publishable_3xW-grMnyyVpoFdRy5sgLg_kQoUMHyd';
 const { createClient } = supabase;
 const _supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-
-
-
-// =========================================================
-// CONFIGURATION & GLOBAL CONSTANTS
-// =========================================================
 const farmEmail = "puregrowfarm001@gmail.com";
 const farmWhatsapp = "919067891039";
 const farmUpiId = "sohamgajera01@okhdfcbank";
@@ -54,9 +48,6 @@ let notificationsRegistry = getCleanData('pgf_notifications');
 
 let currentUser = JSON.parse(localStorage.getItem('pgf_session')) || null;
 
-// =========================================================
-// HELPER: PRODUCT IMAGE MAPPER & 1-CLICK CLIPBOARD COPY
-// =========================================================
 function getOrderProductImage(orderProductsText) {
   const text = (orderProductsText || "").toLowerCase();
   if (text.includes("khakhra")) return "mushroom/Methi khakhra 2.png";
@@ -76,9 +67,6 @@ function copyToClipboard(text) {
   });
 }
 
-// =========================================================
-// SEPARATE MODAL CONTROLLERS (ORDERS & BOOKINGS)
-// =========================================================
 function openOrdersModal() {
   document.getElementById("userOrdersModal").classList.add("active-modal");
   loadUserPanelData();
@@ -101,9 +89,6 @@ function closeModalOutside(e, modalId) {
   }
 }
 
-// =========================================================
-// PASSWORD STRENGTH CHECKER & EYE TOGGLE
-// =========================================================
 function togglePasswordVisibility(inputId, btn) {
   const input = document.getElementById(inputId);
   if (!input) return;
@@ -140,9 +125,6 @@ function checkPasswordStrength(pwd) {
   }
 }
 
-// =========================================================
-// NOTIFICATIONS ENGINE WITH AUTO-READ DISMISS
-// =========================================================
 function pushNotification(targetRecipient, title, message, targetAction = 'general') {
   const newNotif = {
     id: "NOTIF-" + Date.now(),
@@ -326,6 +308,8 @@ async function triggerAdminView() {
       rawIsoDate: o.raw_iso_date,
       deliveryDays: o.delivery_days,
       courierName: o.courier_name,
+      trackingStage: o.tracking_stage || o.trackingStage,
+      currentLocation: o.current_location || o.currentLocation,
       refundCreditedDate: o.refund_credited_date,
       status: o.status
     }));
@@ -546,8 +530,8 @@ function loadUserPanelData() {
         subtitleText = "Payment Not Verified / Invalid UTR";
       } else {
         if (stage === 'Placed') { statusText = "Order Placed " + orderPlacedDate; subtitleText = "Your order has been placed."; }
-        else if (stage === 'Packed') { statusText = "Seller Packed & Ready"; subtitleText = `Dispatched with ${courier}`; }
-        else if (stage === 'Shipped') { statusText = "Shipped via " + courier; subtitleText = `AWB: ${awb}`; }
+        else if (stage === 'Packed') { statusText = "Seller Packed & Ready"; subtitleText = `Dispatched with ${courier} (Location: ${loc})`; }
+        else if (stage === 'Shipped') { statusText = "Shipped via " + courier; subtitleText = `AWB: ${awb} (Location: ${loc})`; }
         else if (stage === 'OutForDelivery') { statusText = "Out For Delivery"; subtitleText = `Arriving Today via ${courier}`; }
         else if (stage === 'Delivered') { statusText = "Delivered " + (arrivalDeliveryDate !== "2-4 Business Days" ? arrivalDeliveryDate : orderPlacedDate); subtitleText = "Delivered safely to your doorstep"; }
       }
@@ -586,7 +570,8 @@ function loadUserPanelData() {
               ${isApproved && !isCancelled && !isRejected ? `
                 <div style="margin-top:8px; background:#f0fdf4; padding:10px 12px; border-radius:6px; border:1px solid #bbf7d0; color:#15803d; font-size:13px; line-height:1.5;">
                   <strong>🚚 Target Delivery Date (Kab Pahuchega):</strong> <span style="font-weight:800; font-size:14px; text-decoration:underline;">${arrivalDeliveryDate}</span><br>
-                  <strong>📦 Dispatched Courier:</strong> <span>${courier}</span> (AWB Tracking Code: <code>${awb}</code>)
+                  <strong>📦 Dispatched Courier:</strong> <span>${courier}</span> (AWB Tracking Code: <code>${awb}</code>)<br>
+                  <strong>📍 Live Current Location (Order Kaha Hai):</strong> <span style="color:#0284c7; font-weight:bold;">${loc}</span>
                 </div>
               ` : ''}
             </div>
@@ -594,7 +579,7 @@ function loadUserPanelData() {
             ${isPending ? `
               <div style="background: #fffbeb; border: 1px solid #fcd34d; border-radius: 8px; padding: 10px; font-size: 13px; color: #92400e;">
                 ⏳ <strong>Status: Verification Pending</strong><br>
-                <span style="font-size:12px;">Admin jaise hi payment verify karke approve karega, live delivery date aur courier tracking activate ho jayegi.</span>
+                <span style="font-size:12px;">Admin jaise hi payment verify karke approve karega, live delivery date, current location aur courier tracking activate ho jayegi.</span>
               </div>
             ` : ''}
 
@@ -611,20 +596,20 @@ function loadUserPanelData() {
                     <div class="timeline-dot"></div>
                     <div class="timeline-title">Seller Processed & Packed</div>
                     <div class="timeline-desc">Seller has packed your order at Farm Hub.</div>
-                    <div class="timeline-desc" style="color:#0284c7; font-size:12px;">Dispatched with delivery partner: <strong>${courier}</strong></div>
+                    <div class="timeline-desc" style="color:#0284c7; font-size:12px;">Dispatched with delivery partner: <strong>${courier}</strong> (📍 ${loc})</div>
                   </div>
 
                   <div class="timeline-step ${curLevel >= 3 ? 'completed' : ''}">
                     <div class="timeline-dot"></div>
                     <div class="timeline-title">Shipped</div>
                     <div class="timeline-desc"><strong>${courier} - ${awb}</strong></div>
-                    <div class="timeline-desc">Your item has been shipped. (📍 Hub: ${loc})</div>
+                    <div class="timeline-desc">Your item has been shipped. (📍 Current Location Hub: ${loc})</div>
                   </div>
 
                   <div class="timeline-step ${curLevel >= 4 ? 'completed' : ''}">
                     <div class="timeline-dot"></div>
                     <div class="timeline-title">Out For Delivery</div>
-                    <div class="timeline-desc">Your item is out for delivery with ${courier} executive.</div>
+                    <div class="timeline-desc">Your item is out for delivery with ${courier} executive. (📍 ${loc})</div>
                   </div>
 
                   <div class="timeline-step ${curLevel >= 5 ? 'completed' : ''}">
@@ -683,14 +668,18 @@ function loadUserPanelData() {
   if (bList) {
     bList.innerHTML = myBookings.length ? myBookings.map(b => {
       const isConfirmed = b.status === 'Confirmed' || b.status === 'Approved';
-      let statusColor = isConfirmed ? 'var(--accent)' : (b.status && b.status.startsWith('Rejected') ? 'var(--danger)' : 'var(--warn)');
-      const certNote = b.certIssued ? `<br><span style="color:var(--accent); font-weight:bold;">📜 Certificate Approved & Ready to Download below!</span>` : (isConfirmed ? `<br><span style="color:#d97706; font-size:12px;">⏳ Step 1: Farm Booking Confirmed. Step 2: Certificate will unlock after training.</span>` : '');
+      const isRejectedBooking = b.status && b.status.startsWith('Rejected');
+      let statusColor = isConfirmed ? 'var(--accent)' : (isRejectedBooking ? 'var(--danger)' : 'var(--warn)');
+      
+      let statusText = isConfirmed ? 'Booking Confirmed' : (b.status || 'Pending Verification');
+      
+      const certNote = b.certIssued ? `<br><span style="color:var(--accent); font-weight:bold;">📜 Certificate Approved & Ready to Download below!</span>` : (isConfirmed ? `<br><span style="color:#d97706; font-size:12px;">⏳ Step 1: Farm Booking Confirmed. Step 2: Certificate will unlock after training.</span>` : (isRejectedBooking ? `<br><span style="color:var(--danger); font-size:12px;">❌ ${b.status}</span>` : ''));
       
       return `
         <div class="data-item-card" style="border: 1px solid #cbd5e1; border-radius: 10px; padding: 12px; margin-bottom: 10px; background:#fff;">
           <strong>Booking ID: ${b.bookingId || ''}</strong><br>
           <small>Booked On: ${b.dateLogged || ''}</small><br>
-          <strong>Scheme: ${b.type || ''} Visit [<span style="color:${statusColor}; font-weight:bold;">${isConfirmed ? 'Booking Confirmed' : (b.status || 'Pending Verification')}</span>]</strong>
+          <strong>Scheme: ${b.type || ''} Visit [<span style="color:${statusColor}; font-weight:bold;">${statusText}</span>]</strong>
           <br><small>Your UPI ID: <code style="color:var(--accent);">${b.userUpiId || 'N/A'}</code></small>
           ${certNote}
         </div>
@@ -749,9 +738,6 @@ function deleteUserAccount(idx) {
   }
 }
 
-// =========================================================
-// LIVE STOCK SUMMARY & CALCULATION LOGIC (UPDATED WITH RULES)
-// =========================================================
 function renderAdminLiveStockSummary() {
   const container = document.getElementById("adminLiveStockCardsContainer");
   if (!container) return;
@@ -867,9 +853,6 @@ function renderAdminLiveStockSummary() {
   `;
 }
 
-// =========================================================
-// DAILY DRY MUSHROOM STOCK MANAGEMENT & TOTALS
-// =========================================================
 function saveDailyDryStockEntry(e) {
   e.preventDefault();
   const rawDate = document.getElementById("dryLogDate").value;
@@ -955,9 +938,6 @@ function renderDailyDryStockTable() {
   `).join("");
 }
 
-// =========================================================
-// SEARCH HELPERS FOR ADMIN TABS & SUB-TABLES
-// =========================================================
 function filterAdminOrdersTable() {
   const query = (document.getElementById("adminOrdersSearchInput")?.value || "").toLowerCase().trim();
   const rows = document.querySelectorAll("#adminOrdersTableBody tr");
@@ -994,9 +974,6 @@ function filterSubTable(inputId, tbodyId) {
   });
 }
 
-// =========================================================
-// YEAR FILTER & CLEAN EXCEL-LIKE PRINT REPORT HANDLER
-// =========================================================
 function handleAdminYearFilterChange() {
   populateAdminDashboardTables();
   computeFinancialLedgerStatements();
@@ -1065,9 +1042,6 @@ function printActiveAdminReport() {
   printWindow.document.close();
 }
 
-// =========================================================
-// DIRECT WHATSAPP MESSAGE SENDER FOR ADMIN
-// =========================================================
 function sendAdminWhatsAppMessage(type, refIdOrIndex) {
   let targetPhone = "";
   let messageText = "";
@@ -1115,9 +1089,6 @@ Thank you!`;
   window.open(`https://wa.me/${formattedPhone}?text=${encodeURIComponent(messageText)}`, '_blank');
 }
 
-// =========================================================
-// ADMIN ERP TABLES, METRICS & INLINE COURIER EDIT
-// =========================================================
 function populateAdminDashboardTables() {
   renderAdminLiveStockSummary();
   renderDailyDryStockTable();
@@ -1203,11 +1174,14 @@ function populateAdminDashboardTables() {
                   </div>
 
                   <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px; gap:4px;">
-                    <span style="font-weight:bold; color:#0284c7; white-space:nowrap;">Stage: ${stage}</span>
-                    <input type="text" value="${courier}" placeholder="Courier Name (e.g. Ekart)" style="padding:2px 6px; font-size:11px; font-weight:bold; color:#334155; border:1px solid #94a3b8; border-radius:4px; width:140px; text-align:right;" onchange="updateOrderCourierDirect(${idx}, this.value)">
+                    <span style="font-weight:bold; color:#0284c7; white-space:nowrap;">Courier:</span>
+                    <input type="text" value="${courier}" placeholder="Courier Name" style="padding:2px 6px; font-size:11px; font-weight:bold; color:#334155; border:1px solid #94a3b8; border-radius:4px; width:140px; text-align:right;" onchange="updateOrderCourierDirect(${idx}, this.value)">
                   </div>
-                  
-                  <div style="color:#334155; margin-bottom:6px;">📍 ${loc}</div>
+
+                  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; gap:4px;">
+                    <span style="font-weight:bold; color:#0284c7; white-space:nowrap;">📍 Location:</span>
+                    <input type="text" value="${loc}" placeholder="Order Kaha Hai (e.g. Surat Hub)" style="padding:2px 6px; font-size:11px; font-weight:bold; color:#334155; border:1px solid #94a3b8; border-radius:4px; width:140px; text-align:right;" onchange="updateOrderLocationDirect(${idx}, this.value)">
+                  </div>
 
                   <div style="display:flex; gap:3px; flex-wrap:wrap;">
                     <button type="button" class="btn" style="padding:2px 5px; font-size:10px; min-height:22px; background:${stage==='Placed'?'#2b8a3e':'#94a3b8'};" onclick="setOrderStageDirect(${idx}, 'Placed')">Placed</button>
@@ -1329,6 +1303,7 @@ function populateAdminDashboardTables() {
                 ` : (isConfirmed ? `
                   ${!certIssued ? `
                     <button class="btn" style="padding:4px 8px; min-height:auto; font-size:11px; background:#0284c7;" onclick="issueUserCertificate(${idx})">2. Approve Certificate</button>
+                    <button class="btn" style="padding:4px 8px; min-height:auto; font-size:11px; background:var(--danger);" onclick="rejectTrainingBooking(${idx})">Reject Certificate</button>
                   ` : `
                     <button type="button" class="btn" style="padding:3px 6px; min-height:auto; font-size:11px; background:var(--accent);" onclick="downloadCertificatePDF('${b.bookingId}')">📜 Download PDF</button>
                   `}
@@ -1376,9 +1351,6 @@ function populateAdminDashboardTables() {
   }
 }
 
-// =========================================================
-// ADMIN FILTER MODAL POPUP FOR LISTS & PENDING ITEMS
-// =========================================================
 function openAdminFilterModal(type) {
   const modal = document.getElementById("adminFilterPopupModal");
   const titleEl = document.getElementById("adminFilterModalTitle");
@@ -1418,7 +1390,7 @@ function openAdminFilterModal(type) {
           <div>
             <strong>${o.orderId} - ${o.name}</strong><br>
             <small class="muted">Products: ${o.products} | Total: ₹${o.total}</small><br>
-            <small style="color:#d97706; font-weight:bold;">Current Stage: ${o.trackingStage || 'Packed'}</small>
+            <small style="color:#d97706; font-weight:bold;">Current Stage: ${o.trackingStage || 'Packed'} (📍 ${o.currentLocation || 'Farm Hub'})</small>
           </div>
           <button type="button" class="btn" style="font-size:12px; padding:6px 12px; min-height:auto; background:var(--accent);" onclick="closeModalOutside({target:{id:'adminFilterPopupModal'}}, 'adminFilterPopupModal'); switchErpTab('erpOrdersTab', 'tabNavOrders');">Manage Delivery</button>
         </div>
@@ -1481,7 +1453,7 @@ function openAdminFilterModal(type) {
     htmlContent = orderRegistry.length ? orderRegistry.map(o => `
       <div style="background:#f8fafc; border:1px solid #cbd5e1; border-radius:8px; padding:10px; font-size:13px;">
         <strong>${o.orderId} - ${o.name}</strong> | Total: ₹${o.total} | Status: <strong>${o.status}</strong><br>
-        <small class="muted">Products: ${o.products} | Date: ${o.dateLogged}</small>
+        <small class="muted">Products: ${o.products} | Location: 📍 ${o.currentLocation || 'Farm Hub'} | Date: ${o.dateLogged}</small>
       </div>
     `).join("") : `<p class="muted" style="text-align:center;">No orders recorded.</p>`;
   } else if (type === 'list_bookings') {
@@ -1544,7 +1516,7 @@ async function openOrderActionsMenu(idx) {
   const o = orderRegistry[idx];
   const choice = prompt(
     `👉 Select an action for Order #${o.orderId} (${o.name}):\n\n` +
-    `1. Approve Order (Sets Delivery Date & Courier)\n` +
+    `1. Approve Order (Sets Delivery Date, Courier & Location)\n` +
     `2. Reject Order\n` +
     `3. Cancel & Refund\n` +
     `4. Edit Details (Phone, Address, Payment Mode, Txn ID & UPI ID)\n\n` +
@@ -1578,6 +1550,19 @@ async function updateOrderCourierDirect(idx, newCourier) {
     .eq('order_id', orderRegistry[idx].orderId);
 
   pushNotification(orderRegistry[idx].email, '🚚 Courier Partner Updated', `Your Order #${orderRegistry[idx].orderId} will be delivered via: ${newCourier}.`, 'order');
+}
+
+async function updateOrderLocationDirect(idx, newLocation) {
+  if (!newLocation) return;
+  orderRegistry[idx].currentLocation = newLocation.trim();
+  localStorage.setItem('pgf_orders', JSON.stringify(orderRegistry));
+  
+  await _supabase
+    .from('pgf_orders')
+    .update({ current_location: orderRegistry[idx].currentLocation })
+    .eq('order_id', orderRegistry[idx].orderId);
+
+  pushNotification(orderRegistry[idx].email, '📍 Live Order Location Update', `Your Order #${orderRegistry[idx].orderId} current location: ${newLocation}.`, 'order');
 }
 
 async function updateExpectedDeliveryDate(idx, newDate) {
@@ -1661,12 +1646,17 @@ async function handleOrderApprove(idx) {
   if (inputCourier === null) return;
   const finalCourier = inputCourier.trim() || defaultCourier;
 
+  const defaultLocation = o.currentLocation || "Pure Grow Farm Central Hub, Makhiyala";
+  const inputLocation = prompt("Order ki abhi ki live location kya hai? (e.g. Rajkot Dispatch Hub / Out for Delivery):", defaultLocation);
+  if (inputLocation === null) return;
+  const finalLocation = inputLocation.trim() || defaultLocation;
+
   o.status = "Approved";
   o.trackingStage = "Packed";
   o.deliveryDays = finalDeliveryDate;
   o.courierName = finalCourier;
   o.trackingNumber = o.trackingNumber || ("FMPC" + Math.floor(1000000000 + Math.random() * 9000000000));
-  o.currentLocation = `Processing & Dispatched via ${finalCourier} at Farm Hub`;
+  o.currentLocation = finalLocation;
   o.paymentReceived = true;
   o.refundStage = "";
   
@@ -1675,18 +1665,19 @@ async function handleOrderApprove(idx) {
     .update({
       status: o.status,
       delivery_days: o.deliveryDays,
-      courier_name: o.courierName
+      courier_name: o.courierName,
+      current_location: o.currentLocation
     })
     .eq('order_id', o.orderId);
   
   pushNotification(
     o.email, 
     '📦 Order Approved & Dispatched!', 
-    `Your Order #${o.orderId} is confirmed. Placed Date: ${o.dateLogged}. Expected Delivery Date: ${finalDeliveryDate} via ${finalCourier}.`, 
+    `Your Order #${o.orderId} is confirmed. Delivery Date: ${finalDeliveryDate} via ${finalCourier}. Location: ${finalLocation}.`, 
     'order'
   );
 
-  alert(`✅ Order Approved Successfully & Synced to Cloud!\n\n• Delivery Date: ${finalDeliveryDate}\n• Courier Partner: ${finalCourier}`);
+  alert(`✅ Order Approved Successfully & Synced to Cloud!\n\n• Delivery Date: ${finalDeliveryDate}\n• Courier: ${finalCourier}\n• Location: ${finalLocation}`);
   populateAdminDashboardTables();
   computeFinancialLedgerStatements();
 }
@@ -1738,7 +1729,7 @@ async function handleOrderCancelRefund(idx) {
   computeFinancialLedgerStatements();
 }
 
-function setOrderStageDirect(idx, newStage) {
+async function setOrderStageDirect(idx, newStage) {
   const o = orderRegistry[idx];
   o.trackingStage = newStage;
 
@@ -1747,16 +1738,25 @@ function setOrderStageDirect(idx, newStage) {
   } else if (newStage === 'Packed') {
     o.currentLocation = `Pure Grow Farm Central Hub (${o.courierName || 'Ekart Logistics'})`;
   } else if (newStage === 'Shipped') {
-    o.currentLocation = `In Transit via ${o.courierName || 'Ekart Logistics'} Hub`;
+    o.currentLocation = `In Transit via ${o.courierName || 'Ekart Logistics'} Transit Hub`;
   } else if (newStage === 'OutForDelivery') {
-    o.currentLocation = `Out for Delivery with ${o.courierName || 'Ekart Logistics'} Partner`;
+    o.currentLocation = `Out for Delivery with local ${o.courierName || 'Ekart Logistics'} executive`;
   } else if (newStage === 'Delivered') {
-    o.currentLocation = "Delivered to Customer Doorstep";
+    o.currentLocation = "Delivered safely to Customer Doorstep";
     o.status = "Delivered";
   }
 
   localStorage.setItem('pgf_orders', JSON.stringify(orderRegistry));
-  pushNotification(o.email, '🚚 Order Shipment Update', `Order #${o.orderId} stage updated to: ${newStage}. (${o.currentLocation})`, 'order');
+  
+  await _supabase
+    .from('pgf_orders')
+    .update({ 
+      status: o.status,
+      current_location: o.currentLocation 
+    })
+    .eq('order_id', o.orderId);
+
+  pushNotification(o.email, '🚚 Order Shipment Update', `Order #${o.orderId} stage updated to: ${newStage}. (📍 Location: ${o.currentLocation})`, 'order');
   populateAdminDashboardTables();
 }
 
@@ -1801,7 +1801,7 @@ async function confirmBookingSlot(idx) {
 
 async function rejectTrainingBooking(idx) {
   const target = bookingsRegistry[idx];
-  let reason = prompt("Farm booking reject karne ka reason likhein:", "Payment unverified / Slot unavailable");
+  let reason = prompt("Farm booking ya certificate reject karne ka reason likhein:", "Payment unverified / Attendance criteria not met");
   if (reason === null) return;
   
   target.status = `Rejected (Reason: ${reason})`;
@@ -1812,9 +1812,9 @@ async function rejectTrainingBooking(idx) {
     .update({ status: target.status, cert_issued: false })
     .eq('booking_id', target.bookingId);
 
-  pushNotification(target.email, '❌ Farm Booking Rejected', `Your booking #${target.bookingId} was rejected. Reason: ${reason}.`, 'booking');
+  pushNotification(target.email, '❌ Farm Booking / Certificate Rejected', `Your booking/certificate #${target.bookingId} was rejected. Reason: ${reason}.`, 'booking');
 
-  alert(`❌ Farm Booking Rejected & Cloud Synced Successfully!`);
+  alert(`❌ Farm Booking / Certificate Rejected & Cloud Synced Successfully!`);
   populateAdminDashboardTables();
   computeFinancialLedgerStatements();
 }
@@ -1984,9 +1984,6 @@ function adminDeleteDamage(idx) {
   }
 }
 
-// =========================================================
-// MATHEMATICAL OVERVIEW & LEDGER CALCULATION LOGIC
-// =========================================================
 function computeFinancialLedgerStatements() {
   const selectedYear = document.getElementById("adminYearFilterSelect")?.value || "ALL";
 
@@ -2752,6 +2749,7 @@ async function confirmOrder(e) {
     raw_iso_date: getTodayIsoString(),
     delivery_days: "",
     courier_name: "Ekart Logistics",
+    current_location: "Pure Grow Farm Central Hub, Makhiyala",
     refund_credited_date: "",
     status: "Pending Verification"
   };
@@ -2778,6 +2776,7 @@ async function confirmOrder(e) {
     txnId: data.txn_id,
     dateLogged: data.date_logged,
     rawIsoDate: data.raw_iso_date,
+    currentLocation: data.current_location,
     status: data.status
   });
 

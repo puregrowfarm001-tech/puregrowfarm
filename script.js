@@ -307,7 +307,6 @@ async function triggerAdminView() {
   document.getElementById("publicContent").style.display = "none";
   document.getElementById("adminErpView").classList.add("active");
   
-  // Supabase se orders aur bookings fetch karna
   const { data: cloudOrders } = await _supabase.from('pgf_orders').select('*');
   if (cloudOrders) {
     orderRegistry = cloudOrders.map(o => ({
@@ -762,7 +761,6 @@ function renderAdminLiveStockSummary() {
   const khakhraProd = products.find(p => p.type === "khakhra") || { stock: 0 };
   const papadProd = products.find(p => p.type === "papad") || { stock: 0 };
 
-  // 1. Dry Live Stock: (Daily Dry + Buy Dry) - (Order Dry + Sell Dry) [1kg = 10 packets]
   const totalDailyDryKg = dailyDryStockRegistry.reduce((sum, item) => sum + Number(item.qty || 0), 0);
   
   const totalBuyDryKg = purchasesRegistry
@@ -781,7 +779,6 @@ function renderAdminLiveStockSummary() {
   if (calculatedDryStockKg < 0) calculatedDryStockKg = 0;
   dryProd.stock = calculatedDryStockKg;
 
-  // 2. Powder Live Stock: (Dry Stock + Buy Powder) - (Order + Sell Powder) [1kg = 10 packets]
   const totalBuyPowderKg = purchasesRegistry
     .filter(p => p && p.product && p.product.toLowerCase().includes("powder"))
     .reduce((sum, p) => sum + Number(p.qty || 0), 0);
@@ -798,7 +795,6 @@ function renderAdminLiveStockSummary() {
   if (calculatedPowderStock < 0) calculatedPowderStock = 0;
   powderProd.stock = calculatedPowderStock;
 
-  // 3. Khakhra Live Stock: (Buy Khakhra) - (Order + Sell Khakhra) [1kg buy = 5 packets]
   const totalBuyKhakhraKg = purchasesRegistry
     .filter(p => p && p.product && p.product.toLowerCase().includes("khakhra"))
     .reduce((sum, p) => sum + Number(p.qty || 0), 0);
@@ -816,7 +812,6 @@ function renderAdminLiveStockSummary() {
   if (calculatedKhakhraStock < 0) calculatedKhakhraStock = 0;
   khakhraProd.stock = calculatedKhakhraStock;
 
-  // 4. Papad Live Stock: (Buy Papad) - (Order + Sell Papad) [1kg buy = 5 packets]
   const totalBuyPapadKg = purchasesRegistry
     .filter(p => p && p.product && p.product.toLowerCase().includes("papad"))
     .reduce((sum, p) => sum + Number(p.qty || 0), 0);
@@ -837,7 +832,6 @@ function renderAdminLiveStockSummary() {
   saveProductsToStorage();
   renderProducts();
 
-  // Render Overview Cards with Stock Availability Status
   container.innerHTML = `
     <div style="background: ${calculatedDryStockKg > 0 ? '#fefce8' : '#fee2e2'}; border: 1px solid ${calculatedDryStockKg > 0 ? '#fef08a' : '#fca5a5'}; padding: 12px; border-radius: 10px;">
       <div style="font-size: 12px; color: ${calculatedDryStockKg > 0 ? '#854d0e' : '#991b1b'}; font-weight: bold;">🌾 Dry Mushroom Stock</div>
@@ -1297,6 +1291,7 @@ function populateAdminDashboardTables() {
         const isConfirmed = b.status === "Confirmed" || b.status === "Approved";
         const certIssued = b.certIssued === true;
         const bUpi = b.userUpiId || "N/A";
+        const isRejectedBooking = b.status && b.status.startsWith('Rejected');
 
         return `
           <tr>
@@ -1319,24 +1314,26 @@ function populateAdminDashboardTables() {
             </td>
             <td><small style="color:#0284c7; font-weight:bold;">${b.dateLogged || 'N/A'}</small></td>
             <td>
-              <span class="badge ${isConfirmed ? 'badge-confirmed' : 'badge-pending'}">${isConfirmed ? '1. Confirmed' : 'Pending'}</span>
+              <span class="badge ${isConfirmed ? 'badge-confirmed' : (isRejectedBooking ? 'badge-pending' : 'badge-pending')}" style="${isRejectedBooking ? 'background:#fee2e2; color:#991b1b;' : ''}">
+                ${isConfirmed ? '1. Confirmed' : (b.status || 'Pending Verification')}
+              </span>
             </td>
             <td>
               <span class="badge ${certIssued ? 'badge-confirmed' : 'badge-pending'}">${certIssued ? '2. Approved' : 'Pending Approval'}</span>
             </td>
             <td>
               <div style="display:flex; flex-direction:column; gap:4px;">
-                ${!isConfirmed ? `
+                ${!isConfirmed && !isRejectedBooking ? `
                   <button class="btn" style="padding:4px 8px; min-height:auto; font-size:11px; background:var(--accent);" onclick="confirmBookingSlot(${idx})">1. Approve Farm Book</button>
-                  <button class="btn" style="padding:4px 8px; min-height:auto; font-size:11px; background:var(--danger);" onclick="rejectTrainingBooking(${idx})">Reject</button>
-                ` : `
+                  <button class="btn" style="padding:4px 8px; min-height:auto; font-size:11px; background:var(--danger);" onclick="rejectTrainingBooking(${idx})">Reject Booking</button>
+                ` : (isConfirmed ? `
                   ${!certIssued ? `
                     <button class="btn" style="padding:4px 8px; min-height:auto; font-size:11px; background:#0284c7;" onclick="issueUserCertificate(${idx})">2. Approve Certificate</button>
                   ` : `
                     <button type="button" class="btn" style="padding:3px 6px; min-height:auto; font-size:11px; background:var(--accent);" onclick="downloadCertificatePDF('${b.bookingId}')">📜 Download PDF</button>
                   `}
-                `}
-                <button type="button" class="btn" style="padding:3px 6px; min-height:auto; font-size:10px; background:#4b5563;" onclick="adminEditCertificateData(${idx})">✏️ Edit Certificate</button>
+                  <button type="button" class="btn" style="padding:3px 6px; min-height:auto; font-size:11px; background:#4b5563;" onclick="adminEditCertificateData(${idx})">✏️ Edit Certificate</button>
+                ` : `<span style="color:#dc2626; font-weight:bold; font-size:12px;">Rejected</span>`)}
                 <button type="button" class="btn" style="padding:4px 8px; font-size:11px; background:#25d366;" onclick="sendAdminWhatsAppMessage('booking', '${b.bookingId}')">💬 WhatsApp</button>
               </div>
             </td>
@@ -1570,17 +1567,29 @@ async function openOrderActionsMenu(idx) {
   }
 }
 
-function updateOrderCourierDirect(idx, newCourier) {
+async function updateOrderCourierDirect(idx, newCourier) {
   if (!newCourier) return;
   orderRegistry[idx].courierName = newCourier.trim();
   localStorage.setItem('pgf_orders', JSON.stringify(orderRegistry));
+  
+  await _supabase
+    .from('pgf_orders')
+    .update({ courier_name: orderRegistry[idx].courierName })
+    .eq('order_id', orderRegistry[idx].orderId);
+
   pushNotification(orderRegistry[idx].email, '🚚 Courier Partner Updated', `Your Order #${orderRegistry[idx].orderId} will be delivered via: ${newCourier}.`, 'order');
 }
 
-function updateExpectedDeliveryDate(idx, newDate) {
+async function updateExpectedDeliveryDate(idx, newDate) {
   if (!newDate) return;
   orderRegistry[idx].deliveryDays = newDate.trim();
   localStorage.setItem('pgf_orders', JSON.stringify(orderRegistry));
+  
+  await _supabase
+    .from('pgf_orders')
+    .update({ delivery_days: orderRegistry[idx].deliveryDays })
+    .eq('order_id', orderRegistry[idx].orderId);
+
   pushNotification(orderRegistry[idx].email, '🚚 Delivery Date Scheduled', `Your Order #${orderRegistry[idx].orderId} is scheduled to arrive on: ${newDate}.`, 'order');
   populateAdminDashboardTables();
 }
@@ -1661,7 +1670,6 @@ async function handleOrderApprove(idx) {
   o.paymentReceived = true;
   o.refundStage = "";
   
-  // Supabase me update karein
   await _supabase
     .from('pgf_orders')
     .update({
@@ -1791,6 +1799,26 @@ async function confirmBookingSlot(idx) {
   computeFinancialLedgerStatements();
 }
 
+async function rejectTrainingBooking(idx) {
+  const target = bookingsRegistry[idx];
+  let reason = prompt("Farm booking reject karne ka reason likhein:", "Payment unverified / Slot unavailable");
+  if (reason === null) return;
+  
+  target.status = `Rejected (Reason: ${reason})`;
+  target.certIssued = false;
+  
+  await _supabase
+    .from('pgf_bookings')
+    .update({ status: target.status, cert_issued: false })
+    .eq('booking_id', target.bookingId);
+
+  pushNotification(target.email, '❌ Farm Booking Rejected', `Your booking #${target.bookingId} was rejected. Reason: ${reason}.`, 'booking');
+
+  alert(`❌ Farm Booking Rejected & Cloud Synced Successfully!`);
+  populateAdminDashboardTables();
+  computeFinancialLedgerStatements();
+}
+
 async function issueUserCertificate(idx) {
   const target = bookingsRegistry[idx];
   if (confirm(`Kya aap ${target.name} ke liye certificate approve karna chahte hain?`)) {
@@ -1807,19 +1835,6 @@ async function issueUserCertificate(idx) {
     alert("✅ Certificate Approved & Cloud Updated!");
     populateAdminDashboardTables();
   }
-}
-
-function rejectTrainingBooking(idx) {
-  const target = bookingsRegistry[idx];
-  let reason = prompt("Reject karne ka reason likhein:", "Payment unverified");
-  if(reason === null) return;
-  
-  target.status = `Rejected (Reason: ${reason})`;
-  target.certIssued = false;
-  localStorage.setItem('pgf_bookings', JSON.stringify(bookingsRegistry));
-
-  pushNotification(target.email, '❌ Farm Booking Rejected', `Your booking #${target.bookingId} was rejected. Reason: ${reason}.`, 'booking');
-  populateAdminDashboardTables();
 }
 
 function adminEditExpense(idx) {
@@ -2010,7 +2025,6 @@ function computeFinancialLedgerStatements() {
   });
   const expenseTotal = filteredExpenses.reduce((sum, e) => sum + Number(e.amount || 0), 0);
 
-  // Partner wise Buy Totals (4)
   let sohamBuyTotal = 0, jeetBuyTotal = 0, farmBuyTotal = 0;
   filteredPurchases.forEach(p => {
     const amt = Number(p.paidAmount !== undefined ? p.paidAmount : p.total || 0);
@@ -2019,7 +2033,6 @@ function computeFinancialLedgerStatements() {
     else if(p.funder === "Farm") farmBuyTotal += amt;
   });
 
-  // Partner wise Expense Totals (5)
   let sohamExpOnly = 0, jeetExpOnly = 0, farmExpOnly = 0;
   filteredExpenses.forEach(e => {
     const amt = Number(e.amount || 0);
@@ -2028,12 +2041,10 @@ function computeFinancialLedgerStatements() {
     else if(e.payer === "Farm") farmExpOnly += amt;
   });
 
-  // 6) Partner & Farm Total -> Strictly 4 + 5 (Buy + Expense for Soham, Jeet & Farm separately)
   let sohamExpTotal = sohamExpOnly + sohamBuyTotal;
   let jeetExpTotal = jeetExpOnly + jeetBuyTotal;
   let farmExpTotal = farmExpOnly + farmBuyTotal;
 
-  // Damage Totals (9)
   const filteredDamages = expensesRegistry.filter(e => {
     if (!e || e.category !== "Damage Received") return false;
     if (selectedYear === "ALL") return true;
@@ -2049,55 +2060,41 @@ function computeFinancialLedgerStatements() {
     else if(d.payer === "Farm") farmDmgTotal += amt;
   });
 
-  // 10) Soham & Jeet Net Expenses = (6 - 9)
   let sohamNetExp = sohamExpTotal - sohamDmgTotal;
   let jeetNetExp = jeetExpTotal - jeetDmgTotal;
 
-  // 7) Farm Available Balance: 1 + 2 + 3 + 9 (9 me sirf farm ka data: farmDmgTotal) - 6 (6 me sirf farm ka data: farmExpTotal)
   const farmAvailableBalance = (orderTotal + farmBookingTotal + sellTotal + farmDmgTotal) - farmExpTotal;
-
-  // 8) Unified Net Profit: 1 + 2 + 3 - 4 - 5
   const netProfit = (orderTotal + farmBookingTotal + sellTotal) - buyTotal - expenseTotal;
 
-  // Overview DOM Updates
   if(document.getElementById("ovOrderTotal")) document.getElementById("ovOrderTotal").textContent = "Rs " + orderTotal.toFixed(2);
   if(document.getElementById("ovFarmBookingTotal")) document.getElementById("ovFarmBookingTotal").textContent = "Rs " + farmBookingTotal.toFixed(2);
   if(document.getElementById("ovSellTotal")) document.getElementById("ovSellTotal").textContent = "Rs " + sellTotal.toFixed(2);
   
-  // 4) Buy Total Card with Breakdown
   if(document.getElementById("ovBuyTotal")) document.getElementById("ovBuyTotal").textContent = "Rs " + buyTotal.toFixed(2);
   if(document.getElementById("ovSohamBuy")) document.getElementById("ovSohamBuy").textContent = "Rs " + sohamBuyTotal.toFixed(2);
   if(document.getElementById("ovJeetBuy")) document.getElementById("ovJeetBuy").textContent = "Rs " + jeetBuyTotal.toFixed(2);
   if(document.getElementById("ovFarmBuy")) document.getElementById("ovFarmBuy").textContent = "Rs " + farmBuyTotal.toFixed(2);
 
-  // 5) Expense Total Card with Breakdown
   if(document.getElementById("ovExpenseTotal")) document.getElementById("ovExpenseTotal").textContent = "Rs " + expenseTotal.toFixed(2);
   if(document.getElementById("ovSohamExpOnly")) document.getElementById("ovSohamExpOnly").textContent = "Rs " + sohamExpOnly.toFixed(2);
   if(document.getElementById("ovJeetExpOnly")) document.getElementById("ovJeetExpOnly").textContent = "Rs " + jeetExpOnly.toFixed(2);
   if(document.getElementById("ovFarmExpOnly")) document.getElementById("ovFarmExpOnly").textContent = "Rs " + farmExpOnly.toFixed(2);
   
-  // 6) Partner & Farm Total (Strictly 4 + 5) - Soham, Jeet, Farm Separated
   if(document.getElementById("ovSohamTotal")) document.getElementById("ovSohamTotal").textContent = "Rs " + sohamExpTotal.toFixed(2);
   if(document.getElementById("ovJeetTotal")) document.getElementById("ovJeetTotal").textContent = "Rs " + jeetExpTotal.toFixed(2);
   if(document.getElementById("ovFarmTotal")) document.getElementById("ovFarmTotal").textContent = "Rs " + farmExpTotal.toFixed(2);
 
-  // 7) Farm Available Balance: 1 + 2 + 3 + 9 (farm data) - 6 (farm data)
   if(document.getElementById("ovFarmAvailableBalance")) document.getElementById("ovFarmAvailableBalance").textContent = "Rs " + farmAvailableBalance.toFixed(2);
-  
-  // 8) Unified Net Profit
   if(document.getElementById("ovProfit")) document.getElementById("ovProfit").textContent = "Rs " + netProfit.toFixed(2);
   
-  // 9) Damage Losses Card with Breakdown
   if(document.getElementById("ovDamage")) document.getElementById("ovDamage").textContent = "Rs " + damageTotal.toFixed(2);
   if(document.getElementById("ovSohamDmgCard")) document.getElementById("ovSohamDmgCard").textContent = "Rs " + sohamDmgTotal.toFixed(2);
   if(document.getElementById("ovJeetDmgCard")) document.getElementById("ovJeetDmgCard").textContent = "Rs " + jeetDmgTotal.toFixed(2);
   if(document.getElementById("ovFarmDmgCard")) document.getElementById("ovFarmDmgCard").textContent = "Rs " + farmDmgTotal.toFixed(2);
 
-  // 10) Soham & Jeet Net Expenses: (6 - 9)
   if(document.getElementById("ovSohamNet")) document.getElementById("ovSohamNet").textContent = "Rs " + sohamNetExp.toFixed(2);
   if(document.getElementById("ovJeetNet")) document.getElementById("ovJeetNet").textContent = "Rs " + jeetNetExp.toFixed(2);
 
-  // Sub Tab 1: Expense Top Summary & Table
   if(document.getElementById("subTabExpTotalDisplay")) document.getElementById("subTabExpTotalDisplay").textContent = "Rs " + expenseTotal.toFixed(2);
   if(document.getElementById("subTabSohamExp")) document.getElementById("subTabSohamExp").textContent = "Rs " + sohamExpOnly.toFixed(2);
   if(document.getElementById("subTabJeetExp")) document.getElementById("subTabJeetExp").textContent = "Rs " + jeetExpOnly.toFixed(2);
@@ -2123,7 +2120,6 @@ function computeFinancialLedgerStatements() {
     }).join("") || `<tr><td colspan="7" style="text-align:center; color:var(--muted); padding:14px;">No expenses found for year ${selectedYear}.</td></tr>`;
   }
 
-  // Sub Tab 2: Sell Top Summary & Table
   const sellPaidTotal = filteredSales.reduce((sum, s) => sum + Number(s.paidAmount !== undefined ? s.paidAmount : s.total || 0), 0);
   const sellPendingTotal = filteredSales.reduce((sum, s) => {
     const tot = Number(s.total || 0);
@@ -2169,7 +2165,6 @@ function computeFinancialLedgerStatements() {
     }).join("") || `<tr><td colspan="9" style="text-align:center; color:var(--muted); padding:14px;">No sales found for year ${selectedYear}.</td></tr>`;
   }
 
-  // Sub Tab 3: Buy Top Summary & Table
   if(document.getElementById("subTabBuyTotalDisplay")) document.getElementById("subTabBuyTotalDisplay").textContent = "Rs " + buyTotal.toFixed(2);
   if(document.getElementById("subTabSohamBuy")) document.getElementById("subTabSohamBuy").textContent = "Rs " + sohamBuyTotal.toFixed(2);
   if(document.getElementById("subTabJeetBuy")) document.getElementById("subTabJeetBuy").textContent = "Rs " + jeetBuyTotal.toFixed(2);
@@ -2204,7 +2199,6 @@ function computeFinancialLedgerStatements() {
     }).join("") || `<tr><td colspan="9" style="text-align:center; color:var(--muted); padding:14px;">No purchases found for year ${selectedYear}.</td></tr>`;
   }
 
-  // Sub Tab 4: Damage Top Summary
   if(document.getElementById("subTabDamageTotalDisplay")) document.getElementById("subTabDamageTotalDisplay").textContent = "Rs " + damageTotal.toFixed(2);
   if(document.getElementById("subTabSohamDmg")) document.getElementById("subTabSohamDmg").textContent = "Rs " + sohamDmgTotal.toFixed(2);
   if(document.getElementById("subTabJeetDmg")) document.getElementById("subTabJeetDmg").textContent = "Rs " + jeetDmgTotal.toFixed(2);
@@ -2233,7 +2227,6 @@ function computeFinancialLedgerStatements() {
 function saveAdminExpense(e) {
   e.preventDefault();
 
-  // Rule: Check available balance before logging an expense
   const selectedYear = document.getElementById("adminYearFilterSelect")?.value || "ALL";
   
   const filteredOrders = orderRegistry.filter(o => o && (o.status === 'Approved' || o.status === 'Delivered') && (selectedYear === "ALL" || (o.rawIsoDate || o.dateLogged || "").includes(selectedYear)));
@@ -2295,7 +2288,6 @@ function saveAdminSale(e) {
   const notes = document.getElementById("saleNotes") ? document.getElementById("saleNotes").value.trim() : "";
   const prodType = document.getElementById("saleProduct").value;
 
-  // 1. Calculate current live stock available for this product type before allowing sale
   const dryProd = products.find(p => p.type === "dry") || { stock: 0 };
   const powderProd = products.find(p => p.type === "powder") || { stock: 0 };
   const khakhraProd = products.find(p => p.type === "khakhra") || { stock: 0 };
@@ -2308,7 +2300,7 @@ function saveAdminSale(e) {
     currentAvailableStock = dryProd.stock;
     unitName = "kg";
   } else if (prodType === "Powder") {
-    currentAvailableStock = powderProd.stock * 10; // 1kg dry = 10 packets
+    currentAvailableStock = powderProd.stock * 10;
     unitName = "packets";
   } else if (prodType === "Khakhra") {
     currentAvailableStock = khakhraProd.stock;
@@ -2317,11 +2309,10 @@ function saveAdminSale(e) {
     currentAvailableStock = papadProd.stock;
     unitName = "packs";
   } else if (prodType === "Green") {
-    currentAvailableStock = 9999; // Green fresh harvest inquiry
+    currentAvailableStock = 9999;
     unitName = "units";
   }
 
-  // 2. Validate if stock is sufficient to sell
   if (qty > currentAvailableStock) {
     alert(`⚠️ Sale Failed! Stock me sufficient quantity available nahi hai.\n\n• Selected Product: ${prodType}\n• Available Stock: ${currentAvailableStock.toFixed(2)} ${unitName}\n• Requested Sale Qty: ${qty} ${unitName}`);
     return;
@@ -2367,10 +2358,8 @@ function saveAdminSale(e) {
 function saveAdminPurchase(e) {
   e.preventDefault();
 
-  // Rule: Check if Farm has enough available balance before allowing a buy/purchase outflow
   const selectedYear = document.getElementById("adminYearFilterSelect")?.value || "ALL";
   
-  // Calculate current available balance dynamically
   const filteredOrders = orderRegistry.filter(o => o && (o.status === 'Approved' || o.status === 'Delivered') && (selectedYear === "ALL" || (o.rawIsoDate || o.dateLogged || "").includes(selectedYear)));
   const orderTotal = filteredOrders.reduce((sum, o) => sum + Number(o.total || 0), 0);
 
@@ -2406,7 +2395,6 @@ function saveAdminPurchase(e) {
   const grandTotal = subtotal + delivery;
   const paid = parseFloat(document.getElementById("purPaidAmount").value) || grandTotal;
 
-  // Check if balance is sufficient for this purchase payment
   if (paid > farmAvailableBalance) {
     alert(`⚠️ Transaction Failed! Farm ke paas sufficient balance available nahi hai.\n\n• Current Farm Balance: Rs ${farmAvailableBalance.toFixed(2)}\n• Required Purchase Amount: Rs ${paid.toFixed(2)}`);
     return;
@@ -2573,16 +2561,16 @@ function renderProducts(list = products) {
 
     if (product.type === "dry") {
       currentStock = dryProd.stock;
-      isAvailable = currentStock >= 1; // Dry me 1kg ho tabhi available
+      isAvailable = currentStock >= 1;
     } else if (product.type === "powder") {
       currentStock = powderProd.stock * 10;
-      isAvailable = currentStock >= 1; // Powder me 1 packet ho tabhi available
+      isAvailable = currentStock >= 1;
     } else if (product.type === "khakhra") {
       currentStock = khakhraProd.stock;
-      isAvailable = currentStock >= 1; // Khakhra me 1 packet ho tabhi available
+      isAvailable = currentStock >= 1;
     } else if (product.type === "papad") {
       currentStock = papadProd.stock;
-      isAvailable = currentStock >= 1; // Papad me 1 packet ho tabhi available
+      isAvailable = currentStock >= 1;
     } else if (product.type === "green") {
       isAvailable = true;
     } else if (product.bulk) {
@@ -2768,7 +2756,6 @@ async function confirmOrder(e) {
     status: "Pending Verification"
   };
 
-  // Supabase Database me save karein
   const { error } = await _supabase.from('pgf_orders').insert([data]);
   if (error) {
     console.error("Cloud Error:", error);
@@ -2776,7 +2763,6 @@ async function confirmOrder(e) {
     return;
   }
 
-  // Local array me bhi push kar lein taaki UI turant update ho jaye
   orderRegistry.unshift({
     orderId: data.order_id,
     name: data.name,
@@ -2818,7 +2804,6 @@ async function confirmOrder(e) {
   
   alert("Order successfully synced to Cloud & Submitted!");
   
-  // WhatsApp link ko turant open karne ke liye safe trigger
   setTimeout(() => {
     window.open(`https://wa.me/${farmWhatsapp}?text=${encodeURIComponent(waMessage)}`, '_blank');
   }, 300);
@@ -2947,7 +2932,6 @@ async function submitStudentVisit(e) {
     certIssued: data.cert_issued
   });
 
-  // Student WhatsApp Message Trigger
   const waText = `NEW STUDENT INTERNSHIP REGISTRATION:\n----------------------------------------\nBooking Ref ID: ${data.booking_id}\nName: ${data.name}\nStudent UPI ID: ${data.user_upi_id}\nCollege: ${data.college}\nCourse: ${data.course}\nUTR Tracking Number: ${data.txn_id}\n----------------------------------------`;
   
   setTimeout(() => {

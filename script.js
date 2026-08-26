@@ -1639,7 +1639,7 @@ function adminEditCertificateData(idx) {
   alert("✅ Certificate records successfully updated!");
 }
 
-function handleOrderApprove(idx) {
+async function handleOrderApprove(idx) {
   const o = orderRegistry[idx];
 
   const defaultDeliveryDate = o.deliveryDays || getTodayIsoString();
@@ -1661,7 +1661,15 @@ function handleOrderApprove(idx) {
   o.paymentReceived = true;
   o.refundStage = "";
   
-  localStorage.setItem('pgf_orders', JSON.stringify(orderRegistry));
+  // Supabase me update karein
+  await _supabase
+    .from('pgf_orders')
+    .update({
+      status: o.status,
+      delivery_days: o.deliveryDays,
+      courier_name: o.courierName
+    })
+    .eq('order_id', o.orderId);
   
   pushNotification(
     o.email, 
@@ -1670,12 +1678,12 @@ function handleOrderApprove(idx) {
     'order'
   );
 
-  alert(`✅ Order Approved Successfully!\n\n• Delivery Date: ${finalDeliveryDate}\n• Courier Partner: ${finalCourier}`);
+  alert(`✅ Order Approved Successfully & Synced to Cloud!\n\n• Delivery Date: ${finalDeliveryDate}\n• Courier Partner: ${finalCourier}`);
   populateAdminDashboardTables();
   computeFinancialLedgerStatements();
 }
 
-function handleOrderReject(idx) {
+async function handleOrderReject(idx) {
   const o = orderRegistry[idx];
   let reason = prompt("Reject karne ka reason likhein (Payment nahi mila / Fake UTR):", "Payment Not Received / Invalid Txn ID");
   if (reason === null) return;
@@ -1685,15 +1693,19 @@ function handleOrderReject(idx) {
   o.trackingStage = "";
   o.refundStage = "";
 
-  localStorage.setItem('pgf_orders', JSON.stringify(orderRegistry));
+  await _supabase
+    .from('pgf_orders')
+    .update({ status: o.status })
+    .eq('order_id', o.orderId);
+
   pushNotification(o.email, '❌ Order Rejected', `Your Order #${o.orderId} was rejected. Reason: ${reason}.`, 'order');
 
-  alert("❌ Option 2: Order Reject ho gaya! (Iska paisa accounting me count nahi hoga)");
+  alert("❌ Order Rejected & Cloud Updated!");
   populateAdminDashboardTables();
   computeFinancialLedgerStatements();
 }
 
-function handleOrderCancelRefund(idx) {
+async function handleOrderCancelRefund(idx) {
   const o = orderRegistry[idx];
   let reason = prompt("Order Cancel karne ka reason likhein (User ko message jayega):", "Item Out of Stock / Unserviceable Pincode");
   if (reason === null) return;
@@ -1703,11 +1715,17 @@ function handleOrderCancelRefund(idx) {
   o.refundStage = "Refund Initiated";
   o.refundCreditedDate = "";
 
-  localStorage.setItem('pgf_orders', JSON.stringify(orderRegistry));
+  await _supabase
+    .from('pgf_orders')
+    .update({ 
+      status: o.status,
+      refund_credited_date: o.refundCreditedDate
+    })
+    .eq('order_id', o.orderId);
   
   pushNotification(o.email, '⚠️ Order Cancelled', `Aapka Order #${o.orderId} cancel kar diya gaya hai. Reason: ${reason}. Refund aapke UPI ID (${o.userUpiId || 'Bank'}) par process kiya ja raha hai.`, 'order');
 
-  alert("🔄 Option 3: Order Cancel ho gaya aur User ko cancellation notification bhej di gayi hai.");
+  alert("🔄 Order Cancelled & Synced to Cloud!");
   populateAdminDashboardTables();
   computeFinancialLedgerStatements();
 }
@@ -1755,30 +1773,38 @@ function setRefundStageDirect(idx, newRefStage) {
   computeFinancialLedgerStatements();
 }
 
-function confirmBookingSlot(idx) {
-  bookingsRegistry[idx].status = "Confirmed";
-  bookingsRegistry[idx].approvedDate = new Date().toLocaleDateString('en-IN');
-  bookingsRegistry[idx].certIssued = false;
-  localStorage.setItem('pgf_bookings', JSON.stringify(bookingsRegistry));
-  
+async function confirmBookingSlot(idx) {
   const target = bookingsRegistry[idx];
+  target.status = "Confirmed";
+  target.approvedDate = new Date().toLocaleDateString('en-IN');
+  target.certIssued = false;
+  
+  await _supabase
+    .from('pgf_bookings')
+    .update({ status: "Confirmed", cert_issued: false })
+    .eq('booking_id', target.bookingId);
+
   pushNotification(target.email, '🎓 Farm Booking Confirmed!', `Your ${target.type} program booking #${target.bookingId} has been confirmed.`, 'booking');
 
-  alert(`✅ 1. Farm Booking Approved for ${target.name}!`);
+  alert(`✅ Farm Booking Approved & Synced to Cloud!`);
   populateAdminDashboardTables();
   computeFinancialLedgerStatements();
 }
 
-function issueUserCertificate(idx) {
+async function issueUserCertificate(idx) {
   const target = bookingsRegistry[idx];
   if (confirm(`Kya aap ${target.name} ke liye certificate approve karna chahte hain?`)) {
     target.certIssued = true;
     target.certIssueDate = new Date().toLocaleDateString('en-IN');
-    localStorage.setItem('pgf_bookings', JSON.stringify(bookingsRegistry));
+    
+    await _supabase
+      .from('pgf_bookings')
+      .update({ cert_issued: true })
+      .eq('booking_id', target.bookingId);
 
     pushNotification(target.email, '📜 Certificate Issued & Ready!', `Your certificate for ${target.type} program (#${target.bookingId}) is ready to download.`, 'certificate');
 
-    alert("✅ 2. Certificate Approved ho gaya!");
+    alert("✅ Certificate Approved & Cloud Updated!");
     populateAdminDashboardTables();
   }
 }
@@ -2931,6 +2957,60 @@ async function submitStudentVisit(e) {
   alert("✅ Student Internship Registration saved to Cloud Database!");
   document.getElementById("studentForm").reset();
   document.getElementById("spayment").disabled = true;
+  checkUserSession();
+}
+
+async function submitFarmerVisit(e) {
+  e.preventDefault();
+  const currentTimestamp = new Date().toLocaleDateString('en-IN') + " " + new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+  
+  const data = {
+    booking_id: "PGF-FAR-" + Date.now().toString().slice(-4),
+    type: "Farmer",
+    name: currentUser.name,
+    phone: currentUser.phone,
+    email: currentUser.email,
+    session_date: document.getElementById("fdate").value,
+    user_upi_id: document.getElementById("fuserUpi").value.trim(),
+    fee: 699,
+    payment_mode: document.getElementById("fpaymentMode").value,
+    txn_id: document.getElementById("fpayment").value.trim(),
+    date_logged: currentTimestamp,
+    status: "Pending Verification",
+    cert_issued: false
+  };
+
+  const { error } = await _supabase.from('pgf_bookings').insert([data]);
+  if (error) {
+    alert("Farmer Registration Error: " + error.message);
+    return;
+  }
+
+  bookingsRegistry.unshift({
+    bookingId: data.booking_id,
+    type: data.type,
+    name: data.name,
+    phone: data.phone,
+    email: data.email,
+    date: data.session_date,
+    userUpiId: data.user_upi_id,
+    fee: data.fee,
+    paymentMode: data.payment_mode,
+    txnId: data.txn_id,
+    dateLogged: data.date_logged,
+    status: data.status,
+    certIssued: data.cert_issued
+  });
+
+  const waText = `NEW FARMER TRAINING BOOKING:\n----------------------------------------\nBooking Ref ID: ${data.booking_id}\nName: ${data.name}\nFarmer UPI ID: ${data.user_upi_id}\nTraining Date: ${data.session_date}\nUTR Tracking Number: ${data.txn_id}\n----------------------------------------`;
+  
+  setTimeout(() => {
+    window.open(`https://wa.me/${farmWhatsapp}?text=${encodeURIComponent(waText)}`, '_blank');
+  }, 300);
+  
+  alert("✅ Farmer Training Booking saved to Cloud Database!");
+  document.getElementById("farmerForm").reset();
+  document.getElementById("fpayment").disabled = true;
   checkUserSession();
 }
 

@@ -2871,62 +2871,16 @@ async function submitStudentVisit(e) {
     certIssued: data.cert_issued
   });
 
+  // Student WhatsApp Message Trigger
+  const waText = `NEW STUDENT INTERNSHIP REGISTRATION:\n----------------------------------------\nBooking Ref ID: ${data.booking_id}\nName: ${data.name}\nStudent UPI ID: ${data.user_upi_id}\nCollege: ${data.college}\nCourse: ${data.course}\nUTR Tracking Number: ${data.txn_id}\n----------------------------------------`;
+  
+  setTimeout(() => {
+    window.open(`https://wa.me/${farmWhatsapp}?text=${encodeURIComponent(waText)}`, '_blank');
+  }, 300);
+
   alert("✅ Student Internship Registration saved to Cloud Database!");
   document.getElementById("studentForm").reset();
   document.getElementById("spayment").disabled = true;
-  checkUserSession();
-}
-
-async function submitFarmerVisit(e) {
-  e.preventDefault();
-  const currentTimestamp = new Date().toLocaleDateString('en-IN') + " " + new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
-  
-  const data = {
-    booking_id: "PGF-FAR-" + Date.now().toString().slice(-4),
-    type: "Farmer",
-    name: currentUser.name,
-    phone: currentUser.phone,
-    email: currentUser.email,
-    session_date: document.getElementById("fdate").value,
-    user_upi_id: document.getElementById("fuserUpi").value.trim(),
-    fee: 699,
-    payment_mode: document.getElementById("fpaymentMode").value,
-    txn_id: document.getElementById("fpayment").value.trim(),
-    date_logged: currentTimestamp,
-    status: "Pending Verification",
-    cert_issued: false
-  };
-
-  // Supabase Database me save karna
-  const { error } = await _supabase.from('pgf_bookings').insert([data]);
-  if (error) {
-    alert("Farmer Registration Error: " + error.message);
-    return;
-  }
-
-  // Local array me push karna taaki admin/user panel turant update ho jaye
-  bookingsRegistry.unshift({
-    bookingId: data.booking_id,
-    type: data.type,
-    name: data.name,
-    phone: data.phone,
-    email: data.email,
-    date: data.session_date,
-    userUpiId: data.user_upi_id,
-    fee: data.fee,
-    paymentMode: data.payment_mode,
-    txnId: data.txn_id,
-    dateLogged: data.date_logged,
-    status: data.status,
-    certIssued: data.cert_issued
-  });
-
-  const waText = `NEW FARMER TRAINING BOOKING:\n----------------------------------------\nBooking Ref ID: ${data.booking_id}\nName: ${data.name}\nFarmer UPI ID: ${data.user_upi_id}\nTraining Date: ${data.session_date}\nUTR Tracking Number: ${data.txn_id}\n----------------------------------------`;
-  window.open(`https://wa.me/${farmWhatsapp}?text=${encodeURIComponent(waText)}`, '_blank');
-  
-  alert("✅ Farmer Training Booking saved to Cloud Database!");
-  document.getElementById("farmerForm").reset();
-  document.getElementById("fpayment").disabled = true;
   checkUserSession();
 }
 

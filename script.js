@@ -4,6 +4,9 @@ const SUPABASE_ANON_KEY = 'sb_publishable_3xW-grMnyyVpoFdRy5sgLg_kQoUMHyd';
 const { createClient } = supabase;
 const _supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+// =========================================================
+// CONFIGURATION & GLOBAL CONSTANTS
+// =========================================================
 const farmEmail = "puregrowfarm001@gmail.com";
 const farmWhatsapp = "919067891039";
 const farmUpiId = "sohamgajera01@okhdfcbank";
@@ -305,14 +308,15 @@ async function triggerAdminView() {
       paymentMode: o.payment_mode,
       txnId: o.txn_id,
       dateLogged: o.date_logged,
+      paymentDate: o.payment_date || o.date_logged,
       rawIsoDate: o.raw_iso_date,
       deliveryDays: o.delivery_days,
       courierName: o.courier_name,
-      trackingStage: o.tracking_stage || o.trackingStage,
-      currentLocation: o.current_location || o.currentLocation,
-      deliveredDate: o.delivered_date || o.deliveredDate,
-      cancelledDate: o.cancelled_date || o.cancelledDate,
-      paymentDate: o.payment_date || o.paymentDate || o.date_logged,
+      trackingStage: o.tracking_stage,
+      currentLocation: o.current_location,
+      deliveredDate: o.delivered_date,
+      cancelledDate: o.cancelled_date,
+      refundStage: o.refund_stage,
       refundCreditedDate: o.refund_credited_date,
       status: o.status
     }));
@@ -338,7 +342,9 @@ async function triggerAdminView() {
       txnId: b.txn_id,
       dateLogged: b.date_logged,
       status: b.status,
-      certIssued: b.cert_issued
+      approvedDate: b.approved_date,
+      certIssued: b.cert_issued,
+      certIssueDate: b.cert_issue_date
     }));
   }
 
@@ -691,7 +697,7 @@ function loadUserPanelData() {
       const certNote = b.certIssued ? `<br><span style="color:var(--accent); font-weight:bold;">📜 Certificate Approved & Ready to Download below!</span>` : (isConfirmed ? `<br><span style="color:#d97706; font-size:12px;">⏳ Step 1: Farm Booking Confirmed. Step 2: Certificate will unlock after training.</span>` : (isRejectedBooking ? `<br><span style="color:var(--danger); font-size:12px;">❌ ${b.status}</span>` : ''));
       
       return `
-        <div class="data-item-card" style="border: 1px solid #cbd5e1; border-radius: 10px; padding: 12px; margin-bottom: 10px; background:#fff;">
+        <div style="border: 1px solid #cbd5e1; border-radius: 10px; padding: 12px; margin-bottom: 10px; background:#fff;">
           <strong>Booking ID: ${b.bookingId || ''}</strong><br>
           <small>Booked On: ${b.dateLogged || ''}</small><br>
           <strong>Scheme: ${b.type || ''} Visit [<span style="color:${statusColor}; font-weight:bold;">${statusText}</span>]</strong>
@@ -1309,9 +1315,11 @@ function populateAdminDashboardTables() {
               <span class="badge ${isConfirmed ? 'badge-confirmed' : (isRejectedBooking ? 'badge-pending' : 'badge-pending')}" style="${isRejectedBooking ? 'background:#fee2e2; color:#991b1b;' : ''}">
                 ${isConfirmed ? '1. Confirmed' : (b.status || 'Pending Verification')}
               </span>
+              ${b.approvedDate ? `<br><small style="color:#16a34a;">Approved: ${b.approvedDate}</small>` : ''}
             </td>
             <td>
               <span class="badge ${certIssued ? 'badge-confirmed' : 'badge-pending'}">${certIssued ? '2. Approved' : 'Pending Approval'}</span>
+              ${b.certIssueDate ? `<br><small style="color:#0284c7;">Issued: ${b.certIssueDate}</small>` : ''}
             </td>
             <td>
               <div style="display:flex; flex-direction:column; gap:4px;">
@@ -1813,18 +1821,23 @@ async function setRefundStageDirect(idx, newRefStage) {
 
 async function confirmBookingSlot(idx) {
   const target = bookingsRegistry[idx];
+  const todayDate = getTodayIsoString();
   target.status = "Confirmed";
-  target.approvedDate = new Date().toLocaleDateString('en-IN');
+  target.approvedDate = todayDate;
   target.certIssued = false;
   
   await _supabase
     .from('pgf_bookings')
-    .update({ status: "Confirmed", cert_issued: false })
+    .update({ 
+      status: "Confirmed", 
+      approved_date: todayDate,
+      cert_issued: false 
+    })
     .eq('booking_id', target.bookingId);
 
   pushNotification(target.email, '🎓 Farm Booking Confirmed!', `Your ${target.type} program booking #${target.bookingId} has been confirmed.`, 'booking');
 
-  alert(`✅ Farm Booking Approved & Synced to Cloud!`);
+  alert(`✅ Farm Booking Approved on ${todayDate} & Synced to Cloud!`);
   populateAdminDashboardTables();
   computeFinancialLedgerStatements();
 }
@@ -1852,17 +1865,21 @@ async function rejectTrainingBooking(idx) {
 async function issueUserCertificate(idx) {
   const target = bookingsRegistry[idx];
   if (confirm(`Kya aap ${target.name} ke liye certificate approve karna chahte hain?`)) {
+    const todayDate = getTodayIsoString();
     target.certIssued = true;
-    target.certIssueDate = new Date().toLocaleDateString('en-IN');
+    target.certIssueDate = todayDate;
     
     await _supabase
       .from('pgf_bookings')
-      .update({ cert_issued: true })
+      .update({ 
+        cert_issued: true,
+        cert_issue_date: todayDate 
+      })
       .eq('booking_id', target.bookingId);
 
     pushNotification(target.email, '📜 Certificate Issued & Ready!', `Your certificate for ${target.type} program (#${target.bookingId}) is ready to download.`, 'certificate');
 
-    alert("✅ Certificate Approved & Cloud Updated!");
+    alert(`✅ Certificate Issued on ${todayDate} & Saved to Supabase!`);
     populateAdminDashboardTables();
   }
 }

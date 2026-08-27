@@ -488,7 +488,7 @@ async function handleSendOtp(e) {
   };
 
   // EmailJS ke zariye Gmail par OTP send karein
-  emailjs.send('YOUR_SERVICE_ID', 'YOUR_TEMPLATE_ID', templateParams)
+  emailjs.send('service_jk9zdkf', 'template_zihxosq', templateParams)
     .then(function(response) {
        alert(`✅ 6-digit OTP successfully aapke Gmail (${email}) par bhej diya gaya hai! Kripya inbox check karein.`);
        document.getElementById("forgotRequestForm").style.display = "none";

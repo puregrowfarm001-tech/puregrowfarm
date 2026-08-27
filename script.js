@@ -405,7 +405,49 @@ function checkUserSession() {
   }
 }
 
-function handleLogin(e) {
+async function handleRegister(e) {
+  e.preventDefault();
+  const name = document.getElementById("regName").value.trim();
+  const phone = document.getElementById("regPhone").value.trim();
+  const email = document.getElementById("regEmail").value.trim();
+  const password = document.getElementById("regPassword").value;
+
+  if (!isPasswordStrong(password)) {
+    alert("⚠️ Kripya Strong Password dalein!\n(8+ chars, 1 Uppercase, 1 Number, 1 Special character)");
+    return;
+  }
+
+  const { data: existingUser } = await _supabase
+    .from('pgf_users')
+    .select('*')
+    .eq('email', email)
+    .single();
+
+  if (existingUser) {
+    alert("Is Email ID se account pehle se bana hua hai!");
+    return;
+  }
+
+  const now = new Date();
+  const currentFormattedDateTime = now.toLocaleDateString('en-IN') + " " + now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+
+  const newUser = { name, phone, email, password, registered_on: currentFormattedDateTime };
+
+  const { error } = await _supabase.from('pgf_users').insert([newUser]);
+  if (error) {
+    alert("Registration error: " + error.message);
+    return;
+  }
+
+  pushNotification('ADMIN', '👤 New Account Created', `${name} (${email}) has registered.`, 'general');
+
+  currentUser = { name, email, phone, isAdmin: false };
+  localStorage.setItem('pgf_session', JSON.stringify(currentUser));
+  alert("✅ Account Successfully Created & Synced to Cloud!");
+  checkUserSession();
+}
+
+async function handleLogin(e) {
   e.preventDefault();
   const userInput = document.getElementById("loginEmail").value.trim();
   const passInput = document.getElementById("loginPassword").value;
@@ -417,53 +459,94 @@ function handleLogin(e) {
     return;
   }
 
-  const match = usersDatabase.find(u => u && ((u.email && u.email.toLowerCase() === userInput.toLowerCase()) || u.phone === userInput));
-  if (match && match.password === passInput) {
-    currentUser = { name: match.name, email: match.email, phone: match.phone, isAdmin: false };
-    localStorage.setItem('pgf_session', JSON.stringify(currentUser));
-    checkUserSession();
-  } else {
+  const { data: dbUser, error } = await _supabase
+    .from('pgf_users')
+    .select('*')
+    .or(`email.eq.${userInput},phone.eq.${userInput}`)
+    .single();
+
+  if (error || !dbUser || dbUser.password !== passInput) {
     alert("Invalid credentials or Account does not exist!");
-  }
-}
-
-function handleRegister(e) {
-  e.preventDefault();
-  const name = document.getElementById("regName").value.trim();
-  const phone = document.getElementById("regPhone").value.trim();
-  const email = document.getElementById("regEmail").value.trim();
-  const password = document.getElementById("regPassword").value;
-
-  if (!isPasswordStrong(password)) {
-    alert("⚠️ Kripya Strong Password dalein!\n\nRules:\n• Minimum 8 characters\n• Kam se kam 1 Capital letter (A-Z)\n• Kam se kam 1 Number (0-9)\n• Kam se kam 1 Special character (@$!%*?&)");
     return;
   }
 
-  const existing = usersDatabase.find(u => u && u.email && u.email.toLowerCase() === email.toLowerCase());
-  if(existing) {
-    alert("Is Email ID se account pehle se bana hua hai!");
-    return;
-  }
-
-  const now = new Date();
-  const currentFormattedDateTime = now.toLocaleDateString('en-IN') + " " + now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
-
-  const newUser = { name, phone, email, password, registeredOn: currentFormattedDateTime };
-  usersDatabase.push(newUser);
-  localStorage.setItem('pgf_user_db', JSON.stringify(usersDatabase));
-
-  pushNotification('ADMIN', '👤 New Account Created', `${name} (${email}) has registered.`, 'general');
-
-  currentUser = { name, email, phone, isAdmin: false };
+  currentUser = { name: dbUser.name, email: dbUser.email, phone: dbUser.phone, isAdmin: false };
   localStorage.setItem('pgf_session', JSON.stringify(currentUser));
-  alert("✅ Account Successfully Created!");
+  
+  alert(`✅ Welcome back, ${currentUser.name}!`);
   checkUserSession();
 }
 
-function handleForgotPassword(e) {
+let pendingResetEmail = "";
+let generatedOtpCode = "";
+
+async function handleSendOtp(e) {
   e.preventDefault();
-  const emailInput = document.getElementById("forgotEmail").value.trim();
-  window.open(`https://wa.me/${farmWhatsapp}?text=Password Assist Request for: ${emailInput}`, '_blank');
+  const email = document.getElementById("forgotEmail").value.trim();
+
+  const { data: user, error } = await _supabase
+    .from('pgf_users')
+    .select('*')
+    .eq('email', email)
+    .single();
+
+  if (error || !user) {
+    alert("⚠️ Yeh email hamare database me registered nahi hai!");
+    return;
+  }
+
+  generatedOtpCode = Math.floor(100000 + Math.random() * 900000).toString();
+  pendingResetEmail = email;
+
+  await _supabase
+    .from('pgf_users')
+    .update({ forgot_otp: generatedOtpCode })
+    .eq('email', email);
+
+  alert(`🔐 [SIMULATED EMAIL SYSTEM]\nAapke email (${email}) par 6-digit OTP bhej diya gaya hai.\n\n👉 Aapka OTP code yeh hai: ${generatedOtpCode}`);
+
+  document.getElementById("forgotRequestForm").style.display = "none";
+  document.getElementById("forgotVerifyForm").style.display = "grid";
+}
+
+async function handleVerifyAndReset(e) {
+  e.preventDefault();
+  const enteredOtp = document.getElementById("otpInputCode").value.trim();
+  const newPassword = document.getElementById("newResetPassword").value;
+
+  if (!isPasswordStrong(newPassword)) {
+    alert("⚠️ Kripya Strong Password dalein!\n(8+ chars, 1 Uppercase, 1 Number, 1 Special character)");
+    return;
+  }
+
+  const { data: user, error } = await _supabase
+    .from('pgf_users')
+    .select('*')
+    .eq('email', pendingResetEmail)
+    .single();
+
+  if (error || !user || user.forgot_otp !== enteredOtp) {
+    alert("❌ Invalid OTP! Kripya sahi 6-digit OTP enter karein.");
+    return;
+  }
+
+  const { error: updateError } = await _supabase
+    .from('pgf_users')
+    .update({ password: newPassword, forgot_otp: null })
+    .eq('email', pendingResetEmail);
+
+  if (updateError) {
+    alert("Password update karne me error aayi: " + updateError.message);
+    return;
+  }
+
+  alert("✅ Password successfully change ho gaya hai! Ab aap naye password se Sign In kar sakte hain.");
+  
+  document.getElementById("forgotVerifyForm").reset();
+  document.getElementById("forgotRequestForm").reset();
+  document.getElementById("forgotVerifyForm").style.display = "none";
+  document.getElementById("forgotRequestForm").style.display = "grid";
+  switchAuthBox('loginBox');
 }
 
 function handleLogout() {

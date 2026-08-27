@@ -241,12 +241,26 @@
 
       <div id="forgotBox" class="auth-box">
         <h2>Password Assistance</h2>
-        <p class="muted" style="font-size:12px;">Apna email dalein, fir WhatsApp par Help ke liye redirect kiya jayega.</p>
-        <form id="forgotForm" onsubmit="handleForgotPassword(event)">
-          <input type="email" id="forgotEmail" placeholder="Email Address" required>
-          <button type="submit" id="sendOtpBtn">Get Help via WhatsApp</button>
+        
+        <!-- Step 1: Request OTP Form -->
+        <form id="forgotRequestForm" onsubmit="handleSendOtp(event)">
+          <p class="muted" style="font-size:12px; margin-bottom:8px;">Apna registered email dalein, 6-digit verification code bheja jayega.</p>
+          <input type="email" id="forgotEmail" placeholder="Registered Email Address" required>
+          <button type="submit" id="sendOtpBtn">Send 6-Digit OTP</button>
         </form>
-        <div class="auth-toggle-links">
+
+        <!-- Step 2: Verify OTP & Change Password -->
+        <form id="forgotVerifyForm" style="display:none; margin-top:10px;" onsubmit="handleVerifyAndReset(event)">
+          <p class="muted" style="font-size:12px; margin-bottom:8px; color:var(--accent); font-weight:bold;">Enter 6-digit OTP sent to your email & new password.</p>
+          <input type="text" id="otpInputCode" placeholder="Enter 6-Digit OTP" maxlength="6" required style="letter-spacing: 4px; font-weight: bold; text-align: center;">
+          <div class="password-input-group" style="margin-top:8px;">
+            <input type="password" id="newResetPassword" placeholder="Enter New Strong Password" required>
+            <button type="button" class="toggle-password-btn" onclick="togglePasswordVisibility('newResetPassword', this)">👁️</button>
+          </div>
+          <button type="submit" id="verifyResetBtn" style="margin-top:10px; background:var(--accent);">Verify & Update Password</button>
+        </form>
+
+        <div class="auth-toggle-links" style="margin-top:14px;">
           <a onclick="switchAuthBox('loginBox')">Back to Sign In</a>
         </div>
       </div>

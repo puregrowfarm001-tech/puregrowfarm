@@ -822,11 +822,39 @@ function switchSubAccountingTab(subTabId) {
   if(document.getElementById(targetActiveButton)) document.getElementById(targetActiveButton).style.background = 'var(--accent)';
 }
 
-function deleteUserAccount(idx) {
-  if (confirm(`Kya aap sach me ${usersDatabase[idx].name} ka account delete karna chahte hain?`)) {
+async function deleteUserAccount(idx) {
+  const targetUser = usersDatabase[idx];
+  if (!targetUser) return;
+
+  if (confirm(`⚠️ Kya aap sach me ${targetUser.name} (${targetUser.email}) ka account database se permanently delete karna chahte hain?\n\nUser ko dobara naya account banana padega.`)) {
+    
+    // 1. Delete user from Supabase 'pgf_users' table
+    const { error } = await _supabase
+      .from('pgf_users')
+      .delete()
+      .eq('email', targetUser.email);
+
+    if (error) {
+      alert("❌ Database se delete karne me error aayi: " + error.message);
+      return;
+    }
+
+    // 2. Log this deletion in Supabase 'pgf_deleted_users_log' table
+    const deletionTime = new Date().toLocaleDateString('en-IN') + " " + new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+    
+    await _supabase.from('pgf_deleted_users_log').insert([{
+      name: targetUser.name,
+      email: targetUser.email,
+      phone: targetUser.phone || 'N/A',
+      deleted_on: deletionTime,
+      deleted_by: currentUser ? currentUser.name : 'Admin'
+    }]);
+
+    // 3. Update local array and refresh view
     usersDatabase.splice(idx, 1);
-    localStorage.setItem('pgf_user_db', JSON.stringify(usersDatabase));
     populateAdminDashboardTables();
+    
+    alert(`✅ Account successfully delete ho gaya hai aur database se remove kar diya gaya hai.`);
   }
 }
 

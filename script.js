@@ -53,7 +53,7 @@ let currentUser = JSON.parse(localStorage.getItem('pgf_session')) || null;
 
 function getOrderProductImage(orderProductsText) {
   const text = (orderProductsText || "").toLowerCase();
-  if (text.includes("khakhra")) return "mushroom/methikhakhra2.png";
+  if (text.includes("khakhra")) return "mushroom/methikhakhra2.png"; // Yaha filename theek karein
   if (text.includes("dry") || text.includes("dried")) return "mushroom/oyst dry.webp";
   if (text.includes("powder")) return "mushroom/oyster powder.png";
   if (text.includes("papad")) return "mushroom/adadpapad2.png";

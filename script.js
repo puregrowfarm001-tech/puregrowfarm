@@ -3328,3 +3328,49 @@ function printDivInvoice() {
 
 renderProducts();
 checkUserSession();
+
+// --- BACKGROUND AUTO-REFRESH & LIVE NOTIFICATION SYSTEM ---
+async function backgroundDataSync() {
+  if (!window._supabase) return;
+
+  try {
+    // 1. Fetch latest orders silently
+    const { data: cloudOrders } = await _supabase.from('pgf_orders').select('*');
+    if (cloudOrders) {
+      orderRegistry = cloudOrders.map(o => ({
+        orderId: o.order_id, name: o.name, phone: o.phone, email: o.email, address: o.address,
+        userUpiId: o.user_upi_id, products: o.products, subtotal: o.subtotal, delivery: o.delivery,
+        total: o.total, paymentMode: o.payment_mode, txnId: o.txn_id, dateLogged: o.date_logged,
+        paymentDate: o.payment_date || o.date_logged, rawIsoDate: o.raw_iso_date, deliveryDays: o.delivery_days,
+        courierName: o.courier_name, trackingStage: o.tracking_stage, currentLocation: o.current_location,
+        deliveredDate: o.delivered_date, cancelledDate: o.cancelled_date, refundStage: o.refund_stage,
+        refundCreditedDate: o.refund_credited_date, status: o.status
+      }));
+    }
+
+    // 2. Fetch latest bookings silently
+    const { data: cloudBookings } = await _supabase.from('pgf_bookings').select('*');
+    if (cloudBookings) {
+      bookingsRegistry = cloudBookings.map(b => ({
+        bookingId: b.booking_id, type: b.type, name: b.name, phone: b.phone, email: b.email,
+        enrollment: b.enrollment, college: b.college, course: b.course, start: b.start_date,
+        end: b.end_date, date: b.session_date, userUpiId: b.user_upi_id, fee: b.fee,
+        paymentMode: b.payment_mode, txnId: b.txn_id, dateLogged: b.date_logged, status: b.status,
+        approvedDate: b.approved_date, certIssued: b.cert_issued, certIssueDate: b.cert_issue_date
+      }));
+    }
+
+    // 3. Refresh user panels or badges if user is logged in
+    if (typeof loadUserPanelData === 'function') {
+      loadUserPanelData();
+    }
+    if (typeof renderNotificationBadge === 'function') {
+      renderNotificationBadge();
+    }
+  } catch (err) {
+    console.log("Background sync pause/error:", err);
+  }
+}
+
+// Har 10 seconds me background me data auto-sync hota rahega taaki notification aur updates turant milein
+setInterval(backgroundDataSync, 10000);

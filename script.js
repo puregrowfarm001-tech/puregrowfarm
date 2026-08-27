@@ -484,6 +484,7 @@ async function handleSendOtp(e) {
   e.preventDefault();
   const email = document.getElementById("forgotEmail").value.trim();
 
+  // Check if user exists in Supabase pgf_users and get their phone number
   const { data: user, error } = await _supabase
     .from('pgf_users')
     .select('*')
@@ -495,16 +496,40 @@ async function handleSendOtp(e) {
     return;
   }
 
+  // Generate random 6-digit OTP
   generatedOtpCode = Math.floor(100000 + Math.random() * 900000).toString();
   pendingResetEmail = email;
 
+  // Save OTP in Supabase database
   await _supabase
     .from('pgf_users')
     .update({ forgot_otp: generatedOtpCode })
     .eq('email', email);
 
-  alert(`🔐 [SIMULATED EMAIL SYSTEM]\nAapke email (${email}) par 6-digit OTP bhej diya gaya hai.\n\n👉 Aapka OTP code yeh hai: ${generatedOtpCode}`);
+  // Clean user phone number for WhatsApp link
+  let userPhone = user.phone ? user.phone.replace(/[^0-9]/g, '') : '';
+  if (userPhone.length === 10) {
+    userPhone = "91" + userPhone; // India country code prefix
+  }
 
+  // Create WhatsApp message text
+  const waMessage = 
+`🔐 *PURE GROW FARM - PASSWORD RESET OTP*
+----------------------------------------
+Aapke account (${email}) ke password reset ke liye 6-digit verification code yeh hai:
+
+👉 *${generatedOtpCode}*
+
+Yeh code kisi ke sath share na karein.
+- Pure Grow Farm`;
+
+  // Open WhatsApp with pre-filled message (Agar user ka phone number database me hai toh uske WhatsApp par, warna farm ke WhatsApp par ya default dialog)
+  const targetWaNumber = userPhone.length >= 12 ? userPhone : farmWhatsapp;
+  window.open(`https://wa.me/${targetWaNumber}?text=${encodeURIComponent(waMessage)}`, '_blank');
+
+  alert(`✅ 6-Digit OTP generate ho gaya hai!\n\nWhatsApp window khul rahi hai jisme aapka OTP code (${generatedOtpCode}) pre-filled hai. Message send karke OTP wapas yahan enter karein.`);
+
+  // Switch form to Step 2 (Verify OTP & Reset Password)
   document.getElementById("forgotRequestForm").style.display = "none";
   document.getElementById("forgotVerifyForm").style.display = "grid";
 }

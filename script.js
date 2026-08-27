@@ -336,8 +336,27 @@ async function triggerAdminView() {
 }
 function exitAdminPanel() { handleLogout(); }
 
-function checkUserSession() {
+async function checkUserSession() {
   renderNotificationBadge();
+
+  // Agar localStorage me session hai, toh Supabase se latest data fetch karke sync kar lein
+  if (currentUser && !currentUser.isAdmin) {
+    const { data: latestUser } = await _supabase
+      .from('pgf_users')
+      .select('*')
+      .eq('email', currentUser.email)
+      .single();
+
+    if (latestUser) {
+      currentUser = { 
+        name: latestUser.name, 
+        email: latestUser.email, 
+        phone: latestUser.phone, 
+        isAdmin: false 
+      };
+      localStorage.setItem('pgf_session', JSON.stringify(currentUser));
+    }
+  }
 
   if (currentUser) {
     document.getElementById("authSection").style.display = "none";
@@ -381,7 +400,6 @@ function checkUserSession() {
     document.getElementById("trainingMainContent").style.display = "none";
   }
 }
-
 async function handleRegister(e) {
   e.preventDefault();
   const name = document.getElementById("regName").value.trim();
@@ -446,10 +464,9 @@ async function handleLogin(e) {
     alert("Invalid credentials or Account does not exist!");
     return;
   }
-
-  currentUser = { name: dbUser.name, email: dbUser.email, phone: dbUser.phone, isAdmin: false };
+currentUser = { name: dbUser.name, email: dbUser.email, phone: dbUser.phone, isAdmin: false };
   localStorage.setItem('pgf_session', JSON.stringify(currentUser));
-  
+    
   alert(`✅ Welcome back, ${currentUser.name}!`);
   checkUserSession();
 }

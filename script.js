@@ -19,7 +19,7 @@ const BASE_PRODUCTS = [
   { id: 2, name: "Dried Oyster Mushroom", price: 800, unit: "1kg pack", image: "mushroom/oyst dry.webp", detail: "Slow-dried to preserve flavor and nutrients.", type: "dry", stock: 0 },
   { id: 3, name: "Oyster Mushroom Powder", price: 130, unit: "100gm pack", image: "mushroom/oyster powder.png", detail: "Mushroom powder for soup, 1kg pack curry, health mix and snacks.", type: "powder", stock: 0 },
   { id: 4, name: "Methi Mushroom Khakhra", price: 70, unit: "200gm pack", image: "mushroom/methikhakhra2.png", detail: "Crispy khakhra prepared with oyster mushroom powder.", type: "khakhra", stock: 0 },
-  { id: 5, name: "Adad Mushroom Papad", price: 120, unit: "200gm pack", image: "mushroom/mushroom/adadpapad2.png", detail: "Papad enriched with mushroom nutrition.", type: "papad", stock: 0 },
+  { id: 5, name: "Adad Mushroom Papad", price: 120, unit: "1 pack", image: "mushroom/mushroom/adadpapad2.png", detail: "Papad enriched with mushroom nutrition.", type: "papad", stock: 0 },
   { id: 6, name: "Bulk and Wholesale Supply", price: 0, unit: "Custom", bulk: true, image: "mushroom/bulk.png", detail: "Supply for restaurants, retailers and local markets.", stock: 99999 }
 ];
 
@@ -1207,7 +1207,13 @@ function populateAdminDashboardTables() {
                     <input type="text" value="${loc}" placeholder="Order Location (e.g. Surat Hub)" style="padding:2px 6px; font-size:11px; font-weight:bold; color:#334155; border:1px solid #94a3b8; border-radius:4px; width:130px; text-align:right;" onchange="updateOrderLocationDirect(${idx}, this.value)">
                   </div>
 
-                  style.css index.html script.js
+                  <div style="display:flex; gap:3px; flex-wrap:wrap;">
+                    <button type="button" class="btn" style="padding:2px 5px; font-size:10px; min-height:22px; background:${stage==='Placed'?'#2b8a3e':'#94a3b8'};" onclick="setOrderStageDirect(${idx}, 'Placed')">Placed</button>
+                    <button type="button" class="btn" style="padding:2px 5px; font-size:10px; min-height:22px; background:${stage==='Packed'?'#2b8a3e':'#94a3b8'};" onclick="setOrderStageDirect(${idx}, 'Packed')">Packed</button>
+                    <button type="button" class="btn" style="padding:2px 5px; font-size:10px; min-height:22px; background:${stage==='Shipped'?'#2b8a3e':'#94a3b8'};" onclick="setOrderStageDirect(${idx}, 'Shipped')">Shipped</button>
+                    <button type="button" class="btn" style="padding:2px 5px; font-size:10px; min-height:22px; background:${stage==='OutForDelivery'?'#2b8a3e':'#94a3b8'};" onclick="setOrderStageDirect(${idx}, 'OutForDelivery')">Out Delivery</button>
+                    <button type="button" class="btn" style="padding:2px 5px; font-size:10px; min-height:22px; background:${stage==='Delivered'?'#16a34a':'#94a3b8'};" onclick="setOrderStageDirect(${idx}, 'Delivered')">Delivered</button>
+                  </div>
                 </div>
               ` : (isCancelled ? `
                 <div style="background:#fffaf5; padding:8px; border-radius:8px; border:1px solid #fdba74; font-size:12px;">

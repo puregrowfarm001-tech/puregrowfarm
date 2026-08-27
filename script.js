@@ -404,7 +404,8 @@ async function handleRegister(e) {
   e.preventDefault();
   const name = document.getElementById("regName").value.trim();
   const phone = document.getElementById("regPhone").value.trim();
-  const email = document.getElementById("regEmail").value.trim();
+  // Email ko automatic lowercase me convert karne ke liye
+  const email = document.getElementById("regEmail").value.trim().toLowerCase();
   const password = document.getElementById("regPassword").value;
 
   if (!isPasswordStrong(password)) {
@@ -444,7 +445,7 @@ async function handleRegister(e) {
 
 async function handleLogin(e) {
   e.preventDefault();
-  const userInput = document.getElementById("loginEmail").value.trim();
+  let userInput = document.getElementById("loginEmail").value.trim();
   const passInput = document.getElementById("loginPassword").value;
 
   if (userInput === ADMIN_CREDENTIALS.user && passInput === ADMIN_CREDENTIALS.pass) {
@@ -452,6 +453,11 @@ async function handleLogin(e) {
     localStorage.setItem('pgf_session', JSON.stringify(currentUser));
     checkUserSession();
     return;
+  }
+
+  // Agar user ne email dala hai (yaani '@' hai), toh use automatically lowercase kar do
+  if (userInput.includes('@')) {
+    userInput = userInput.toLowerCase();
   }
 
   const { data: dbUser, error } = await _supabase
@@ -464,9 +470,10 @@ async function handleLogin(e) {
     alert("Invalid credentials or Account does not exist!");
     return;
   }
-currentUser = { name: dbUser.name, email: dbUser.email, phone: dbUser.phone, isAdmin: false };
+
+  currentUser = { name: dbUser.name, email: dbUser.email, phone: dbUser.phone, isAdmin: false };
   localStorage.setItem('pgf_session', JSON.stringify(currentUser));
-    
+  
   alert(`✅ Welcome back, ${currentUser.name}!`);
   checkUserSession();
 }

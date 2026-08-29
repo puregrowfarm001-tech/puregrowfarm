@@ -339,22 +339,15 @@ function exitAdminPanel() { handleLogout(); }
 async function checkUserSession() {
   renderNotificationBadge();
 
-  // Agar localStorage me session hai, toh Supabase se latest data fetch karke sync kar lein
-  if (currentUser && !currentUser.isAdmin) {
-    const { data: latestUser } = await _supabase
-      .from('pgf_users')
-      .select('*')
-      .eq('email', currentUser.email)
-      .single();
-
-    if (latestUser) {
-      currentUser = { 
-        name: latestUser.name, 
-        email: latestUser.email, 
-        phone: latestUser.phone, 
-        isAdmin: false 
-      };
-      localStorage.setItem('pgf_session', JSON.stringify(currentUser));
+  // Agar localStorage me session pehle se saved hai, toh turant load kar lo
+  if (!currentUser) {
+    const savedSession = localStorage.getItem('pgf_session');
+    if (savedSession) {
+      try {
+        currentUser = JSON.parse(savedSession);
+      } catch (e) {
+        currentUser = null;
+      }
     }
   }
 
@@ -384,7 +377,8 @@ async function checkUserSession() {
       document.getElementById("fphone").value = currentUser.phone || "";
       document.getElementById("femail").value = currentUser.email;
 
-      loadUserPanelData();
+      // Cloud se fresh orders aur bookings fetch karke turant panels load karein
+      loadUserPanelDataFromCloud();
     }
   } else {
     document.getElementById("authSection").style.display = "block";
@@ -3398,3 +3392,54 @@ async function backgroundDataSync() {
 
 // Har 10 seconds me background me data auto-sync hota rahega taaki notification aur updates turant milein
 setInterval(backgroundDataSync, 10000);
+
+
+async function loadUserPanelDataFromCloud() {
+  if (!currentUser || currentUser.isAdmin) return;
+
+  try {
+    // 1. Fetch fresh orders from Supabase
+    const { data: cloudOrders } = await _supabase
+      .from('pgf_orders')
+      .select('*')
+      .eq('email', currentUser.email);
+
+    if (cloudOrders) {
+      // Purane local orders ko update/merge karein
+      orderRegistry = orderRegistry.filter(o => o.email !== currentUser.email);
+      const mappedOrders = cloudOrders.map(o => ({
+        orderId: o.order_id, name: o.name, phone: o.phone, email: o.email, address: o.address,
+        userUpiId: o.user_upi_id, products: o.products, subtotal: o.subtotal, delivery: o.delivery,
+        total: o.total, paymentMode: o.payment_mode, txnId: o.txn_id, dateLogged: o.date_logged,
+        paymentDate: o.payment_date || o.date_logged, rawIsoDate: o.raw_iso_date, deliveryDays: o.delivery_days,
+        courierName: o.courier_name, trackingStage: o.tracking_stage, currentLocation: o.current_location,
+        deliveredDate: o.delivered_date, cancelledDate: o.cancelled_date, refundStage: o.refund_stage,
+        refundCreditedDate: o.refund_credited_date, status: o.status
+      }));
+      orderRegistry.push(...mappedOrders);
+    }
+
+    // 2. Fetch fresh bookings from Supabase
+    const { data: cloudBookings } = await _supabase
+      .from('pgf_bookings')
+      .select('*')
+      .eq('email', currentUser.email);
+
+    if (cloudBookings) {
+      bookingsRegistry = bookingsRegistry.filter(b => b.email !== currentUser.email);
+      const mappedBookings = cloudBookings.map(b => ({
+        bookingId: b.booking_id, type: b.type, name: b.name, phone: b.phone, email: b.email,
+        enrollment: b.enrollment, college: b.college, course: b.course, start: b.start_date,
+        end: b.end_date, date: b.session_date, userUpiId: b.user_upi_id, fee: b.fee,
+        paymentMode: b.payment_mode, txnId: b.txn_id, dateLogged: b.date_logged, status: b.status,
+        approvedDate: b.approved_date, certIssued: b.cert_issued, certIssueDate: b.cert_issue_date
+      }));
+      bookingsRegistry.push(...mappedBookings);
+    }
+
+    loadUserPanelData();
+  } catch (err) {
+    console.log("Cloud sync error on refresh:", err);
+    loadUserPanelData();
+  }
+}

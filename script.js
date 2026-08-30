@@ -3439,7 +3439,13 @@ async function backgroundDataSync() {
       }));
     }
 
-    // 3. Refresh user panels or badges if user is logged in
+    // 3. Sync notifications registry from localStorage
+    const localNotifs = JSON.parse(localStorage.getItem('pgf_notifications')) || [];
+    if (Array.isArray(localNotifs)) {
+      notificationsRegistry = localNotifs;
+    }
+
+    // 4. Refresh user panels or badges if user is logged in
     if (typeof loadUserPanelData === 'function') {
       loadUserPanelData();
     }

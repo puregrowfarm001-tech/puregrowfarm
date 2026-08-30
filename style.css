@@ -487,13 +487,3 @@ th { background: #f8faf8; font-weight: 700; }
     max-width: 380px;
   }
 }
-
-.notif-interactive-card {
-  cursor: pointer;
-  transition: background 0.2s ease, transform 0.1s ease;
-}
-
-.notif-interactive-card:hover {
-  background: #e0f2fe !important;
-  transform: translateY(-1px);
-}

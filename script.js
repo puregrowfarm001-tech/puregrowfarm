@@ -198,13 +198,15 @@ function renderNotificationBadge() {
     return;
   }
 
-  // Agar admin hai toh sabhi 'ADMIN' wali notifications dikhengi
-  // Agar regular user hai toh sirf uska email match karne wali ya 'general' broadcast notifications hi dikhengi
+  // Yahan par email aur phone dono match hone ka check lagaya gaya hai
   const myNotifs = notificationsRegistry.filter(n => {
     if (currentUser.isAdmin) {
       return n.recipient === 'ADMIN';
     } else {
-      return n.recipient === currentUser.email || n.recipient === 'GENERAL' || n.recipient === 'all';
+      return n.recipient === currentUser.email || 
+             n.recipient === currentUser.phone || 
+             n.recipient === 'GENERAL' || 
+             n.recipient === 'all';
     }
   });
 
@@ -231,6 +233,7 @@ function renderNotificationBadge() {
     `).join("");
   }
 }
+
 function toggleNotificationDropdown() {
   const panel = document.getElementById("notificationDropdownPanel");
   if (!panel) return;

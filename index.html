@@ -4,6 +4,16 @@
 
   <link rel="icon" type="image/png" href="mushroom/pgf logo.png">
 
+  <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+<script>
+  window.OneSignalDeferred = window.OneSignalDeferred || [];
+  OneSignalDeferred.push(async function(OneSignal) {
+    await OneSignal.init({
+      appId: "ba3e11a1-d004-40eb-b920-37f24a3253ee",
+    });
+  });
+</script>
+
   <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
   <script type="text/javascript">
      (function(){

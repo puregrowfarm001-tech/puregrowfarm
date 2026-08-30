@@ -192,14 +192,8 @@ function renderNotificationBadge() {
   const listBody = document.getElementById("notificationListBody");
   if (!badge || !listBody) return;
 
-  const currentRecipient = currentUser ? (currentUser.isAdmin ? 'ADMIN' : currentUser.email) : null;
-  if (!currentRecipient) {
-    badge.style.display = "none";
-    listBody.innerHTML = `<span class="muted" style="font-size:12px; text-align:center; padding:10px;">Please login to view notifications.</span>`;
-    return;
-  }
-
-  const myNotifs = notificationsRegistry.filter(n => n.recipient === currentRecipient || (currentUser.isAdmin && n.recipient === 'ADMIN'));
+  // Debug ke liye sabhi notifications fetch karein agar currentUser na bhi ho
+  const myNotifs = notificationsRegistry; 
   const unreadCount = myNotifs.filter(n => !n.isRead).length;
 
   if (unreadCount > 0) {
@@ -213,13 +207,12 @@ function renderNotificationBadge() {
     listBody.innerHTML = `<span class="muted" style="font-size:12px; text-align:center; padding:10px;">No alerts yet.</span>`;
   } else {
     listBody.innerHTML = myNotifs.map(n => `
-      <div class="notif-interactive-card" onclick="handleNotificationClick('${n.id}')" style="background:${n.isRead ? '#f8fafc' : '#eff6ff'}; border:1px solid ${n.isRead ? '#e2e8f0' : '#bfdbfe'}; border-radius:8px; padding:10px; font-size:12px;">
+      <div class="notif-interactive-card" onclick="handleNotificationClick('${n.id}')" style="background:${n.isRead ? '#f8fafc' : '#eff6ff'}; border:1px solid ${n.isRead ? '#e2e8f0' : '#bfdbfe'}; border-radius:8px; padding:10px; font-size:12px; margin-bottom:6px;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:3px;">
           <strong style="color:${n.isRead ? '#334155' : '#1d4ed8'};">${n.title}</strong>
           <span style="font-size:10px; color:#64748b;">${n.time}</span>
         </div>
         <div style="color:#475569; line-height:1.3;">${n.message}</div>
-        <div style="font-size:10px; color:var(--accent); margin-top:4px; font-weight:bold;">👉 Click to open details</div>
       </div>
     `).join("");
   }

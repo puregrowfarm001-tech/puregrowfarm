@@ -2993,6 +2993,8 @@ async function confirmOrder(e) {
     return;
   }
 
+  pushNotification('ADMIN', '📦 New Order Received', `${data.name} ne naya order place kiya hai (Ref: #${data.order_id}).`, 'order');
+
   orderRegistry.unshift({
     orderId: data.order_id,
     name: data.name,
@@ -3144,6 +3146,8 @@ async function submitStudentVisit(e) {
     return;
   }
 
+  pushNotification('ADMIN', '🎓 New Training Booking', `${currentUser.name} ne Student training ke liye booking ki hai (Ref: #${data.booking_id}).`, 'booking');
+
   bookingsRegistry.unshift({
     bookingId: data.booking_id,
     type: data.type,
@@ -3201,6 +3205,8 @@ async function submitFarmerVisit(e) {
     alert("Farmer Registration Error: " + error.message);
     return;
   }
+
+  pushNotification('ADMIN', '🎓 New Training Booking', `${currentUser.name} ne Farmer training ke liye booking ki hai (Ref: #${data.booking_id}).`, 'booking');
 
   bookingsRegistry.unshift({
     bookingId: data.booking_id,

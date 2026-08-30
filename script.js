@@ -564,6 +564,18 @@ async function handleVerifyAndReset(e) {
 function handleLogout() {
   currentUser = null;
   localStorage.removeItem('pgf_session');
+  
+  // 1. Sabhi khule hue popup modals ko forcefully band (close) karein
+  const ordersModal = document.getElementById("userOrdersModal");
+  if (ordersModal) ordersModal.classList.remove("active-modal");
+
+  const bookingsModal = document.getElementById("userBookingsModal");
+  if (bookingsModal) bookingsModal.classList.remove("active-modal");
+
+  const filterModal = document.getElementById("adminFilterPopupModal");
+  if (filterModal) filterModal.classList.remove("active-modal");
+
+  // 2. Session check karke user interface ko Sign In view par reset karein
   checkUserSession();
 }
 

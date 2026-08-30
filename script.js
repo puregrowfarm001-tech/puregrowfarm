@@ -3443,3 +3443,25 @@ async function loadUserPanelDataFromCloud() {
     loadUserPanelData();
   }
 }
+
+// --- PRODUCT SEARCH FILTER LISTENER ---
+document.addEventListener("DOMContentLoaded", function() {
+  const searchInput = document.getElementById("productSearch");
+  if (searchInput) {
+    searchInput.addEventListener("input", function(e) {
+      const query = e.target.value.toLowerCase().trim();
+      if (!query) {
+        renderProducts(products);
+        return;
+      }
+      
+      const filtered = products.filter(p => 
+        (p.name && p.name.toLowerCase().includes(query)) || 
+        (p.detail && p.detail.toLowerCase().includes(query)) ||
+        (p.type && p.type.toLowerCase().includes(query))
+      );
+      
+      renderProducts(filtered);
+    });
+  }
+});

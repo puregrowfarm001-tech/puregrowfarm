@@ -1188,39 +1188,37 @@ function printActiveAdminReport() {
 
 function sendAdminWhatsAppMessage(type, refIdOrIndex) {
   let targetPhone = "";
-  let messageText = "";
+  let customerName = "";
+  let refId = "";
+  let statusType = "order_approved";
+  let extraDetails = {};
 
   if (type === 'order') {
     const o = orderRegistry.find(item => item && item.orderId === refIdOrIndex);
     if (!o) return;
     targetPhone = o.phone;
-    messageText = 
-`Hello ${o.name}, 
-Thank you for shopping with *Pure Grow Farm*! 🌱
-Aapka Order Ref (*#${o.orderId}*) successfully receive ho gaya hai. Hum aapke fresh oyster mushroom products safely dispatch kar rahe hain. 
-Any help needed? Contact us at +91 9067891039.
-Thank you for choosing Pure Grow Farm!`;
-
+    customerName = o.name;
+    refId = o.orderId;
+    statusType = "order_approved";
+    extraDetails = {
+      courier: o.courierName || 'Ekart Logistics',
+      location: o.currentLocation || 'Farm Hub',
+      eta: o.deliveryDays || '2-4 Days'
+    };
   } else if (type === 'booking') {
     const b = bookingsRegistry.find(item => item && item.bookingId === refIdOrIndex);
     if (!b) return;
     targetPhone = b.phone;
-    messageText = 
-`Hello ${b.name}, 
-Thank you for registering with *Pure Grow Farm*! 🎓
-Aapka ${b.type} program booking Ref (*#${b.bookingId}*) confirm kar liya gaya hai. Makhiyala farm training hub me aapka swagat hai!
-Thank you,
-Pure Grow Farm`;
-
+    customerName = b.name;
+    refId = b.bookingId;
+    statusType = "certificate";
   } else if (type === 'user') {
     const u = usersDatabase[refIdOrIndex];
     if (!u) return;
     targetPhone = u.phone;
-    messageText = 
-`Hello ${u.name}, 
-Welcome to *Pure Grow Farm* official portal! 🌱
-Aapka account successfully registered ho gaya hai. Aap hamare store se fresh oyster mushrooms, khakhra, aur training sessions access kar sakte hain.
-Thank you!`;
+    customerName = u.name;
+    refId = "WELCOME";
+    statusType = "order_placed";
   }
 
   if (!targetPhone) {
@@ -1228,9 +1226,24 @@ Thank you!`;
     return;
   }
 
-  const cleanPhone = targetPhone.replace(/[^0-9]/g, '');
-  const formattedPhone = cleanPhone.length === 10 ? "91" + cleanPhone : cleanPhone;
-  window.open(`https://wa.me/${formattedPhone}?text=${encodeURIComponent(messageText)}`, '_blank');
+  // Phone number format clean karna
+  let cleanPhone = targetPhone.replace(/[^0-9]/g, '');
+  if (cleanPhone.length === 10) {
+    cleanPhone = "91" + cleanPhone;
+  }
+
+  let messageText = "";
+
+  if (statusType === "order_approved") {
+    messageText = `Hello *${customerName}*,\n\nGood news! 🌱 Aapka Order Ref (*#${refId}*) *Confirm & Pack* ho gaya hai.\n🚚 *Courier:* ${extraDetails.courier}\n📍 *Current Location:* ${extraDetails.location}\n📅 *Expected Delivery:* ${extraDetails.eta}\n\nThank you for choosing Pure Grow Farm!`;
+  } else if (statusType === "certificate") {
+    messageText = `Hello *${customerName}*,\n\nBadhai ho! 📜 Aapka *Pure Grow Farm Training Certificate* approve kar liya gaya hai (Ref: #${refId}).\nAap apni profile me login karke PDF download kar sakte hain!`;
+  } else {
+    messageText = `Hello *${customerName}*,\n\nThank you for connecting with *Pure Grow Farm*! 🌱\nAapka reference ID (*#${refId}*) update kar diya gaya hai.`;
+  }
+
+  const encodedMessage = encodeURIComponent(messageText);
+  window.open(`https://wa.me/${cleanPhone}?text=${encodedMessage}`, '_blank');
 }
 
 function populateAdminDashboardTables() {
@@ -3471,3 +3484,44 @@ document.addEventListener("DOMContentLoaded", function() {
     });
   }
 });
+
+
+function sendWhatsAppNotification(customerPhone, customerName, refId, statusType, extraDetails = {}) {
+  if (!customerPhone) {
+    alert("⚠️ Is user ka valid mobile number available nahi hai!");
+    return;
+  }
+
+  // Phone number format clean karna (10 digits hai toh 91 laga dena)
+  let cleanPhone = customerPhone.replace(/[^0-9]/g, '');
+  if (cleanPhone.length === 10) {
+    cleanPhone = "91" + cleanPhone;
+  }
+
+  let message = "";
+
+  // Status ke mutabiq automatic message generate karna
+  if (statusType === "order_placed") {
+    message = `Hello *${customerName}*,\n\nThank you for shopping with *Pure Grow Farm*! 🌱\nAapka Order Ref (*#${refId}*) successfully receive ho gaya hai aur verification process me hai.\n\nThank you for choosing Pure Grow Farm!`;
+  } 
+  else if (statusType === "order_approved") {
+    message = `Hello *${customerName}*,\n\nGood news! 🌱 Aapka Order Ref (*#${refId}*) *Confirm & Pack* ho gaya hai.\n🚚 *Courier:* ${extraDetails.courier || 'Ekart Logistics'}\n📍 *Current Location:* ${extraDetails.location || 'Farm Hub'}\n📅 *Expected Delivery:* ${extraDetails.eta || '2-4 Days'}`;
+  }
+  else if (statusType === "shipped") {
+    message = `Hello *${customerName}*,\n\nAapka order (*#${refId}*) *Shipped* ho gaya hai aur raste me hai 🚚.\n📦 *Courier:* ${extraDetails.courier || 'Ekart Logistics'}\n📍 *Live Location:* ${extraDetails.location || 'Transit Hub'}`;
+  }
+  else if (statusType === "delivered") {
+    message = `Hello *${customerName}*,\n\nAapka order (*#${refId}*) successfully *Delivered* ho chuka hai! 🎉\n\nUmeed hai aapko hamare organic oyster mushroom products pasand aaye honge. Review zaroor dein!`;
+  }
+  else if (statusType === "cancelled") {
+    message = `Hello *${customerName}*,\n\nKhed hai ki aapka order (*#${refId}*) cancel kar diya gaya hai. ⚠️\n💰 *Refund Status:* ${extraDetails.refund || 'Initiated to your UPI ID'}\n\nAgar koi sawal ho toh sampark karein: +91 9067891039.`;
+  }
+  else if (statusType === "certificate") {
+    message = `Hello *${customerName}*,\n\nBadhai ho! 📜 Aapka *Pure Grow Farm Training Certificate* approve kar liya gaya hai.\nAap apni profile me login karke PDF download kar sakte hain!`;
+  }
+
+  // WhatsApp link open karne ke liye
+  const encodedMessage = encodeURIComponent(message);
+  const whatsappUrl = `https://wa.me/${cleanPhone}?text=${encodedMessage}`;
+  window.open(whatsappUrl, '_blank');
+}

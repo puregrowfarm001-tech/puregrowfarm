@@ -192,8 +192,22 @@ function renderNotificationBadge() {
   const listBody = document.getElementById("notificationListBody");
   if (!badge || !listBody) return;
 
-  // Debug ke liye sabhi notifications fetch karein agar currentUser na bhi ho
-  const myNotifs = notificationsRegistry; 
+  if (!currentUser) {
+    badge.style.display = "none";
+    listBody.innerHTML = `<span class="muted" style="font-size:12px; text-align:center; padding:10px;">Please login to view notifications.</span>`;
+    return;
+  }
+
+  // Agar admin hai toh sabhi 'ADMIN' wali notifications dikhengi
+  // Agar regular user hai toh sirf uska email match karne wali ya 'general' broadcast notifications hi dikhengi
+  const myNotifs = notificationsRegistry.filter(n => {
+    if (currentUser.isAdmin) {
+      return n.recipient === 'ADMIN';
+    } else {
+      return n.recipient === currentUser.email || n.recipient === 'GENERAL' || n.recipient === 'all';
+    }
+  });
+
   const unreadCount = myNotifs.filter(n => !n.isRead).length;
 
   if (unreadCount > 0) {
@@ -204,7 +218,7 @@ function renderNotificationBadge() {
   }
 
   if (myNotifs.length === 0) {
-    listBody.innerHTML = `<span class="muted" style="font-size:12px; text-align:center; padding:10px;">No alerts yet.</span>`;
+    listBody.innerHTML = `<span class="muted" style="font-size:12px; text-align:center; padding:10px;">No new alerts.</span>`;
   } else {
     listBody.innerHTML = myNotifs.map(n => `
       <div class="notif-interactive-card" onclick="handleNotificationClick('${n.id}')" style="background:${n.isRead ? '#f8fafc' : '#eff6ff'}; border:1px solid ${n.isRead ? '#e2e8f0' : '#bfdbfe'}; border-radius:8px; padding:10px; font-size:12px; margin-bottom:6px;">
@@ -217,7 +231,6 @@ function renderNotificationBadge() {
     `).join("");
   }
 }
-
 function toggleNotificationDropdown() {
   const panel = document.getElementById("notificationDropdownPanel");
   if (!panel) return;

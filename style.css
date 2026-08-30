@@ -408,3 +408,46 @@ th { background: #f8faf8; font-weight: 700; }
     grid-template-columns: 1fr;
   }
 }
+
+/* =========================================================
+   NOTIFICATION DROPDOWN & BELL STYLING FIX
+   ========================================================= */
+
+.notification-bell-container {
+  position: relative;
+  display: inline-block;
+}
+
+#notificationDropdownPanel {
+  display: none;
+  position: absolute;
+  right: 0;
+  left: auto;
+  top: 45px;
+  width: 310px;
+  max-width: 90vw;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.18);
+  z-index: 100000;
+  padding: 12px;
+}
+
+.notif-interactive-card {
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.1s ease;
+}
+
+.notif-interactive-card:hover {
+  background: #e0f2fe !important;
+  transform: translateY(-1px);
+}
+
+/* Mobile Screen ke liye adjustment taaki notification cut na ho */
+@media (max-width: 480px) {
+  #notificationDropdownPanel {
+    right: -10px;
+    width: 86vw;
+  }
+}

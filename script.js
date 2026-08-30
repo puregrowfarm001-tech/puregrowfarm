@@ -1189,36 +1189,70 @@ function printActiveAdminReport() {
 function sendAdminWhatsAppMessage(type, refIdOrIndex) {
   let targetPhone = "";
   let customerName = "";
-  let refId = "";
-  let statusType = "order_approved";
-  let extraDetails = {};
+  let messageText = "";
 
   if (type === 'order') {
-    const o = orderRegistry.find(item => item && item.orderId === refIdOrIndex);
+    const o = orderRegistry[refIdOrIndex] || orderRegistry.find(item => item && item.orderId === refIdOrIndex);
     if (!o) return;
     targetPhone = o.phone;
     customerName = o.name;
-    refId = o.orderId;
-    statusType = "order_approved";
-    extraDetails = {
-      courier: o.courierName || 'Ekart Logistics',
-      location: o.currentLocation || 'Farm Hub',
-      eta: o.deliveryDays || '2-4 Days'
-    };
+
+    const status = o.status || "Pending Verification";
+    const stage = o.trackingStage || "Placed";
+    const courier = o.courierName || "Ekart Logistics";
+    const loc = o.currentLocation || "Pure Grow Farm Central Hub";
+    const eta = o.deliveryDays || "2-4 Business Days";
+    const refundSt = o.refundStage || "Initiated";
+    const refundDt = o.refundCreditedDate || new Date().toLocaleDateString('en-IN');
+
+    if (status.startsWith('Rejected')) {
+      const reason = status.replace('Rejected (Reason: ', '').replace(')', '');
+      messageText = `Hello *${customerName}*,\n\n❌ *Order Rejected Update*\nAapka Order Ref (*#${o.orderId}*) reject kar diya gaya hai.\n🔍 *Reason:* ${reason}\n\nAapko koi sahayata chahiye toh sampark karein: +91 9067891039.`;
+    } 
+    else if (status.startsWith('Cancelled')) {
+      const reason = status.replace('Cancelled (Reason: ', '').replace(')', '');
+      messageText = `Hello *${customerName}*,\n\n⚠️ *Order Cancelled & Refund Update*\nAapka Order (*#${o.orderId}*) cancel ho gaya hai.\n🔍 *Reason:* ${reason}\n💰 *Refund Status:* ${refundSt} (Date: ${refundDt})\nAapke UPI ID par payment process ki ja rahi hai.`;
+    } 
+    else if (refundSt === 'Refund Credited') {
+      messageText = `Hello *${customerName}*,\n\n💸 *Refund Successfully Credited!*\nAapke Order (*#${o.orderId}*) ka poora refund amount date *${refundDt}* ko aapke UPI ID (${o.userUpiId || 'Linked Bank'}) par safely transfer kar diya gaya hai. ✅`;
+    }
+    else if (stage === 'Delivered' || status === 'Delivered') {
+      messageText = `Hello *${customerName}*,\n\n🎉 *Order Delivered Successfully!*\nAapka Pure Grow Farm order (*#${o.orderId}*) successfully deliver ho chuka hai via *${courier}*.\n\nUmeed hai aapko hamare organic oyster mushroom products pasand aaye honge! ⭐`;
+    }
+    else {
+      // General live tracking / stage update message
+      messageText = `Hello *${customerName}*,\n\n📦 *Pure Grow Farm - Live Order Update* (*#${o.orderId}*)\n\n📍 *Current Status / Stage:* ${stage}\n🚚 *Courier Partner:* ${courier}\n📍 *Current Location:* ${loc}\n📅 *Expected Delivery Date:* ${eta}\n\nThank you for choosing Pure Grow Farm! 🌱`;
+    }
+
   } else if (type === 'booking') {
-    const b = bookingsRegistry.find(item => item && item.bookingId === refIdOrIndex);
+    const b = bookingsRegistry[refIdOrIndex] || bookingsRegistry.find(item => item && item.bookingId === refIdOrIndex);
     if (!b) return;
     targetPhone = b.phone;
     customerName = b.name;
-    refId = b.bookingId;
-    statusType = "certificate";
+
+    const bStatus = b.status || "Pending Verification";
+    const isCertIssued = b.certIssued === true;
+
+    if (bStatus.startsWith('Rejected')) {
+      const reason = bStatus.replace('Rejected (Reason: ', '').replace(')', '');
+      messageText = `Hello *${customerName}*,\n\n❌ *Farm Booking / Certificate Rejected*\nAapka ${b.type} application (*#${b.bookingId}*) reject kar diya gaya hai.\n🔍 *Reason:* ${reason}`;
+    }
+    else if (isCertIssued) {
+      messageText = `Hello *${customerName}*,\n\n📜 *Certificate Approved & Ready!* 🎉\nBadhai ho! Aapka *Pure Grow Farm ${b.type} Training Certificate* (*#${b.bookingId}*) approve kar liya gaya hai.\nAap apni profile me login karke PDF download kar sakte hain!`;
+    }
+    else if (bStatus === 'Confirmed' || bStatus === 'Approved') {
+      messageText = `Hello *${customerName}*,\n\n✅ *Farm Booking Confirmed!*\nAapka ${b.type} session/internship booking (*#${b.bookingId}*) confirm kar liya gaya hai. Makhiyala farm training hub me aapka swagat hai! 🎓`;
+    }
+    else {
+      messageText = `Hello *${customerName}*,\n\n⏳ *Farm Booking Update*\nAapka ${b.type} booking (*#${b.bookingId}*) abhi *${bStatus}* state me hai. Verification ke baad update mil jayega.`;
+    }
+
   } else if (type === 'user') {
     const u = usersDatabase[refIdOrIndex];
     if (!u) return;
     targetPhone = u.phone;
     customerName = u.name;
-    refId = "WELCOME";
-    statusType = "order_placed";
+    messageText = `Hello *${customerName}*,\n\nWelcome to *Pure Grow Farm* official portal! 🌱\nAapka account successfully registered ho gaya hai. Aap hamare store se fresh oyster mushrooms aur training sessions access kar sakte hain.`;
   }
 
   if (!targetPhone) {
@@ -1226,26 +1260,13 @@ function sendAdminWhatsAppMessage(type, refIdOrIndex) {
     return;
   }
 
-  // Phone number format clean karna
   let cleanPhone = targetPhone.replace(/[^0-9]/g, '');
   if (cleanPhone.length === 10) {
     cleanPhone = "91" + cleanPhone;
   }
 
-  let messageText = "";
-
-  if (statusType === "order_approved") {
-    messageText = `Hello *${customerName}*,\n\nGood news! 🌱 Aapka Order Ref (*#${refId}*) *Confirm & Pack* ho gaya hai.\n🚚 *Courier:* ${extraDetails.courier}\n📍 *Current Location:* ${extraDetails.location}\n📅 *Expected Delivery:* ${extraDetails.eta}\n\nThank you for choosing Pure Grow Farm!`;
-  } else if (statusType === "certificate") {
-    messageText = `Hello *${customerName}*,\n\nBadhai ho! 📜 Aapka *Pure Grow Farm Training Certificate* approve kar liya gaya hai (Ref: #${refId}).\nAap apni profile me login karke PDF download kar sakte hain!`;
-  } else {
-    messageText = `Hello *${customerName}*,\n\nThank you for connecting with *Pure Grow Farm*! 🌱\nAapka reference ID (*#${refId}*) update kar diya gaya hai.`;
-  }
-
-  const encodedMessage = encodeURIComponent(messageText);
-  window.open(`https://wa.me/${cleanPhone}?text=${encodedMessage}`, '_blank');
+  window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(messageText)}`, '_blank');
 }
-
 function populateAdminDashboardTables() {
   renderAdminLiveStockSummary();
   renderDailyDryStockTable();

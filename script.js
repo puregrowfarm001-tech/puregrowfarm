@@ -2990,6 +2990,8 @@ async function confirmOrder(e) {
     return;
   }
 
+  pushNotification('ADMIN', '📦 New Order Received', `${data.name} ne naya order place kiya hai (Ref: #${data.order_id}). Total: ₹${data.total}`, 'order');
+
   orderRegistry.unshift({
     orderId: data.order_id,
     name: data.name,
@@ -3140,6 +3142,8 @@ async function submitStudentVisit(e) {
     alert("Registration Error: " + error.message);
     return;
   }
+
+  pushNotification('ADMIN', '🎓 New Training Booking', `${currentUser.name} ne ${data.type} training ke liye booking ki hai (Ref: #${data.booking_id}).`, 'booking');
 
   bookingsRegistry.unshift({
     bookingId: data.booking_id,

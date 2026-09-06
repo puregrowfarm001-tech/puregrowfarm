@@ -699,21 +699,9 @@
         </div>
 
         <!-- Sub Tab 1: Expense Page -->
+        <!-- Sub Tab 1: Expense Page -->
         <div id="subTabExpense" class="sub-accounting-section" style="display:none;">
-          <div style="background:#fef3c7; border:1px solid #fde68a; padding:12px; border-radius:10px; margin-bottom:14px; display:flex; justify-content:space-between; align-items:center; cursor:pointer;" onclick="openAdminFilterModal('list_expenses')">
-            <div>
-              <strong style="color:#92400e; font-size:14px;">📊 Total Expenses Outflow: <span id="subTabExpTotalDisplay">Rs 0.00</span></strong>
-              <div style="font-size:11px; color:#b45309; margin-top:2px;">Soham: <span id="subTabSohamExp">Rs 0</span> | Jeet: <span id="subTabJeetExp">Rs 0</span> | Farm: <span id="subTabFarmExp">Rs 0</span></div>
-            </div>
-            <span style="font-size:12px; font-weight:bold; color:#b45309;">🔍 View List</span>
-          </div>
-
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:10px;">
-            <h4>1. Log Operational Outflow & Records</h4>
-            <input type="search" id="searchExpenseInput" placeholder="🔍 Search Expenses..." style="max-width:240px;" oninput="filterSubTable('searchExpenseInput', 'subExpenseTableBody')">
-          </div>
-
-          <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap:16px;">
+          <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap:16px; margin-bottom: 20px;">
             <div class="db-card">
               <form onsubmit="saveAdminExpense(event)">
                 <label>Select Operation Date: <input type="date" id="expLogDate" required></label>
@@ -743,12 +731,32 @@
                 <button type="submit">Log Outflow Ledger Row</button>
               </form>
             </div>
+            
+            <div class="db-card" style="background:#fef3c7; border:1px solid #fde68a;">
+              <strong style="color:#92400e; font-size:15px;">📊 Overall Expenses Outflow Summary</strong>
+              <div style="font-size:14px; margin-top:10px; font-weight:bold;">Total Expenses: <span id="subTabExpTotalDisplay">Rs 0.00</span></div>
+              <div style="font-size:12px; color:#b45309; margin-top:6px;">Soham: <span id="subTabSohamExp">Rs 0</span> | Jeet: <span id="subTabJeetExp">Rs 0</span> | Farm: <span id="subTabFarmExp">Rs 0</span></div>
+            </div>
+          </div>
+
+          <!-- Category Selection Switcher Tabs -->
+          <div style="display: flex; gap: 8px; margin-bottom: 15px; flex-wrap: wrap;">
+            <button type="button" class="btn" id="btnExpCatFarm" onclick="switchExpCategoryTab('expCatFarmSec')">🏢 Farm Infrastructure (<span id="countExpFarm">0</span>)</button>
+            <button type="button" class="btn" id="btnExpCatMushroom" onclick="switchExpCategoryTab('expCatMushroomSec')" style="background:var(--muted);">🍄 Mushroom Substrate (<span id="countExpMushroom">0</span>)</button>
+            <button type="button" class="btn" id="btnExpCatStudent" onclick="switchExpCategoryTab('expCatStudentSec')" style="background:var(--muted);">🎓 Student & Farmer (<span id="countExpStudent">0</span>)</button>
+          </div>
+
+          <!-- Section 1: Farm Infrastructure -->
+          <div id="expCatFarmSec" class="exp-cat-section">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:10px;">
+              <h4 style="color:#1e293b; margin:0;">🏢 Farm Infrastructure Expenses (<span id="totalExpFarm" style="color:var(--accent);">Rs 0</span>)</h4>
+              <input type="search" id="searchExpFarmInput" placeholder="🔍 Search Farm Expenses..." style="max-width:240px;" oninput="filterSubTable('searchExpFarmInput', 'subExpenseTableBodyFarm')">
+            </div>
             <div class="table-responsive">
               <table class="sub-table">
                 <thead>
                   <tr>
                     <th>Date</th>
-                    <th>Category</th>
                     <th>Payer</th>
                     <th>Context</th>
                     <th>Amount</th>
@@ -756,10 +764,57 @@
                     <th>Action</th>
                   </tr>
                 </thead>
-                <tbody id="subExpenseTableBody"></tbody>
+                <tbody id="subExpenseTableBodyFarm"></tbody>
               </table>
             </div>
           </div>
+
+          <!-- Section 2: Mushroom Substrate -->
+          <div id="expCatMushroomSec" class="exp-cat-section" style="display:none;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:10px;">
+              <h4 style="color:#1e293b; margin:0;">🍄 Mushroom Substrate Expenses (<span id="totalExpMushroom" style="color:var(--accent);">Rs 0</span>)</h4>
+              <input type="search" id="searchExpMushroomInput" placeholder="🔍 Search Mushroom Expenses..." style="max-width:240px;" oninput="filterSubTable('searchExpMushroomInput', 'subExpenseTableBodyMushroom')">
+            </div>
+            <div class="table-responsive">
+              <table class="sub-table">
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Payer</th>
+                    <th>Context</th>
+                    <th>Amount</th>
+                    <th>Notes</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="subExpenseTableBodyMushroom"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Section 3: Student & Farmer Training -->
+          <div id="expCatStudentSec" class="exp-cat-section" style="display:none;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:10px;">
+              <h4 style="color:#1e293b; margin:0;">🎓 Student & Farmer Training Expenses (<span id="totalExpStudent" style="color:var(--accent);">Rs 0</span>)</h4>
+              <input type="search" id="searchExpStudentInput" placeholder="🔍 Search Training Expenses..." style="max-width:240px;" oninput="filterSubTable('searchExpStudentInput', 'subExpenseTableBodyStudent')">
+            </div>
+            <div class="table-responsive">
+              <table class="sub-table">
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Payer</th>
+                    <th>Context</th>
+                    <th>Amount</th>
+                    <th>Notes</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="subExpenseTableBodyStudent"></tbody>
+              </table>
+            </div>
+          </div>
+
         </div>
 
         <!-- Sub Tab 2: Sell Page -->

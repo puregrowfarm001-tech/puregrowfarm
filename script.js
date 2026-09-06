@@ -198,7 +198,6 @@ function renderNotificationBadge() {
     return;
   }
 
-  // Yahan par email aur phone dono match hone ka check lagaya gaya hai
   const myNotifs = notificationsRegistry.filter(n => {
     if (currentUser.isAdmin) {
       return n.recipient === 'ADMIN';
@@ -301,7 +300,6 @@ async function triggerAdminView() {
   document.getElementById("publicContent").style.display = "none";
   document.getElementById("adminErpView").classList.add("active");
   
-  // 1. Fetch Cloud Orders
   const { data: cloudOrders } = await _supabase.from('pgf_orders').select('*');
   if (cloudOrders) {
     orderRegistry = cloudOrders.map(o => ({
@@ -315,7 +313,6 @@ async function triggerAdminView() {
     }));
   }
 
-  // 2. Fetch Cloud Bookings
   const { data: cloudBookings } = await _supabase.from('pgf_bookings').select('*');
   if (cloudBookings) {
     bookingsRegistry = cloudBookings.map(b => ({
@@ -327,7 +324,6 @@ async function triggerAdminView() {
     }));
   }
 
-  // 3. Fetch Cloud Users (Admin panel me registered users dikhane ke liye)
   const { data: cloudUsers } = await _supabase.from('pgf_users').select('*');
   if (cloudUsers) {
     usersDatabase = cloudUsers.map(u => ({
@@ -348,7 +344,6 @@ function exitAdminPanel() { handleLogout(); }
 async function checkUserSession() {
   renderNotificationBadge();
 
-  // Agar localStorage me session pehle se saved hai, toh turant load kar lo
   if (!currentUser) {
     const savedSession = localStorage.getItem('pgf_session');
     if (savedSession) {
@@ -386,7 +381,6 @@ async function checkUserSession() {
       document.getElementById("fphone").value = currentUser.phone || "";
       document.getElementById("femail").value = currentUser.email;
 
-      // Cloud se fresh orders aur bookings fetch karke turant panels load karein
       loadUserPanelDataFromCloud();
     }
   } else {
@@ -407,7 +401,6 @@ async function handleRegister(e) {
   e.preventDefault();
   const name = document.getElementById("regName").value.trim();
   const phone = document.getElementById("regPhone").value.trim();
-  // Email ko automatic lowercase me convert karne ke liye
   const email = document.getElementById("regEmail").value.trim().toLowerCase();
   const password = document.getElementById("regPassword").value;
 
@@ -458,7 +451,6 @@ async function handleLogin(e) {
     return;
   }
 
-  // Agar user ne email dala hai (yaani '@' hai), toh use automatically lowercase kar do
   if (userInput.includes('@')) {
     userInput = userInput.toLowerCase();
   }
@@ -502,7 +494,6 @@ async function handleSendOtp(e) {
   generatedOtpCode = Math.floor(100000 + Math.random() * 900000).toString();
   pendingResetEmail = email;
 
-  // Supabase me OTP save karein
   await _supabase
     .from('pgf_users')
     .update({ forgot_otp: generatedOtpCode })
@@ -514,7 +505,6 @@ async function handleSendOtp(e) {
     otp_code: generatedOtpCode
   };
 
-  // EmailJS ke zariye Gmail par OTP send karein
   emailjs.send('service_jk9zdkf', 'template_zihxosq', templateParams)
     .then(function(response) {
        alert(`✅ 6-digit OTP successfully aapke Gmail (${email}) par bhej diya gaya hai! Kripya inbox check karein.`);
@@ -568,7 +558,6 @@ function handleLogout() {
   currentUser = null;
   localStorage.removeItem('pgf_session');
   
-  // 1. Sabhi khule hue popup modals ko forcefully band (close) karein
   const ordersModal = document.getElementById("userOrdersModal");
   if (ordersModal) ordersModal.classList.remove("active-modal");
 
@@ -578,7 +567,6 @@ function handleLogout() {
   const filterModal = document.getElementById("adminFilterPopupModal");
   if (filterModal) filterModal.classList.remove("active-modal");
 
-  // 2. Session check karke user interface ko Sign In view par reset karein
   checkUserSession();
 }
 
@@ -861,13 +849,35 @@ function switchSubAccountingTab(subTabId) {
   if(document.getElementById(targetActiveButton)) document.getElementById(targetActiveButton).style.background = 'var(--accent)';
 }
 
+function switchExpCategoryTab(secId) {
+  document.querySelectorAll('.exp-cat-section').forEach(sec => sec.style.display = 'none');
+  document.getElementById(secId).style.display = 'block';
+  
+  ['btnExpCatFarm', 'btnExpCatMushroom', 'btnExpCatStudent'].forEach(bId => {
+    const btn = document.getElementById(bId);
+    if(btn) btn.style.background = 'var(--muted)';
+  });
+  
+  if(secId === 'expCatFarmSec') {
+    const btn = document.getElementById('btnExpCatFarm');
+    if(btn) btn.style.background = 'var(--accent)';
+  }
+  if(secId === 'expCatMushroomSec') {
+    const btn = document.getElementById('btnExpCatMushroom');
+    if(btn) btn.style.background = 'var(--accent)';
+  }
+  if(secId === 'expCatStudentSec') {
+    const btn = document.getElementById('btnExpCatStudent');
+    if(btn) btn.style.background = 'var(--accent)';
+  }
+}
+
 async function deleteUserAccount(idx) {
   const targetUser = usersDatabase[idx];
   if (!targetUser) return;
 
   if (confirm(`⚠️ Kya aap sach me ${targetUser.name} (${targetUser.email}) ka account database se permanently delete karna chahte hain?\n\nUser ko dobara naya account banana padega.`)) {
     
-    // 1. Delete user from Supabase 'pgf_users' table
     const { error } = await _supabase
       .from('pgf_users')
       .delete()
@@ -878,7 +888,6 @@ async function deleteUserAccount(idx) {
       return;
     }
 
-    // 2. Log this deletion in Supabase 'pgf_deleted_users_log' table
     const deletionTime = new Date().toLocaleDateString('en-IN') + " " + new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
     
     await _supabase.from('pgf_deleted_users_log').insert([{
@@ -889,7 +898,6 @@ async function deleteUserAccount(idx) {
       deleted_by: currentUser ? currentUser.name : 'Admin'
     }]);
 
-    // 3. Update local array and refresh view
     usersDatabase.splice(idx, 1);
     populateAdminDashboardTables();
     
@@ -1235,7 +1243,6 @@ function sendAdminWhatsAppMessage(type, refIdOrIndex) {
       messageText = `Hello *${customerName}*,\n\n🎉 *Order Delivered Successfully!*\nAapka Pure Grow Farm order (*#${o.orderId}*) successfully deliver ho chuka hai via *${courier}*.\n\nUmeed hai aapko hamare organic oyster mushroom products pasand aaye honge! ⭐`;
     }
     else {
-      // General live tracking / stage update message
       messageText = `Hello *${customerName}*,\n\n📦 *Pure Grow Farm - Live Order Update* (*#${o.orderId}*)\n\n📍 *Current Status / Stage:* ${stage}\n🚚 *Courier Partner:* ${courier}\n📍 *Current Location:* ${loc}\n📅 *Expected Delivery Date:* ${eta}\n\nThank you for choosing Pure Grow Farm! 🌱`;
     }
 
@@ -1282,6 +1289,7 @@ function sendAdminWhatsAppMessage(type, refIdOrIndex) {
 
   window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(messageText)}`, '_blank');
 }
+
 function populateAdminDashboardTables() {
   renderAdminLiveStockSummary();
   renderDailyDryStockTable();
@@ -2327,13 +2335,30 @@ function computeFinancialLedgerStatements() {
   if(document.getElementById("subTabJeetExp")) document.getElementById("subTabJeetExp").textContent = "Rs " + jeetExpOnly.toFixed(2);
   if(document.getElementById("subTabFarmExp")) document.getElementById("subTabFarmExp").textContent = "Rs " + farmExpOnly.toFixed(2);
 
-  if(document.getElementById("subExpenseTableBody")) {
-    document.getElementById("subExpenseTableBody").innerHTML = filteredExpenses.map((e) => {
+  // --- SPLIT EXPENSES BY CATEGORY FOR 3 TABLES ---
+  const expFarmList = filteredExpenses.filter(e => e.category === "Farm");
+  const expMushroomList = filteredExpenses.filter(e => e.category === "Mushroom");
+  const expStudentList = filteredExpenses.filter(e => e.category === "Student & Farmer");
+
+  const totalFarmExp = expFarmList.reduce((sum, e) => sum + Number(e.amount || 0), 0);
+  const totalMushroomExp = expMushroomList.reduce((sum, e) => sum + Number(e.amount || 0), 0);
+  const totalStudentExp = expStudentList.reduce((sum, e) => sum + Number(e.amount || 0), 0);
+
+  if(document.getElementById("totalExpFarm")) document.getElementById("totalExpFarm").textContent = "Rs " + totalFarmExp.toFixed(2);
+  if(document.getElementById("totalExpMushroom")) document.getElementById("totalExpMushroom").textContent = "Rs " + totalMushroomExp.toFixed(2);
+  if(document.getElementById("totalExpStudent")) document.getElementById("totalExpStudent").textContent = "Rs " + totalStudentExp.toFixed(2);
+
+  if(document.getElementById("countExpFarm")) document.getElementById("countExpFarm").textContent = expFarmList.length;
+  if(document.getElementById("countExpMushroom")) document.getElementById("countExpMushroom").textContent = expMushroomList.length;
+  if(document.getElementById("countExpStudent")) document.getElementById("countExpStudent").textContent = expStudentList.length;
+
+  // Farm Table Render
+  if(document.getElementById("subExpenseTableBodyFarm")) {
+    document.getElementById("subExpenseTableBodyFarm").innerHTML = expFarmList.map((e) => {
       const idx = expensesRegistry.indexOf(e);
       return `
         <tr>
           <td>${e.date}</td>
-          <td>${e.category}</td>
           <td>${e.payer}</td>
           <td>${e.desc}</td>
           <td style="color:var(--warn); font-weight:bold;">Rs ${e.amount}</td>
@@ -2344,7 +2369,47 @@ function computeFinancialLedgerStatements() {
           </td>
         </tr>
       `;
-    }).join("") || `<tr><td colspan="7" style="text-align:center; color:var(--muted); padding:14px;">No expenses found for year ${selectedYear}.</td></tr>`;
+    }).join("") || `<tr><td colspan="6" style="text-align:center; color:var(--muted); padding:14px;">No Farm expenses recorded.</td></tr>`;
+  }
+
+  // Mushroom Table Render
+  if(document.getElementById("subExpenseTableBodyMushroom")) {
+    document.getElementById("subExpenseTableBodyMushroom").innerHTML = expMushroomList.map((e) => {
+      const idx = expensesRegistry.indexOf(e);
+      return `
+        <tr>
+          <td>${e.date}</td>
+          <td>${e.payer}</td>
+          <td>${e.desc}</td>
+          <td style="color:var(--warn); font-weight:bold;">Rs ${e.amount}</td>
+          <td><small>${e.notes || '-'}</small></td>
+          <td>
+            <button type="button" class="btn" style="padding:2px 5px; font-size:10px; min-height:auto; background:#0284c7;" onclick="adminEditExpense(${idx})">✏️</button>
+            <button type="button" class="btn" style="padding:2px 5px; font-size:10px; min-height:auto; background:var(--danger);" onclick="adminDeleteExpense(${idx})">🗑️</button>
+          </td>
+        </tr>
+      `;
+    }).join("") || `<tr><td colspan="6" style="text-align:center; color:var(--muted); padding:14px;">No Mushroom expenses recorded.</td></tr>`;
+  }
+
+  // Student & Farmer Table Render
+  if(document.getElementById("subExpenseTableBodyStudent")) {
+    document.getElementById("subExpenseTableBodyStudent").innerHTML = expStudentList.map((e) => {
+      const idx = expensesRegistry.indexOf(e);
+      return `
+        <tr>
+          <td>${e.date}</td>
+          <td>${e.payer}</td>
+          <td>${e.desc}</td>
+          <td style="color:var(--warn); font-weight:bold;">Rs ${e.amount}</td>
+          <td><small>${e.notes || '-'}</small></td>
+          <td>
+            <button type="button" class="btn" style="padding:2px 5px; font-size:10px; min-height:auto; background:#0284c7;" onclick="adminEditExpense(${idx})">✏️</button>
+            <button type="button" class="btn" style="padding:2px 5px; font-size:10px; min-height:auto; background:var(--danger);" onclick="adminDeleteExpense(${idx})">🗑️</button>
+          </td>
+        </tr>
+      `;
+    }).join("") || `<tr><td colspan="6" style="text-align:center; color:var(--muted); padding:14px;">No Training expenses recorded.</td></tr>`;
   }
 
   const sellPaidTotal = filteredSales.reduce((sum, s) => sum + Number(s.paidAmount !== undefined ? s.paidAmount : s.total || 0), 0);
@@ -3408,12 +3473,10 @@ function printDivInvoice() {
 renderProducts();
 checkUserSession();
 
-// --- BACKGROUND AUTO-REFRESH & LIVE NOTIFICATION SYSTEM ---
 async function backgroundDataSync() {
   if (!window._supabase) return;
 
   try {
-    // 1. Fetch latest orders silently
     const { data: cloudOrders } = await _supabase.from('pgf_orders').select('*');
     if (cloudOrders) {
       orderRegistry = cloudOrders.map(o => ({
@@ -3427,7 +3490,6 @@ async function backgroundDataSync() {
       }));
     }
 
-    // 2. Fetch latest bookings silently
     const { data: cloudBookings } = await _supabase.from('pgf_bookings').select('*');
     if (cloudBookings) {
       bookingsRegistry = cloudBookings.map(b => ({
@@ -3439,13 +3501,11 @@ async function backgroundDataSync() {
       }));
     }
 
-    // 3. Sync notifications registry from localStorage
     const localNotifs = JSON.parse(localStorage.getItem('pgf_notifications')) || [];
     if (Array.isArray(localNotifs)) {
       notificationsRegistry = localNotifs;
     }
 
-    // 4. Refresh user panels or badges if user is logged in
     if (typeof loadUserPanelData === 'function') {
       loadUserPanelData();
     }
@@ -3457,22 +3517,18 @@ async function backgroundDataSync() {
   }
 }
 
-// Har 10 seconds me background me data auto-sync hota rahega taaki notification aur updates turant milein
 setInterval(backgroundDataSync, 10000);
-
 
 async function loadUserPanelDataFromCloud() {
   if (!currentUser || currentUser.isAdmin) return;
 
   try {
-    // 1. Fetch fresh orders from Supabase
     const { data: cloudOrders } = await _supabase
       .from('pgf_orders')
       .select('*')
       .eq('email', currentUser.email);
 
     if (cloudOrders) {
-      // Purane local orders ko update/merge karein
       orderRegistry = orderRegistry.filter(o => o.email !== currentUser.email);
       const mappedOrders = cloudOrders.map(o => ({
         orderId: o.order_id, name: o.name, phone: o.phone, email: o.email, address: o.address,
@@ -3486,7 +3542,6 @@ async function loadUserPanelDataFromCloud() {
       orderRegistry.push(...mappedOrders);
     }
 
-    // 2. Fetch fresh bookings from Supabase
     const { data: cloudBookings } = await _supabase
       .from('pgf_bookings')
       .select('*')
@@ -3511,7 +3566,6 @@ async function loadUserPanelDataFromCloud() {
   }
 }
 
-// --- PRODUCT SEARCH FILTER LISTENER ---
 document.addEventListener("DOMContentLoaded", function() {
   const searchInput = document.getElementById("productSearch");
   if (searchInput) {
@@ -3533,14 +3587,12 @@ document.addEventListener("DOMContentLoaded", function() {
   }
 });
 
-
 function sendWhatsAppNotification(customerPhone, customerName, refId, statusType, extraDetails = {}) {
   if (!customerPhone) {
     alert("⚠️ Is user ka valid mobile number available nahi hai!");
     return;
   }
 
-  // Phone number format clean karna (10 digits hai toh 91 laga dena)
   let cleanPhone = customerPhone.replace(/[^0-9]/g, '');
   if (cleanPhone.length === 10) {
     cleanPhone = "91" + cleanPhone;
@@ -3548,7 +3600,6 @@ function sendWhatsAppNotification(customerPhone, customerName, refId, statusType
 
   let message = "";
 
-  // Status ke mutabiq automatic message generate karna
   if (statusType === "order_placed") {
     message = `Hello *${customerName}*,\n\nThank you for shopping with *Pure Grow Farm*! 🌱\nAapka Order Ref (*#${refId}*) successfully receive ho gaya hai aur verification process me hai.\n\nThank you for choosing Pure Grow Farm!`;
   } 
@@ -3568,7 +3619,6 @@ function sendWhatsAppNotification(customerPhone, customerName, refId, statusType
     message = `Hello *${customerName}*,\n\nBadhai ho! 📜 Aapka *Pure Grow Farm Training Certificate* approve kar liya gaya hai.\nAap apni profile me login karke PDF download kar sakte hain!`;
   }
 
-  // WhatsApp link open karne ke liye
   const encodedMessage = encodeURIComponent(message);
   const whatsappUrl = `https://wa.me/${cleanPhone}?text=${encodedMessage}`;
   window.open(whatsappUrl, '_blank');

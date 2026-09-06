@@ -1153,9 +1153,11 @@ function printActiveAdminReport() {
 
   const sectionClone = activeSection.cloneNode(true);
   
+  // Search inputs ko print report se hatane ke liye
   const searchInputs = sectionClone.querySelectorAll('input[type="search"]');
   searchInputs.forEach(input => input.remove());
 
+  // Tables ke action buttons aur columns ko clean karne ke liye
   const tables = sectionClone.querySelectorAll('table');
   tables.forEach(table => {
     const headers = table.querySelectorAll('th');
@@ -1191,6 +1193,7 @@ function printActiveAdminReport() {
         th, td { border: 1px solid #94a3b8; padding: 8px 10px; text-align: left; }
         th { background: #2b8a3e !important; color: white !important; -webkit-print-color-adjust: exact; font-weight: bold; }
         tr:nth-child(even) { background-color: #f8fafc; }
+        .exp-cat-section { display: block !important; margin-bottom: 20px; }
       </style>
     </head>
     <body>
@@ -1208,7 +1211,6 @@ function printActiveAdminReport() {
   `);
   printWindow.document.close();
 }
-
 function sendAdminWhatsAppMessage(type, refIdOrIndex) {
   let targetPhone = "";
   let customerName = "";

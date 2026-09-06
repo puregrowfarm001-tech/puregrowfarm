@@ -1158,16 +1158,15 @@ function printActiveAdminReport() {
     const sectionClone = section.cloneNode(true);
     const sectionTitle = sectionClone.querySelector('h3')?.textContent || `ERP Section ${index + 1}`;
     
-    // 1. Saare input forms, buttons, aur unke container white boxes (.db-card jisme form tha) ko hatana
-    const dbCards = sectionClone.querySelectorAll('.db-card');
-    dbCards.forEach((card, cIndex) => {
-      // Agar card ke andar form ya input hai toh use remove kar dein (jaise input forms)
-      if (card.querySelector('form') || card.querySelector('input')) {
+    // 1. Saare input forms, buttons, aur khali .db-card boxes ko print me se poori tarah remove karna
+    const allCards = sectionClone.querySelectorAll('.db-card');
+    allCards.forEach(card => {
+      // Agar card ke andar table nahi hai (yaani wo input form wala dabba hai), toh use hata dein
+      if (!card.querySelector('table')) {
         card.remove();
       }
     });
 
-    // Baaki ke un-necessary search boxes aur elements hatayein
     const inputs = sectionClone.querySelectorAll('form, input, select, button, input[type="search"]');
     inputs.forEach(el => el.remove());
 
@@ -1193,7 +1192,7 @@ function printActiveAdminReport() {
       });
     });
 
-    // 3. Expenses aur baaki saare sub-sections/category sections ko print me forced visible karna
+    // 3. Hidden sub-sections aur category sections ko print me visible karna
     sectionClone.style.display = 'block';
     const subSections = sectionClone.querySelectorAll('.sub-accounting-section, .exp-cat-section');
     subSections.forEach(sub => {
@@ -1228,7 +1227,7 @@ function printActiveAdminReport() {
         .print-section-wrapper { page-break-before: always; }
         .print-section-wrapper:first-of-type { page-break-before: avoid; }
         
-        /* Expenses ki teeno categories aur baaki sabhi tables ko print me show karne ke liye */
+        /* Expenses aur baaki saare sections ko print me show karne ke liye */
         .exp-cat-section { display: block !important; visibility: visible !important; margin-bottom: 20px; }
         .sub-accounting-section { display: block !important; visibility: visible !important; }
         

@@ -1149,7 +1149,6 @@ function handleAdminYearFilterChange() {
 function printActiveAdminReport() {
   const selectedYear = document.getElementById("adminYearFilterSelect")?.value || "ALL";
   
-  // Admin panel ke sabhi ERP sections ko ek saath lene ke liye
   const allSections = document.querySelectorAll('.erp-section');
   let combinedHTML = '';
   
@@ -1157,19 +1156,11 @@ function printActiveAdminReport() {
     const sectionClone = section.cloneNode(true);
     const sectionTitle = sectionClone.querySelector('h3')?.textContent || `ERP Section ${index + 1}`;
     
-    // Search inputs ko print report se hatane ke liye
-    const searchInputs = sectionClone.querySelectorAll('input[type="search"]');
-    searchInputs.forEach(input => input.remove());
-    
-    // Form entry cards ko hatana taaki sirf data aur tables print hon
-    const formCards = sectionClone.querySelectorAll('.db-card');
-    formCards.forEach((card, i) => {
-      if (i === 0 && sectionClone.querySelector('#expCatFarmSec')) {
-        card.remove();
-      }
-    });
+    // 1. Saare inputs, search bars, aur form elements ko hatane ke liye
+    const interactiveElements = sectionClone.querySelectorAll('input, select, button, form, .db-card');
+    interactiveElements.forEach(el => el.remove());
 
-    // Tables ke action buttons aur columns ko clean karne ke liye
+    // 2. Tables ke action buttons aur columns ko clean karne ke liye
     const tables = sectionClone.querySelectorAll('table');
     tables.forEach(table => {
       const headers = table.querySelectorAll('th');
@@ -1191,7 +1182,7 @@ function printActiveAdminReport() {
       });
     });
 
-    // Print ke liye hidden sub-sections aur tabs ko visible karna
+    // 3. Hidden sub-sections, tabs, aur category sections ko print me visible karne ke liye
     sectionClone.style.display = 'block';
     const subSections = sectionClone.querySelectorAll('.sub-accounting-section, .exp-cat-section');
     subSections.forEach(sub => sub.style.display = 'block');

@@ -1158,10 +1158,13 @@ function printActiveAdminReport() {
     const sectionClone = section.cloneNode(true);
     const sectionTitle = sectionClone.querySelector('h3')?.textContent || `ERP Section ${index + 1}`;
     
-    // 1. Saare input forms, buttons, aur khali .db-card boxes ko print me se poori tarah remove karna
+    // 1. Saare interactive filter summary buttons/cards ko hatana (jaise Pending Confirm, Pending Delivery, Refund, Bookings, Certificates Pending)
+    const filterCards = sectionClone.querySelectorAll('div[onclick*="openAdminFilterModal"]');
+    filterCards.forEach(card => card.remove());
+
+    // 2. Khali form containers (.db-card jisme abhi table nahi hai) ko hatana
     const allCards = sectionClone.querySelectorAll('.db-card');
     allCards.forEach(card => {
-      // Agar card ke andar table nahi hai (yaani wo input form wala dabba hai), toh use hata dein
       if (!card.querySelector('table')) {
         card.remove();
       }
@@ -1170,7 +1173,7 @@ function printActiveAdminReport() {
     const inputs = sectionClone.querySelectorAll('form, input, select, button, input[type="search"]');
     inputs.forEach(el => el.remove());
 
-    // 2. Tables ke action buttons aur columns ko clean karne ke liye
+    // 3. Tables ke action buttons aur columns ko clean karne ke liye
     const tables = sectionClone.querySelectorAll('table');
     tables.forEach(table => {
       const headers = table.querySelectorAll('th');
@@ -1192,7 +1195,7 @@ function printActiveAdminReport() {
       });
     });
 
-    // 3. Hidden sub-sections aur category sections ko print me visible karna
+    // 4. Hidden sub-sections aur category sections ko print me visible karna
     sectionClone.style.display = 'block';
     const subSections = sectionClone.querySelectorAll('.sub-accounting-section, .exp-cat-section');
     subSections.forEach(sub => {

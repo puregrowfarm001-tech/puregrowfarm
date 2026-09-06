@@ -1149,32 +1149,21 @@ function handleAdminYearFilterChange() {
 function printActiveAdminReport() {
   const selectedYear = document.getElementById("adminYearFilterSelect")?.value || "ALL";
   
-  // Admin panel ke sabhi ERP sections ko lene ke liye ('erpUsersTab' yaani registered accounts ko chhod kar)
+  // Registered users ko chhod kar baaki saare ERP sections ko print me lene ke liye
   const allSections = document.querySelectorAll('.erp-section');
   let combinedHTML = '';
   
   allSections.forEach((section, index) => {
-    // 1. Registered Accounts Ledger wala section print me nahi aayega
     if (section.id === 'erpUsersTab') return;
 
     const sectionClone = section.cloneNode(true);
     const sectionTitle = sectionClone.querySelector('h3')?.textContent || `ERP Section ${index + 1}`;
     
-    // 2. Sirf entry forms, search bars aur buttons ko hatana hai, data tables ko nahi
+    // Sirf entry forms, inputs, search bars aur buttons ko hatana hai taaki data tables aur totals print hon
     const inputForms = sectionClone.querySelectorAll('form, .db-card input, .db-card select, .db-card button, input[type="search"]');
     inputForms.forEach(el => el.remove());
 
-    // 3. Top summary metric counter boxes ko hatana (lekin fin-grid aur accounting data ko rakhna)
-    const topGrids = sectionClone.querySelectorAll('div[style*="grid-template-columns"]');
-    topGrids.forEach(grid => {
-      const text = grid.textContent || "";
-      // Agar ye sirf pending counts ya alert boxes hain toh remove karein, financial cards ko rehne dein
-      if ((text.includes('Pending') || text.includes('Certificates Pending')) && !text.includes('Total') && !text.includes('Revenue')) {
-        grid.remove();
-      }
-    });
-
-    // 4. Tables ke action buttons aur columns ko clean karne ke liye taaki sirf data print ho
+    // Tables ke action buttons aur columns ko clean karne ke liye
     const tables = sectionClone.querySelectorAll('table');
     tables.forEach(table => {
       const headers = table.querySelectorAll('th');
@@ -1196,7 +1185,7 @@ function printActiveAdminReport() {
       });
     });
 
-    // 5. Hidden sub-sections, tabs, aur category sections ko print me visible karna taaki data print ho
+    // Hidden sub-sections, tabs, aur category sections ko print me visible karna
     sectionClone.style.display = 'block';
     const subSections = sectionClone.querySelectorAll('.sub-accounting-section, .exp-cat-section');
     subSections.forEach(sub => sub.style.display = 'block');
@@ -1229,6 +1218,7 @@ function printActiveAdminReport() {
         .print-section-wrapper:first-of-type { page-break-before: avoid; }
         .fin-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 20px; }
         .fin-card { border: 1px solid #cbd5e1; padding: 10px; border-radius: 8px; background: #f8fafc; }
+        .db-card { border: 1px solid #cbd5e1; padding: 12px; border-radius: 8px; background: #fffbeeb8; margin-bottom: 15px; }
       </style>
     </head>
     <body>

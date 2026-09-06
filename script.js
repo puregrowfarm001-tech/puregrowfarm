@@ -1149,7 +1149,6 @@ function handleAdminYearFilterChange() {
 function printActiveAdminReport() {
   const selectedYear = document.getElementById("adminYearFilterSelect")?.value || "ALL";
   
-  // Registered users ko chhod kar baaki saare ERP sections ko print me lene ke liye
   const allSections = document.querySelectorAll('.erp-section');
   let combinedHTML = '';
   
@@ -1159,11 +1158,20 @@ function printActiveAdminReport() {
     const sectionClone = section.cloneNode(true);
     const sectionTitle = sectionClone.querySelector('h3')?.textContent || `ERP Section ${index + 1}`;
     
-    // Sirf entry forms, inputs, search bars aur buttons ko hatana hai taaki data tables aur totals print hon
-    const inputForms = sectionClone.querySelectorAll('form, .db-card input, .db-card select, .db-card button, input[type="search"]');
-    inputForms.forEach(el => el.remove());
+    // 1. Saare input forms, buttons, aur unke container white boxes (.db-card jisme form tha) ko hatana
+    const dbCards = sectionClone.querySelectorAll('.db-card');
+    dbCards.forEach((card, cIndex) => {
+      // Agar card ke andar form ya input hai toh use remove kar dein (jaise input forms)
+      if (card.querySelector('form') || card.querySelector('input')) {
+        card.remove();
+      }
+    });
 
-    // Tables ke action buttons aur columns ko clean karne ke liye
+    // Baaki ke un-necessary search boxes aur elements hatayein
+    const inputs = sectionClone.querySelectorAll('form, input, select, button, input[type="search"]');
+    inputs.forEach(el => el.remove());
+
+    // 2. Tables ke action buttons aur columns ko clean karne ke liye
     const tables = sectionClone.querySelectorAll('table');
     tables.forEach(table => {
       const headers = table.querySelectorAll('th');
@@ -1185,10 +1193,13 @@ function printActiveAdminReport() {
       });
     });
 
-    // Hidden sub-sections, tabs, aur category sections ko print me visible karna
+    // 3. Expenses aur baaki saare sub-sections/category sections ko print me forced visible karna
     sectionClone.style.display = 'block';
     const subSections = sectionClone.querySelectorAll('.sub-accounting-section, .exp-cat-section');
-    subSections.forEach(sub => sub.style.display = 'block');
+    subSections.forEach(sub => {
+      sub.style.display = 'block';
+      sub.style.visibility = 'visible';
+    });
 
     combinedHTML += `
       <div class="print-section-wrapper" style="page-break-before: always; margin-top: 25px;">
@@ -1216,9 +1227,13 @@ function printActiveAdminReport() {
         tr:nth-child(even) { background-color: #f8fafc; }
         .print-section-wrapper { page-break-before: always; }
         .print-section-wrapper:first-of-type { page-break-before: avoid; }
+        
+        /* Expenses ki teeno categories aur baaki sabhi tables ko print me show karne ke liye */
+        .exp-cat-section { display: block !important; visibility: visible !important; margin-bottom: 20px; }
+        .sub-accounting-section { display: block !important; visibility: visible !important; }
+        
         .fin-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 20px; }
         .fin-card { border: 1px solid #cbd5e1; padding: 10px; border-radius: 8px; background: #f8fafc; }
-        .db-card { border: 1px solid #cbd5e1; padding: 12px; border-radius: 8px; background: #fffbeeb8; margin-bottom: 15px; }
       </style>
     </head>
     <body>

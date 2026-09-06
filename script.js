@@ -2491,7 +2491,8 @@ function computeFinancialLedgerStatements() {
   if(document.getElementById("subBuyTableBody")) {
     document.getElementById("subBuyTableBody").innerHTML = filteredPurchases.map((p) => {
       const idx = purchasesRegistry.indexOf(p);
-      const totalPayable = Number(p.total || (p.qty * p.rate));
+      const deliveryAmt = Number(p.delivery || 0);
+      const totalPayable = Number(p.total || (p.qty * p.rate) + deliveryAmt);
       const paid = Number(p.paidAmount !== undefined ? p.paidAmount : totalPayable);
       const pendingToVendor = Math.max(0, totalPayable - paid);
 
@@ -2503,6 +2504,7 @@ function computeFinancialLedgerStatements() {
           <td><strong>${p.vendor}</strong></td>
           <td>${p.qty}</td>
           <td>Rs ${p.rate}</td>
+          <td>Rs ${deliveryAmt.toFixed(2)}</td>
           <td style="color:var(--danger); font-weight:bold;">Rs ${totalPayable.toFixed(2)}</td>
           <td>
             <span style="color:#16a34a; font-weight:bold;">Paid: Rs ${paid.toFixed(2)}</span>
@@ -2514,7 +2516,7 @@ function computeFinancialLedgerStatements() {
           </td>
         </tr>
       `;
-    }).join("") || `<tr><td colspan="9" style="text-align:center; color:var(--muted); padding:14px;">No purchases found for year ${selectedYear}.</td></tr>`;
+    }).join("") || `<tr><td colspan="10" style="text-align:center; color:var(--muted); padding:14px;">No purchases found for year ${selectedYear}.</td></tr>`;
   }
 
   if(document.getElementById("subTabDamageTotalDisplay")) document.getElementById("subTabDamageTotalDisplay").textContent = "Rs " + damageTotal.toFixed(2);

@@ -1149,18 +1149,30 @@ function handleAdminYearFilterChange() {
 function printActiveAdminReport() {
   const selectedYear = document.getElementById("adminYearFilterSelect")?.value || "ALL";
   
+  // Admin panel ke sabhi ERP sections ko lene ke liye, lekin Registered Users ('erpUsersTab') ko skip kar diya gaya hai
   const allSections = document.querySelectorAll('.erp-section');
   let combinedHTML = '';
   
   allSections.forEach((section, index) => {
+    // 1. Registered Accounts Ledger wala section print me nahi aayega
+    if (section.id === 'erpUsersTab') return;
+
     const sectionClone = section.cloneNode(true);
     const sectionTitle = sectionClone.querySelector('h3')?.textContent || `ERP Section ${index + 1}`;
     
-    // 1. Saare inputs, search bars, aur form elements ko hatane ke liye
+    // 2. Saare inputs, search bars, form elements, aur entry cards ko hatane ke liye
     const interactiveElements = sectionClone.querySelectorAll('input, select, button, form, .db-card');
     interactiveElements.forEach(el => el.remove());
 
-    // 2. Tables ke action buttons aur columns ko clean karne ke liye
+    // 3. Orders aur Bookings ke top summary metric counter boxes/grids ko hatane ke liye
+    const topGrids = sectionClone.querySelectorAll('div[style*="grid-template-columns"]');
+    topGrids.forEach(grid => {
+      if (grid.innerHTML.includes('Pending') || grid.innerHTML.includes('Total') || grid.innerHTML.includes('Revenue') || grid.innerHTML.includes('Students') || grid.innerHTML.includes('Refund')) {
+        grid.remove();
+      }
+    });
+
+    // 4. Tables ke action buttons aur columns ko clean karne ke liye
     const tables = sectionClone.querySelectorAll('table');
     tables.forEach(table => {
       const headers = table.querySelectorAll('th');
@@ -1182,7 +1194,7 @@ function printActiveAdminReport() {
       });
     });
 
-    // 3. Hidden sub-sections, tabs, aur category sections ko print me visible karne ke liye
+    // 5. Hidden sub-sections, tabs, aur category sections ko print me visible karne ke liye
     sectionClone.style.display = 'block';
     const subSections = sectionClone.querySelectorAll('.sub-accounting-section, .exp-cat-section');
     subSections.forEach(sub => sub.style.display = 'block');

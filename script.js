@@ -1153,9 +1153,17 @@ function printActiveAdminReport() {
 
   const sectionClone = activeSection.cloneNode(true);
   
-  // Search inputs ko print report se hatane ke liye
+  // Search inputs aur form entry card ko print report se hatane ke liye taaki sirf tables aur data print ho
   const searchInputs = sectionClone.querySelectorAll('input[type="search"]');
   searchInputs.forEach(input => input.remove());
+  
+  const formCards = sectionClone.querySelectorAll('.db-card');
+  formCards.forEach((card, index) => {
+    // Agar Expenses section hai toh pehla input form card hata denge taaki sirf data tables print hon
+    if (index === 0 && sectionClone.querySelector('#expCatFarmSec')) {
+      card.remove();
+    }
+  });
 
   // Tables ke action buttons aur columns ko clean karne ke liye
   const tables = sectionClone.querySelectorAll('table');
@@ -1186,21 +1194,28 @@ function printActiveAdminReport() {
     <head>
       <title>Pure Grow Farm - ${sectionTitle} (${selectedYear})</title>
       <style>
-        body { font-family: Arial, sans-serif; padding: 20px; color: #111; background: #fff; }
-        h2 { color: #2b8a3e; margin-bottom: 4px; font-size: 20px; }
+        body { font-family: Arial, sans-serif; padding: 25px; color: #111; background: #fff; }
+        h2 { color: #2b8a3e; margin-bottom: 4px; font-size: 22px; }
+        h3 { font-size: 18px; margin-top: 15px; color: #1e293b; border-bottom: 2px solid #2b8a3e; padding-bottom: 5px; }
+        h4 { font-size: 16px; margin-top: 20px; color: #0f172a; }
         .meta { font-size: 13px; color: #555; margin-bottom: 20px; }
-        table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 12px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; margin-bottom: 25px; font-size: 12px; page-break-inside: avoid; }
         th, td { border: 1px solid #94a3b8; padding: 8px 10px; text-align: left; }
         th { background: #2b8a3e !important; color: white !important; -webkit-print-color-adjust: exact; font-weight: bold; }
         tr:nth-child(even) { background-color: #f8fafc; }
-        .exp-cat-section { display: block !important; margin-bottom: 20px; }
+        
+        /* Step by step sections layout for printing */
+        .exp-cat-section { display: block !important; page-break-before: auto; margin-bottom: 30px; }
+        div[style*="display: flex"] { display: block !important; }
       </style>
     </head>
     <body>
       <h2>Pure Grow Farm - Operational Ledger Report</h2>
       <div class="meta"><strong>Section:</strong> ${sectionTitle} | <strong>Year Filter:</strong> ${selectedYear} | <strong>Generated On:</strong> ${new Date().toLocaleString()}</div>
-      <hr style="border:0; border-top:1px solid #cbd5e1;">
+      <hr style="border:0; border-top:1px solid #cbd5e1; margin-bottom: 20px;">
+      
       ${sectionClone.innerHTML}
+      
       <script>
         window.onload = function() {
           setTimeout(function() { window.print(); }, 500);

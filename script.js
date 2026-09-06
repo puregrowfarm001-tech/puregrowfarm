@@ -1148,43 +1148,60 @@ function handleAdminYearFilterChange() {
 
 function printActiveAdminReport() {
   const selectedYear = document.getElementById("adminYearFilterSelect")?.value || "ALL";
-  const activeSection = document.querySelector('.erp-section.active');
-  const sectionTitle = activeSection ? activeSection.querySelector('h3')?.textContent || "Admin ERP Report" : "Pure Grow Farm Report";
-
-  const sectionClone = activeSection.cloneNode(true);
   
-  // Search inputs aur form entry card ko print report se hatane ke liye taaki sirf tables aur data print ho
-  const searchInputs = sectionClone.querySelectorAll('input[type="search"]');
-  searchInputs.forEach(input => input.remove());
+  // Admin panel ke sabhi ERP sections ko ek saath lene ke liye
+  const allSections = document.querySelectorAll('.erp-section');
+  let combinedHTML = '';
   
-  const formCards = sectionClone.querySelectorAll('.db-card');
-  formCards.forEach((card, index) => {
-    // Agar Expenses section hai toh pehla input form card hata denge taaki sirf data tables print hon
-    if (index === 0 && sectionClone.querySelector('#expCatFarmSec')) {
-      card.remove();
-    }
-  });
-
-  // Tables ke action buttons aur columns ko clean karne ke liye
-  const tables = sectionClone.querySelectorAll('table');
-  tables.forEach(table => {
-    const headers = table.querySelectorAll('th');
-    const rows = table.querySelectorAll('tr');
-
-    let removeIndices = [];
-    headers.forEach((th, index) => {
-      const text = th.textContent.toLowerCase();
-      if (text.includes('delivery & tracking') || text.includes('actions & whatsapp') || text.includes('action')) {
-        removeIndices.push(index);
+  allSections.forEach((section, index) => {
+    const sectionClone = section.cloneNode(true);
+    const sectionTitle = sectionClone.querySelector('h3')?.textContent || `ERP Section ${index + 1}`;
+    
+    // Search inputs ko print report se hatane ke liye
+    const searchInputs = sectionClone.querySelectorAll('input[type="search"]');
+    searchInputs.forEach(input => input.remove());
+    
+    // Form entry cards ko hatana taaki sirf data aur tables print hon
+    const formCards = sectionClone.querySelectorAll('.db-card');
+    formCards.forEach((card, i) => {
+      if (i === 0 && sectionClone.querySelector('#expCatFarmSec')) {
+        card.remove();
       }
     });
 
-    rows.forEach(row => {
-      const cols = row.querySelectorAll('th, td');
-      removeIndices.forEach(colIndex => {
-        if (cols[colIndex]) cols[colIndex].remove();
+    // Tables ke action buttons aur columns ko clean karne ke liye
+    const tables = sectionClone.querySelectorAll('table');
+    tables.forEach(table => {
+      const headers = table.querySelectorAll('th');
+      const rows = table.querySelectorAll('tr');
+
+      let removeIndices = [];
+      headers.forEach((th, thIndex) => {
+        const text = th.textContent.toLowerCase();
+        if (text.includes('delivery & tracking') || text.includes('actions & whatsapp') || text.includes('action')) {
+          removeIndices.push(thIndex);
+        }
+      });
+
+      rows.forEach(row => {
+        const cols = row.querySelectorAll('th, td');
+        removeIndices.forEach(colIndex => {
+          if (cols[colIndex]) cols[colIndex].remove();
+        });
       });
     });
+
+    // Print ke liye hidden sub-sections aur tabs ko visible karna
+    sectionClone.style.display = 'block';
+    const subSections = sectionClone.querySelectorAll('.sub-accounting-section, .exp-cat-section');
+    subSections.forEach(sub => sub.style.display = 'block');
+
+    combinedHTML += `
+      <div class="print-section-wrapper" style="page-break-before: always; margin-top: 25px;">
+        <h3 style="background: #eef7ee; color: #2b8a3e; padding: 10px 14px; border-left: 5px solid #2b8a3e; font-size: 16px; margin-bottom: 15px; border-radius: 4px;">${sectionTitle}</h3>
+        ${sectionClone.innerHTML}
+      </div>
+    `;
   });
 
   const printWindow = window.open('', '_blank');
@@ -1192,33 +1209,33 @@ function printActiveAdminReport() {
     <!DOCTYPE html>
     <html>
     <head>
-      <title>Pure Grow Farm - ${sectionTitle} (${selectedYear})</title>
+      <title>Pure Grow Farm - Complete Master ERP Report (${selectedYear})</title>
       <style>
         body { font-family: Arial, sans-serif; padding: 25px; color: #111; background: #fff; }
         h2 { color: #2b8a3e; margin-bottom: 4px; font-size: 22px; }
-        h3 { font-size: 18px; margin-top: 15px; color: #1e293b; border-bottom: 2px solid #2b8a3e; padding-bottom: 5px; }
-        h4 { font-size: 16px; margin-top: 20px; color: #0f172a; }
+        h3 { font-size: 16px; margin-top: 15px; color: #1e293b; }
+        h4 { font-size: 14px; margin-top: 15px; color: #0f172a; }
         .meta { font-size: 13px; color: #555; margin-bottom: 20px; }
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; margin-bottom: 25px; font-size: 12px; page-break-inside: avoid; }
-        th, td { border: 1px solid #94a3b8; padding: 8px 10px; text-align: left; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; margin-bottom: 20px; font-size: 11px; page-break-inside: avoid; }
+        th, td { border: 1px solid #94a3b8; padding: 6px 8px; text-align: left; }
         th { background: #2b8a3e !important; color: white !important; -webkit-print-color-adjust: exact; font-weight: bold; }
         tr:nth-child(even) { background-color: #f8fafc; }
-        
-        /* Step by step sections layout for printing */
-        .exp-cat-section { display: block !important; page-break-before: auto; margin-bottom: 30px; }
-        div[style*="display: flex"] { display: block !important; }
+        .print-section-wrapper { page-break-before: always; }
+        .print-section-wrapper:first-of-type { page-break-before: avoid; }
+        .fin-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 20px; }
+        .fin-card { border: 1px solid #cbd5e1; padding: 10px; border-radius: 8px; background: #f8fafc; }
       </style>
     </head>
     <body>
-      <h2>Pure Grow Farm - Operational Ledger Report</h2>
-      <div class="meta"><strong>Section:</strong> ${sectionTitle} | <strong>Year Filter:</strong> ${selectedYear} | <strong>Generated On:</strong> ${new Date().toLocaleString()}</div>
+      <h2>Pure Grow Farm - Complete Master ERP Operational Report</h2>
+      <div class="meta"><strong>Year Filter:</strong> ${selectedYear} | <strong>Generated On:</strong> ${new Date().toLocaleString()}</div>
       <hr style="border:0; border-top:1px solid #cbd5e1; margin-bottom: 20px;">
       
-      ${sectionClone.innerHTML}
+      ${combinedHTML}
       
       <script>
         window.onload = function() {
-          setTimeout(function() { window.print(); }, 500);
+          setTimeout(function() { window.print(); }, 600);
         };
       <\/script>
     </body>
@@ -1226,6 +1243,7 @@ function printActiveAdminReport() {
   `);
   printWindow.document.close();
 }
+
 function sendAdminWhatsAppMessage(type, refIdOrIndex) {
   let targetPhone = "";
   let customerName = "";

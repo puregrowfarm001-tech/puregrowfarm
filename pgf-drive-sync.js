@@ -2,7 +2,7 @@
 // PGF MANAGEMENT - GOOGLE SHEETS / DRIVE SYNC BRIDGE (alag.js)
 // =========================================================
 
-const PGF_APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzuqVnQVwweajZya8OYwi8IU5KzgPEeVp3mOm_cSaZo8kjIT0McqHM93BUwDULEaht_YA/exechttps://script.google.com/macros/s/AKfycbzuqVnQVwweajZya8OYwi8IU5KzgPEeVp3mOm_cSaZo8kjIT0McqHM93BUwDULEaht_YA/exec";
+const PGF_APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzuqVnQVwweajZya8OYwi8IU5KzgPEeVp3mOm_cSaZo8kjIT0McqHM93BUwDULEaht_YA/exechttps://script.google.com/macros/s/AKfycbzuqVnQVwweajZya8OYwi8IU5KzgPEeVp3mOm_cSaZo8kjIT0McqHM93BUwDULEaht_YA/exechttps://script.google.com/macros/s/AKfycbzuqVnQVwweajZya8OYwi8IU5KzgPEeVp3mOm_cSaZo8kjIT0McqHM93BUwDULEaht_YA/exec";
 
 /**
  * 1. Google Sheet / Drive se saara data fetch karne ke liye (Website par dikhane ke liye)

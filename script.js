@@ -1,20 +1,22 @@
 const SUPABASE_URL = 'https://prukoxvmwuzaacctjxph.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_3xW-grMnyyVpoFdRy5sgLg_kQoUMHyd';
 
-// --- GOOGLE SHEET SYNC CONFIGURATION ---
 const SHEET_API_URL = "https://script.google.com/macros/s/AKfycbxwziJ0tXjFRZEEVWKYI7ugdC7Yz93yQh6Cx5CeVA2xkZeGeVNbYstubyKxOSz6R6monw/exec";
 
-async function syncRowToGoogleSheet(sheetName, rowValues) {
+async function syncRowToGoogleSheet(sheetName, rowValues, actionType = "add") {
   try {
+    const formData = new URLSearchParams();
+    formData.append("sheetName", sheetName);
+    formData.append("rowValues", JSON.stringify(rowValues));
+    formData.append("action", actionType); // "add", "update", ya "delete"
+
     await fetch(SHEET_API_URL, {
       method: "POST",
-      mode: "no-cors",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ sheetName: sheetName, rowValues: rowValues })
+      body: formData
     });
-    console.log(`Synced to sheet: ${sheetName}`);
+    console.log(`✅ Google Sheet Synced [${actionType.toUpperCase()}]: ${sheetName}`);
   } catch (err) {
-    console.error("Sheet sync failed:", err);
+    console.error("❌ Google Sheet sync failed:", err);
   }
 }
 
@@ -929,6 +931,8 @@ async function deleteUserAccount(idx) {
     
     alert(`✅ Account successfully delete ho gaya hai aur database se remove kar diya gaya hai.`);
   }
+
+  syncRowToGoogleSheet("Registered Accounts", [targetUser.email, targetUser.name, targetUser.phone, targetUser.email, targetUser.registeredOn], "delete");
 }
 
 function renderAdminLiveStockSummary() {
@@ -1098,6 +1102,8 @@ function deleteDailyDryEntry(idx) {
     renderDailyDryStockTable();
     renderAdminLiveStockSummary();
   }
+
+  syncRowToGoogleSheet("🌾 Daily Dry Stock", [item.date, item.notes, item.qty], "delete");
 }
 
 function renderDailyDryStockTable() {
@@ -1893,6 +1899,10 @@ function adminEditOrderDetails(idx) {
   pushNotification(o.email, '🚚 Order Details Updated', `Your Order #${o.orderId} details have been updated by Admin.`, 'order');
   populateAdminDashboardTables();
   alert("✅ Order Details updated successfully!");
+
+  syncRowToGoogleSheet("Orders Manager", [
+    o.orderId, o.dateLogged, o.name, o.phone, o.email, o.address, o.products, o.total, o.paymentMode, o.txnId, o.userUpiId, o.status, (o.courierName + " | " + o.currentLocation), (o.refundStage || "-")
+  ], "update");
 }
 
 function adminEditCertificateData(idx) {
@@ -1967,6 +1977,10 @@ async function handleOrderApprove(idx) {
   alert(`✅ Order Approved Successfully & Synced to Cloud!\n\n• Delivery Date: ${finalDeliveryDate}\n• Courier: ${finalCourier}\n• Location: ${finalLocation}`);
   populateAdminDashboardTables();
   computeFinancialLedgerStatements();
+
+  syncRowToGoogleSheet("Orders Manager", [
+    o.orderId, o.dateLogged, o.name, o.phone, o.email, o.address, o.products, o.total, o.paymentMode, o.txnId, o.userUpiId, o.status, (o.courierName + " | " + o.currentLocation), (o.refundStage || "-")
+  ], "update");
 }
 
 async function handleOrderReject(idx) {
@@ -2054,6 +2068,10 @@ async function setOrderStageDirect(idx, newStage) {
 
   pushNotification(o.email, '🚚 Order Shipment Update', `Order #${o.orderId} stage updated to: ${newStage}. (📍 Location: ${o.currentLocation})`, 'order');
   populateAdminDashboardTables();
+
+  syncRowToGoogleSheet("Orders Manager", [
+    o.orderId, o.dateLogged, o.name, o.phone, o.email, o.address, o.products, o.total, o.paymentMode, o.txnId, o.userUpiId, o.status, (o.courierName + " | " + o.currentLocation), (o.refundStage || "-")
+  ], "update");
 }
 
 async function setRefundStageDirect(idx, newRefStage) {
@@ -2104,6 +2122,26 @@ async function confirmBookingSlot(idx) {
   pushNotification(target.email, '🎓 Farm Booking Confirmed!', `Your ${target.type} program booking #${target.bookingId} has been confirmed.`, 'booking');
 
   alert(`✅ Farm Booking Approved on ${todayDate} & Synced to Cloud!`);
+
+  // 🔹 Farm Training Bookings sheet ke liye UPDATE sync
+  const sessionInfo = target.type === "Student" ? (target.college + " (" + target.course + ")") : ("Session Date: " + target.date);
+  syncRowToGoogleSheet("Farm Training Bookings", [
+    target.bookingId,                                           
+    target.type,                                                 
+    target.name,                                                 
+    target.phone,                                                
+    target.email,                                                
+    sessionInfo,                                                 
+    target.fee,                                                  
+    target.paymentMode || target.payment_mode,                   
+    target.txnId || target.txn_id,                                               
+    target.userUpiId || target.user_upi_id,                      
+    "Confirmed",                                                 // Status updated to Confirmed
+    todayDate,                                                   // Approval Date
+    target.certIssued ? "Approved & Issued" : "Pending Approval",
+    target.certIssueDate || "-"                                  
+  ], "update");
+
   populateAdminDashboardTables();
   computeFinancialLedgerStatements();
 }
@@ -2124,6 +2162,26 @@ async function rejectTrainingBooking(idx) {
   pushNotification(target.email, '❌ Farm Booking / Certificate Rejected', `Your booking/certificate #${target.bookingId} was rejected. Reason: ${reason}.`, 'booking');
 
   alert(`❌ Farm Booking / Certificate Rejected & Cloud Synced Successfully!`);
+
+  // 🔹 Rejection update ke liye sync
+  const sessionInfo = target.type === "Student" ? (target.college + " (" + target.course + ")") : ("Session Date: " + target.date);
+  syncRowToGoogleSheet("Farm Training Bookings", [
+    target.bookingId,                                          
+    target.type,                                               
+    target.name,                                               
+    target.phone,                                              
+    target.email,                                              
+    sessionInfo,                                               
+    target.fee,                                                
+    target.paymentMode || target.payment_mode,                 
+    target.txnId || target.txn_id,                             
+    target.userUpiId || target.user_upi_id,                    
+    target.status,                                             // Status updated to Rejected
+    "-",                                                       
+    "Rejected",                                                // Certificate Status
+    "-"                                                        
+  ], "update");
+
   populateAdminDashboardTables();
   computeFinancialLedgerStatements();
 }
@@ -2146,6 +2204,26 @@ async function issueUserCertificate(idx) {
     pushNotification(target.email, '📜 Certificate Issued & Ready!', `Your certificate for ${target.type} program (#${target.bookingId}) is ready to download.`, 'certificate');
 
     alert(`✅ Certificate Issued on ${todayDate} & Saved to Supabase!`);
+
+    // 🔹 Certificate Approval ke update ke liye sync
+    const sessionInfo = target.type === "Student" ? (target.college + " (" + target.course + ")") : ("Session Date: " + target.date);
+    syncRowToGoogleSheet("Farm Training Bookings", [
+      target.bookingId,                                          
+      target.type,                                               
+      target.name,                                               
+      target.phone,                                              
+      target.email,                                              
+      sessionInfo,                                               
+      target.fee,                                                
+      target.paymentMode || target.payment_mode,                 
+      target.txnId || target.txn_id,                             
+      target.userUpiId || target.user_upi_id,                    
+      target.status || "Confirmed",                              
+      target.approvedDate || todayDate,                          
+      "Approved & Issued",                                       // Certificate Status (Updated)
+      todayDate                                                  // Issue Date (Updated)
+    ], "update");
+
     populateAdminDashboardTables();
   }
 }
@@ -2174,6 +2252,8 @@ function adminEditExpense(idx) {
   localStorage.setItem('pgf_expenses', JSON.stringify(expensesRegistry));
   computeFinancialLedgerStatements();
   alert("✅ Expense row updated!");
+
+  syncRowToGoogleSheet("1. Expenses Page", [exp.date, exp.category, exp.payer, exp.mode, exp.desc, exp.amount, exp.notes], "update");
 }
 
 function adminDeleteExpense(idx) {
@@ -2182,6 +2262,7 @@ function adminDeleteExpense(idx) {
     localStorage.setItem('pgf_expenses', JSON.stringify(expensesRegistry));
     computeFinancialLedgerStatements();
   }
+  syncRowToGoogleSheet("1. Expenses Page", [item.date, item.category, item.payer, item.mode, item.desc, item.amount, item.notes], "delete");
 }
 
 function adminEditSale(idx) {
@@ -2217,6 +2298,8 @@ function adminEditSale(idx) {
   localStorage.setItem('pgf_sales', JSON.stringify(salesRegistry));
   computeFinancialLedgerStatements();
   alert("✅ Sell Entry successfully updated!");
+
+  syncRowToGoogleSheet("2. Sell Page", [s.date, s.product, s.buyer, s.phone, s.qty, s.rate, s.delivery, s.total, s.paidAmount, s.notes], "update");
 }
 
 function adminDeleteSale(idx) {
@@ -2225,6 +2308,8 @@ function adminDeleteSale(idx) {
     localStorage.setItem('pgf_sales', JSON.stringify(salesRegistry));
     computeFinancialLedgerStatements();
   }
+
+  syncRowToGoogleSheet("2. Sell Page", [item.date, item.product, item.buyer, item.phone, item.qty, item.rate, item.delivery, item.total, item.paidAmount, item.notes], "delete");
 }
 
 function adminEditPurchase(idx) {
@@ -2256,6 +2341,8 @@ function adminEditPurchase(idx) {
   localStorage.setItem('pgf_purchases', JSON.stringify(purchasesRegistry));
   computeFinancialLedgerStatements();
   alert("✅ Buy Purchase record updated!");
+
+  syncRowToGoogleSheet("3. Buy Page", [p.date, p.product, p.funder, p.vendor, p.qty, p.rate, p.delivery, p.total, p.paidAmount, p.notes], "update");
 }
 
 function adminDeletePurchase(idx) {
@@ -2264,6 +2351,8 @@ function adminDeletePurchase(idx) {
     localStorage.setItem('pgf_purchases', JSON.stringify(purchasesRegistry));
     computeFinancialLedgerStatements();
   }
+
+  syncRowToGoogleSheet("3. Buy Page", [item.date, item.product, item.funder, item.vendor, item.qty, item.rate, item.delivery, item.total, item.paidAmount, item.notes], "delete");
 }
 
 function adminEditDamage(idx) {
@@ -2287,6 +2376,8 @@ function adminEditDamage(idx) {
   localStorage.setItem('pgf_expenses', JSON.stringify(expensesRegistry));
   computeFinancialLedgerStatements();
   alert("✅ Damage log updated!");
+
+  syncRowToGoogleSheet("4. Damage Page", [dmg.date, dmg.desc, dmg.payer, dmg.amount, dmg.notes], "update");
 }
 
 function adminDeleteDamage(idx) {
@@ -2295,6 +2386,8 @@ function adminDeleteDamage(idx) {
     localStorage.setItem('pgf_expenses', JSON.stringify(expensesRegistry));
     computeFinancialLedgerStatements();
   }
+
+  syncRowToGoogleSheet("4. Damage Page", [item.date, item.desc, item.payer, item.amount, item.notes], "delete");
 }
 
 function computeFinancialLedgerStatements() {

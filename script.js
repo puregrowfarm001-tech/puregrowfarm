@@ -3325,22 +3325,7 @@ async function submitStudentVisit(e) {
   checkUserSession();
 
   syncRowToGoogleSheet("Farm Training Bookings", [data.booking_id, data.type, currentUser.name, currentUser.phone, currentUser.email, data.college || data.session_date, data.fee, data.payment_mode, data.txn_id, data.user_upi_id, "Pending Verification", "-", "Pending Approval", "-"]);
-  syncRowToGoogleSheet("Farm Training Bookings", [
-  data.booking_id, 
-  data.type, 
-  currentUser.name, 
-  currentUser.phone, 
-  currentUser.email, 
-  data.college + " (" + data.course + ") [" + data.start_date + " to " + data.end_date + "]", 
-  data.fee, 
-  data.payment_mode, 
-  data.txn_id, 
-  data.user_upi_id, 
-  data.status, 
-  "-", 
-  "Pending Approval", 
-  "-"
-]);
+  
 }
 
 async function submitFarmerVisit(e) {

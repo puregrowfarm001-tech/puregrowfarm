@@ -455,7 +455,14 @@ async function handleRegister(e) {
   alert("✅ Account Successfully Created & Synced to Cloud!");
   checkUserSession();
 
-  syncRowToGoogleSheet("Registered Accounts", [usersDatabase.length + 1, name, phone, email, currentFormattedDateTime]);
+  // 🔹 Sirf ek baar yahan sync hoga (Registered Accounts sheet ke sahi columns ke anusaar)
+  syncRowToGoogleSheet("Registered Accounts", [
+    usersDatabase.length + 1, // Index No
+    name,                     // Client Legal Name
+    phone,                    // Registered Mobile Line
+    email,                    // Email Authentication ID
+    currentFormattedDateTime  // Account Created On
+  ]);
 }
 
 async function handleLogin(e) {
@@ -3293,39 +3300,28 @@ async function submitStudentVisit(e) {
 
   pushNotification('ADMIN', '🎓 New Training Booking', `${currentUser.name} ne Student training ke liye booking ki hai (Ref: #${data.booking_id}).`, 'booking');
 
-  bookingsRegistry.unshift({
-    bookingId: data.booking_id,
-    type: data.type,
-    name: data.name,
-    phone: data.phone,
-    email: data.email,
-    enrollment: data.enrollment,
-    college: data.college,
-    course: data.course,
-    start: data.start_date,
-    end: data.end_date,
-    userUpiId: data.user_upi_id,
-    fee: data.fee,
-    paymentMode: data.payment_mode,
-    txnId: data.txn_id,
-    dateLogged: data.date_logged,
-    status: data.status,
-    certIssued: data.cert_issued
-  });
-
-  const waText = `NEW STUDENT INTERNSHIP REGISTRATION:\n----------------------------------------\nBooking Ref ID: ${data.booking_id}\nName: ${data.name}\nStudent UPI ID: ${data.user_upi_id}\nCollege: ${data.college}\nCourse: ${data.course}\nUTR Tracking Number: ${data.txn_id}\n----------------------------------------`;
-  
-  setTimeout(() => {
-    window.open(`https://wa.me/${farmWhatsapp}?text=${encodeURIComponent(waText)}`, '_blank');
-  }, 300);
-
   alert("✅ Student Internship Registration saved to Cloud Database!");
   document.getElementById("studentForm").reset();
   document.getElementById("spayment").disabled = true;
   checkUserSession();
 
-  syncRowToGoogleSheet("Farm Training Bookings", [data.booking_id, data.type, currentUser.name, currentUser.phone, currentUser.email, data.college || data.session_date, data.fee, data.payment_mode, data.txn_id, data.user_upi_id, "Pending Verification", "-", "Pending Approval", "-"]);
-  
+  // 🔹 Sirf ek baar yahan sync hoga (Farm Training Bookings sheet ke sahi columns)
+  syncRowToGoogleSheet("Farm Training Bookings", [
+    data.booking_id,                                           // Booking ID
+    data.type,                                                 // Type
+    currentUser.name,                                          // Name
+    currentUser.phone,                                         // Phone
+    currentUser.email,                                         // Email
+    data.college + " (" + data.course + ")",                   // College / Session Details
+    data.fee,                                                  // Fee (₹) - Number column
+    data.payment_mode,                                         // Payment Mode
+    data.txn_id,                                               // Txn ID (UTR)
+    data.user_upi_id,                                          // User UPI
+    "Pending Verification",                                    // Booking Status
+    "-",                                                       // Approval Date
+    "Pending Approval",                                        // Certificate Status
+    "-"                                                        // Issue Date
+  ]);
 }
 
 async function submitFarmerVisit(e) {
@@ -3355,35 +3351,29 @@ async function submitFarmerVisit(e) {
   }
 
   pushNotification('ADMIN', '🎓 New Training Booking', `${currentUser.name} ne Farmer training ke liye booking ki hai (Ref: #${data.booking_id}).`, 'booking');
-
-  bookingsRegistry.unshift({
-    bookingId: data.booking_id,
-    type: data.type,
-    name: data.name,
-    phone: data.phone,
-    email: data.email,
-    date: data.session_date,
-    userUpiId: data.user_upi_id,
-    fee: data.fee,
-    paymentMode: data.payment_mode,
-    txnId: data.txn_id,
-    dateLogged: data.date_logged,
-    status: data.status,
-    certIssued: data.cert_issued
-  });
-
-  const waText = `NEW FARMER TRAINING BOOKING:\n----------------------------------------\nBooking Ref ID: ${data.booking_id}\nName: ${data.name}\nFarmer UPI ID: ${data.user_upi_id}\nTraining Date: ${data.session_date}\nUTR Tracking Number: ${data.txn_id}\n----------------------------------------`;
-  
-  setTimeout(() => {
-    window.open(`https://wa.me/${farmWhatsapp}?text=${encodeURIComponent(waText)}`, '_blank');
-  }, 300);
   
   alert("✅ Farmer Training Booking saved to Cloud Database!");
   document.getElementById("farmerForm").reset();
   document.getElementById("fpayment").disabled = true;
   checkUserSession();
 
-  syncRowToGoogleSheet("Farm Training Bookings", [data.booking_id, data.type, currentUser.name, currentUser.phone, currentUser.email, data.college || data.session_date, data.fee, data.payment_mode, data.txn_id, data.user_upi_id, "Pending Verification", "-", "Pending Approval", "-"]);
+  // 🔹 Sirf ek baar yahan sync hoga
+  syncRowToGoogleSheet("Farm Training Bookings", [
+    data.booking_id,                                           // Booking ID
+    data.type,                                                 // Type
+    currentUser.name,                                          // Name
+    currentUser.phone,                                         // Phone
+    currentUser.email,                                         // Email
+    "Session Date: " + data.session_date,                      // College / Session Details
+    data.fee,                                                  // Fee (₹) - Number column
+    data.payment_mode,                                         // Payment Mode
+    data.txn_id,                                               // Txn ID (UTR)
+    data.user_upi_id,                                          // User UPI
+    "Pending Verification",                                    // Booking Status
+    "-",                                                       // Approval Date
+    "Pending Approval",                                        // Certificate Status
+    "-"                                                        // Issue Date
+  ]);
 }
 
 function downloadCertificatePDF(bookingId) {

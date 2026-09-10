@@ -1,6 +1,23 @@
 const SUPABASE_URL = 'https://prukoxvmwuzaacctjxph.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_3xW-grMnyyVpoFdRy5sgLg_kQoUMHyd';
 
+// --- GOOGLE SHEET SYNC CONFIGURATION ---
+const SHEET_API_URL = "https://script.google.com/macros/s/AKfycbxwziJ0tXjFRZEEVWKYI7ugdC7Yz93yQh6Cx5CeVA2xkZeGeVNbYstubyKxOSz6R6monw/exec";
+
+async function syncRowToGoogleSheet(sheetName, rowValues) {
+  try {
+    await fetch(SHEET_API_URL, {
+      method: "POST",
+      mode: "no-cors",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ sheetName: sheetName, rowValues: rowValues })
+    });
+    console.log(`Synced to sheet: ${sheetName}`);
+  } catch (err) {
+    console.error("Sheet sync failed:", err);
+  }
+}
+
 const { createClient } = supabase;
 const _supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
@@ -437,6 +454,8 @@ async function handleRegister(e) {
   localStorage.setItem('pgf_session', JSON.stringify(currentUser));
   alert("✅ Account Successfully Created & Synced to Cloud!");
   checkUserSession();
+
+  syncRowToGoogleSheet("Registered Accounts", [usersDatabase.length + 1, name, phone, email, currentFormattedDateTime]);
 }
 
 async function handleLogin(e) {
@@ -1054,6 +1073,8 @@ function saveDailyDryStockEntry(e) {
   renderDailyDryStockTable();
   renderAdminLiveStockSummary();
   alert(`✅ ${qty} kg Daily Dry Mushroom Stock successfully added!`);
+
+  syncRowToGoogleSheet("🌾 Daily Dry Stock", [dryEntry.date, dryEntry.notes, dryEntry.qty]);
 }
 
 function deleteDailyDryEntry(idx) {
@@ -2617,6 +2638,8 @@ function saveAdminExpense(e) {
   initDefaultDatePickers();
   computeFinancialLedgerStatements();
   alert(`✅ Expense logged successfully! Amount: Rs ${amountVal}`);
+
+  syncRowToGoogleSheet("1. Expenses Page", [data.date, data.category, data.payer, data.mode, data.desc, data.amount, data.notes]);
 }
 
 function saveAdminSale(e) {
@@ -2694,6 +2717,8 @@ function saveAdminSale(e) {
   computeFinancialLedgerStatements();
   renderAdminLiveStockSummary();
   alert(`✅ Wholesale Sale Entry saved successfully! Total: Rs ${grandTotal}, Received: Rs ${paid}`);
+
+  syncRowToGoogleSheet("2. Sell Page", [data.date, data.product, data.buyer, data.phone, data.qty, data.rate, data.delivery, data.total, data.paidAmount, data.notes]);
 }
 
 function saveAdminPurchase(e) {
@@ -2781,6 +2806,8 @@ function saveAdminPurchase(e) {
   computeFinancialLedgerStatements();
   renderAdminLiveStockSummary();
   alert(`✅ Inventory Buy recorded successfully! Total: Rs ${grandTotal}, Paid: Rs ${paid}`);
+
+  syncRowToGoogleSheet("3. Buy Page", [data.date, data.product, data.funder, data.vendor, data.qty, data.rate, data.delivery, data.total, data.paidAmount, data.notes]);
 }
 
 function saveAdminDamage(e) {
@@ -2807,6 +2834,8 @@ function saveAdminDamage(e) {
   initDefaultDatePickers();
   computeFinancialLedgerStatements();
   alert(`✅ Damage recorded under ${payerType}!`);
+
+  syncRowToGoogleSheet("4. Damage Page", [data.date, data.desc, data.payer, data.amount, data.notes]);
 }
 
 function downloadOfflineSaleInvoice(saleId) {
@@ -3162,6 +3191,8 @@ async function confirmOrder(e) {
   renderCart();
   document.getElementById("orderForm").reset();
   checkUserSession();
+
+  syncRowToGoogleSheet("Orders Manager", [generatedOrderId, currentTimestamp, currentUser.name, currentUser.phone, currentUser.email, data.address, data.products, data.total, data.payment_mode, data.txn_id, data.user_upi_id, "Pending Verification", "Ekart Logistics", "-"]);
 }
 function closeInvoice() { document.getElementById("invoiceDialog").close(); }
 
@@ -3292,6 +3323,8 @@ async function submitStudentVisit(e) {
   document.getElementById("studentForm").reset();
   document.getElementById("spayment").disabled = true;
   checkUserSession();
+
+  syncRowToGoogleSheet("Farm Training Bookings", [data.booking_id, data.type, currentUser.name, currentUser.phone, currentUser.email, data.college || data.session_date, data.fee, data.payment_mode, data.txn_id, data.user_upi_id, "Pending Verification", "-", "Pending Approval", "-"]);
 }
 
 async function submitFarmerVisit(e) {
@@ -3348,6 +3381,8 @@ async function submitFarmerVisit(e) {
   document.getElementById("farmerForm").reset();
   document.getElementById("fpayment").disabled = true;
   checkUserSession();
+
+  syncRowToGoogleSheet("Farm Training Bookings", [data.booking_id, data.type, currentUser.name, currentUser.phone, currentUser.email, data.college || data.session_date, data.fee, data.payment_mode, data.txn_id, data.user_upi_id, "Pending Verification", "-", "Pending Approval", "-"]);
 }
 
 function downloadCertificatePDF(bookingId) {

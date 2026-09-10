@@ -407,6 +407,7 @@ async function checkUserSession() {
     if(currentUser.isAdmin) {
       triggerAdminView();
     } else {
+      document.getElementById("mainNav").style.display = "flex";
       document.getElementById("dashboardWorkspace").style.display = "block";
       document.getElementById("userDashboardName").textContent = currentUser.name;
       
@@ -428,6 +429,7 @@ async function checkUserSession() {
       loadUserPanelDataFromCloud();
     }
   } else {
+    document.getElementById("mainNav").style.display = "flex";
     document.getElementById("authSection").style.display = "block";
     document.getElementById("logoutBtn").style.display = "none";
     document.getElementById("authNavBtn").style.display = "inline-flex";

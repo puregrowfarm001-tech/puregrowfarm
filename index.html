@@ -698,7 +698,7 @@
           </div>
         </div>
 
-        <!-- Sub Tab 1: Expense Page -->
+        
         <!-- Sub Tab 1: Expense Page -->
         <div id="subTabExpense" class="sub-accounting-section" style="display:none;">
           <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap:16px; margin-bottom: 20px;">
@@ -924,6 +924,7 @@
                 </label>
 
                  <input type="text" id="purVendor" placeholder="Kiske Pas Se Liya He (Vendor Name)" required>
+                 <input type="tel" id="purVendorPhone" placeholder="Vendor 10-Digit Mobile Number" maxlength="10" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10);" required>
                  <input type="number" step="0.01" id="purQty" placeholder="Kitna Liya He (Qty)" required>
                  <input type="number" id="purRate" placeholder="Purchase Rate per unit (Rs)" required>
                  <input type="number" id="purDelivery" placeholder="Delivery / Transport Charge (Rs) [0 agar free ho]" value="0" min="0">

@@ -325,7 +325,7 @@ async function triggerAdminView() {
     }));
   }
 
-  // 👇 NAYE TABLES FETCH KARNE KA CODE YAHAN ADD KAREIN:
+  // Naye Tables Fetch Karne Ka Code:
   const { data: cloudDry } = await _supabase.from('pgf_daily_dry_stock').select('*');
   if (cloudDry) {
     dailyDryStockRegistry = cloudDry.map(d => ({
@@ -350,7 +350,18 @@ async function triggerAdminView() {
   const { data: cloudPurchases } = await _supabase.from('pgf_purchases').select('*');
   if (cloudPurchases) {
     purchasesRegistry = cloudPurchases.map(p => ({
-      purId: p.pur_id, date: p.date, product: p.product, funder: p.funder, vendor: p.vendor, qty: Number(p.qty), rate: Number(p.rate), delivery: Number(p.delivery), total: Number(p.total), paidAmount: Number(p.paid_amount), notes: p.notes
+      purId: p.pur_id, 
+      date: p.date, 
+      product: p.product, 
+      funder: p.funder, 
+      vendor: p.vendor, 
+      vendorPhone: p.vendor_phone, // 👈 Yeh line add kar di gayi hai taaki vendor phone fetch ho
+      qty: Number(p.qty), 
+      rate: Number(p.rate), 
+      delivery: Number(p.delivery), 
+      total: Number(p.total), 
+      paidAmount: Number(p.paid_amount), 
+      notes: p.notes
     }));
   }
 
@@ -359,10 +370,8 @@ async function triggerAdminView() {
     const mappedDamages = cloudDamages.map(d => ({
       expId: d.exp_id, date: d.date, category: "Damage Received", payer: d.payer, mode: "Internal Allocation", desc: d.desc, amount: Number(d.amount), notes: d.notes
     }));
-    // Expenses registry me damages bhi combine kar sakte hain ya alag rakh sakte hain
     expensesRegistry.push(...mappedDamages);
   }
-  // 👆 Yahan tak add karein
 
   initDefaultDatePickers();
   populateAdminDashboardTables();
@@ -2710,7 +2719,16 @@ function computeFinancialLedgerStatements() {
         <tr>
           <td>${s.date}</td>
           <td>${s.product}</td>
-          <td><strong>${s.buyer}</strong><br><small>${s.phone || ''}</small></td>
+          <td>
+            <strong>${s.buyer}</strong><br>
+            <small>${s.phone || ''}</small>
+            ${s.phone ? `
+              <div style="display:flex; gap:4px; margin-top:2px;">
+                <a href="tel:${s.phone}" class="btn" style="padding:2px 6px; font-size:10px; min-height:auto; background:#0284c7;">📞 Call</a>
+                <a href="https://wa.me/91${s.phone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent('Hello ' + s.buyer + ', regarding your purchase at Pure Grow Farm:')}" target="_blank" class="btn" style="padding:2px 6px; font-size:10px; min-height:auto; background:#25d366;">💬 WP</a>
+              </div>
+            ` : ''}
+          </td>
           <td>${s.qty}</td>
           <td style="font-weight:600;">Rs ${Number(s.rate || 0).toFixed(2)}</td>
           <td>Rs ${del.toFixed(2)}</td>
@@ -2749,7 +2767,16 @@ function computeFinancialLedgerStatements() {
           <td>${p.date}</td>
           <td>${p.product}</td>
           <td><span class="badge" style="background:#eef2ff; color:#3730a3;">${p.funder || 'Farm'}</span></td>
-          <td><strong>${p.vendor}</strong></td>
+          <td>
+            <strong>${p.vendor}</strong><br>
+            <small>${p.vendorPhone || ''}</small>
+            ${p.vendorPhone ? `
+              <div style="display:flex; gap:4px; margin-top:2px;">
+                <a href="tel:${p.vendorPhone}" class="btn" style="padding:2px 6px; font-size:10px; min-height:auto; background:#0284c7;">📞 Call</a>
+                <a href="https://wa.me/91${p.vendorPhone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent('Hello, regarding purchase of ' + p.product + ' at Pure Grow Farm:')}" target="_blank" class="btn" style="padding:2px 6px; font-size:10px; min-height:auto; background:#25d366;">💬 WP</a>
+              </div>
+            ` : ''}
+          </td>
           <td>${p.qty}</td>
           <td>Rs ${p.rate}</td>
           <td>Rs ${deliveryAmt.toFixed(2)}</td>
@@ -2835,7 +2862,44 @@ async function saveAdminSale(e) {
   const notes = document.getElementById("saleNotes") ? document.getElementById("saleNotes").value.trim() : "";
   const prodType = document.getElementById("saleProduct").value;
 
-  // Stock validation code wahi rahega...
+  const dryProd = products.find(p => p.type === "dry") || { stock: 0 };
+  const powderProd = products.find(p => p.type === "powder") || { stock: 0 };
+  const khakhraProd = products.find(p => p.type === "khakhra") || { stock: 0 };
+  const papadProd = products.find(p => p.type === "papad") || { stock: 0 };
+
+  let currentAvailableStock = 0;
+  let unitName = "units";
+
+  if (prodType === "Dry") {
+    currentAvailableStock = dryProd.stock;
+    unitName = "kg";
+  } else if (prodType === "Powder") {
+    currentAvailableStock = powderProd.stock * 10;
+    unitName = "packets";
+  } else if (prodType === "Khakhra") {
+    currentAvailableStock = khakhraProd.stock;
+    unitName = "packs";
+  } else if (prodType === "Papad") {
+    currentAvailableStock = papadProd.stock;
+    unitName = "packs";
+  } else if (prodType === "Green") {
+    currentAvailableStock = 9999;
+    unitName = "units";
+  }
+
+  // 👇 Stock validation check: Agar stock available nahi hai ya quantity zyada hai toh yhi rok dega
+  if (qty > currentAvailableStock) {
+    alert(`⚠️ Sale Failed! Stock me sufficient quantity available nahi hai.\n\n• Selected Product: ${prodType}\n• Available Stock: ${currentAvailableStock.toFixed(2)} ${unitName}\n• Requested Sale Qty: ${qty} ${unitName}`);
+    return;
+  }
+
+  const targetProd = products.find(p => p.type === prodType.toLowerCase() || p.name.toLowerCase().includes(prodType.toLowerCase()));
+  if (targetProd && !targetProd.bulk && prodType !== "Powder") {
+    targetProd.stock = Math.max(0, targetProd.stock - qty);
+    saveProductsToStorage();
+    renderProducts();
+  }
+
   const subtotal = qty * rate;
   const grandTotal = subtotal + delivery;
 
@@ -2866,6 +2930,7 @@ async function saveAdminSale(e) {
   localStorage.setItem('pgf_sales', JSON.stringify(salesRegistry));
 
   e.target.reset();
+  if (document.getElementById("saleDelivery")) document.getElementById("saleDelivery").value = "0";
   initDefaultDatePickers();
   computeFinancialLedgerStatements();
   renderAdminLiveStockSummary();
@@ -2874,8 +2939,10 @@ async function saveAdminSale(e) {
 
 async function saveAdminPurchase(e) {
   e.preventDefault();
-  // Balance check code wahi rahega...
 
+  // (Baki ka balance check aur calculation code wahi rahega...)
+  const selectedYear = document.getElementById("adminYearFilterSelect")?.value || "ALL";
+  
   const rawDate = document.getElementById("purLogDate").value;
   const qty = parseFloat(document.getElementById("purQty").value);
   const rate = parseFloat(document.getElementById("purRate").value);
@@ -2884,34 +2951,61 @@ async function saveAdminPurchase(e) {
   const grandTotal = subtotal + delivery;
   const paid = parseFloat(document.getElementById("purPaidAmount").value) || grandTotal;
 
+  // 👇 10-digit phone number validation check yahan add karein:
+  const vendorPhoneInput = document.getElementById("purVendorPhone") ? document.getElementById("purVendorPhone").value.trim() : "";
+  if (vendorPhoneInput && !/^\d{10}$/.test(vendorPhoneInput)) {
+    alert("⚠️ Kripya valid 10-digit ka mobile number dalein!");
+    return;
+  }
+
+  const purType = document.getElementById("purProduct").value;
+  const funder = document.getElementById("purFunder").value;
+  const vendor = document.getElementById("purVendor").value.trim();
+  const notes = document.getElementById("purNotes") ? document.getElementById("purNotes").value.trim() : "";
+  
+  // Stock update code...
+  let matchedProd = null;
+  if (purType.includes("Dry")) matchedProd = products.find(p => p.type === "dry");
+  else if (purType.includes("Powder")) matchedProd = products.find(p => p.type === "powder");
+  else if (purType.includes("Khakhra")) matchedProd = products.find(p => p.type === "khakhra");
+  else if (purType.includes("Papad")) matchedProd = products.find(p => p.type === "papad");
+  else if (purType.includes("Green")) matchedProd = products.find(p => p.type === "green");
+
+  if (matchedProd) {
+    matchedProd.stock = (matchedProd.stock || 0) + qty;
+    saveProductsToStorage();
+    renderProducts();
+  }
+
   const dbData = {
     pur_id: "PUR-" + Date.now().toString().slice(-4),
     date: rawDate ? new Date(rawDate).toLocaleDateString('en-IN') : new Date().toLocaleDateString('en-IN'),
-    product: document.getElementById("purProduct").value,
-    funder: document.getElementById("purFunder").value,
-    vendor: document.getElementById("purVendor").value.trim(),
+    product: purType,
+    funder: funder,
+    vendor: vendor,
+    vendor_phone: vendorPhoneInput, // 👈 Database me save hoga
     qty: qty,
     rate: rate,
     delivery: delivery,
     total: grandTotal,
     paid_amount: paid,
-    notes: document.getElementById("purNotes") ? document.getElementById("purNotes").value.trim() : ""
+    notes: notes
   };
 
-  // 👇 Supabase cloud me insert
   const { error } = await _supabase.from('pgf_purchases').insert([dbData]);
   if (error) { alert("Cloud Error: " + error.message); return; }
 
   purchasesRegistry.unshift({
-    purId: dbData.pur_id, date: dbData.date, product: dbData.product, funder: dbData.funder, vendor: dbData.vendor, qty: dbData.qty, rate: dbData.rate, delivery: dbData.delivery, total: dbData.total, paidAmount: dbData.paid_amount, notes: dbData.notes
+    purId: dbData.pur_id, date: dbData.date, product: dbData.product, funder: dbData.funder, vendor: dbData.vendor, vendorPhone: dbData.vendor_phone, qty: dbData.qty, rate: dbData.rate, delivery: dbData.delivery, total: dbData.total, paidAmount: dbData.paid_amount, notes: dbData.notes
   });
   localStorage.setItem('pgf_purchases', JSON.stringify(purchasesRegistry));
 
   e.target.reset();
+  if (document.getElementById("purDelivery")) document.getElementById("purDelivery").value = "0";
   initDefaultDatePickers();
   computeFinancialLedgerStatements();
   renderAdminLiveStockSummary();
-  alert(`✅ Inventory Buy recorded & synced to Cloud! Total: Rs ${grandTotal}`);
+  alert(`✅ Inventory Buy recorded successfully! Total: Rs ${grandTotal}`);
 }
 
 async function saveAdminDamage(e) {

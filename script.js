@@ -295,6 +295,7 @@ function switchAuthBox(boxId) {
 }
 
 async function triggerAdminView() {
+  document.getElementById("mainNav").style.display = "none";
   document.getElementById("authSection").style.display = "none";
   document.getElementById("dashboardWorkspace").style.display = "none";
   document.getElementById("publicContent").style.display = "none";

@@ -1359,6 +1359,7 @@ function printActiveAdminReport() {
     <!DOCTYPE html>
     <html>
     <head>
+      <img src="mushroom/pgf logo.png" alt="Pure Grow Farm logo" class="logo-img">
       <title>Pure Grow Farm - Financial & ERP Report (${selectedYear})</title>
       <style>
         body { font-family: Arial, sans-serif; padding: 25px; color: #111; background: #fff; }

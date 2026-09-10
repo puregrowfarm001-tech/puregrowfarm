@@ -1354,6 +1354,8 @@ function printActiveAdminReport() {
   });
 
   const printWindow = window.open('', '_blank');
+  const basePath = window.location.href.substring(0, window.location.href.lastIndexOf('/') + 1);
+  const logoUrl = basePath + "mushroom/pgf logo.png";
   printWindow.document.write(`
     <!DOCTYPE html>
     <html>

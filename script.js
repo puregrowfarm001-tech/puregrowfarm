@@ -1294,12 +1294,12 @@ function printActiveAdminReport() {
   const farmAvailableBalance = (orderTotal + farmBookingTotal + sellTotal + farmDmgTotal) - farmExpTotal;
   const netProfit = (orderTotal + farmBookingTotal + sellTotal) - buyTotal - expenseTotal;
 
-  // Baaki ERP tables ka filtered data export karne ke liye original logic
   const allSections = document.querySelectorAll('.erp-section');
   let combinedHTML = '';
   
   allSections.forEach((section, index) => {
-    if (section.id === 'erpUsersTab') return;
+    // 🛑 Yahan check kiya: Agar section me Users tab hai ya Live Stock Summary wala container hai, toh use print me skip kar do!
+    if (section.id === 'erpUsersTab' || section.querySelector('#adminLiveStockCardsContainer')) return;
 
     const sectionClone = section.cloneNode(true);
     const sectionTitle = sectionClone.querySelector('h3')?.textContent || `ERP Section ${index + 1}`;

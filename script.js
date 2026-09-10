@@ -3398,6 +3398,20 @@ function showVisitForm(id) {
   document.getElementById("studentForm").classList.remove("active");
   document.getElementById("farmerForm").classList.remove("active");
   document.getElementById(id).classList.add("active");
+
+  const indicator = document.getElementById("activeFormIndicatorTitle");
+  const btnStudent = document.getElementById("btnTabStudent");
+  const btnFarmer = document.getElementById("btnTabFarmer");
+
+  if (id === 'studentForm') {
+    if (indicator) indicator.textContent = "📝 Currently Filling: Student Internship Program Application (Fee: Rs 100)";
+    if (btnStudent) btnStudent.style.background = "var(--accent)";
+    if (btnFarmer) btnFarmer.style.background = "var(--muted)";
+  } else {
+    if (indicator) indicator.textContent = "📝 Currently Filling: Farmer Training Workshop Registration (Fee: Rs 699)";
+    if (btnFarmer) btnFarmer.style.background = "var(--accent)";
+    if (btnStudent) btnStudent.style.background = "var(--muted)";
+  }
 }
 
 function openVisitPayment(formId, amount) {
@@ -3517,7 +3531,7 @@ async function submitStudentVisit(e) {
     window.open(`https://wa.me/${farmWhatsapp}?text=${encodeURIComponent(waText)}`, '_blank');
   }, 300);
 
-  alert("✅ Student Internship Registration saved to Cloud Database!");
+  alert("✅ Success! Aapka Student Internship Registration cloud database me save ho gaya hai. Aapki profile me iska status dikhega.");
   document.getElementById("studentForm").reset();
   document.getElementById("spayment").disabled = true;
   checkUserSession();
@@ -3573,7 +3587,7 @@ async function submitFarmerVisit(e) {
     window.open(`https://wa.me/${farmWhatsapp}?text=${encodeURIComponent(waText)}`, '_blank');
   }, 300);
   
-  alert("✅ Farmer Training Booking saved to Cloud Database!");
+  alert("✅ Success! Aapka Farmer Training Workshop booking cloud database me save ho gaya hai. Aapki profile me iska status dikhega.");
   document.getElementById("farmerForm").reset();
   document.getElementById("fpayment").disabled = true;
   checkUserSession();

@@ -442,8 +442,13 @@
 
           <div id="trainingMainContent" style="display:none;">
             <div class="visit-tabs">
-              <button type="button" class="btn" onclick="showVisitForm('studentForm')">Student Internship Block</button>
-              <button type="button" class="btn" onclick="showVisitForm('farmerForm')">Farmer Training Workshop Block</button>
+             <button type="button" class="btn" id="btnTabStudent" onclick="showVisitForm('studentForm')">🎓 Student Internship Block</button>
+             <button type="button" class="btn" id="btnTabFarmer" onclick="showVisitForm('farmerForm')" style="background:var(--muted);">👨‍🌾 Farmer Training Workshop Block</button>
+            </div>
+
+            <!-- 👇 Yeh heading active form ke hisaab se batayegi ki user kya bhar raha hai -->
+            <div id="activeFormIndicatorTitle" style="margin-bottom: 12px; font-weight: bold; color: var(--accent); font-size: 15px;">
+                 📝 Currently Filling: Student Internship Program Application
             </div>
 
             <!-- Student Form -->

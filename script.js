@@ -831,49 +831,18 @@ function loadUserPanelData() {
     }).join("") : "No active orders mapped for this profile.";
   }
 
-  if (bList) {
-    bList.innerHTML = myBookings.length ? myBookings.map(b => {
-      const isConfirmed = b.status === 'Confirmed' || b.status === 'Approved';
-      const isRejectedBooking = b.status && b.status.startsWith('Rejected');
-      let statusColor = isConfirmed ? 'var(--accent)' : (isRejectedBooking ? 'var(--danger)' : 'var(--warn)');
-      
-      let statusText = isConfirmed ? 'Booking Confirmed' : (b.status || 'Pending Verification');
-      
-      const certNote = b.certIssued ? `<br><span style="color:var(--accent); font-weight:bold;">📜 Certificate Approved & Ready to Download below!</span>` : (isConfirmed ? `<br><span style="color:#d97706; font-size:12px;">⏳ Step 1: Farm Booking Confirmed. Step 2: Certificate will unlock after training.</span>` : (isRejectedBooking ? `<br><span style="color:var(--danger); font-size:12px;">❌ ${b.status}</span>` : ''));
-      
-      return `
-        <div style="border: 1px solid #cbd5e1; border-radius: 10px; padding: 12px; margin-bottom: 10px; background:#fff;">
-          <strong>Booking ID: ${b.bookingId || ''}</strong><br>
-          <small>Booked On: ${b.dateLogged || ''}</small><br>
-          <strong>Scheme: ${b.type || ''} Visit [<span style="color:${statusColor}; font-weight:bold;">${statusText}</span>]</strong>
-          <br><small>Your UPI ID: <code style="color:var(--accent);">${b.userUpiId || 'N/A'}</code></small>
-          ${certNote}
-        </div>
-      `;
-    }).join("") : "No course training applications logged.";
-
-    const issuedBookings = myBookings.filter(b => b.certIssued === true);
-
-    if (issuedBookings.length > 0 && historyCertWrapper && historyCertContainer) {
-      let historyCertHtml = "";
-      issuedBookings.forEach((b) => {
-        const titleText = b.type === "Student" ? "Certificate of Internship" : "Certificate of Farming";
-        historyCertHtml += `
-          <div style="padding: 10px; background: #fff; border: 1px solid var(--line); border-radius: 8px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
-            <div>
-              <span style="font-weight: bold; font-size:13px; color: var(--accent);">${titleText}</span><br>
-              <small class="muted">Ref ID: ${b.bookingId}</small>
-            </div>
-            <button type="button" class="btn" style="min-height:30px; padding: 4px 10px; font-size:12px;" onclick="downloadCertificatePDF('${b.bookingId}')">📥 Download PDF</button>
-          </div>
-        `;
-      });
-      historyCertContainer.innerHTML = historyCertHtml;
-      historyCertWrapper.style.display = "block";
-    } else if (historyCertWrapper) {
-      historyCertWrapper.style.display = "none";
-    }
+  function toggleBookingDetailsView(bookingId) {
+  const panel = document.getElementById(`booking-details-${bookingId}`);
+  const arrow = document.getElementById(`booking-arrow-${bookingId}`);
+  if (!panel) return;
+  if (panel.style.display === "none" || panel.style.display === "") {
+    panel.style.display = "block";
+    if (arrow) arrow.textContent = "▲";
+  } else {
+    panel.style.display = "none";
+    if (arrow) arrow.textContent = "▼";
   }
+}
 }
 
 function switchErpTab(tabId, buttonId) {
@@ -4167,4 +4136,17 @@ async function handleVerifyOtpAndChangePassword(e) {
   document.getElementById("sendProfileOtpBtn").style.display = "block";
   document.getElementById("otpVerifySectionBlock").style.display = "none";
   alert("✅ Password successfully reset & updated in Supabase cloud!");
+}
+
+function toggleBookingDetailsView(bookingId) {
+  const panel = document.getElementById(`booking-details-${bookingId}`);
+  const arrow = document.getElementById(`booking-arrow-${bookingId}`);
+  if (!panel) return;
+  if (panel.style.display === "none" || panel.style.display === "") {
+    panel.style.display = "block";
+    if (arrow) arrow.textContent = "▲";
+  } else {
+    panel.style.display = "none";
+    if (arrow) arrow.textContent = "▼";
+  }
 }

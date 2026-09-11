@@ -3698,38 +3698,79 @@ function downloadCertificatePDF(bookingId) {
 <html>
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=1024, initial-scale=0.4, user-scalable=yes">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${titleText} - ${targetBooking.name}</title>
   <style>
-    @page { size: A4 landscape; margin: 6mm; }
+    @page { 
+      size: A4 landscape; 
+      margin: 0mm; /* Extra margin hata diya taaki poore page par fit aaye */
+    }
     * { box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-    body { 
+    html, body { 
       margin: 0; 
-      padding: 12px; 
+      padding: 0; 
+      width: 100vw;
+      height: 100vh;
       font-family: Arial, sans-serif; 
-      background: #f8fafc; 
-      text-align: center;
-      min-width: 980px; 
+      background: #ffffff; 
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    .no-print-bar { 
+      position: fixed;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #f0fdf4; 
+      border: 1px solid #bbf7d0; 
+      padding: 8px 16px; 
+      border-radius: 8px; 
+      z-index: 1000;
+    }
+    .no-print-btn { 
+      background: #2b8a3e; 
+      color: #fff; 
+      border: 0; 
+      padding: 6px 14px; 
+      font-weight: bold; 
+      border-radius: 6px; 
+      font-size: 13px; 
+      cursor: pointer; 
     }
     .certificate-frame { 
-      width: 960px; 
+      width: 297mm; /* Exact A4 Landscape width */
+      height: 210mm; /* Exact A4 Landscape height taaki extra space na bache */
       background: #fff; 
       border: 8px solid #1e4620; 
-      padding: 20px; 
+      padding: 15px 25px; 
       box-sizing: border-box; 
-      margin: 0 auto; 
-      box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
     }
-    .inner-border { border: 2px solid #d97706; padding: 20px; background: #ffffff; }
+    .inner-border { 
+      border: 2px solid #d97706; 
+      padding: 15px 20px; 
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      background: #ffffff; 
+    }
     .cert-header-top { display: flex; justify-content: center; align-items: center; gap: 15px; }
-    .cert-title { font-size: 28px; font-weight: bold; color: #1e4620; text-transform: uppercase; letter-spacing: 1px; font-family: 'Times New Roman', Times, serif; margin: 12px 0 6px 0; }
-    .cert-name { font-size: 24px; font-weight: bold; color: #2b8a3e; border-bottom: 2px solid #d97706; display: inline-block; padding: 0 20px; margin: 6px auto; font-family: 'Times New Roman', Times, serif; }
-    .cert-desc { font-size: 14px; line-height: 1.6; text-align: justify; margin: 12px auto; max-width: 820px; color: #222; }
-    .cert-footer-grid { display: flex; justify-content: space-between; align-items: flex-end; margin-top: 25px; padding: 0 10px; }
-    .sign-img { width: 120px; height: 48px; object-fit: contain; display: block; margin: 0 auto -8px auto; mix-blend-mode: multiply; }
-    .no-print-bar { margin-bottom: 12px; background: #f0fdf4; border: 1px solid #bbf7d0; padding: 10px; border-radius: 8px; width: 960px; margin-left: auto; margin-right: auto; }
-    .no-print-btn { background: #2b8a3e; color: #fff; border: 0; padding: 8px 18px; font-weight: bold; border-radius: 6px; font-size: 14px; cursor: pointer; }
-    @media print { .no-print-bar { display: none !important; } body { padding: 0; background: #fff; min-width: 100%; } .certificate-frame { width: 100%; box-shadow: none; } }
+    .cert-title { font-size: 26px; font-weight: bold; color: #1e4620; text-transform: uppercase; letter-spacing: 1px; font-family: 'Times New Roman', Times, serif; margin: 4px 0; }
+    .cert-name { font-size: 24px; font-weight: bold; color: #2b8a3e; border-bottom: 2px solid #d97706; display: inline-block; padding: 0 15px; margin: 4px auto; font-family: 'Times New Roman', Times, serif; }
+    .cert-desc { font-size: 13.5px; line-height: 1.5; text-align: center; margin: 6px auto; max-width: 820px; color: #222; }
+    .cert-footer-grid { display: flex; justify-content: space-between; align-items: flex-end; width: 100%; margin-top: 10px; }
+    .sign-img { width: 110px; height: 42px; object-fit: contain; display: block; margin: 0 auto -6px auto; mix-blend-mode: multiply; }
+    
+    @media print { 
+      .no-print-bar { display: none !important; } 
+      body { background: #fff; width: 100vw; height: 100vh; } 
+      .certificate-frame { border: 8px solid #1e4620 !important; width: 100vw; height: 100vh; max-width: none; max-height: none; }
+    }
   </style>
 </head>
 <body>
@@ -3740,17 +3781,17 @@ function downloadCertificatePDF(bookingId) {
   <div class="certificate-frame">
     <div class="inner-border">
       <div class="cert-header-top">
-        <img src="${logoUrl}" alt="Logo" style="width: 60px; height: auto;">
+        <img src="${logoUrl}" alt="Logo" style="width: 50px; height: auto;">
         <div style="text-align:left;">
-          <h2 style="color: #1e4620; margin: 0; font-size: 20px; font-weight: 800;">PURE GROW FARM</h2>
-          <p style="margin: 2px 0 0 0; font-size: 11px; color:#6b7280;">Makhiyala, Gujarat, 362011 | puregrowfarm001@gmail.com</p>
+          <h2 style="color: #1e4620; margin: 0; font-size: 18px; font-weight: 800;">PURE GROW FARM</h2>
+          <p style="margin: 2px 0 0 0; font-size: 10.5px; color:#6b7280;">Makhiyala, Gujarat, 362011 | puregrowfarm001@gmail.com</p>
         </div>
       </div>
-      <hr style="border:0; border-top: 2px solid #2b8a3e; margin: 10px 0;">
+      <hr style="border:0; border-top: 2px solid #2b8a3e; margin: 8px 0;">
       <div class="cert-title">${titleText}</div>
-      <p style="font-style: italic; margin: 3px 0; color: #555; font-size: 13px;">This is to certify that</p>
+      <p style="font-style: italic; margin: 2px 0; color: #555; font-size: 12px;">This is to certify that</p>
       <div class="cert-name">${targetBooking.name.toUpperCase()}</div>
-      <p style="font-style: italic; margin: 5px 0; color: #555; font-size: 13px;">${descText}</p>
+      <p style="font-style: italic; margin: 2px 0; color: #555; font-size: 12px;">${descText}</p>
       <p class="cert-desc">
         The program execution guidelines were conducted ${durationContent}. 
         During this framework index period, the candidate gained foundational knowledge in mushroom biology, substrate preparation, spawn inoculation, and scientific crop management, demonstrating an exceptional work ethic.
@@ -3758,29 +3799,29 @@ function downloadCertificatePDF(bookingId) {
       
       <div class="cert-footer-grid">
         <div style="text-align: center; width: 34%;">
-          <div style="height: 50px; display: flex; align-items: flex-end; justify-content: center;">
+          <div style="height: 42px; display: flex; align-items: flex-end; justify-content: center;">
             <img src="${sohamSignUrl}" alt="Soham Gajera Signature" class="sign-img">
           </div>
-          <div style="border-top: 1.5px solid #333; width: 160px; margin: 0 auto 4px auto;"></div>
-          <div style="font-size: 13px; font-weight: bold; color: #1e4620;">Soham N Gajera</div>
-          <div style="font-size: 10px; color: #475569; margin-top: 2px;">Co-Founder & Managing Director</div>
+          <div style="border-top: 1.5px solid #333; width: 150px; margin: 0 auto 3px auto;"></div>
+          <div style="font-size: 12px; font-weight: bold; color: #1e4620;">Soham N Gajera</div>
+          <div style="font-size: 9.5px; color: #475569; margin-top: 1px;">Co-Founder & Managing Director</div>
         </div>
 
         <div style="text-align: center; width: 28%;">
-          <img src="${logoUrl}" alt="Stamp" style="width: 55px; height: auto; opacity: 0.95;">
-          <div style="font-size: 9px; font-weight: 800; color: #1e4620; margin-top: 2px; letter-spacing: 0.5px;">PURE GROW FARM</div>
-          <div style="font-size: 11px; color: #334155; margin-top: 3px;">
+          <img src="${logoUrl}" alt="Stamp" style="width: 45px; height: auto; opacity: 0.95;">
+          <div style="font-size: 8.5px; font-weight: 800; color: #1e4620; margin-top: 1px; letter-spacing: 0.5px;">PURE GROW FARM</div>
+          <div style="font-size: 10.5px; color: #334155; margin-top: 2px;">
             <strong>Approved Date:</strong> ${actualApprovedDate}
           </div>
         </div>
 
         <div style="text-align: center; width: 34%;">
-          <div style="height: 50px; display: flex; align-items: flex-end; justify-content: center;">
+          <div style="height: 42px; display: flex; align-items: flex-end; justify-content: center;">
             <img src="${jeetSignUrl}" alt="Jeet Gajera Signature" class="sign-img">
           </div>
-          <div style="border-top: 1.5px solid #333; width: 160px; margin: 0 auto 4px auto;"></div>
-          <div style="font-size: 13px; font-weight: bold; color: #1e4620;">Jeet A Gajera</div>
-          <div style="font-size: 10px; color: #475569; margin-top: 2px;">Co-Founder & Director<br>(Agriculture & Production)</div>
+          <div style="border-top: 1.5px solid #333; width: 150px; margin: 0 auto 3px auto;"></div>
+          <div style="font-size: 12px; font-weight: bold; color: #1e4620;">Jeet A Gajera</div>
+          <div style="font-size: 9.5px; color: #475569; margin-top: 1px;">Co-Founder & Director<br>(Agriculture & Production)</div>
         </div>
       </div>
     </div>

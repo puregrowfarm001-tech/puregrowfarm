@@ -208,7 +208,25 @@
         </div>
 
         <a class="btn" href="#authSection" id="authNavBtn">Login / Register</a>
-        <button class="btn" id="logoutBtn" style="display:none;" onclick="handleLogout()">Logout</button>
+        <!-- User Profile Dropdown Menu (Login ke baad dikhega) -->
+        <div id="userProfileMenuWrapper" class="notification-bell-container" style="position: relative; display: none;">
+          <button type="button" class="btn" style="background:var(--accent); color:#fff; border-radius:999px; padding:6px 14px; font-weight:bold;" onclick="toggleProfileDropdown()">
+            👤 <span id="headerUserNameDisplay">Profile</span> ▼
+          </button>
+
+          <div id="userProfileDropdownPanel" style="display:none; position:absolute; right:0; top:45px; width:260px; background:#fff; border:1px solid var(--line); border-radius:12px; box-shadow:0 10px 25px rgba(0,0,0,0.18); z-index:100000; padding:14px; text-align:left;">
+            <div style="border-bottom:1px solid var(--line); padding-bottom:8px; margin-bottom:8px;">
+              <strong id="dropUserName" style="font-size:14px; color:#0f1720; display:block;">User Name</strong>
+              <small id="dropUserEmail" class="muted" style="font-size:11px; word-break:break-all;">email@gmail.com</small><br>
+              <small id="dropUserPhone" class="muted" style="font-size:11px;">+91 0000000000</small>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:6px;">
+              <button type="button" class="btn" style="background:#0284c7; font-size:12px; padding:6px; width:100%; justify-content:center;" onclick="openEditProfileModal()">✏️ Edit Profile</button>
+              <button type="button" class="btn" style="background:#d97706; font-size:12px; padding:6px; width:100%; justify-content:center;" onclick="openChangePasswordModal()">🔒 Change Password</button>
+              <button type="button" class="btn" style="background:var(--danger); font-size:12px; padding:6px; width:100%; justify-content:center; margin-top:4px;" onclick="handleLogout()">🚪 Logout</button>
+            </div>
+          </div>
+        </div>
       </div>
     </header>
 
@@ -1198,6 +1216,47 @@
         <a class="btn" id="whatsappInvoice" target="_blank" rel="noreferrer" style="background: #25d366;">Send WhatsApp Summary</a>
       </div>
     </dialog>
+
+    <!-- Edit Profile Modal -->
+    <div id="editProfileModal" class="data-popup-modal" onclick="closeModalOutside(event, 'editProfileModal')">
+      <div class="popup-content-box" style="max-width: 420px;">
+        <button type="button" class="close-popup-btn" onclick="closeEditProfileModal()">Close (X)</button>
+        <h2>✏️ Edit Profile</h2>
+        <form onsubmit="handleUpdateProfile(event)" style="margin-top:15px;">
+          <label style="font-size:12px; font-weight:bold;">Full Name:</label>
+          <input type="text" id="editProfileName" required>
+          <label style="font-size:12px; font-weight:bold; margin-top:6px;">Mobile Number:</label>
+          <input type="tel" id="editProfilePhone" required>
+          <label style="font-size:12px; font-weight:bold; margin-top:6px;">Email (Read-only):</label>
+          <input type="email" id="editProfileEmail" readonly style="background:#f3f4f6; cursor:not-allowed;">
+          <button type="submit" style="margin-top:12px; background:var(--accent);">Save Changes to Cloud</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Change Password Modal -->
+    <div id="changePasswordModal" class="data-popup-modal" onclick="closeModalOutside(event, 'changePasswordModal')">
+      <div class="popup-content-box" style="max-width: 420px;">
+        <button type="button" class="close-popup-btn" onclick="closeChangePasswordModal()">Close (X)</button>
+        <h2>🔒 Change Password</h2>
+        <form onsubmit="handleUpdatePassword(event)" style="margin-top:15px;">
+          <label style="font-size:12px; font-weight:bold;">Current Password:</label>
+          <div class="password-input-group">
+            <input type="password" id="currentPasswordInput" required>
+            <button type="button" class="toggle-password-btn" onclick="togglePasswordVisibility('currentPasswordInput', this)">👁️</button>
+          </div>
+          <label style="font-size:12px; font-weight:bold; margin-top:6px;">New Strong Password:</label>
+          <div class="password-input-group">
+            <input type="password" id="newPasswordInput" required oninput="checkPasswordStrength(this.value)">
+            <button type="button" class="toggle-password-btn" onclick="togglePasswordVisibility('newPasswordInput', this)">👁️</button>
+          </div>
+          <div id="passwordStrengthFeedback" class="strength-indicator" style="color: #94a3b8; font-size:11px; margin-top:4px;">
+            Password must have 8+ chars, 1 uppercase, 1 number & 1 special character (@$!%*?&).
+          </div>
+          <button type="submit" style="margin-top:12px; background:var(--accent);">Update Password in Cloud</button>
+        </form>
+      </div>
+    </div>
 
     <!-- Footer -->
     <footer style="padding: 30px 0; border-top: 1px solid var(--line); margin-top: 40px; background: #ffffff; border-radius: 16px;">

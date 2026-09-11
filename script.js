@@ -388,10 +388,19 @@ async function checkUserSession() {
     }
   }
 
+  const profileWrapper = document.getElementById("userProfileMenuWrapper");
+
   if (currentUser) {
     document.getElementById("authSection").style.display = "none";
-    document.getElementById("logoutBtn").style.display = "inline-flex";
     document.getElementById("authNavBtn").style.display = "none";
+    
+    if (profileWrapper) profileWrapper.style.display = "inline-block";
+    
+    // Header & Dropdown ke andar details set karein
+    if (document.getElementById("headerUserNameDisplay")) document.getElementById("headerUserNameDisplay").textContent = currentUser.name;
+    if (document.getElementById("dropUserName")) document.getElementById("dropUserName").textContent = currentUser.name;
+    if (document.getElementById("dropUserEmail")) document.getElementById("dropUserEmail").textContent = currentUser.email;
+    if (document.getElementById("dropUserPhone")) document.getElementById("dropUserPhone").textContent = currentUser.phone || "No Phone";
     
     if(currentUser.isAdmin) {
       triggerAdminView();
@@ -420,7 +429,7 @@ async function checkUserSession() {
   } else {
     document.getElementById("mainNav").style.display = "flex";
     document.getElementById("authSection").style.display = "block";
-    document.getElementById("logoutBtn").style.display = "none";
+    if (profileWrapper) profileWrapper.style.display = "none";
     document.getElementById("authNavBtn").style.display = "inline-flex";
     document.getElementById("dashboardWorkspace").style.display = "none";
     document.getElementById("adminErpView").classList.remove("active");
@@ -432,6 +441,7 @@ async function checkUserSession() {
     document.getElementById("trainingMainContent").style.display = "none";
   }
 }
+
 async function handleRegister(e) {
   e.preventDefault();
   const name = document.getElementById("regName").value.trim();
@@ -3961,4 +3971,114 @@ function sendWhatsAppNotification(customerPhone, customerName, refId, statusType
   const encodedMessage = encodeURIComponent(message);
   const whatsappUrl = `https://wa.me/${cleanPhone}?text=${encodedMessage}`;
   window.open(whatsappUrl, '_blank');
+}
+
+
+
+// Profile Dropdown Toggle
+function toggleProfileDropdown() {
+  const panel = document.getElementById("userProfileDropdownPanel");
+  if (!panel) return;
+  panel.style.display = panel.style.display === "block" ? "none" : "block";
+}
+
+// Click outside to close profile dropdown
+document.addEventListener('click', function(e) {
+  const wrapper = document.getElementById("userProfileMenuWrapper");
+  const panel = document.getElementById("userProfileDropdownPanel");
+  if (wrapper && panel && !wrapper.contains(e.target)) {
+    panel.style.display = "none";
+  }
+});
+
+function openEditProfileModal() {
+  document.getElementById("userProfileDropdownPanel").style.display = "none";
+  if (!currentUser) return;
+  document.getElementById("editProfileName").value = currentUser.name || "";
+  document.getElementById("editProfilePhone").value = currentUser.phone || "";
+  document.getElementById("editProfileEmail").value = currentUser.email || "";
+  document.getElementById("editProfileModal").classList.add("active-modal");
+}
+
+function closeEditProfileModal() {
+  document.getElementById("editProfileModal").classList.remove("active-modal");
+}
+
+function openChangePasswordModal() {
+  document.getElementById("userProfileDropdownPanel").style.display = "none";
+  document.getElementById("changePasswordModal").classList.add("active-modal");
+}
+
+function closeChangePasswordModal() {
+  document.getElementById("changePasswordModal").classList.remove("active-modal");
+}
+
+// Update Profile & Sync to Supabase Database
+async function handleUpdateProfile(e) {
+  e.preventDefault();
+  if (!currentUser) return;
+
+  const newName = document.getElementById("editProfileName").value.trim();
+  const newPhone = document.getElementById("editProfilePhone").value.trim();
+
+  // Supabase Database me update karein
+  const { error } = await _supabase
+    .from('pgf_users')
+    .update({ name: newName, phone: newPhone })
+    .eq('email', currentUser.email);
+
+  if (error) {
+    alert("❌ Profile update karne me error aayi: " + error.message);
+    return;
+  }
+
+  // Local session update
+  currentUser.name = newName;
+  currentUser.phone = newPhone;
+  localStorage.setItem('pgf_session', JSON.stringify(currentUser));
+
+  closeEditProfileModal();
+  checkUserSession();
+  alert("✅ Profile successfully updated and synced to Supabase cloud!");
+}
+
+// Update Password & Sync to Supabase Database
+async function handleUpdatePassword(e) {
+  e.preventDefault();
+  if (!currentUser) return;
+
+  const currentPass = document.getElementById("currentPasswordInput").value;
+  const newPass = document.getElementById("newPasswordInput").value;
+
+  if (!isPasswordStrong(newPass)) {
+    alert("⚠️ Kripya Strong Password dalein!\n(8+ chars, 1 Uppercase, 1 Number, 1 Special character)");
+    return;
+  }
+
+  // Pehle check karein ki current password sahi hai ya nahi
+  const { data: dbUser, error: fetchErr } = await _supabase
+    .from('pgf_users')
+    .select('password')
+    .eq('email', currentUser.email)
+    .single();
+
+  if (fetchErr || !dbUser || dbUser.password !== currentPass) {
+    alert("❌ Current password galat hai!");
+    return;
+  }
+
+  // Supabase me naya password update karein
+  const { error: updateErr } = await _supabase
+    .from('pgf_users')
+    .update({ password: newPass })
+    .eq('email', currentUser.email);
+
+  if (updateErr) {
+    alert("❌ Password update karne me error aayi: " + updateErr.message);
+    return;
+  }
+
+  closeChangePasswordModal();
+  document.getElementById("changePasswordModal").querySelector("form").reset();
+  alert("✅ Password successfully updated in Supabase cloud!");
 }

@@ -214,7 +214,13 @@
             👤 <span id="headerUserNameDisplay">Profile</span> ▼
           </button>
 
-          <div id="userProfileDropdownPanel" style="display:none; position:absolute; right:0; top:45px; width:260px; background:#fff; border:1px solid var(--line); border-radius:12px; box-shadow:0 10px 25px rgba(0,0,0,0.18); z-index:100000; padding:14px; text-align:left;">
+          <div id="userProfileDropdownPanel" style="display:none; position:absolute; right:0; top:45px; width:280px; background:#fff; border:1px solid var(--line); border-radius:12px; box-shadow:0 10px 25px rgba(0,0,0,0.18); z-index:1000000; padding:14px; text-align:left;">
+            <!-- Close Button for Profile Menu -->
+            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--line); padding-bottom:6px; margin-bottom:8px;">
+              <strong style="font-size:13px; color:var(--accent);">👤 User Profile</strong>
+              <button type="button" style="background:#ef4444; color:#fff; border:none; border-radius:4px; padding:2px 8px; font-size:11px; cursor:pointer; font-weight:bold;" onclick="toggleProfileDropdown()">Close (X)</button>
+            </div>
+
             <div style="border-bottom:1px solid var(--line); padding-bottom:8px; margin-bottom:8px;">
               <strong id="dropUserName" style="font-size:14px; color:#0f1720; display:block;">User Name</strong>
               <small id="dropUserEmail" class="muted" style="font-size:11px; word-break:break-all;">email@gmail.com</small><br>
@@ -1236,10 +1242,12 @@
 
     <!-- Change Password Modal -->
     <div id="changePasswordModal" class="data-popup-modal" onclick="closeModalOutside(event, 'changePasswordModal')">
-      <div class="popup-content-box" style="max-width: 420px;">
+      <div class="popup-content-box" style="max-width: 440px; z-index: 2000000;">
         <button type="button" class="close-popup-btn" onclick="closeChangePasswordModal()">Close (X)</button>
         <h2>🔒 Change Password</h2>
-        <form onsubmit="handleUpdatePassword(event)" style="margin-top:15px;">
+        
+        <!-- Mode 1: With Current Password -->
+        <form id="passwordChangeStandardForm" onsubmit="handleUpdatePassword(event)" style="margin-top:15px;">
           <label style="font-size:12px; font-weight:bold;">Current Password:</label>
           <div class="password-input-group">
             <input type="password" id="currentPasswordInput" required>
@@ -1254,7 +1262,31 @@
             Password must have 8+ chars, 1 uppercase, 1 number & 1 special character (@$!%*?&).
           </div>
           <button type="submit" style="margin-top:12px; background:var(--accent);">Update Password in Cloud</button>
+          
+          <div style="text-align:right; margin-top:8px;">
+            <a style="font-size:12px; color:var(--accent); font-weight:bold; cursor:pointer;" onclick="switchToOtpPasswordMode()">Current password yaad nahi hai? Email OTP se change karein</a>
+          </div>
         </form>
+
+        <!-- Mode 2: Via Email OTP (Agar current password yaad na ho) -->
+        <form id="passwordChangeOtpForm" style="display:none; margin-top:15px;" onsubmit="handleVerifyOtpAndChangePassword(event)">
+          <p class="muted" style="font-size:12px; margin-bottom:8px;">Aapke registered email par 6-digit OTP bheja jayega.</p>
+          <button type="button" id="sendProfileOtpBtn" class="btn" style="background:#0284c7; width:100%; margin-bottom:10px;" onclick="sendProfileResetOtp()">Send 6-Digit OTP to Email</button>
+          
+          <div id="otpVerifySectionBlock" style="display:none; display:grid; gap:8px;">
+            <input type="text" id="profileOtpInputCode" placeholder="Enter 6-Digit OTP" maxlength="6" required style="letter-spacing: 4px; font-weight: bold; text-align: center;">
+            <div class="password-input-group">
+              <input type="password" id="newOtpPasswordInput" placeholder="Enter New Strong Password" required oninput="checkPasswordStrength(this.value)">
+              <button type="button" class="toggle-password-btn" onclick="togglePasswordVisibility('newOtpPasswordInput', this)">👁️</button>
+            </div>
+            <button type="submit" style="background:var(--accent); margin-top:6px;">Verify & Reset Password</button>
+          </div>
+
+          <div style="text-align:right; margin-top:8px;">
+            <a style="font-size:12px; color:var(--accent); font-weight:bold; cursor:pointer;" onclick="switchToStandardPasswordMode()">Back to Current Password Login</a>
+          </div>
+        </form>
+
       </div>
     </div>
 

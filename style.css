@@ -487,3 +487,11 @@ th { background: #f8faf8; font-weight: 700; }
     max-width: 380px;
   }
 }
+
+
+.data-popup-modal {
+  z-index: 9999999 !important;
+}
+.popup-content-box {
+  z-index: 10000000 !important;
+}

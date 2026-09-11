@@ -394,17 +394,19 @@ async function checkUserSession() {
     document.getElementById("authSection").style.display = "none";
     document.getElementById("authNavBtn").style.display = "none";
     
-    if (profileWrapper) profileWrapper.style.display = "inline-block";
-    
-    // Header & Dropdown ke andar details set karein
-    if (document.getElementById("headerUserNameDisplay")) document.getElementById("headerUserNameDisplay").textContent = currentUser.name;
-    if (document.getElementById("dropUserName")) document.getElementById("dropUserName").textContent = currentUser.name;
-    if (document.getElementById("dropUserEmail")) document.getElementById("dropUserEmail").textContent = currentUser.email;
-    if (document.getElementById("dropUserPhone")) document.getElementById("dropUserPhone").textContent = currentUser.phone || "No Phone";
-    
-    if(currentUser.isAdmin) {
+    // 🛑 Agar user Admin hai, toh header me profile menu hide rakho!
+    if (currentUser.isAdmin) {
+      if (profileWrapper) profileWrapper.style.display = "none";
       triggerAdminView();
     } else {
+      // Normal Customer ke liye profile menu dikhao
+      if (profileWrapper) profileWrapper.style.display = "inline-block";
+      
+      if (document.getElementById("headerUserNameDisplay")) document.getElementById("headerUserNameDisplay").textContent = currentUser.name;
+      if (document.getElementById("dropUserName")) document.getElementById("dropUserName").textContent = currentUser.name;
+      if (document.getElementById("dropUserEmail")) document.getElementById("dropUserEmail").textContent = currentUser.email;
+      if (document.getElementById("dropUserPhone")) document.getElementById("dropUserPhone").textContent = currentUser.phone || "No Phone";
+
       document.getElementById("mainNav").style.display = "flex";
       document.getElementById("dashboardWorkspace").style.display = "block";
       document.getElementById("userDashboardName").textContent = currentUser.name;

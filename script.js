@@ -3698,80 +3698,38 @@ function downloadCertificatePDF(bookingId) {
 <html>
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=1024, initial-scale=0.4, user-scalable=yes">
   <title>${titleText} - ${targetBooking.name}</title>
   <style>
-    @page { 
-      size: A4 landscape; 
-      margin: 0; 
-    }
+    @page { size: A4 landscape; margin: 6mm; }
     * { box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-    html, body { 
+    body { 
       margin: 0; 
-      padding: 0; 
-      width: 100vw;
-      height: 100vh;
+      padding: 12px; 
       font-family: Arial, sans-serif; 
-      background: #ffffff; 
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      overflow: hidden;
-    }
-    .no-print-bar { 
-      position: fixed;
-      top: 5px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: #f0fdf4; 
-      border: 1px solid #bbf7d0; 
-      padding: 6px 14px; 
-      border-radius: 8px; 
-      z-index: 1000;
-    }
-    .no-print-btn { 
-      background: #2b8a3e; 
-      color: #fff; 
-      border: 0; 
-      padding: 6px 14px; 
-      font-weight: bold; 
-      border-radius: 6px; 
-      font-size: 13px; 
-      cursor: pointer; 
+      background: #f8fafc; 
+      text-align: center;
+      min-width: 980px; 
     }
     .certificate-frame { 
       width: 960px; 
-      height: 660px; 
       background: #fff; 
       border: 8px solid #1e4620; 
-      padding: 16px; 
+      padding: 20px; 
       box-sizing: border-box; 
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
+      margin: 0 auto; 
+      box-shadow: 0 4px 20px rgba(0,0,0,0.08);
     }
-    .inner-border { 
-      border: 2px solid #d97706; 
-      padding: 16px; 
-      height: 100%;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      background: #ffffff; 
-    }
+    .inner-border { border: 2px solid #d97706; padding: 20px; background: #ffffff; }
     .cert-header-top { display: flex; justify-content: center; align-items: center; gap: 15px; }
-    .cert-title { font-size: 28px; font-weight: bold; color: #1e4620; text-transform: uppercase; letter-spacing: 1px; font-family: 'Times New Roman', Times, serif; margin: 4px 0; }
-    .cert-name { font-size: 24px; font-weight: bold; color: #2b8a3e; border-bottom: 2px solid #d97706; display: inline-block; padding: 0 20px; margin: 4px auto; font-family: 'Times New Roman', Times, serif; }
-    .cert-desc { font-size: 14px; line-height: 1.5; text-align: center; margin: 6px auto; max-width: 820px; color: #222; }
-    .cert-footer-grid { display: flex; justify-content: space-between; align-items: flex-end; width: 100%; margin-top: 5px; }
+    .cert-title { font-size: 28px; font-weight: bold; color: #1e4620; text-transform: uppercase; letter-spacing: 1px; font-family: 'Times New Roman', Times, serif; margin: 12px 0 6px 0; }
+    .cert-name { font-size: 24px; font-weight: bold; color: #2b8a3e; border-bottom: 2px solid #d97706; display: inline-block; padding: 0 20px; margin: 6px auto; font-family: 'Times New Roman', Times, serif; }
+    .cert-desc { font-size: 14px; line-height: 1.6; text-align: justify; margin: 12px auto; max-width: 820px; color: #222; }
+    .cert-footer-grid { display: flex; justify-content: space-between; align-items: flex-end; margin-top: 25px; padding: 0 10px; }
     .sign-img { width: 120px; height: 48px; object-fit: contain; display: block; margin: 0 auto -8px auto; mix-blend-mode: multiply; }
-    
-    @media print { 
-      .no-print-bar { display: none !important; } 
-      html, body { width: 100vw; height: 100vh; background: #fff; overflow: hidden; } 
-      .certificate-frame { width: 100vw; height: 100vh; border: 8px solid #1e4620 !important; margin: 0; padding: 16px; box-shadow: none; position: absolute; top: 0; left: 0; } 
-    }
+    .no-print-bar { margin-bottom: 12px; background: #f0fdf4; border: 1px solid #bbf7d0; padding: 10px; border-radius: 8px; width: 960px; margin-left: auto; margin-right: auto; }
+    .no-print-btn { background: #2b8a3e; color: #fff; border: 0; padding: 8px 18px; font-weight: bold; border-radius: 6px; font-size: 14px; cursor: pointer; }
+    @media print { .no-print-bar { display: none !important; } body { padding: 0; background: #fff; min-width: 100%; } .certificate-frame { width: 100%; box-shadow: none; } }
   </style>
 </head>
 <body>
@@ -3788,11 +3746,11 @@ function downloadCertificatePDF(bookingId) {
           <p style="margin: 2px 0 0 0; font-size: 11px; color:#6b7280;">Makhiyala, Gujarat, 362011 | puregrowfarm001@gmail.com</p>
         </div>
       </div>
-      <hr style="border:0; border-top: 2px solid #2b8a3e; margin: 8px 0;">
+      <hr style="border:0; border-top: 2px solid #2b8a3e; margin: 10px 0;">
       <div class="cert-title">${titleText}</div>
-      <p style="font-style: italic; margin: 2px 0; color: #555; font-size: 13px;">This is to certify that</p>
+      <p style="font-style: italic; margin: 3px 0; color: #555; font-size: 13px;">This is to certify that</p>
       <div class="cert-name">${targetBooking.name.toUpperCase()}</div>
-      <p style="font-style: italic; margin: 2px 0; color: #555; font-size: 13px;">${descText}</p>
+      <p style="font-style: italic; margin: 5px 0; color: #555; font-size: 13px;">${descText}</p>
       <p class="cert-desc">
         The program execution guidelines were conducted ${durationContent}. 
         During this framework index period, the candidate gained foundational knowledge in mushroom biology, substrate preparation, spawn inoculation, and scientific crop management, demonstrating an exceptional work ethic.

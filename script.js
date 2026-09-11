@@ -829,7 +829,7 @@ function loadUserPanelData() {
         </div>
       `;
     }).join("") : "No active orders mapped for this profile.";
-  }
+  }}
 
   function toggleBookingDetailsView(bookingId) {
   const panel = document.getElementById(`booking-details-${bookingId}`);
@@ -843,6 +843,19 @@ function loadUserPanelData() {
     if (arrow) arrow.textContent = "▼";
   }
 }
+
+
+function toggleBookingDetailsView(bookingId) {
+  const panel = document.getElementById(`booking-details-${bookingId}`);
+  const arrow = document.getElementById(`booking-arrow-${bookingId}`);
+  if (!panel) return;
+  if (panel.style.display === "none" || panel.style.display === "") {
+    panel.style.display = "block";
+    if (arrow) arrow.textContent = "▲";
+  } else {
+    panel.style.display = "none";
+    if (arrow) arrow.textContent = "▼";
+  }
 }
 
 function switchErpTab(tabId, buttonId) {

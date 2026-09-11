@@ -301,7 +301,7 @@ async function triggerAdminView() {
   document.getElementById("publicContent").style.display = "none";
   document.getElementById("adminErpView").classList.add("active");
   
-  // Existing Orders & Bookings fetch code...
+  // Orders & Bookings fetch
   const { data: cloudOrders } = await _supabase.from('pgf_orders').select('*');
   if (cloudOrders) {
     orderRegistry = cloudOrders.map(o => ({
@@ -326,7 +326,7 @@ async function triggerAdminView() {
     }));
   }
 
-  // Naye Tables Fetch Karne Ka Code:
+  // Expense, Sell, Buy, Damage & Dry Stock Tables Fetch From Cloud Supabase:
   const { data: cloudDry } = await _supabase.from('pgf_daily_dry_stock').select('*');
   if (cloudDry) {
     dailyDryStockRegistry = cloudDry.map(d => ({
@@ -351,18 +351,7 @@ async function triggerAdminView() {
   const { data: cloudPurchases } = await _supabase.from('pgf_purchases').select('*');
   if (cloudPurchases) {
     purchasesRegistry = cloudPurchases.map(p => ({
-      purId: p.pur_id, 
-      date: p.date, 
-      product: p.product, 
-      funder: p.funder, 
-      vendor: p.vendor, 
-      vendorPhone: p.vendor_phone, // 👈 Yeh line add kar di gayi hai taaki vendor phone fetch ho
-      qty: Number(p.qty), 
-      rate: Number(p.rate), 
-      delivery: Number(p.delivery), 
-      total: Number(p.total), 
-      paidAmount: Number(p.paid_amount), 
-      notes: p.notes
+      purId: p.pur_id, date: p.date, product: p.product, funder: p.funder, vendor: p.vendor, vendorPhone: p.vendor_phone, qty: Number(p.qty), rate: Number(p.rate), delivery: Number(p.delivery), total: Number(p.total), paidAmount: Number(p.paid_amount), notes: p.notes
     }));
   }
 
@@ -2946,8 +2935,6 @@ function computeFinancialLedgerStatements() {
 
 async function saveAdminExpense(e) {
   e.preventDefault();
-  // ... (purana balance check code wahi rahega) ...
-
   const rawDate = document.getElementById("expLogDate").value;
   const amountVal = parseFloat(document.getElementById("expAmount").value);
 
@@ -2962,7 +2949,6 @@ async function saveAdminExpense(e) {
     notes: document.getElementById("expNotes") ? document.getElementById("expNotes").value.trim() : ""
   };
 
-  // 👇 Supabase cloud me insert
   const { error } = await _supabase.from('pgf_expenses').insert([dbData]);
   if (error) { alert("Cloud Error: " + error.message); return; }
 
@@ -2974,7 +2960,7 @@ async function saveAdminExpense(e) {
   e.target.reset();
   initDefaultDatePickers();
   computeFinancialLedgerStatements();
-  alert(`✅ Expense logged & synced to Cloud! Amount: Rs ${amountVal}`);
+  alert(`✅ Data cloud me save ho gaya hai! Expense Amount: Rs ${amountVal}`);
 }
 
 async function saveAdminSale(e) {
@@ -2986,44 +2972,6 @@ async function saveAdminSale(e) {
   const paid = parseFloat(document.getElementById("salePaidAmount").value) || 0;
   const notes = document.getElementById("saleNotes") ? document.getElementById("saleNotes").value.trim() : "";
   const prodType = document.getElementById("saleProduct").value;
-
-  const dryProd = products.find(p => p.type === "dry") || { stock: 0 };
-  const powderProd = products.find(p => p.type === "powder") || { stock: 0 };
-  const khakhraProd = products.find(p => p.type === "khakhra") || { stock: 0 };
-  const papadProd = products.find(p => p.type === "papad") || { stock: 0 };
-
-  let currentAvailableStock = 0;
-  let unitName = "units";
-
-  if (prodType === "Dry") {
-    currentAvailableStock = dryProd.stock;
-    unitName = "kg";
-  } else if (prodType === "Powder") {
-    currentAvailableStock = powderProd.stock * 10;
-    unitName = "packets";
-  } else if (prodType === "Khakhra") {
-    currentAvailableStock = khakhraProd.stock;
-    unitName = "packs";
-  } else if (prodType === "Papad") {
-    currentAvailableStock = papadProd.stock;
-    unitName = "packs";
-  } else if (prodType === "Green") {
-    currentAvailableStock = 9999;
-    unitName = "units";
-  }
-
-  // 👇 Stock validation check: Agar stock available nahi hai ya quantity zyada hai toh yhi rok dega
-  if (qty > currentAvailableStock) {
-    alert(`⚠️ Sale Failed! Stock me sufficient quantity available nahi hai.\n\n• Selected Product: ${prodType}\n• Available Stock: ${currentAvailableStock.toFixed(2)} ${unitName}\n• Requested Sale Qty: ${qty} ${unitName}`);
-    return;
-  }
-
-  const targetProd = products.find(p => p.type === prodType.toLowerCase() || p.name.toLowerCase().includes(prodType.toLowerCase()));
-  if (targetProd && !targetProd.bulk && prodType !== "Powder") {
-    targetProd.stock = Math.max(0, targetProd.stock - qty);
-    saveProductsToStorage();
-    renderProducts();
-  }
 
   const subtotal = qty * rate;
   const grandTotal = subtotal + delivery;
@@ -3045,7 +2993,6 @@ async function saveAdminSale(e) {
     notes: notes
   };
 
-  // 👇 Supabase cloud me insert
   const { error } = await _supabase.from('pgf_sales').insert([dbData]);
   if (error) { alert("Cloud Error: " + error.message); return; }
 
@@ -3059,15 +3006,11 @@ async function saveAdminSale(e) {
   initDefaultDatePickers();
   computeFinancialLedgerStatements();
   renderAdminLiveStockSummary();
-  alert(`✅ Wholesale Sale Entry saved to Cloud! Total: Rs ${grandTotal}`);
+  alert(`✅ Data cloud me save ho gaya hai! Wholesale Sale Total: Rs ${grandTotal}`);
 }
 
 async function saveAdminPurchase(e) {
   e.preventDefault();
-
-  // (Baki ka balance check aur calculation code wahi rahega...)
-  const selectedYear = document.getElementById("adminYearFilterSelect")?.value || "ALL";
-  
   const rawDate = document.getElementById("purLogDate").value;
   const qty = parseFloat(document.getElementById("purQty").value);
   const rate = parseFloat(document.getElementById("purRate").value);
@@ -3076,31 +3019,11 @@ async function saveAdminPurchase(e) {
   const grandTotal = subtotal + delivery;
   const paid = parseFloat(document.getElementById("purPaidAmount").value) || grandTotal;
 
-  // 👇 10-digit phone number validation check yahan add karein:
-  const vendorPhoneInput = document.getElementById("purVendorPhone") ? document.getElementById("purVendorPhone").value.trim() : "";
-  if (vendorPhoneInput && !/^\d{10}$/.test(vendorPhoneInput)) {
-    alert("⚠️ Kripya valid 10-digit ka mobile number dalein!");
-    return;
-  }
-
   const purType = document.getElementById("purProduct").value;
   const funder = document.getElementById("purFunder").value;
   const vendor = document.getElementById("purVendor").value.trim();
+  const vendorPhoneInput = document.getElementById("purVendorPhone") ? document.getElementById("purVendorPhone").value.trim() : "";
   const notes = document.getElementById("purNotes") ? document.getElementById("purNotes").value.trim() : "";
-  
-  // Stock update code...
-  let matchedProd = null;
-  if (purType.includes("Dry")) matchedProd = products.find(p => p.type === "dry");
-  else if (purType.includes("Powder")) matchedProd = products.find(p => p.type === "powder");
-  else if (purType.includes("Khakhra")) matchedProd = products.find(p => p.type === "khakhra");
-  else if (purType.includes("Papad")) matchedProd = products.find(p => p.type === "papad");
-  else if (purType.includes("Green")) matchedProd = products.find(p => p.type === "green");
-
-  if (matchedProd) {
-    matchedProd.stock = (matchedProd.stock || 0) + qty;
-    saveProductsToStorage();
-    renderProducts();
-  }
 
   const dbData = {
     pur_id: "PUR-" + Date.now().toString().slice(-4),
@@ -3108,7 +3031,7 @@ async function saveAdminPurchase(e) {
     product: purType,
     funder: funder,
     vendor: vendor,
-    vendor_phone: vendorPhoneInput, // 👈 Database me save hoga
+    vendor_phone: vendorPhoneInput,
     qty: qty,
     rate: rate,
     delivery: delivery,
@@ -3130,7 +3053,7 @@ async function saveAdminPurchase(e) {
   initDefaultDatePickers();
   computeFinancialLedgerStatements();
   renderAdminLiveStockSummary();
-  alert(`✅ Inventory Buy recorded successfully! Total: Rs ${grandTotal}`);
+  alert(`✅ Data cloud me save ho gaya hai! Purchase Total: Rs ${grandTotal}`);
 }
 
 async function saveAdminDamage(e) {
@@ -3149,7 +3072,6 @@ async function saveAdminDamage(e) {
     notes: notes
   };
 
-  // 👇 Supabase cloud me insert (`pgf_damages` table me)
   const { error } = await _supabase.from('pgf_damages').insert([dbData]);
   if (error) { alert("Cloud Error: " + error.message); return; }
 
@@ -3160,7 +3082,7 @@ async function saveAdminDamage(e) {
   e.target.reset();
   initDefaultDatePickers();
   computeFinancialLedgerStatements();
-  alert(`✅ Damage recorded under ${payerType} & saved to Cloud!`);
+  alert(`✅ Data cloud me save ho gaya hai! Damage Loss: Rs ${amountVal}`);
 }
 
 function downloadOfflineSaleInvoice(saleId) {

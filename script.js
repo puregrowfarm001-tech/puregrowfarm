@@ -2680,7 +2680,8 @@ async function saveAdminExpense(e) {
 
   e.target.reset();
   initDefaultDatePickers();
-  computeFinancialLedgerStatements();
+  computeFinancialLedgerStatements(); // Isse sare expense tables aur cards update ho jayenge
+  
   alert(`✅ Expense logged & synced to Cloud! Amount: Rs ${amountVal}`);
 }
 

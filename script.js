@@ -3698,18 +3698,20 @@ function downloadCertificatePDF(bookingId) {
 <html>
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=1024, initial-scale=0.4, user-scalable=yes">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${titleText} - ${targetBooking.name}</title>
   <style>
-    @page { size: A4 landscape; margin: 6mm; }
+    @page { 
+      size: A4 landscape; 
+      margin: 0mm; 
+    }
     * { box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     body { 
       margin: 0; 
-      padding: 12px; 
+      padding: 0; 
       font-family: Arial, sans-serif; 
       background: #f8fafc; 
       text-align: center;
-      min-width: 980px; 
     }
     .certificate-frame { 
       width: 960px; 
@@ -3718,7 +3720,6 @@ function downloadCertificatePDF(bookingId) {
       padding: 20px; 
       box-sizing: border-box; 
       margin: 0 auto; 
-      box-shadow: 0 4px 20px rgba(0,0,0,0.08);
     }
     .inner-border { border: 2px solid #d97706; padding: 20px; background: #ffffff; }
     .cert-header-top { display: flex; justify-content: center; align-items: center; gap: 15px; }
@@ -3727,9 +3728,32 @@ function downloadCertificatePDF(bookingId) {
     .cert-desc { font-size: 14px; line-height: 1.6; text-align: justify; margin: 12px auto; max-width: 820px; color: #222; }
     .cert-footer-grid { display: flex; justify-content: space-between; align-items: flex-end; margin-top: 25px; padding: 0 10px; }
     .sign-img { width: 120px; height: 48px; object-fit: contain; display: block; margin: 0 auto -8px auto; mix-blend-mode: multiply; }
-    .no-print-bar { margin-bottom: 12px; background: #f0fdf4; border: 1px solid #bbf7d0; padding: 10px; border-radius: 8px; width: 960px; margin-left: auto; margin-right: auto; }
-    .no-print-btn { background: #2b8a3e; color: #fff; border: 0; padding: 8px 18px; font-weight: bold; border-radius: 6px; font-size: 14px; cursor: pointer; }
-    @media print { .no-print-bar { display: none !important; } body { padding: 0; background: #fff; min-width: 100%; } .certificate-frame { width: 100%; box-shadow: none; } }
+    
+    .no-print-bar { 
+      margin: 10px auto; 
+      background: #f0fdf4; 
+      border: 1px solid #bbf7d0; 
+      padding: 10px; 
+      border-radius: 8px; 
+      width: 960px; 
+      text-align: center;
+    }
+    .no-print-btn { 
+      background: #2b8a3e; 
+      color: #fff; 
+      border: 0; 
+      padding: 8px 18px; 
+      font-weight: bold; 
+      border-radius: 6px; 
+      font-size: 14px; 
+      cursor: pointer; 
+    }
+
+    @media print { 
+      .no-print-bar { display: none !important; } 
+      body { padding: 0; background: #fff; } 
+      .certificate-frame { width: 100%; border: 8px solid #1e4620 !important; margin: 0; box-shadow: none; } 
+    }
   </style>
 </head>
 <body>

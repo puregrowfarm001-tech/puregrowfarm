@@ -4084,3 +4084,87 @@ async function handleUpdatePassword(e) {
   document.getElementById("changePasswordModal").querySelector("form").reset();
   alert("✅ Password successfully updated in Supabase cloud!");
 }
+
+
+// --- Password Change Mode Switcher & OTP Functions ---
+function switchToOtpPasswordMode() {
+  document.getElementById("passwordChangeStandardForm").style.display = "none";
+  document.getElementById("passwordChangeOtpForm").style.display = "grid";
+}
+
+function switchToStandardPasswordMode() {
+  document.getElementById("passwordChangeOtpForm").style.display = "none";
+  document.getElementById("passwordChangeStandardForm").style.display = "grid";
+}
+
+let profileResetOtpCode = "";
+
+async function sendProfileResetOtp() {
+  if (!currentUser) return;
+  
+  profileResetOtpCode = Math.floor(100000 + Math.random() * 900000).toString();
+
+  const { error: dbErr } = await _supabase
+    .from('pgf_users')
+    .update({ forgot_otp: profileResetOtpCode })
+    .eq('email', currentUser.email);
+
+  if (dbErr) {
+    alert("Database error: " + dbErr.message);
+    return;
+  }
+
+  const templateParams = {
+    to_email: currentUser.email,
+    to_name: currentUser.name,
+    otp_code: profileResetOtpCode
+  };
+
+  emailjs.send('service_jk9zdkf', 'template_zihxosq', templateParams)
+    .then(function(response) {
+       alert(`✅ 6-digit OTP has been sent to your email (${currentUser.email})!`);
+       document.getElementById("sendProfileOtpBtn").style.display = "none";
+       document.getElementById("otpVerifySectionBlock").style.display = "grid";
+    }, function(error) {
+       alert("❌ Failed to send email: " + JSON.stringify(error));
+    });
+}
+
+async function handleVerifyOtpAndChangePassword(e) {
+  e.preventDefault();
+  const enteredOtp = document.getElementById("profileOtpInputCode").value.trim();
+  const newPass = document.getElementById("newOtpPasswordInput").value;
+
+  if (!isPasswordStrong(newPass)) {
+    alert("⚠️ Please enter a strong password!\n(8+ chars, 1 Uppercase, 1 Number, 1 Special character)");
+    return;
+  }
+
+  const { data: dbUser, error } = await _supabase
+    .from('pgf_users')
+    .select('*')
+    .eq('email', currentUser.email)
+    .single();
+
+  if (error || !dbUser || dbUser.forgot_otp !== enteredOtp) {
+    alert("❌ Invalid OTP! Please enter the correct 6-digit OTP.");
+    return;
+  }
+
+  const { error: updateErr } = await _supabase
+    .from('pgf_users')
+    .update({ password: newPass, forgot_otp: null })
+    .eq('email', currentUser.email);
+
+  if (updateErr) {
+    alert("Password update error: " + updateErr.message);
+    return;
+  }
+
+  closeChangePasswordModal();
+  document.getElementById("changePasswordModal").querySelector("form").reset();
+  switchToStandardPasswordMode();
+  document.getElementById("sendProfileOtpBtn").style.display = "block";
+  document.getElementById("otpVerifySectionBlock").style.display = "none";
+  alert("✅ Password successfully reset & updated in Supabase cloud!");
+}

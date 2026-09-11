@@ -2680,9 +2680,14 @@ async function saveAdminExpense(e) {
 
   e.target.reset();
   initDefaultDatePickers();
-  computeFinancialLedgerStatements(); // Isse sare expense tables aur cards update ho jayenge
   
-  alert(`✅ Expense logged & synced to Cloud! Amount: Rs ${amountVal}`);
+  // Financial ledger aur tables ko update karne ke liye
+  if (typeof computeFinancialLedgerStatements === 'function') {
+    computeFinancialLedgerStatements();
+  }
+  
+  // Dry stock ki tarah proper success message format
+  alert(`✅ Rs ${amountVal} Expense successfully saved to Cloud!`);
 }
 
 async function saveAdminExpense(e) {

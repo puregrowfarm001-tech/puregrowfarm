@@ -1242,7 +1242,7 @@
 
     <!-- Change Password Modal -->
     <div id="changePasswordModal" class="data-popup-modal" onclick="closeModalOutside(event, 'changePasswordModal')">
-      <div class="popup-content-box" style="max-width: 440px; z-index: 2000000;">
+      <div class="popup-content-box" style="max-width: 440px;">
         <button type="button" class="close-popup-btn" onclick="closeChangePasswordModal()">Close (X)</button>
         <h2>🔒 Change Password</h2>
         
@@ -1264,14 +1264,14 @@
           <button type="submit" style="margin-top:12px; background:var(--accent);">Update Password in Cloud</button>
           
           <div style="text-align:right; margin-top:8px;">
-            <a style="font-size:12px; color:var(--accent); font-weight:bold; cursor:pointer;" onclick="switchToOtpPasswordMode()">Current password yaad nahi hai? Email OTP se change karein</a>
+            <a style="font-size:12px; color:var(--accent); font-weight:bold; cursor:pointer;" onclick="switchToOtpPasswordMode()">Forgot current password? Change via Email OTP</a>
           </div>
         </form>
 
-        <!-- Mode 2: Via Email OTP (Agar current password yaad na ho) -->
+        <!-- Mode 2: Via Email OTP -->
         <form id="passwordChangeOtpForm" style="display:none; margin-top:15px;" onsubmit="handleVerifyOtpAndChangePassword(event)">
-          <p class="muted" style="font-size:12px; margin-bottom:8px;">Aapke registered email par 6-digit OTP bheja jayega.</p>
-          <button type="button" id="sendProfileOtpBtn" class="btn" style="background:#0284c7; width:100%; margin-bottom:10px;" onclick="sendProfileResetOtp()">Send 6-Digit OTP to Email</button>
+          <p class="muted" style="font-size:12px; margin-bottom:8px;">A 6-digit verification code will be sent to your registered email.</p>
+          <button type="button" id="sendProfileOtpBtn" class="btn" style="background:#0284c7; width:100%; margin-bottom:10px;" onclick="sendProfileResetOtp()">Send 6-Digit OTP</button>
           
           <div id="otpVerifySectionBlock" style="display:none; display:grid; gap:8px;">
             <input type="text" id="profileOtpInputCode" placeholder="Enter 6-Digit OTP" maxlength="6" required style="letter-spacing: 4px; font-weight: bold; text-align: center;">
@@ -1283,7 +1283,7 @@
           </div>
 
           <div style="text-align:right; margin-top:8px;">
-            <a style="font-size:12px; color:var(--accent); font-weight:bold; cursor:pointer;" onclick="switchToStandardPasswordMode()">Back to Current Password Login</a>
+            <a style="font-size:12px; color:var(--accent); font-weight:bold; cursor:pointer;" onclick="switchToStandardPasswordMode()">Back to Current Password</a>
           </div>
         </form>
 

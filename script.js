@@ -839,40 +839,52 @@ function loadUserPanelData() {
       
       let statusText = isConfirmed ? 'Booking Confirmed' : (b.status || 'Pending Verification');
       
-      const certNote = b.certIssued ? `<br><span style="color:var(--accent); font-weight:bold;">📜 Certificate Approved & Ready to Download below!</span>` : (isConfirmed ? `<br><span style="color:#d97706; font-size:12px;">⏳ Step 1: Farm Booking Confirmed. Step 2: Certificate will unlock after training.</span>` : (isRejectedBooking ? `<br><span style="color:var(--danger); font-size:12px;">❌ ${b.status}</span>` : ''));
+      const certNote = b.certIssued ? `<br><span style="color:var(--accent); font-weight:bold;">📜 Certificate Approved & Ready to Download below!</span>` : (isConfirmed ? `<br><span style="color:#d97706; font-size:12px;">⏳ Step 1: Farm Booking Confirmed. Step 2: Certificate will unlock after training.</span>` : (isRejectedBooking ? `<br><span style="color:#dc2626; font-size:12px;">❌ ${b.status}</span>` : ''));
       
       return `
-        <div style="border: 1px solid #cbd5e1; border-radius: 10px; padding: 12px; margin-bottom: 10px; background:#fff;">
-          <strong>Booking ID: ${b.bookingId || ''}</strong><br>
-          <small>Booked On: ${b.dateLogged || ''}</small><br>
-          <strong>Scheme: ${b.type || ''} Visit [<span style="color:${statusColor}; font-weight:bold;">${statusText}</span>]</strong>
-          <br><small>Your UPI ID: <code style="color:var(--accent);">${b.userUpiId || 'N/A'}</code></small>
-          ${certNote}
+        <div style="border: 1px solid #cbd5e1; border-radius: 10px; margin-bottom: 10px; background:#fff; overflow:hidden;">
+          <div onclick="toggleBookingDetailsView('${b.bookingId}')" style="padding: 12px 14px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; background: #fff;">
+            <div>
+              <strong>${b.type || 'Program'} Training Booking</strong><br>
+              <small class="muted">Ref ID: ${b.bookingId} | Date: ${b.dateLogged || ''}</small>
+            </div>
+            <div style="text-align: right;">
+              <span style="color:${statusColor}; font-weight:bold; font-size:12.5px;">${statusText}</span>
+              <span id="booking-arrow-${b.bookingId}" style="font-size: 11px; color: #94a3b8; margin-left: 6px;">▼</span>
+            </div>
+          </div>
+
+          <div id="booking-details-${b.bookingId}" style="display: none; padding: 14px; background: #f8fafc; border-top: 1px solid #f1f5f9; font-size: 13px; line-height: 1.6;">
+            <div><strong>📌 Booking Type:</strong> <span style="font-weight:bold; color:var(--accent);">${b.type} Program</span></div>
+            <div><strong>📅 Booked Date & Time:</strong> <span>${b.dateLogged || 'N/A'}</span></div>
+            <div><strong>💰 Fee Paid:</strong> <span style="color:#16a34a; font-weight:bold;">Rs ${b.fee || 0}</span></div>
+            <div><strong>💳 Payment Mode & UTR:</strong> <span>${b.paymentMode || 'UPI'}</span> | Txn: <code>${b.txnId || 'N/A'}</code></div>
+            <div><strong>📱 Your UPI ID:</strong> <code style="color:var(--accent); font-weight:bold;">${b.userUpiId || 'N/A'}</code></div>
+            ${b.type === 'Student' ? `
+              <div><strong>🎓 College:</strong> ${b.college || 'N/A'} (${b.course || 'N/A'})</div>
+              <div><strong>🏷️ Roll / Enrollment:</strong> ${b.enrollment || 'N/A'}</div>
+              <div><strong>⏳ Internship Period:</strong> ${b.start || 'N/A'} to ${b.end || 'N/A'}</div>
+            ` : `
+              <div><strong>👨‍🌾 Training Session Date:</strong> ${b.date || 'N/A'}</div>
+            `}
+            <div style="margin-top: 6px;"><strong>Status Details:</strong> ${certNote}</div>
+          </div>
         </div>
       `;
     }).join("") : "No course training applications logged.";
+  }
+}
 
-    const issuedBookings = myBookings.filter(b => b.certIssued === true);
-
-    if (issuedBookings.length > 0 && historyCertWrapper && historyCertContainer) {
-      let historyCertHtml = "";
-      issuedBookings.forEach((b) => {
-        const titleText = b.type === "Student" ? "Certificate of Internship" : "Certificate of Farming";
-        historyCertHtml += `
-          <div style="padding: 10px; background: #fff; border: 1px solid var(--line); border-radius: 8px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
-            <div>
-              <span style="font-weight: bold; font-size:13px; color: var(--accent);">${titleText}</span><br>
-              <small class="muted">Ref ID: ${b.bookingId}</small>
-            </div>
-            <button type="button" class="btn" style="min-height:30px; padding: 4px 10px; font-size:12px;" onclick="downloadCertificatePDF('${b.bookingId}')">📥 Download PDF</button>
-          </div>
-        `;
-      });
-      historyCertContainer.innerHTML = historyCertHtml;
-      historyCertWrapper.style.display = "block";
-    } else if (historyCertWrapper) {
-      historyCertWrapper.style.display = "none";
-    }
+function toggleBookingDetailsView(bookingId) {
+  const panel = document.getElementById(`booking-details-${bookingId}`);
+  const arrow = document.getElementById(`booking-arrow-${bookingId}`);
+  if (!panel) return;
+  if (panel.style.display === "none" || panel.style.display === "") {
+    panel.style.display = "block";
+    if (arrow) arrow.textContent = "▲";
+  } else {
+    panel.style.display = "none";
+    if (arrow) arrow.textContent = "▼";
   }
 }
 

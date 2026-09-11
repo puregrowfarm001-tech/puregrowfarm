@@ -839,10 +839,19 @@ function loadUserPanelData() {
       
       let statusText = isConfirmed ? 'Booking Confirmed' : (b.status || 'Pending Verification');
       
-      const certNote = b.certIssued ? `<br><span style="color:var(--accent); font-weight:bold;">📜 Certificate Approved & Ready to Download below!</span>` : (isConfirmed ? `<br><span style="color:#d97706; font-size:12px;">⏳ Step 1: Farm Booking Confirmed. Step 2: Certificate will unlock after training.</span>` : (isRejectedBooking ? `<br><span style="color:#dc2626; font-size:12px;">❌ ${b.status}</span>` : ''));
+      // Certificate Approved hone par download button yhi par dikhega!
+      const certActionSection = b.certIssued ? `
+        <div style="margin-top: 10px; background: #f0fdf4; padding: 10px; border-radius: 8px; border: 1px solid #bbf7d0; display: flex; justify-content: space-between; align-items: center;">
+          <div>
+            <span style="color: var(--accent); font-weight: bold; font-size: 13px;">📜 Certificate Approved & Ready!</span><br>
+            <small class="muted">Aapka training certificate approve ho gaya hai.</small>
+          </div>
+          <button type="button" class="btn" style="padding: 6px 14px; font-size: 12px; min-height: 32px; background: var(--accent);" onclick="downloadCertificatePDF('${b.bookingId}')">📥 Download PDF</button>
+        </div>
+      ` : (isConfirmed ? `<div style="margin-top:6px; color:#d97706; font-size:12px;">⏳ Step 1: Booking Confirmed. Certificate training ke baad approve hoga.</div>` : '');
       
       return `
-        <div style="border: 1px solid #cbd5e1; border-radius: 10px; margin-bottom: 10px; background:#fff; overflow:hidden;">
+        <div style="border: 1px solid #cbd5e1; border-radius: 10px; margin-bottom: 12px; background:#fff; overflow:hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
           <div onclick="toggleBookingDetailsView('${b.bookingId}')" style="padding: 12px 14px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; background: #fff;">
             <div>
               <strong>${b.type || 'Program'} Training Booking</strong><br>
@@ -867,7 +876,7 @@ function loadUserPanelData() {
             ` : `
               <div><strong>👨‍🌾 Training Session Date:</strong> ${b.date || 'N/A'}</div>
             `}
-            <div style="margin-top: 6px;"><strong>Status Details:</strong> ${certNote}</div>
+            ${certActionSection}
           </div>
         </div>
       `;

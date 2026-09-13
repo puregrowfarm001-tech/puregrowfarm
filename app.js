@@ -14,7 +14,11 @@ document.addEventListener("DOMContentLoaded", function() {
         renderProducts();
         return;
       }
-      // Product filtering handled in products.js or globally
+      const filtered = products.filter(p => 
+        (p.name && p.name.toLowerCase().includes(query)) || 
+        (p.detail && p.detail.toLowerCase().includes(query))
+      );
+      renderProducts(filtered);
     });
   }
 });

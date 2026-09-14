@@ -4221,11 +4221,10 @@ function switchAdminSubTab(subTabId, btnId) {
 let adminFarmerBookingsRegistry = getCleanData('pgf_admin_farmer_bookings');
 let adminFarmConnectorsRegistry = getCleanData('pgf_admin_farm_connectors');
 
-// Supabase se Data Load karne ka function (Admin View khulte hi data aayega)
+// Supabase se Data Load karne ka function
 async function fetchAdminManagerDataFromCloud() {
   if (!_supabase) return;
 
-  // 1. Farmer Bookings Fetch
   const { data: cloudFarmers } = await _supabase.from('pgf_admin_farmer_bookings').select('*');
   if (cloudFarmers) {
     adminFarmerBookingsRegistry = cloudFarmers.map(f => ({
@@ -4234,7 +4233,6 @@ async function fetchAdminManagerDataFromCloud() {
     localStorage.setItem('pgf_admin_farmer_bookings', JSON.stringify(adminFarmerBookingsRegistry));
   }
 
-  // 2. Farm Connectors Fetch
   const { data: cloudConnectors } = await _supabase.from('pgf_admin_farm_connectors').select('*');
   if (cloudConnectors) {
     adminFarmConnectorsRegistry = cloudConnectors.map(c => ({
@@ -4436,7 +4434,6 @@ function sendSingleWhatsApp(phone, msgId, imgId) {
   window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(finalUrlText)}`, '_blank');
 }
 
-// Jab admin panel load ho toh cloud se data fetch ho jaye
 document.addEventListener("DOMContentLoaded", function() {
   fetchAdminManagerDataFromCloud();
 });

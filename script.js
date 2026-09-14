@@ -1379,7 +1379,127 @@ function populateAdminDashboardTables() {
     return orderDateStr.includes(selectedYear);
   });
   
-  // ... baaki order rendering code wahi rahega ...
+  const approvedOrdersList = validOrders.filter(o => o.status === 'Approved' || o.status === 'Delivered');
+  const approvedOnlineRevenue = approvedOrdersList.reduce((sum, o) => sum + Number(o.total || 0), 0);
+  
+  const pendingConfirmCount = validOrders.filter(o => o && o.status === 'Pending Verification').length;
+  const pendingDeliveryCount = validOrders.filter(o => o && o.status === 'Approved' && o.trackingStage !== 'Delivered' && o.status !== 'Delivered').length;
+  const refundPendingCount = validOrders.filter(o => o && o.status && o.status.startsWith('Cancelled') && o.refundStage !== 'Refund Credited').length;
+
+  if (document.getElementById("adminPendingConfirmCount")) document.getElementById("adminPendingConfirmCount").textContent = pendingConfirmCount;
+  if (document.getElementById("adminPendingDeliveryCount")) document.getElementById("adminPendingDeliveryCount").textContent = pendingDeliveryCount;
+  if (document.getElementById("adminApprovedRevenueValue")) document.getElementById("adminApprovedRevenueValue").textContent = `Rs ${approvedOnlineRevenue.toFixed(2)}`;
+  if (document.getElementById("adminRefundPendingCount")) document.getElementById("adminRefundPendingCount").textContent = refundPendingCount;
+
+  if (document.getElementById("adminOrdersTableBody")) {
+    if (!validOrders.length) {
+      document.getElementById("adminOrdersTableBody").innerHTML = `<tr><td colspan="10" style="text-align:center; color:var(--muted); padding:24px; font-weight:bold;">No customer orders found for year ${selectedYear}.</td></tr>`;
+    } else {
+      document.getElementById("adminOrdersTableBody").innerHTML = validOrders.map((o) => {
+        const idx = orderRegistry.indexOf(o);
+        const grandTotal = Number(o.total || 0);
+        const mode = o.paymentMode || "Online UPI";
+        const status = o.status || "Pending Verification";
+        const isDelivered = status === 'Delivered' || o.trackingStage === 'Delivered';
+        const isApproved = status === 'Approved' || isDelivered;
+        const isCancelled = status.startsWith('Cancelled');
+        const isRejected = status.startsWith('Rejected');
+        
+        const stage = o.trackingStage || (isDelivered ? 'Delivered' : (isApproved ? 'Packed' : 'Placed'));
+        const loc = o.currentLocation || 'Farm Facility';
+        const eta = o.deliveryDays || '';
+        const courier = o.courierName || 'Ekart Logistics';
+        const refundDate = o.refundCreditedDate || getTodayIsoString();
+        const displayDateTime = o.dateLogged || new Date().toLocaleDateString('en-IN');
+        const paymentDate = o.paymentDate || displayDateTime;
+        const userUpi = o.userUpiId || "N/A";
+
+        return `
+          <tr>
+            <td><strong>${o.orderId}</strong></td>
+            <td style="white-space: nowrap;">
+              <span style="color:#0284c7; font-weight:bold; font-size:12px;">📅 Placed: ${displayDateTime}</span><br>
+              <span style="color:#16a34a; font-weight:bold; font-size:11px;">💳 Paid: ${paymentDate}</span>
+            </td>
+            <td>
+              <strong>${o.name}</strong><br>
+              <small>${o.phone || 'N/A'}</small><br>
+              <small class="muted">${o.email || ''}</small>
+            </td>
+            <td><small>${o.address || 'N/A'}</small></td>
+            <td>${o.products || 'N/A'}</td>
+            <td style="color:var(--accent); font-weight:bold; font-size:14px;">Rs ${grandTotal}</td>
+            <td>
+              <span class="badge" style="background:#eef2ff; color:#3730a3; margin-bottom:3px; font-weight:bold;">${mode}</span><br>
+              <small>Txn: <code>${o.txnId || 'N/A'}</code></small><br>
+              <div style="display:flex; align-items:center; gap:4px; margin-top:2px;">
+                <code style="background:#f1f5f9; padding:2px 4px; border-radius:4px; color:#0f172a; font-size:11px;">UPI: ${userUpi}</code>
+                ${userUpi !== 'N/A' ? `<button type="button" title="Copy UPI ID" style="padding:1px 5px; min-height:auto; font-size:10px; background:#0284c7;" onclick="copyToClipboard('${userUpi}')">📋</button>` : ''}
+              </div>
+            </td>
+            <td>
+              <span class="badge ${isDelivered ? 'badge-confirmed' : (isCancelled ? 'badge-pending' : (isRejected ? 'badge-pending' : (isApproved ? 'badge-confirmed' : 'badge-pending')))}" style="${isRejected ? 'background:#fee2e2; color:#991b1b;' : (isCancelled ? 'background:#ffedd5; color:#c2410c;' : (isDelivered ? 'background:#16a34a; color:#fff;' : ''))}">
+                ${status}
+              </span>
+              ${isCancelled ? `<br><small style="color:${o.refundStage === 'Refund Credited' ? '#16a34a' : '#ea580c'}; font-weight:bold;">Refund: ${o.refundStage || 'Initiated'} ${o.refundCreditedDate ? `(${o.refundCreditedDate})` : ''}</small>` : ''}
+              ${isDelivered && o.deliveredDate ? `<br><small style="color:#16a34a; font-weight:bold;">Delivered: ${o.deliveredDate}</small>` : ''}
+            </td>
+            
+            <td style="min-width: 280px;">
+              ${isApproved && !isCancelled && !isRejected ? `
+                <div style="background:#f8fafc; padding:8px; border-radius:8px; border:1px solid #e2e8f0; font-size:12px;">
+                  <div style="margin-bottom:6px; display:flex; align-items:center; gap:4px; background:#fff; padding:4px 6px; border-radius:6px; border:1px solid #cbd5e1;">
+                    <label style="font-size:11px; font-weight:bold; color:#0f172a; white-space:nowrap;">📅 Delivery Date:</label>
+                    <input type="date" value="${eta}" style="padding:2px 4px; font-size:11px; width:100%; border:1px solid #94a3b8; border-radius:4px;" onchange="updateExpectedDeliveryDate(${idx}, this.value)">
+                  </div>
+
+                  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px; gap:4px;">
+                    <span style="font-weight:bold; color:#0284c7; white-space:nowrap;">Courier:</span>
+                    <input type="text" value="${courier}" placeholder="Courier Name" style="padding:2px 6px; font-size:11px; font-weight:bold; color:#334155; border:1px solid #94a3b8; border-radius:4px; width:140px; text-align:right;" onchange="updateOrderCourierDirect(${idx}, this.value)">
+                  </div>
+
+                  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; gap:4px;">
+                    <span style="font-weight:bold; color:#0284c7; white-space:nowrap;">📍 Location (Kaha he):</span>
+                    <input type="text" value="${loc}" placeholder="Order Location (e.g. Surat Hub)" style="padding:2px 6px; font-size:11px; font-weight:bold; color:#334155; border:1px solid #94a3b8; border-radius:4px; width:130px; text-align:right;" onchange="updateOrderLocationDirect(${idx}, this.value)">
+                  </div>
+
+                  <div style="display:flex; gap:3px; flex-wrap:wrap;">
+                    <button type="button" class="btn" style="padding:2px 5px; font-size:10px; min-height:22px; background:${stage==='Placed'?'#2b8a3e':'#94a3b8'};" onclick="setOrderStageDirect(${idx}, 'Placed')">Placed</button>
+                    <button type="button" class="btn" style="padding:2px 5px; font-size:10px; min-height:22px; background:${stage==='Packed'?'#2b8a3e':'#94a3b8'};" onclick="setOrderStageDirect(${idx}, 'Packed')">Packed</button>
+                    <button type="button" class="btn" style="padding:2px 5px; font-size:10px; min-height:22px; background:${stage==='Shipped'?'#2b8a3e':'#94a3b8'};" onclick="setOrderStageDirect(${idx}, 'Shipped')">Shipped</button>
+                    <button type="button" class="btn" style="padding:2px 5px; font-size:10px; min-height:22px; background:${stage==='OutForDelivery'?'#2b8a3e':'#94a3b8'};" onclick="setOrderStageDirect(${idx}, 'OutForDelivery')">Out Delivery</button>
+                    <button type="button" class="btn" style="padding:2px 5px; font-size:10px; min-height:22px; background:${stage==='Delivered'?'#16a34a':'#94a3b8'};" onclick="setOrderStageDirect(${idx}, 'Delivered')">Delivered</button>
+                  </div>
+                </div>
+              ` : (isCancelled ? `
+                <div style="background:#fffaf5; padding:8px; border-radius:8px; border:1px solid #fdba74; font-size:12px;">
+                  <span style="font-weight:bold; color:#ea580c;">Refund Control Action</span>
+                  
+                  <div style="margin: 6px 0 4px 0; display:flex; align-items:center; gap:4px; background:#fff; padding:3px 6px; border-radius:4px; border:1px solid #cbd5e1;">
+                    <label style="font-size:10.5px; font-weight:bold; white-space:nowrap;">📅 Refund Date:</label>
+                    <input type="date" value="${refundDate}" id="refundDateInput_${idx}" style="padding:1px 4px; font-size:11px; width:100%; border:1px solid #94a3b8; border-radius:4px;" onchange="updateOrderRefundDate(${idx}, this.value)">
+                  </div>
+
+                  <div style="display:flex; gap:4px; flex-wrap:wrap; margin-top:4px;">
+                    <button type="button" class="btn" style="padding:3px 6px; font-size:11px; min-height:24px; background:${o.refundStage==='Refund Initiated'?'#ea580c':'#94a3b8'};" onclick="setRefundStageDirect(${idx}, 'Refund Initiated')">Initiated</button>
+                    <button type="button" class="btn" style="padding:3px 6px; font-size:11px; min-height:24px; background:${o.refundStage==='Refund Processing'?'#ea580c':'#94a3b8'};" onclick="setRefundStageDirect(${idx}, 'Refund Processing')">Processing</button>
+                    <button type="button" class="btn" style="padding:3px 6px; font-size:11px; min-height:24px; background:${o.refundStage==='Refund Credited'?'#16a34a':'#dc2626'}; font-weight:bold;" onclick="setRefundStageDirect(${idx}, 'Refund Credited')">💸 Credited (Deduct Cash)</button>
+                  </div>
+                </div>
+              ` : (isRejected ? `<span style="color:#dc2626; font-weight:bold; font-size:12px;">Rejected</span>` : `<span style="color:#d97706; font-weight:bold; font-size:12px;">Approve or Cancel to track</span>`))}
+            </td>
+
+            <td>
+              <div style="display:flex; flex-direction:column; gap:4px;">
+                <button class="btn" style="padding:5px 8px; font-size:11px; background:#0f172a; border-radius:6px;" onclick="openOrderActionsMenu(${idx})">⚙️ Manage</button>
+                <button class="btn" style="padding:5px 8px; font-size:11px; background:#25d366; border-radius:6px;" onclick="sendAdminWhatsAppMessage('order', '${o.orderId}')">💬 WhatsApp</button>
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join("");
+    }
+  }
 
   // 2. BOOKINGS SORTING: Newest first (New first, Old last)
   const sortedBookings = [...bookingsRegistry].sort((a, b) => {
@@ -1395,7 +1515,129 @@ function populateAdminDashboardTables() {
     return bookingDateStr.includes(selectedYear);
   });
 
-  // ... baaki bookings rendering code wahi rahega ...
+  const totalStudents = validBookings.filter(b => b.type === "Student").length;
+  const totalFarmers = validBookings.filter(b => b.type === "Farmer").length;
+  const totalBookingsFee = validBookings.filter(b => b.status === "Confirmed" || b.status === "Approved").reduce((sum, b) => sum + Number(b.fee || 0), 0);
+  const pendingBookings = validBookings.filter(b => b.status === "Pending Verification").length;
+  const pendingCertificates = validBookings.filter(b => (b.status === "Confirmed" || b.status === "Approved") && !b.certIssued).length;
+
+  if (document.getElementById("adminTotalStudentsCount")) document.getElementById("adminTotalStudentsCount").textContent = totalStudents;
+  if (document.getElementById("adminTotalFarmersCount")) document.getElementById("adminTotalFarmersCount").textContent = totalFarmers;
+  if (document.getElementById("adminTotalBookingsFee")) document.getElementById("adminTotalBookingsFee").textContent = `Rs ${totalBookingsFee.toFixed(2)}`;
+  if (document.getElementById("adminBookingsPendingCount")) document.getElementById("adminBookingsPendingCount").textContent = pendingBookings;
+  if (document.getElementById("adminCertificatesPendingCount")) document.getElementById("adminCertificatesPendingCount").textContent = pendingCertificates;
+
+  if (document.getElementById("adminBookingsTableBody")) {
+    if (!validBookings.length) {
+      document.getElementById("adminBookingsTableBody").innerHTML = `<tr><td colspan="10" style="text-align:center; color:var(--muted); padding:24px; font-weight:bold;">No farm training bookings found for year ${selectedYear}.</td></tr>`;
+    } else {
+      const bookingsTbody = document.getElementById("adminBookingsTableBody");
+      bookingsTbody.innerHTML = validBookings.map((b) => {
+        const idx = bookingsRegistry.indexOf(b);
+        const isStudent = b.type === "Student";
+        const submittedDetails = isStudent ? `
+          <div style="line-height:1.4;">
+            <strong>College:</strong> ${b.college || 'N/A'}<br>
+            <strong>Course:</strong> ${b.course || 'N/A'} (Roll: ${b.enrollment || 'N/A'})<br>
+            <strong>Dates:</strong> <span style="color:#0369a1; font-weight:600;">${b.start || 'N/A'}</span> to <span style="color:#0369a1; font-weight:600;">${b.end || 'N/A'}</span>
+          </div>
+        ` : `
+          <div style="line-height:1.4;">
+            <strong>Session Date:</strong> <span style="color:#92400e; font-weight:600;">${b.date || 'N/A'}</span><br>
+            <span class="muted">Farmer Practical Training</span>
+          </div>
+        `;
+
+        const mode = b.paymentMode || "UPI Gateway";
+        const isConfirmed = b.status === "Confirmed" || b.status === "Approved";
+        const certIssued = b.certIssued === true;
+        const bUpi = b.userUpiId || "N/A";
+        const isRejectedBooking = b.status && b.status.startsWith('Rejected');
+
+        return `
+          <tr>
+            <td><strong>${b.bookingId}</strong></td>
+            <td><span class="badge" style="background:${isStudent ? '#e0f2fe; color:#0369a1;' : '#fef3c7; color:#92400e;'}">${b.type || 'Booking'}</span></td>
+            <td>
+              <strong>${b.name}</strong><br>
+              <small>${b.phone || 'N/A'}</small><br>
+              <small class="muted">${b.email || 'N/A'}</small>
+            </td>
+            <td><small>${submittedDetails}</small></td>
+            <td style="font-weight:bold; color:var(--accent); font-size:14px;">Rs ${b.fee || 0}</td>
+            <td>
+              <span class="badge" style="background:#eef2ff; color:#3730a3; margin-bottom:3px; font-weight:bold;">${mode}</span><br>
+              <small>Txn: <code>${b.txnId || 'N/A'}</code></small><br>
+              <div style="display:flex; align-items:center; gap:4px; margin-top:2px;">
+                <code style="background:#f1f5f9; padding:2px 4px; border-radius:4px; color:#0f172a; font-size:11px;">UPI: ${bUpi}</code>
+                ${bUpi !== 'N/A' ? `<button type="button" title="Copy UPI ID" style="padding:1px 5px; min-height:auto; font-size:10px; background:#0284c7;" onclick="copyToClipboard('${bUpi}')">📋</button>` : ''}
+              </div>
+            </td>
+            <td><small style="color:#0284c7; font-weight:bold;">${b.dateLogged || 'N/A'}</small></td>
+            <td>
+              <span class="badge ${isConfirmed ? 'badge-confirmed' : (isRejectedBooking ? 'badge-pending' : 'badge-pending')}" style="${isRejectedBooking ? 'background:#fee2e2; color:#991b1b;' : ''}">
+                ${isConfirmed ? '1. Confirmed' : (b.status || 'Pending Verification')}
+              </span>
+              ${b.approvedDate ? `<br><small style="color:#16a34a;">Approved: ${b.approvedDate}</small>` : ''}
+            </td>
+            <td>
+              <span class="badge ${certIssued ? 'badge-confirmed' : 'badge-pending'}">${certIssued ? '2. Approved' : 'Pending Approval'}</span>
+              ${b.certIssueDate ? `<br><small style="color:#0284c7;">Issued: ${b.certIssueDate}</small>` : ''}
+            </td>
+            <td>
+              <div style="display:flex; flex-direction:column; gap:4px;">
+                ${!isConfirmed && !isRejectedBooking ? `
+                  <button class="btn" style="padding:4px 8px; min-height:auto; font-size:11px; background:var(--accent);" onclick="confirmBookingSlot(${idx})">1. Approve Farm Book</button>
+                  <button class="btn" style="padding:4px 8px; min-height:auto; font-size:11px; background:var(--danger);" onclick="rejectTrainingBooking(${idx})">Reject Booking</button>
+                ` : (isConfirmed ? `
+                  ${!certIssued ? `
+                    <button class="btn" style="padding:4px 8px; min-height:auto; font-size:11px; background:#0284c7;" onclick="issueUserCertificate(${idx})">2. Approve Certificate</button>
+                    <button class="btn" style="padding:4px 8px; min-height:auto; font-size:11px; background:var(--danger);" onclick="rejectTrainingBooking(${idx})">Reject Certificate</button>
+                  ` : `
+                    <button type="button" class="btn" style="padding:3px 6px; min-height:auto; font-size:11px; background:var(--accent);" onclick="downloadCertificatePDF('${b.bookingId}')">📜 Download PDF</button>
+                  `}
+                  <button type="button" class="btn" style="padding:3px 6px; min-height:auto; font-size:11px; background:#4b5563;" onclick="adminEditCertificateData(${idx})">✏️ Edit Certificate</button>
+                ` : `<span style="color:#dc2626; font-weight:bold; font-size:12px;">Rejected</span>`)}
+                <button type="button" class="btn" style="padding:4px 8px; font-size:11px; background:#25d366;" onclick="sendAdminWhatsAppMessage('booking', '${b.bookingId}')">💬 WhatsApp</button>
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join("");
+    }
+  }
+
+  if (document.getElementById("adminUsersTableBody")) {
+    const validUsers = usersDatabase.filter(u => {
+      if (!u || !u.name || !u.email) return false;
+      if (selectedYear === "ALL") return true;
+      const regDateStr = u.registeredOn || "";
+      return regDateStr.includes(selectedYear);
+    });
+
+    if (!validUsers.length) {
+      document.getElementById("adminUsersTableBody").innerHTML = `<tr><td colspan="6" style="text-align:center; color:var(--muted); padding:24px; font-weight:bold;">No registered accounts found for year ${selectedYear}.</td></tr>`;
+    } else {
+      document.getElementById("adminUsersTableBody").innerHTML = validUsers.map((u) => {
+        const idx = usersDatabase.indexOf(u);
+        return `
+          <tr>
+            <td>${idx + 1}</td>
+            <td><strong>${u.name}</strong></td>
+            <td>${u.phone || 'N/A'}</td>
+            <td><code>${u.email}</code></td>
+            <td><mark style="background:#f3f4f6; padding:2px 4px; border-radius:4px;">${u.password || '******'}</mark></td>
+            <td>
+              <div style="display:flex; gap:4px; flex-wrap:wrap;">
+                <button class="btn" style="padding:4px 8px; min-height:auto; background:var(--danger);" onclick="deleteUserAccount(${idx})">Delete</button>
+                <button class="btn" style="padding:4px 8px; min-height:auto; background:#25d366;" onclick="sendAdminWhatsAppMessage('user', ${idx})">💬 WhatsApp</button>
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join("");
+    }
+  }
 }
 
 function openAdminFilterModal(type) {

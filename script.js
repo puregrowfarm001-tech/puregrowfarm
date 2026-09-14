@@ -1250,12 +1250,13 @@ function handleAdminYearFilterChange() {
 function printActiveAdminReport() {
   const selectedYear = document.getElementById("adminYearFilterSelect")?.value || "ALL";
 
-  // 🗓️ Proper Calendar Date Parser Helper
+  // 🗓️ 100% Secure Calendar Date Parser for Ascending Order (Oldest First)
   const parseCalendarDate = (dateStr) => {
     if (!dateStr) return 0;
     let cleanStr = String(dateStr).trim().split(" ")[0]; // Time hata kar sirf date lein
     let parts = cleanStr.split(/[\/\-]/);
     if (parts.length === 3) {
+      // Agar format DD/MM/YYYY ya DD-MM-YYYY hai
       if (parts[0].length <= 2 && parts[2].length === 4) {
         return new Date(`${parts[2]}-${parts[1]}-${parts[0]}`).getTime() || 0;
       }
@@ -1267,10 +1268,10 @@ function printActiveAdminReport() {
   const sortByCalendarDateAscending = (a, b, dateKey1, dateKey2) => {
     let dateStrA = a[dateKey1] || a[dateKey2] || "";
     let dateStrB = b[dateKey1] || b[dateKey2] || "";
-    return parseCalendarDate(dateStrA) - parseCalendarDate(dateStrB); // Oldest to Newest (Calendar Order)
+    return parseCalendarDate(dateStrA) - parseCalendarDate(dateStrB); // 🔄 Oldest to Newest (Calendar Order: e.g. 30/8 then 10/9)
   };
 
-  // 1. Filtered Orders & Sorted Oldest First
+  // 1. Filtered Orders & Sorted Oldest First (Print ke liye)
   const filteredOrders = orderRegistry.filter(o => {
     if (!o || !(o.status === 'Approved' || o.status === 'Delivered')) return false;
     if (selectedYear === "ALL") return true;
@@ -1279,7 +1280,7 @@ function printActiveAdminReport() {
   filteredOrders.sort((a, b) => sortByCalendarDateAscending(a, b, 'rawIsoDate', 'dateLogged'));
   const orderTotal = filteredOrders.reduce((sum, o) => sum + Number(o.total || 0), 0);
 
-  // 2. Filtered Bookings & Sorted Oldest First
+  // 2. Filtered Bookings & Sorted Oldest First (Print ke liye)
   const filteredBookings = bookingsRegistry.filter(b => {
     if (!b || !b.name || !(b.status === "Confirmed" || b.status === "Approved")) return false;
     if (selectedYear === "ALL") return true;
@@ -1379,7 +1380,7 @@ function printActiveAdminReport() {
     const inputs = sectionClone.querySelectorAll('form, input, select, button, input[type="search"]');
     inputs.forEach(el => el.remove());
 
-    // 🔄 Print table rows ko sorted data ke hisaab se dynamically rewrite karna
+    // 🔄 Print table rows ko properly sorted (Oldest first) data ke sath regenerate karna
     const tables = sectionClone.querySelectorAll('table');
     tables.forEach(table => {
       const headers = table.querySelectorAll('th');
@@ -1391,7 +1392,7 @@ function printActiveAdminReport() {
         }
       });
 
-      // Agar yeh Bookings table hai, toh sorted filteredBookings se rows dubara generate karo
+      // Agar yeh Bookings table hai
       if (table.id === 'adminBookingsTableBody' || table.querySelector('th')?.textContent.includes('Booking ID')) {
         const tbody = table.querySelector('tbody') || table;
         tbody.innerHTML = filteredBookings.map(b => `
@@ -1408,7 +1409,7 @@ function printActiveAdminReport() {
           </tr>
         `).join('') || `<tr><td colspan="9" style="text-align:center;">No records</td></tr>`;
       } 
-      // Agar yeh Orders table hai, toh sorted filteredOrders se rows dubara generate karo
+      // Agar yeh Orders table hai
       else if (table.querySelector('th')?.textContent.includes('Order ID')) {
         const tbody = table.querySelector('tbody') || table;
         tbody.innerHTML = filteredOrders.map(o => `
@@ -1425,7 +1426,7 @@ function printActiveAdminReport() {
         `).join('') || `<tr><td colspan="8" style="text-align:center;">No records</td></tr>`;
       }
 
-      // Baaki unwanted columns remove karna
+      // Unwanted columns remove karna
       const rows = table.querySelectorAll('tr');
       rows.forEach(row => {
         const cols = row.querySelectorAll('th, td');

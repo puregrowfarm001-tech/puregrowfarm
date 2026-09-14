@@ -1250,46 +1250,45 @@ function handleAdminYearFilterChange() {
 function printActiveAdminReport() {
   const selectedYear = document.getElementById("adminYearFilterSelect")?.value || "ALL";
 
-  // 🗓️ Calendar Date-wise Sorting Helper (Ensures proper chronological calendar order)
+  // 🗓️ Proper Calendar Date Parser Helper
   const parseCalendarDate = (dateStr) => {
     if (!dateStr) return 0;
-    // Agar format 'DD/MM/YYYY' ya 'DD-MM-YYYY' hai toh use parseable format me badle
-    let parts = dateStr.split(/[\/\-]/);
+    let cleanStr = String(dateStr).trim().split(" ")[0]; // Time hata kar sirf date lein
+    let parts = cleanStr.split(/[\/\-]/);
     if (parts.length === 3) {
-      // Agar pehla part din hai (jaise 30/08/2026)
       if (parts[0].length <= 2 && parts[2].length === 4) {
         return new Date(`${parts[2]}-${parts[1]}-${parts[0]}`).getTime() || 0;
       }
     }
-    let parsed = new Date(dateStr).getTime();
+    let parsed = new Date(cleanStr).getTime();
     return isNaN(parsed) ? 0 : parsed;
   };
 
   const sortByCalendarDateAscending = (a, b, dateKey1, dateKey2) => {
     let dateStrA = a[dateKey1] || a[dateKey2] || "";
     let dateStrB = b[dateKey1] || b[dateKey2] || "";
-    return parseCalendarDate(dateStrA) - parseCalendarDate(dateStrB); // 🗓️ Calendar order: Oldest/First calendar date to latest
+    return parseCalendarDate(dateStrA) - parseCalendarDate(dateStrB); // Oldest to Newest (Calendar Order)
   };
 
-  // Filtered data calculation for selected year
+  // 1. Filtered Orders & Sorted Oldest First
   const filteredOrders = orderRegistry.filter(o => {
     if (!o || !(o.status === 'Approved' || o.status === 'Delivered')) return false;
     if (selectedYear === "ALL") return true;
     return (o.rawIsoDate || o.dateLogged || "").includes(selectedYear);
   });
-  
   filteredOrders.sort((a, b) => sortByCalendarDateAscending(a, b, 'rawIsoDate', 'dateLogged'));
   const orderTotal = filteredOrders.reduce((sum, o) => sum + Number(o.total || 0), 0);
 
+  // 2. Filtered Bookings & Sorted Oldest First
   const filteredBookings = bookingsRegistry.filter(b => {
     if (!b || !b.name || !(b.status === "Confirmed" || b.status === "Approved")) return false;
     if (selectedYear === "ALL") return true;
     return (b.date || b.dateLogged || "").includes(selectedYear);
   });
-
   filteredBookings.sort((a, b) => sortByCalendarDateAscending(a, b, 'dateLogged', 'date'));
   const farmBookingTotal = filteredBookings.reduce((sum, b) => sum + Number(b.fee || 0), 0);
 
+  // 3. Filtered Sales & Sorted Oldest First
   const filteredSales = salesRegistry.filter(s => {
     if (!s) return false;
     if (selectedYear === "ALL") return true;
@@ -1298,6 +1297,7 @@ function printActiveAdminReport() {
   filteredSales.sort((a, b) => sortByCalendarDateAscending(a, b, 'date', 'date'));
   const sellTotal = filteredSales.reduce((sum, s) => sum + Number(s.paidAmount !== undefined ? s.paidAmount : s.total || 0), 0);
 
+  // 4. Filtered Purchases & Sorted Oldest First
   const filteredPurchases = purchasesRegistry.filter(p => {
     if (!p) return false;
     if (selectedYear === "ALL") return true;
@@ -1306,6 +1306,7 @@ function printActiveAdminReport() {
   filteredPurchases.sort((a, b) => sortByCalendarDateAscending(a, b, 'date', 'date'));
   const buyTotal = filteredPurchases.reduce((sum, p) => sum + Number(p.paidAmount !== undefined ? p.paidAmount : p.total || 0), 0);
 
+  // 5. Filtered Expenses & Sorted Oldest First
   const filteredExpenses = expensesRegistry.filter(e => {
     if (!e || e.category === "Damage Received") return false;
     if (selectedYear === "ALL") return true;
@@ -1378,11 +1379,10 @@ function printActiveAdminReport() {
     const inputs = sectionClone.querySelectorAll('form, input, select, button, input[type="search"]');
     inputs.forEach(el => el.remove());
 
+    // 🔄 Print table rows ko sorted data ke hisaab se dynamically rewrite karna
     const tables = sectionClone.querySelectorAll('table');
     tables.forEach(table => {
       const headers = table.querySelectorAll('th');
-      const rows = table.querySelectorAll('tr');
-
       let removeIndices = [];
       headers.forEach((th, thIndex) => {
         const text = th.textContent.toLowerCase();
@@ -1391,6 +1391,42 @@ function printActiveAdminReport() {
         }
       });
 
+      // Agar yeh Bookings table hai, toh sorted filteredBookings se rows dubara generate karo
+      if (table.id === 'adminBookingsTableBody' || table.querySelector('th')?.textContent.includes('Booking ID')) {
+        const tbody = table.querySelector('tbody') || table;
+        tbody.innerHTML = filteredBookings.map(b => `
+          <tr>
+            <td><strong>${b.bookingId}</strong></td>
+            <td>${b.type || 'Booking'}</td>
+            <td><strong>${b.name}</strong><br><small>${b.phone || ''}</small></td>
+            <td><small>${b.type === 'Student' ? 'College: ' + (b.college || '') : 'Session Date: ' + (b.date || '')}</small></td>
+            <td>Rs ${b.fee || 0}</td>
+            <td>${b.paymentMode || 'UPI'} <br><small>${b.txnId || ''}</small></td>
+            <td>${b.dateLogged || ''}</td>
+            <td>${b.status || ''}</td>
+            <td>${b.certIssued ? 'Approved' : 'Pending'}</td>
+          </tr>
+        `).join('') || `<tr><td colspan="9" style="text-align:center;">No records</td></tr>`;
+      } 
+      // Agar yeh Orders table hai, toh sorted filteredOrders se rows dubara generate karo
+      else if (table.querySelector('th')?.textContent.includes('Order ID')) {
+        const tbody = table.querySelector('tbody') || table;
+        tbody.innerHTML = filteredOrders.map(o => `
+          <tr>
+            <td><strong>${o.orderId}</strong></td>
+            <td>${o.dateLogged || ''}</td>
+            <td><strong>${o.name}</strong><br><small>${o.phone || ''}</small></td>
+            <td><small>${o.address || ''}</small></td>
+            <td>${o.products || ''}</td>
+            <td>Rs ${o.total || 0}</td>
+            <td>${o.paymentMode || ''}</td>
+            <td>${o.status || ''}</td>
+          </tr>
+        `).join('') || `<tr><td colspan="8" style="text-align:center;">No records</td></tr>`;
+      }
+
+      // Baaki unwanted columns remove karna
+      const rows = table.querySelectorAll('tr');
       rows.forEach(row => {
         const cols = row.querySelectorAll('th, td');
         removeIndices.forEach(colIndex => {

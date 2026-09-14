@@ -1258,7 +1258,11 @@ function printActiveAdminReport() {
   });
   
   // 🔄 Print ke liye: Old Data First (Ascending order - Purana data sabse upar)
-  filteredOrders.sort((a, b) => new Date(a.rawIsoDate || a.dateLogged || 0) - new Date(b.rawIsoDate || b.dateLogged || 0));
+  filteredOrders.sort((a, b) => {
+    let timeA = new Date(a.rawIsoDate || a.dateLogged || 0).getTime() || 0;
+    let timeB = new Date(b.rawIsoDate || b.dateLogged || 0).getTime() || 0;
+    return timeA - timeB; // Oldest first for printing
+  });
 
   const orderTotal = filteredOrders.reduce((sum, o) => sum + Number(o.total || 0), 0);
 
@@ -1269,7 +1273,11 @@ function printActiveAdminReport() {
   });
 
   // 🔄 Print ke liye Bookings: Old Data First
-  filteredBookings.sort((a, b) => new Date(a.dateLogged || 0) - new Date(b.dateLogged || 0));
+  filteredBookings.sort((a, b) => {
+    let timeA = new Date(a.dateLogged || a.date || 0).getTime() || 0;
+    let timeB = new Date(b.dateLogged || b.date || 0).getTime() || 0;
+    return timeA - timeB;
+  });
 
   const farmBookingTotal = filteredBookings.reduce((sum, b) => sum + Number(b.fee || 0), 0);
 
@@ -1280,7 +1288,11 @@ function printActiveAdminReport() {
   });
   
   // 🔄 Print ke liye Sales: Old Data First
-  filteredSales.sort((a, b) => new Date(a.date || 0) - new Date(b.date || 0));
+  filteredSales.sort((a, b) => {
+    let timeA = new Date(a.date || 0).getTime() || 0;
+    let timeB = new Date(b.date || 0).getTime() || 0;
+    return timeA - timeB;
+  });
   const sellTotal = filteredSales.reduce((sum, s) => sum + Number(s.paidAmount !== undefined ? s.paidAmount : s.total || 0), 0);
 
   const filteredPurchases = purchasesRegistry.filter(p => {
@@ -1290,7 +1302,11 @@ function printActiveAdminReport() {
   });
 
   // 🔄 Print ke liye Purchases: Old Data First
-  filteredPurchases.sort((a, b) => new Date(a.date || 0) - new Date(b.date || 0));
+  filteredPurchases.sort((a, b) => {
+    let timeA = new Date(a.date || 0).getTime() || 0;
+    let timeB = new Date(b.date || 0).getTime() || 0;
+    return timeA - timeB;
+  });
   const buyTotal = filteredPurchases.reduce((sum, p) => sum + Number(p.paidAmount !== undefined ? p.paidAmount : p.total || 0), 0);
 
   const filteredExpenses = expensesRegistry.filter(e => {
@@ -1300,7 +1316,11 @@ function printActiveAdminReport() {
   });
 
   // 🔄 Print ke liye Expenses: Old Data First
-  filteredExpenses.sort((a, b) => new Date(a.date || 0) - new Date(b.date || 0));
+  filteredExpenses.sort((a, b) => {
+    let timeA = new Date(a.date || 0).getTime() || 0;
+    let timeB = new Date(b.date || 0).getTime() || 0;
+    return timeA - timeB;
+  });
   const expenseTotal = filteredExpenses.reduce((sum, e) => sum + Number(e.amount || 0), 0);
 
   let sohamBuyTotal = 0, jeetBuyTotal = 0, farmBuyTotal = 0;
@@ -1329,7 +1349,11 @@ function printActiveAdminReport() {
     return (e.date || "").includes(selectedYear);
   });
 
-  filteredDamages.sort((a, b) => new Date(a.date || 0) - new Date(b.date || 0));
+  filteredDamages.sort((a, b) => {
+    let timeA = new Date(a.date || 0).getTime() || 0;
+    let timeB = new Date(b.date || 0).getTime() || 0;
+    return timeA - timeB;
+  });
   const damageTotal = filteredDamages.reduce((sum, d) => sum + Number(d.amount || 0), 0);
 
   let sohamDmgTotal = 0, jeetDmgTotal = 0, farmDmgTotal = 0;
@@ -1350,7 +1374,6 @@ function printActiveAdminReport() {
   let combinedHTML = '';
   
   allSections.forEach((section, index) => {
-    // 🛑 Yahan check kiya: Agar section me Users tab hai ya Live Stock Summary wala container hai, toh use print me skip kar do!
     if (section.id === 'erpUsersTab' || section.querySelector('#adminLiveStockCardsContainer')) return;
 
     const sectionClone = section.cloneNode(true);

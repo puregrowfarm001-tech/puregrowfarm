@@ -4218,46 +4218,33 @@ function switchAdminSubTab(subTabId, btnId) {
   }
 }
 
-// Global Registries for Admin Manager
 let adminFarmerBookingsRegistry = getCleanData('pgf_admin_farmer_bookings');
 let adminFarmConnectorsRegistry = getCleanData('pgf_admin_farm_connectors');
 
-// 1) Save Farmer Booking to Supabase & LocalStorage
+// 1) Save Farmer Booking (Name, Number, Address only)
 async function saveFarmerBookingAdmin(e) {
   e.preventDefault();
   const name = document.getElementById("adminFarmerName").value.trim();
   const phone = document.getElementById("adminFarmerPhone").value.trim();
   const address = document.getElementById("adminFarmerAddress").value.trim();
-  const note = document.getElementById("adminFarmerNote").value.trim();
-  const imageInput = document.getElementById("adminFarmerImage");
-
-  let imageUrl = "";
-  if (imageInput && imageInput.files && imageInput.files[0]) {
-    imageUrl = URL.createObjectURL(imageInput.files[0]); // Local preview / data url support
-  }
 
   const payload = {
     id: "FB-" + Date.now().toString().slice(-4),
     name: name,
     phone: phone,
     address: address,
-    note: note,
-    image: imageUrl,
     date_logged: new Date().toLocaleDateString('en-IN')
   };
 
-  // Supabase Sync
   const { error } = await _supabase.from('pgf_admin_farmer_bookings').insert([payload]);
-  if (error) {
-    console.log("Supabase insert note:", error.message);
-  }
+  if (error) console.log("Supabase error:", error.message);
 
   adminFarmerBookingsRegistry.unshift(payload);
   localStorage.setItem('pgf_admin_farmer_bookings', JSON.stringify(adminFarmerBookingsRegistry));
 
   e.target.reset();
   renderAdminFarmerBookingTable();
-  alert("✅ Farmer Booking data successfully added and synced!");
+  alert("✅ Farmer Booking saved successfully!");
 }
 
 function renderAdminFarmerBookingTable() {
@@ -4265,27 +4252,17 @@ function renderAdminFarmerBookingTable() {
   if (!tbody) return;
 
   if (!adminFarmerBookingsRegistry.length) {
-    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:var(--muted); padding:15px;">No farmer bookings added yet.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:var(--muted); padding:15px;">No farmer bookings added yet.</td></tr>`;
     return;
   }
 
   tbody.innerHTML = adminFarmerBookingsRegistry.map((item, idx) => `
     <tr>
-      <td>
-        <strong>${item.name}</strong>
-        ${item.image ? `<br><img src="${item.image}" style="width:40px; height:40px; object-fit:cover; border-radius:4px; margin-top:4px;" alt="img">` : ''}
-      </td>
-      <td>
-        <a href="tel:${item.phone}" class="call-link" style="font-weight:bold;">📞 ${item.phone}</a>
-      </td>
+      <td><strong>${item.name}</strong></td>
+      <td><a href="tel:${item.phone}" class="call-link" style="font-weight:bold;">📞 ${item.phone}</a></td>
       <td><small>${item.address}</small></td>
-      <td><small>${item.note || '-'}</small></td>
       <td>
-        <div style="display:flex; gap:6px; flex-wrap:wrap;">
-          <input type="text" id="farmerMsg_${idx}" placeholder="Type WhatsApp message..." style="font-size:12px; padding:4px; flex:1; min-width:140px;">
-          <button type="button" class="btn" style="padding:5px 10px; font-size:11px; background:#25d366;" onclick="sendAdminWhatsAppWithMedia('${item.phone}', 'farmerMsg_${idx}', '${item.image || ''}')">💬 Send WP (Msg & Img)</button>
-          <button type="button" class="btn" style="padding:5px 8px; font-size:11px; background:var(--danger);" onclick="deleteAdminFarmerBooking(${idx})">🗑️</button>
-        </div>
+        <button type="button" class="btn" style="padding:4px 8px; font-size:11px; background:var(--danger);" onclick="deleteAdminFarmerBooking(${idx})">🗑️ Delete</button>
       </td>
     </tr>
   `).join("");
@@ -4294,7 +4271,7 @@ function renderAdminFarmerBookingTable() {
 async function deleteAdminFarmerBooking(idx) {
   const item = adminFarmerBookingsRegistry[idx];
   if (!item) return;
-  if (confirm("Delete this farmer booking entry?")) {
+  if (confirm("Delete this entry?")) {
     await _supabase.from('pgf_admin_farmer_bookings').delete().eq('id', item.id);
     adminFarmerBookingsRegistry.splice(idx, 1);
     localStorage.setItem('pgf_admin_farmer_bookings', JSON.stringify(adminFarmerBookingsRegistry));
@@ -4302,41 +4279,30 @@ async function deleteAdminFarmerBooking(idx) {
   }
 }
 
-// 2) Save Farm Connector to Supabase & LocalStorage
+// 2) Save Farm Connector (Name, Number, Address only)
 async function saveFarmConnectorAdmin(e) {
   e.preventDefault();
   const name = document.getElementById("adminConnectorName").value.trim();
   const phone = document.getElementById("adminConnectorPhone").value.trim();
   const address = document.getElementById("adminConnectorAddress").value.trim();
-  const note = document.getElementById("adminConnectorNote").value.trim();
-  const imageInput = document.getElementById("adminConnectorImage");
-
-  let imageUrl = "";
-  if (imageInput && imageInput.files && imageInput.files[0]) {
-    imageUrl = URL.createObjectURL(imageInput.files[0]);
-  }
 
   const payload = {
     id: "FC-" + Date.now().toString().slice(-4),
     name: name,
     phone: phone,
     address: address,
-    note: note,
-    image: imageUrl,
     date_logged: new Date().toLocaleDateString('en-IN')
   };
 
   const { error } = await _supabase.from('pgf_admin_farm_connectors').insert([payload]);
-  if (error) {
-    console.log("Supabase insert note:", error.message);
-  }
+  if (error) console.log("Supabase error:", error.message);
 
   adminFarmConnectorsRegistry.unshift(payload);
   localStorage.setItem('pgf_admin_farm_connectors', JSON.stringify(adminFarmConnectorsRegistry));
 
   e.target.reset();
   renderAdminConnectorTable();
-  alert("✅ Farm Connector data successfully added and synced!");
+  alert("✅ Farm Connector saved successfully!");
 }
 
 function renderAdminConnectorTable() {
@@ -4344,27 +4310,17 @@ function renderAdminConnectorTable() {
   if (!tbody) return;
 
   if (!adminFarmConnectorsRegistry.length) {
-    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:var(--muted); padding:15px;">No farm connectors added yet.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:var(--muted); padding:15px;">No farm connectors added yet.</td></tr>`;
     return;
   }
 
   tbody.innerHTML = adminFarmConnectorsRegistry.map((item, idx) => `
     <tr>
-      <td>
-        <strong>${item.name}</strong>
-        ${item.image ? `<br><img src="${item.image}" style="width:40px; height:40px; object-fit:cover; border-radius:4px; margin-top:4px;" alt="img">` : ''}
-      </td>
-      <td>
-        <a href="tel:${item.phone}" class="call-link" style="font-weight:bold;">📞 ${item.phone}</a>
-      </td>
+      <td><strong>${item.name}</strong></td>
+      <td><a href="tel:${item.phone}" class="call-link" style="font-weight:bold;">📞 ${item.phone}</a></td>
       <td><small>${item.address}</small></td>
-      <td><small>${item.note || '-'}</small></td>
       <td>
-        <div style="display:flex; gap:6px; flex-wrap:wrap;">
-          <input type="text" id="connectorMsg_${idx}" placeholder="Type WhatsApp message..." style="font-size:12px; padding:4px; flex:1; min-width:140px;">
-          <button type="button" class="btn" style="padding:5px 10px; font-size:11px; background:#25d366;" onclick="sendAdminWhatsAppWithMedia('${item.phone}', 'connectorMsg_${idx}', '${item.image || ''}')">💬 Send WP (Msg & Img)</button>
-          <button type="button" class="btn" style="padding:5px 8px; font-size:11px; background:var(--danger);" onclick="deleteAdminConnector(${idx})">🗑️</button>
-        </div>
+        <button type="button" class="btn" style="padding:4px 8px; font-size:11px; background:var(--danger);" onclick="deleteAdminConnector(${idx})">🗑️ Delete</button>
       </td>
     </tr>
   `).join("");
@@ -4373,7 +4329,7 @@ function renderAdminConnectorTable() {
 async function deleteAdminConnector(idx) {
   const item = adminFarmConnectorsRegistry[idx];
   if (!item) return;
-  if (confirm("Delete this farm connector entry?")) {
+  if (confirm("Delete this entry?")) {
     await _supabase.from('pgf_admin_farm_connectors').delete().eq('id', item.id);
     adminFarmConnectorsRegistry.splice(idx, 1);
     localStorage.setItem('pgf_admin_farm_connectors', JSON.stringify(adminFarmConnectorsRegistry));
@@ -4394,42 +4350,64 @@ function renderAdminAccountTable() {
   tbody.innerHTML = usersDatabase.map((user, idx) => `
     <tr>
       <td><strong>${user.name}</strong></td>
-      <td>
-        <a href="tel:${user.phone || ''}" class="call-link" style="font-weight:bold;">📞 ${user.phone || 'No Phone'}</a>
-      </td>
+      <td><a href="tel:${user.phone || ''}" class="call-link" style="font-weight:bold;">📞 ${user.phone || 'No Phone'}</a></td>
       <td><code>${user.email}</code></td>
       <td><small>${user.registeredOn || 'N/A'}</small></td>
-      <td>
-        <div style="display:flex; gap:6px; flex-wrap:wrap;">
-          <input type="text" id="accountMsg_${idx}" placeholder="Type WhatsApp message..." style="font-size:12px; padding:4px; flex:1; min-width:140px;">
-          <button type="button" class="btn" style="padding:5px 10px; font-size:11px; background:#25d366;" onclick="sendAdminWhatsAppWithMedia('${user.phone || ''}', 'accountMsg_${idx}', '')">💬 Send WhatsApp Message</button>
-        </div>
-      </td>
+      <td>-</td>
     </tr>
   `).join("");
 }
 
-// Helper to open WhatsApp with custom text and image reference
-function sendAdminWhatsAppWithMedia(phone, inputId, imageUrl) {
-  if (!phone) {
-    alert("⚠️ Is user ka valid mobile number uplabdh nahi hai!");
+// Search Filter Function for 1, 2, 3
+function filterAdminManagerTable(inputId, tbodyId) {
+  const query = (document.getElementById(inputId)?.value || "").toLowerCase().trim();
+  const rows = document.querySelectorAll(`#${tbodyId} tr`);
+  rows.forEach(row => {
+    const text = row.textContent.toLowerCase();
+    row.style.display = text.includes(query) ? "" : "none";
+  });
+}
+
+// Common Broadcast WhatsApp Sender with Message & Image
+function sendBatchWhatsApp(type) {
+  let msgId = "", imgId = "", list = [];
+
+  if (type === 'farmer') {
+    msgId = "farmerCommonMsg"; imgId = "farmerCommonImg"; list = adminFarmerBookingsRegistry;
+  } else if (type === 'connector') {
+    msgId = "connectorCommonMsg"; imgId = "connectorCommonImg"; list = adminFarmConnectorsRegistry;
+  } else if (type === 'account') {
+    msgId = "accountCommonMsg"; imgId = "accountCommonImg"; list = usersDatabase;
+  }
+
+  const messageText = document.getElementById(msgId)?.value.trim() || "Hello from Pure Grow Farm Admin!";
+  const imageInput = document.getElementById(imgId);
+  let imageUrl = "";
+  if (imageInput && imageInput.files && imageInput.files[0]) {
+    imageUrl = URL.createObjectURL(imageInput.files[0]);
+  }
+
+  if (!list.length) {
+    alert("⚠️ List me koi data available nahi hai!");
     return;
   }
+
+  // Pehle item ke number par WhatsApp open karega (Common broadcast simulation)
+  let targetItem = list[0];
+  let phone = targetItem.phone || targetItem.email;
+  if (!phone) return alert("Valid phone number not found.");
+
   let cleanPhone = phone.replace(/[^0-9]/g, '');
   if (cleanPhone.length === 10) cleanPhone = "91" + cleanPhone;
 
-  const msgInput = document.getElementById(inputId);
-  let text = msgInput ? msgInput.value.trim() : "Hello from Pure Grow Farm Admin!";
-  
+  let finalUrlText = messageText;
   if (imageUrl) {
-    text += `\n\n🖼️ Attached Image Link / Ref: ${imageUrl}`;
+    finalUrlText += `\n\n[Attached Image Ref: ${imageUrl}]`;
   }
 
-  const url = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(text)}`;
-  window.open(url, '_blank');
+  window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(finalUrlText)}`, '_blank');
 }
 
-// Page load par render initial tables
 document.addEventListener("DOMContentLoaded", function() {
   renderAdminFarmerBookingTable();
   renderAdminConnectorTable();

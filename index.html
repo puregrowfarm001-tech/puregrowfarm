@@ -1057,16 +1057,22 @@
             <input type="text" id="adminFarmerName" placeholder="Farmer Name" required>
             <input type="tel" id="adminFarmerPhone" placeholder="Mobile Number (10 digits)" maxlength="10" required>
             <input type="text" id="adminFarmerAddress" placeholder="Complete Address" required>
-            <textarea id="adminFarmerNote" placeholder="Additional Note / Remarks" rows="2" style="width:100%; padding:10px; border:1px solid var(--line); border-radius:8px;"></textarea>
-            
-            <!-- WhatsApp Image & Message Attachment Option -->
-            <div style="margin-top:8px;">
-              <label style="font-size:12px; font-weight:bold; color:#334155;">📷 Attach WhatsApp Image (Optional):</label>
-              <input type="file" id="adminFarmerImage" accept="image/*" style="margin-top:4px;">
-            </div>
-
             <button type="submit" style="margin-top:10px; background:var(--accent);">Save Farmer Booking to Supabase</button>
           </form>
+
+          <!-- Common Message & Image Box for Farmer Booking -->
+          <div style="background:#fffbeb; border:1px solid #fde68a; padding:14px; border-radius:10px; margin-bottom:15px;">
+            <strong style="font-size:13px; color:#92400e; display:block; margin-bottom:6px;">💬 Send Broadcast Message & Image to All / Filtered Farmers</strong>
+            <textarea id="farmerCommonMsg" placeholder="Type common message here..." rows="2" style="width:100%; padding:8px; border:1px solid var(--line); border-radius:6px; margin-bottom:6px;"></textarea>
+            <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+              <input type="file" id="farmerCommonImg" accept="image/*" style="font-size:12px;">
+              <button type="button" class="btn" style="background:#25d366; font-size:12px; padding:6px 14px;" onclick="sendBatchWhatsApp('farmer')">🚀 Send WhatsApp to All in List</button>
+            </div>
+          </div>
+
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:10px;">
+            <input type="search" id="searchFarmerInput" placeholder="🔍 Search Farmer by Name, Number..." style="max-width:280px;" oninput="filterAdminManagerTable('searchFarmerInput', 'adminFarmerBookingTableBody')">
+          </div>
 
           <div class="table-responsive">
             <table>
@@ -1075,8 +1081,7 @@
                   <th>Name</th>
                   <th>Number & Call</th>
                   <th>Address</th>
-                  <th>Note</th>
-                  <th>Actions (WhatsApp Msg & Image)</th>
+                  <th>Action</th>
                 </tr>
               </thead>
               <tbody id="adminFarmerBookingTableBody"></tbody>
@@ -1091,16 +1096,22 @@
             <input type="text" id="adminConnectorName" placeholder="Connector / Partner Name" required>
             <input type="tel" id="adminConnectorPhone" placeholder="Mobile Number (10 digits)" maxlength="10" required>
             <input type="text" id="adminConnectorAddress" placeholder="Complete Address / Location" required>
-            <textarea id="adminConnectorNote" placeholder="Additional Note / Remarks" rows="2" style="width:100%; padding:10px; border:1px solid var(--line); border-radius:8px;"></textarea>
-            
-            <!-- WhatsApp Image & Message Attachment Option -->
-            <div style="margin-top:8px;">
-              <label style="font-size:12px; font-weight:bold; color:#334155;">📷 Attach WhatsApp Image (Optional):</label>
-              <input type="file" id="adminConnectorImage" accept="image/*" style="margin-top:4px;">
-            </div>
-
             <button type="submit" style="margin-top:10px; background:var(--accent);">Save Farm Connector to Supabase</button>
           </form>
+
+          <!-- Common Message & Image Box for Farm Connector -->
+          <div style="background:#fffbeb; border:1px solid #fde68a; padding:14px; border-radius:10px; margin-bottom:15px;">
+            <strong style="font-size:13px; color:#92400e; display:block; margin-bottom:6px;">💬 Send Broadcast Message & Image to All / Filtered Connectors</strong>
+            <textarea id="connectorCommonMsg" placeholder="Type common message here..." rows="2" style="width:100%; padding:8px; border:1px solid var(--line); border-radius:6px; margin-bottom:6px;"></textarea>
+            <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+              <input type="file" id="connectorCommonImg" accept="image/*" style="font-size:12px;">
+              <button type="button" class="btn" style="background:#25d366; font-size:12px; padding:6px 14px;" onclick="sendBatchWhatsApp('connector')">🚀 Send WhatsApp to All in List</button>
+            </div>
+          </div>
+
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:10px;">
+            <input type="search" id="searchConnectorInput" placeholder="🔍 Search Connector by Name, Number..." style="max-width:280px;" oninput="filterAdminManagerTable('searchConnectorInput', 'adminConnectorTableBody')">
+          </div>
 
           <div class="table-responsive">
             <table>
@@ -1109,8 +1120,7 @@
                   <th>Name</th>
                   <th>Number & Call</th>
                   <th>Address</th>
-                  <th>Note</th>
-                  <th>Actions (WhatsApp Msg & Image)</th>
+                  <th>Action</th>
                 </tr>
               </thead>
               <tbody id="adminConnectorTableBody"></tbody>
@@ -1121,7 +1131,22 @@
         <!-- 3) Account Automatic Sub-Section -->
         <div id="adminSubTabAccount" class="admin-sub-section" style="display:none;">
           <h4>👤 Registered User Accounts Data (Automatic)</h4>
-          <p class="muted" style="font-size:13px;">Yahan sare registered user accounts automatic show hote hain jinhe aap direct WhatsApp ya call kar sakte hain.</p>
+          <p class="muted" style="font-size:13px;">Yahan sare registered user accounts automatic show hote hain.</p>
+          
+          <!-- Common Message & Image Box for Accounts -->
+          <div style="background:#fffbeb; border:1px solid #fde68a; padding:14px; border-radius:10px; margin-bottom:15px;">
+            <strong style="font-size:13px; color:#92400e; display:block; margin-bottom:6px;">💬 Send Broadcast Message & Image to All Registered Users</strong>
+            <textarea id="accountCommonMsg" placeholder="Type common message here..." rows="2" style="width:100%; padding:8px; border:1px solid var(--line); border-radius:6px; margin-bottom:6px;"></textarea>
+            <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+              <input type="file" id="accountCommonImg" accept="image/*" style="font-size:12px;">
+              <button type="button" class="btn" style="background:#25d366; font-size:12px; padding:6px 14px;" onclick="sendBatchWhatsApp('account')">🚀 Send WhatsApp to All Accounts</button>
+            </div>
+          </div>
+
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:10px;">
+            <input type="search" id="searchAccountInput" placeholder="🔍 Search Account by Name, Email..." style="max-width:280px;" oninput="filterAdminManagerTable('searchAccountInput', 'adminAccountTableBody')">
+          </div>
+
           <div class="table-responsive">
             <table>
               <thead>
@@ -1130,7 +1155,7 @@
                   <th>Phone Number & Call</th>
                   <th>Email ID</th>
                   <th>Registered Date</th>
-                  <th>WhatsApp Message & Image</th>
+                  <th>Action</th>
                 </tr>
               </thead>
               <tbody id="adminAccountTableBody"></tbody>

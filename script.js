@@ -1250,69 +1250,40 @@ function handleAdminYearFilterChange() {
 function printActiveAdminReport() {
   const selectedYear = document.getElementById("adminYearFilterSelect")?.value || "ALL";
 
-  // 🗓️ Secure Calendar Date Parser (Oldest First / Ascending Order)
-  const parseCalendarDate = (dateStr) => {
-    if (!dateStr) return 0;
-    let cleanStr = String(dateStr).trim().split(" ")[0];
-    let parts = cleanStr.split(/[\/\-]/);
-    if (parts.length === 3) {
-      if (parts[0].length <= 2 && parts[2].length === 4) {
-        return new Date(`${parts[2]}-${parts[1]}-${parts[0]}`).getTime() || 0;
-      }
-    }
-    let parsed = new Date(cleanStr).getTime();
-    return isNaN(parsed) ? 0 : parsed;
-  };
-
-  const sortByCalendarDateAscending = (a, b, dateKey1, dateKey2) => {
-    let dateStrA = a[dateKey1] || a[dateKey2] || "";
-    let dateStrB = b[dateKey1] || b[dateKey2] || "";
-    return parseCalendarDate(dateStrA) - parseCalendarDate(dateStrB);
-  };
-
-  // 1. Filtered & Sorted Orders (Oldest First)
+  // Filtered data calculation for selected year
   const filteredOrders = orderRegistry.filter(o => {
     if (!o || !(o.status === 'Approved' || o.status === 'Delivered')) return false;
     if (selectedYear === "ALL") return true;
     return (o.rawIsoDate || o.dateLogged || "").includes(selectedYear);
   });
-  filteredOrders.sort((a, b) => sortByCalendarDateAscending(a, b, 'rawIsoDate', 'dateLogged'));
   const orderTotal = filteredOrders.reduce((sum, o) => sum + Number(o.total || 0), 0);
 
-  // 2. Filtered & Sorted Bookings (Oldest First)
   const filteredBookings = bookingsRegistry.filter(b => {
     if (!b || !b.name || !(b.status === "Confirmed" || b.status === "Approved")) return false;
     if (selectedYear === "ALL") return true;
     return (b.date || b.dateLogged || "").includes(selectedYear);
   });
-  filteredBookings.sort((a, b) => sortByCalendarDateAscending(a, b, 'dateLogged', 'date'));
   const farmBookingTotal = filteredBookings.reduce((sum, b) => sum + Number(b.fee || 0), 0);
 
-  // 3. Filtered & Sorted Sales (Oldest First)
   const filteredSales = salesRegistry.filter(s => {
     if (!s) return false;
     if (selectedYear === "ALL") return true;
     return (s.date || "").includes(selectedYear);
   });
-  filteredSales.sort((a, b) => sortByCalendarDateAscending(a, b, 'date', 'date'));
   const sellTotal = filteredSales.reduce((sum, s) => sum + Number(s.paidAmount !== undefined ? s.paidAmount : s.total || 0), 0);
 
-  // 4. Filtered & Sorted Purchases (Oldest First)
   const filteredPurchases = purchasesRegistry.filter(p => {
     if (!p) return false;
     if (selectedYear === "ALL") return true;
     return (p.date || "").includes(selectedYear);
   });
-  filteredPurchases.sort((a, b) => sortByCalendarDateAscending(a, b, 'date', 'date'));
   const buyTotal = filteredPurchases.reduce((sum, p) => sum + Number(p.paidAmount !== undefined ? p.paidAmount : p.total || 0), 0);
 
-  // 5. Filtered & Sorted Expenses (Oldest First)
   const filteredExpenses = expensesRegistry.filter(e => {
     if (!e || e.category === "Damage Received") return false;
     if (selectedYear === "ALL") return true;
     return (e.date || "").includes(selectedYear);
   });
-  filteredExpenses.sort((a, b) => sortByCalendarDateAscending(a, b, 'date', 'date'));
   const expenseTotal = filteredExpenses.reduce((sum, e) => sum + Number(e.amount || 0), 0);
 
   let sohamBuyTotal = 0, jeetBuyTotal = 0, farmBuyTotal = 0;
@@ -1340,7 +1311,6 @@ function printActiveAdminReport() {
     if (selectedYear === "ALL") return true;
     return (e.date || "").includes(selectedYear);
   });
-  filteredDamages.sort((a, b) => sortByCalendarDateAscending(a, b, 'date', 'date'));
   const damageTotal = filteredDamages.reduce((sum, d) => sum + Number(d.amount || 0), 0);
 
   let sohamDmgTotal = 0, jeetDmgTotal = 0, farmDmgTotal = 0;
@@ -1357,7 +1327,65 @@ function printActiveAdminReport() {
   const farmAvailableBalance = (orderTotal + farmBookingTotal + sellTotal + farmDmgTotal) - farmExpTotal;
   const netProfit = (orderTotal + farmBookingTotal + sellTotal) - buyTotal - expenseTotal;
 
-  // 📄 Generate Clean HTML for Print Window directly from sorted arrays
+  const allSections = document.querySelectorAll('.erp-section');
+  let combinedHTML = '';
+  
+  allSections.forEach((section, index) => {
+    // 🛑 Yahan check kiya: Agar section me Users tab hai ya Live Stock Summary wala container hai, toh use print me skip kar do!
+    if (section.id === 'erpUsersTab' || section.querySelector('#adminLiveStockCardsContainer')) return;
+
+    const sectionClone = section.cloneNode(true);
+    const sectionTitle = sectionClone.querySelector('h3')?.textContent || `ERP Section ${index + 1}`;
+    
+    const filterCards = sectionClone.querySelectorAll('div[onclick*="openAdminFilterModal"]');
+    filterCards.forEach(card => card.remove());
+
+    const allCards = sectionClone.querySelectorAll('.db-card');
+    allCards.forEach(card => {
+      if (!card.querySelector('table')) {
+        card.remove();
+      }
+    });
+
+    const inputs = sectionClone.querySelectorAll('form, input, select, button, input[type="search"]');
+    inputs.forEach(el => el.remove());
+
+    const tables = sectionClone.querySelectorAll('table');
+    tables.forEach(table => {
+      const headers = table.querySelectorAll('th');
+      const rows = table.querySelectorAll('tr');
+
+      let removeIndices = [];
+      headers.forEach((th, thIndex) => {
+        const text = th.textContent.toLowerCase();
+        if (text.includes('delivery & tracking') || text.includes('actions & whatsapp') || text.includes('action')) {
+          removeIndices.push(thIndex);
+        }
+      });
+
+      rows.forEach(row => {
+        const cols = row.querySelectorAll('th, td');
+        removeIndices.forEach(colIndex => {
+          if (cols[colIndex]) cols[colIndex].remove();
+        });
+      });
+    });
+
+    sectionClone.style.display = 'block';
+    const subSections = sectionClone.querySelectorAll('.sub-accounting-section, .exp-cat-section');
+    subSections.forEach(sub => {
+      sub.style.display = 'block';
+      sub.style.visibility = 'visible';
+    });
+
+    combinedHTML += `
+      <div class="print-section-wrapper" style="page-break-before: always; margin-top: 25px;">
+        <h3 style="background: #eef7ee; color: #2b8a3e; padding: 10px 14px; border-left: 5px solid #2b8a3e; font-size: 16px; margin-bottom: 15px; border-radius: 4px;">${sectionTitle}</h3>
+        ${sectionClone.innerHTML}
+      </div>
+    `;
+  });
+
   const printWindow = window.open('', '_blank');
   
   printWindow.document.write(`
@@ -1366,28 +1394,29 @@ function printActiveAdminReport() {
     <head>
       <title>Pure Grow Farm - Financial & ERP Report (${selectedYear})</title>
       <style>
-        body { font-family: Arial, sans-serif; padding: 20px; color: #111; background: #fff; }
-        h2 { color: #2b8a3e; margin-bottom: 2px; font-size: 20px; text-align: center; }
-        .meta { font-size: 12px; color: #555; margin-bottom: 15px; text-align: center; }
-        .summary-container { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 20px; }
-        .card { border: 1px solid #cbd5e1; padding: 10px; border-radius: 6px; background: #f8fafc; }
-        .card h4 { margin: 0 0 4px 0; color: #0f172a; font-size: 12px; }
-        .amount { font-weight: bold; color: #0284c7; font-size: 15px; }
-        .sub-text { font-size: 10px; color: #475569; margin-top: 3px; display: block; }
-        .print-section-wrapper { page-break-before: always; margin-top: 20px; }
-        h3 { background: #eef7ee; color: #2b8a3e; padding: 8px 12px; border-left: 4px solid #2b8a3e; font-size: 14px; margin-bottom: 10px; border-radius: 4px; }
-        table { width: 100%; border-collapse: collapse; margin-bottom: 15px; font-size: 10.5px; page-break-inside: avoid; }
-        th, td { border: 1px solid #94a3b8; padding: 6px; text-align: left; }
+        body { font-family: Arial, sans-serif; padding: 25px; color: #111; background: #fff; }
+        h2 { color: #2b8a3e; margin-bottom: 4px; font-size: 22px; text-align: center; }
+        .meta { font-size: 13px; color: #555; margin-bottom: 20px; text-align: center; }
+        .summary-container { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 25px; }
+        .card { border: 1px solid #cbd5e1; padding: 12px; border-radius: 8px; background: #f8fafc; }
+        .card h4 { margin: 0 0 6px 0; color: #0f172a; font-size: 13px; }
+        .amount { font-weight: bold; color: #0284c7; font-size: 16px; }
+        .sub-text { font-size: 11px; color: #475569; margin-top: 4px; display: block; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; margin-bottom: 20px; font-size: 11px; page-break-inside: avoid; }
+        th, td { border: 1px solid #94a3b8; padding: 6px 8px; text-align: left; }
         th { background: #2b8a3e !important; color: white !important; -webkit-print-color-adjust: exact; font-weight: bold; }
         tr:nth-child(even) { background-color: #f8fafc; }
+        .print-section-wrapper { page-break-before: always; }
+        .exp-cat-section { display: block !important; visibility: visible !important; margin-bottom: 20px; }
+        .sub-accounting-section { display: block !important; visibility: visible !important; }
       </style>
     </head>
     <body>
       <h2>Pure Grow Farm - Official Financial & Operational Ledger Report</h2>
       <div class="meta"><strong>Selected Year Filter:</strong> ${selectedYear} | <strong>Generated On:</strong> ${new Date().toLocaleString()}</div>
-      <hr style="border:0; border-top:1px solid #cbd5e1; margin-bottom: 15px;">
+      <hr style="border:0; border-top:1px solid #cbd5e1; margin-bottom: 20px;">
       
-      <h3 style="background:#eef7ee; color:#2b8a3e; padding:8px 12px; border-left:4px solid #2b8a3e;">Farm Core Financial & Stock Overview Summary Ledger</h3>
+      <h3 style="color: #1e293b; border-bottom: 2px solid #2b8a3e; padding-bottom: 5px;">Farm Core Financial & Stock Overview Summary Ledger</h3>
       <div class="summary-container">
         <div class="card">
           <h4>1) Order Total (Online Sales)</h4>
@@ -1437,170 +1466,11 @@ function printActiveAdminReport() {
         </div>
       </div>
 
-      <!-- SECTION 1: ORDERS -->
-      <div class="print-section-wrapper">
-        <h3>E-Commerce Customer Orders Grid Ledger & Shipment Management</h3>
-        <table>
-          <thead>
-            <tr>
-              <th>Order ID</th>
-              <th>Placed Date</th>
-              <th>Client Details</th>
-              <th>Address</th>
-              <th>Products</th>
-              <th>Total</th>
-              <th>Payment Mode & Txn ID</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${filteredOrders.length ? filteredOrders.map(o => `
-              <tr>
-                <td><strong>${o.orderId}</strong></td>
-                <td>${o.dateLogged || ''}</td>
-                <td><strong>${o.name}</strong><br><small>${o.phone || ''}</small></td>
-                <td><small>${o.address || ''}</small></td>
-                <td>${o.products || ''}</td>
-                <td>Rs ${o.total || 0}</td>
-                <td>${o.paymentMode || ''} <br><small>${o.txnId || ''}</small></td>
-                <td>${o.status || ''}</td>
-              </tr>
-            `).join('') : `<tr><td colspan="8" style="text-align:center;">No orders found for year ${selectedYear}</td></tr>`}
-          </tbody>
-        </table>
-      </div>
-
-      <!-- SECTION 2: BOOKINGS -->
-      <div class="print-section-wrapper">
-        <h3>Farm Training Workshop & Student Internship Bookings Ledger</h3>
-        <table>
-          <thead>
-            <tr>
-              <th>Booking ID</th>
-              <th>Type</th>
-              <th>User Profile</th>
-              <th>Academic / Session Details</th>
-              <th>Fee Paid</th>
-              <th>Payment Mode & Txn ID</th>
-              <th>Booking Date</th>
-              <th>Booking Status</th>
-              <th>Certificate</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${filteredBookings.length ? filteredBookings.map(b => `
-              <tr>
-                <td><strong>${b.bookingId}</strong></td>
-                <td>${b.type || 'Booking'}</td>
-                <td><strong>${b.name}</strong><br><small>${b.phone || ''}</small></td>
-                <td><small>${b.type === 'Student' ? 'College: ' + (b.college || '') + ' (' + (b.course || '') + ')' : 'Session Date: ' + (b.date || '')}</small></td>
-                <td>Rs ${b.fee || 0}</td>
-                <td>${b.paymentMode || 'UPI'} <br><small>${b.txnId || ''}</small></td>
-                <td>${b.dateLogged || ''}</td>
-                <td>${b.status || ''}</td>
-                <td>${b.certIssued ? 'Approved' : 'Pending'}</td>
-              </tr>
-            `).join('') : `<tr><td colspan="9" style="text-align:center;">No bookings found for year ${selectedYear}</td></tr>`}
-          </tbody>
-        </table>
-      </div>
-
-      <!-- SECTION 3: SALES -->
-      <div class="print-section-wrapper">
-        <h3>Wholesale Sales Ledger (Offline Inflow)</h3>
-        <table>
-          <thead>
-            <tr>
-              <th>Date</th>
-              <th>Product Variant</th>
-              <th>Buyer Name</th>
-              <th>Qty</th>
-              <th>Price/Unit</th>
-              <th>Delivery</th>
-              <th>Total Amount</th>
-              <th>Paid Amount</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${filteredSales.length ? filteredSales.map(s => `
-              <tr>
-                <td>${s.date || ''}</td>
-                <td>${s.product || ''}</td>
-                <td><strong>${s.buyer || ''}</strong><br><small>${s.phone || ''}</small></td>
-                <td>${s.qty || 0}</td>
-                <td>Rs ${s.rate || 0}</td>
-                <td>Rs ${s.delivery || 0}</td>
-                <td>Rs ${s.total || 0}</td>
-                <td>Rs ${s.paidAmount !== undefined ? s.paidAmount : s.total || 0}</td>
-              </tr>
-            `).join('') : `<tr><td colspan="8" style="text-align:center;">No sales records found for year ${selectedYear}</td></tr>`}
-          </tbody>
-        </table>
-      </div>
-
-      <!-- SECTION 4: PURCHASES -->
-      <div class="print-section-wrapper">
-        <h3>Raw Inventory Material Purchases Ledger (Buy Outflow)</h3>
-        <table>
-          <thead>
-            <tr>
-              <th>Date</th>
-              <th>Resource Lot</th>
-              <th>Funder</th>
-              <th>Vendor Name</th>
-              <th>Qty</th>
-              <th>Rate</th>
-              <th>Total Payable</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${filteredPurchases.length ? filteredPurchases.map(p => `
-              <tr>
-                <td>${p.date || ''}</td>
-                <td>${p.product || ''}</td>
-                <td>${p.funder || ''}</td>
-                <td><strong>${p.vendor || ''}</strong><br><small>${p.vendorPhone || ''}</small></td>
-                <td>${p.qty || 0}</td>
-                <td>Rs ${p.rate || 0}</td>
-                <td>Rs ${p.total || 0}</td>
-              </tr>
-            `).join('') : `<tr><td colspan="7" style="text-align:center;">No purchase records found for year ${selectedYear}</td></tr>`}
-          </tbody>
-        </table>
-      </div>
-
-      <!-- SECTION 5: EXPENSES -->
-      <div class="print-section-wrapper">
-        <h3>Farm Expenses Outflow Ledger</h3>
-        <table>
-          <thead>
-            <tr>
-              <th>Date</th>
-              <th>Category</th>
-              <th>Payer</th>
-              <th>Context / Summary</th>
-              <th>Amount</th>
-              <th>Notes</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${filteredExpenses.length ? filteredExpenses.map(e => `
-              <tr>
-                <td>${e.date || ''}</td>
-                <td>${e.category || ''}</td>
-                <td>${e.payer || ''}</td>
-                <td>${e.desc || ''}</td>
-                <td>Rs ${e.amount || 0}</td>
-                <td><small>${e.notes || '-'}</small></td>
-              </tr>
-            `).join('') : `<tr><td colspan="6" style="text-align:center;">No expense records found for year ${selectedYear}</td></tr>`}
-          </tbody>
-        </table>
-      </div>
+      ${combinedHTML}
       
       <script>
         window.onload = function() {
-          setTimeout(function() { window.print(); }, 500);
+          setTimeout(function() { window.print(); }, 600);
         };
       <\/script>
     </body>

@@ -1257,11 +1257,11 @@ function printActiveAdminReport() {
     return (o.rawIsoDate || o.dateLogged || "").includes(selectedYear);
   });
   
-  // 🔄 Print ke liye: Old Data First (Ascending order - Purana data sabse upar)
+  // 🔄 Print ke liye: Old Data First / Ascending Order (e.g. 12, 13, 15 date wise)
   filteredOrders.sort((a, b) => {
     let timeA = new Date(a.rawIsoDate || a.dateLogged || 0).getTime() || 0;
     let timeB = new Date(b.rawIsoDate || b.dateLogged || 0).getTime() || 0;
-    return timeA - timeB; // Oldest first for printing
+    return timeA - timeB; 
   });
 
   const orderTotal = filteredOrders.reduce((sum, o) => sum + Number(o.total || 0), 0);
@@ -1272,7 +1272,7 @@ function printActiveAdminReport() {
     return (b.date || b.dateLogged || "").includes(selectedYear);
   });
 
-  // 🔄 Print ke liye Bookings: Old Data First
+  // 🔄 Print ke liye Bookings: Old Data First / Ascending Order (e.g. 12, 13, 15 date wise)
   filteredBookings.sort((a, b) => {
     let timeA = new Date(a.dateLogged || a.date || 0).getTime() || 0;
     let timeB = new Date(b.dateLogged || b.date || 0).getTime() || 0;
@@ -1287,7 +1287,7 @@ function printActiveAdminReport() {
     return (s.date || "").includes(selectedYear);
   });
   
-  // 🔄 Print ke liye Sales: Old Data First
+  // 🔄 Print ke liye Sales: Old Data First / Ascending Order
   filteredSales.sort((a, b) => {
     let timeA = new Date(a.date || 0).getTime() || 0;
     let timeB = new Date(b.date || 0).getTime() || 0;
@@ -1301,7 +1301,7 @@ function printActiveAdminReport() {
     return (p.date || "").includes(selectedYear);
   });
 
-  // 🔄 Print ke liye Purchases: Old Data First
+  // 🔄 Print ke liye Purchases: Old Data First / Ascending Order
   filteredPurchases.sort((a, b) => {
     let timeA = new Date(a.date || 0).getTime() || 0;
     let timeB = new Date(b.date || 0).getTime() || 0;
@@ -1315,7 +1315,7 @@ function printActiveAdminReport() {
     return (e.date || "").includes(selectedYear);
   });
 
-  // 🔄 Print ke liye Expenses: Old Data First
+  // 🔄 Print ke liye Expenses: Old Data First / Ascending Order
   filteredExpenses.sort((a, b) => {
     let timeA = new Date(a.date || 0).getTime() || 0;
     let timeB = new Date(b.date || 0).getTime() || 0;

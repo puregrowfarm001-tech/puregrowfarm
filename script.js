@@ -1250,32 +1250,233 @@ function handleAdminYearFilterChange() {
 function printActiveAdminReport() {
   const selectedYear = document.getElementById("adminYearFilterSelect")?.value || "ALL";
 
-  // PRINT / EXPORT SORTING: Oldest first (First first, Last last -> Ascending order)
-  const printSortedOrders = [...orderRegistry].sort((a, b) => {
-    const dateA = new Date(a.rawIsoDate || a.dateLogged || 0);
-    const dateB = new Date(b.rawIsoDate || b.dateLogged || 0);
-    return dateA - dateB; // Ascending: Oldest first
-  });
-
-  const filteredOrders = printSortedOrders.filter(o => {
+  // Filtered data calculation for selected year
+  const filteredOrders = orderRegistry.filter(o => {
     if (!o || !(o.status === 'Approved' || o.status === 'Delivered')) return false;
     if (selectedYear === "ALL") return true;
     return (o.rawIsoDate || o.dateLogged || "").includes(selectedYear);
   });
+  const orderTotal = filteredOrders.reduce((sum, o) => sum + Number(o.total || 0), 0);
 
-  const printSortedBookings = [...bookingsRegistry].sort((a, b) => {
-    const dateA = new Date(a.dateLogged || a.date || 0);
-    const dateB = new Date(b.dateLogged || b.date || 0);
-    return dateA - dateB; // Ascending: Oldest first
-  });
-
-  const filteredBookings = printSortedBookings.filter(b => {
+  const filteredBookings = bookingsRegistry.filter(b => {
     if (!b || !b.name || !(b.status === "Confirmed" || b.status === "Approved")) return false;
     if (selectedYear === "ALL") return true;
     return (b.date || b.dateLogged || "").includes(selectedYear);
   });
+  const farmBookingTotal = filteredBookings.reduce((sum, b) => sum + Number(b.fee || 0), 0);
 
-  // ... baaki print code wahi rahega ...
+  const filteredSales = salesRegistry.filter(s => {
+    if (!s) return false;
+    if (selectedYear === "ALL") return true;
+    return (s.date || "").includes(selectedYear);
+  });
+  const sellTotal = filteredSales.reduce((sum, s) => sum + Number(s.paidAmount !== undefined ? s.paidAmount : s.total || 0), 0);
+
+  const filteredPurchases = purchasesRegistry.filter(p => {
+    if (!p) return false;
+    if (selectedYear === "ALL") return true;
+    return (p.date || "").includes(selectedYear);
+  });
+  const buyTotal = filteredPurchases.reduce((sum, p) => sum + Number(p.paidAmount !== undefined ? p.paidAmount : p.total || 0), 0);
+
+  const filteredExpenses = expensesRegistry.filter(e => {
+    if (!e || e.category === "Damage Received") return false;
+    if (selectedYear === "ALL") return true;
+    return (e.date || "").includes(selectedYear);
+  });
+  const expenseTotal = filteredExpenses.reduce((sum, e) => sum + Number(e.amount || 0), 0);
+
+  let sohamBuyTotal = 0, jeetBuyTotal = 0, farmBuyTotal = 0;
+  filteredPurchases.forEach(p => {
+    const amt = Number(p.paidAmount !== undefined ? p.paidAmount : p.total || 0);
+    if(p.funder === "Soham") sohamBuyTotal += amt;
+    else if(p.funder === "Jeet") jeetBuyTotal += amt;
+    else if(p.funder === "Farm") farmBuyTotal += amt;
+  });
+
+  let sohamExpOnly = 0, jeetExpOnly = 0, farmExpOnly = 0;
+  filteredExpenses.forEach(e => {
+    const amt = Number(e.amount || 0);
+    if(e.payer === "Soham") sohamExpOnly += amt;
+    else if(e.payer === "Jeet") jeetExpOnly += amt;
+    else if(e.payer === "Farm") farmExpOnly += amt;
+  });
+
+  let sohamExpTotal = sohamExpOnly + sohamBuyTotal;
+  let jeetExpTotal = jeetExpOnly + jeetBuyTotal;
+  let farmExpTotal = farmExpOnly + farmBuyTotal;
+
+  const filteredDamages = expensesRegistry.filter(e => {
+    if (!e || e.category !== "Damage Received") return false;
+    if (selectedYear === "ALL") return true;
+    return (e.date || "").includes(selectedYear);
+  });
+  const damageTotal = filteredDamages.reduce((sum, d) => sum + Number(d.amount || 0), 0);
+
+  let sohamDmgTotal = 0, jeetDmgTotal = 0, farmDmgTotal = 0;
+  filteredDamages.forEach(d => {
+    const amt = Number(d.amount || 0);
+    if(d.payer === "Soham") sohamDmgTotal += amt;
+    else if(d.payer === "Jeet") jeetDmgTotal += amt;
+    else if(d.payer === "Farm") farmDmgTotal += amt;
+  });
+
+  let sohamNetExp = sohamExpTotal - sohamDmgTotal;
+  let jeetNetExp = jeetExpTotal - jeetDmgTotal;
+
+  const farmAvailableBalance = (orderTotal + farmBookingTotal + sellTotal + farmDmgTotal) - farmExpTotal;
+  const netProfit = (orderTotal + farmBookingTotal + sellTotal) - buyTotal - expenseTotal;
+
+  const allSections = document.querySelectorAll('.erp-section');
+  let combinedHTML = '';
+  
+  allSections.forEach((section, index) => {
+    // 🛑 Yahan check kiya: Agar section me Users tab hai ya Live Stock Summary wala container hai, toh use print me skip kar do!
+    if (section.id === 'erpUsersTab' || section.querySelector('#adminLiveStockCardsContainer')) return;
+
+    const sectionClone = section.cloneNode(true);
+    const sectionTitle = sectionClone.querySelector('h3')?.textContent || `ERP Section ${index + 1}`;
+    
+    const filterCards = sectionClone.querySelectorAll('div[onclick*="openAdminFilterModal"]');
+    filterCards.forEach(card => card.remove());
+
+    const allCards = sectionClone.querySelectorAll('.db-card');
+    allCards.forEach(card => {
+      if (!card.querySelector('table')) {
+        card.remove();
+      }
+    });
+
+    const inputs = sectionClone.querySelectorAll('form, input, select, button, input[type="search"]');
+    inputs.forEach(el => el.remove());
+
+    const tables = sectionClone.querySelectorAll('table');
+    tables.forEach(table => {
+      const headers = table.querySelectorAll('th');
+      const rows = table.querySelectorAll('tr');
+
+      let removeIndices = [];
+      headers.forEach((th, thIndex) => {
+        const text = th.textContent.toLowerCase();
+        if (text.includes('delivery & tracking') || text.includes('actions & whatsapp') || text.includes('action')) {
+          removeIndices.push(thIndex);
+        }
+      });
+
+      rows.forEach(row => {
+        const cols = row.querySelectorAll('th, td');
+        removeIndices.forEach(colIndex => {
+          if (cols[colIndex]) cols[colIndex].remove();
+        });
+      });
+    });
+
+    sectionClone.style.display = 'block';
+    const subSections = sectionClone.querySelectorAll('.sub-accounting-section, .exp-cat-section');
+    subSections.forEach(sub => {
+      sub.style.display = 'block';
+      sub.style.visibility = 'visible';
+    });
+
+    combinedHTML += `
+      <div class="print-section-wrapper" style="page-break-before: always; margin-top: 25px;">
+        <h3 style="background: #eef7ee; color: #2b8a3e; padding: 10px 14px; border-left: 5px solid #2b8a3e; font-size: 16px; margin-bottom: 15px; border-radius: 4px;">${sectionTitle}</h3>
+        ${sectionClone.innerHTML}
+      </div>
+    `;
+  });
+
+  const printWindow = window.open('', '_blank');
+  
+  printWindow.document.write(`
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>Pure Grow Farm - Financial & ERP Report (${selectedYear})</title>
+      <style>
+        body { font-family: Arial, sans-serif; padding: 25px; color: #111; background: #fff; }
+        h2 { color: #2b8a3e; margin-bottom: 4px; font-size: 22px; text-align: center; }
+        .meta { font-size: 13px; color: #555; margin-bottom: 20px; text-align: center; }
+        .summary-container { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 25px; }
+        .card { border: 1px solid #cbd5e1; padding: 12px; border-radius: 8px; background: #f8fafc; }
+        .card h4 { margin: 0 0 6px 0; color: #0f172a; font-size: 13px; }
+        .amount { font-weight: bold; color: #0284c7; font-size: 16px; }
+        .sub-text { font-size: 11px; color: #475569; margin-top: 4px; display: block; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; margin-bottom: 20px; font-size: 11px; page-break-inside: avoid; }
+        th, td { border: 1px solid #94a3b8; padding: 6px 8px; text-align: left; }
+        th { background: #2b8a3e !important; color: white !important; -webkit-print-color-adjust: exact; font-weight: bold; }
+        tr:nth-child(even) { background-color: #f8fafc; }
+        .print-section-wrapper { page-break-before: always; }
+        .exp-cat-section { display: block !important; visibility: visible !important; margin-bottom: 20px; }
+        .sub-accounting-section { display: block !important; visibility: visible !important; }
+      </style>
+    </head>
+    <body>
+      <h2>Pure Grow Farm - Official Financial & Operational Ledger Report</h2>
+      <div class="meta"><strong>Selected Year Filter:</strong> ${selectedYear} | <strong>Generated On:</strong> ${new Date().toLocaleString()}</div>
+      <hr style="border:0; border-top:1px solid #cbd5e1; margin-bottom: 20px;">
+      
+      <h3 style="color: #1e293b; border-bottom: 2px solid #2b8a3e; padding-bottom: 5px;">Farm Core Financial & Stock Overview Summary Ledger</h3>
+      <div class="summary-container">
+        <div class="card">
+          <h4>1) Order Total (Online Sales)</h4>
+          <div class="amount">Rs ${orderTotal.toFixed(2)}</div>
+        </div>
+        <div class="card">
+          <h4>2) Farm Booking Total</h4>
+          <div class="amount">Rs ${farmBookingTotal.toFixed(2)}</div>
+        </div>
+        <div class="card">
+          <h4>3) Sell Total (Offline Wholesale)</h4>
+          <div class="amount">Rs ${sellTotal.toFixed(2)}</div>
+        </div>
+        <div class="card">
+          <h4>4) Buy Total (Purchases)</h4>
+          <div class="amount">Rs ${buyTotal.toFixed(2)}</div>
+          <span class="sub-text">Soham: Rs ${sohamBuyTotal.toFixed(2)} | Jeet: Rs ${jeetBuyTotal.toFixed(2)} | Farm: Rs ${farmBuyTotal.toFixed(2)}</span>
+        </div>
+        <div class="card">
+          <h4>5) Expense Total</h4>
+          <div class="amount">Rs ${expenseTotal.toFixed(2)}</div>
+          <span class="sub-text">Soham: Rs ${sohamExpOnly.toFixed(2)} | Jeet: Rs ${jeetExpOnly.toFixed(2)} | Farm: Rs ${farmExpOnly.toFixed(2)}</span>
+        </div>
+        <div class="card">
+          <h4>6) Partner & Farm Total (Buy + Expense)</h4>
+          <span class="sub-text">👤 Soham Total: Rs ${sohamExpTotal.toFixed(2)}</span>
+          <span class="sub-text">👤 Jeet Total: Rs ${jeetExpTotal.toFixed(2)}</span>
+          <span class="sub-text">🏢 Farm Total: Rs ${farmExpTotal.toFixed(2)}</span>
+        </div>
+        <div class="card">
+          <h4>7) Farm Available Balance (Net Vault)</h4>
+          <div class="amount" style="color: ${farmAvailableBalance >= 0 ? '#16a34a' : '#dc2626'};">Rs ${farmAvailableBalance.toFixed(2)}</div>
+        </div>
+        <div class="card">
+          <h4>8) Unified Net Profit (P&L)</h4>
+          <div class="amount" style="color: ${netProfit >= 0 ? '#16a34a' : '#dc2626'};">Rs ${netProfit.toFixed(2)}</div>
+        </div>
+        <div class="card">
+          <h4>9) Total Damage Losses</h4>
+          <div class="amount">Rs ${damageTotal.toFixed(2)}</div>
+          <span class="sub-text">Soham: Rs ${sohamDmgTotal.toFixed(2)} | Jeet: Rs ${jeetDmgTotal.toFixed(2)} | Farm: Rs ${farmDmgTotal.toFixed(2)}</span>
+        </div>
+        <div class="card">
+          <h4>10) Soham & Jeet Net Expenses (6 - 9)</h4>
+          <span class="sub-text">👤 Soham Net: Rs ${sohamNetExp.toFixed(2)}</span>
+          <span class="sub-text">👤 Jeet Net: Rs ${jeetNetExp.toFixed(2)}</span>
+        </div>
+      </div>
+
+      ${combinedHTML}
+      
+      <script>
+        window.onload = function() {
+          setTimeout(function() { window.print(); }, 600);
+        };
+      <\/script>
+    </body>
+    </html>
+  `);
+  printWindow.document.close();
 }
 
 function sendAdminWhatsAppMessage(type, refIdOrIndex) {
@@ -1365,14 +1566,7 @@ function populateAdminDashboardTables() {
 
   const selectedYear = document.getElementById("adminYearFilterSelect")?.value || "ALL";
 
-  // 1. ORDERS SORTING: Newest first (New first, Old last)
-  const sortedOrders = [...orderRegistry].sort((a, b) => {
-    const dateA = new Date(a.rawIsoDate || a.dateLogged || 0);
-    const dateB = new Date(b.rawIsoDate || b.dateLogged || 0);
-    return dateB - dateA; // Descending: Newest on top
-  });
-
-  const validOrders = sortedOrders.filter(o => {
+  const validOrders = orderRegistry.filter(o => {
     if (!o || !o.name || !o.orderId) return false;
     if (selectedYear === "ALL") return true;
     const orderDateStr = o.rawIsoDate || o.dateLogged || "";
@@ -1501,14 +1695,7 @@ function populateAdminDashboardTables() {
     }
   }
 
-  // 2. BOOKINGS SORTING: Newest first (New first, Old last)
-  const sortedBookings = [...bookingsRegistry].sort((a, b) => {
-    const dateA = new Date(a.dateLogged || a.date || 0);
-    const dateB = new Date(b.dateLogged || b.date || 0);
-    return dateB - dateA; // Descending: Newest on top
-  });
-
-  const validBookings = sortedBookings.filter(b => {
+  const validBookings = bookingsRegistry.filter(b => {
     if (!b || !b.name || !b.bookingId) return false;
     if (selectedYear === "ALL") return true;
     const bookingDateStr = b.date || b.dateLogged || "";

@@ -362,6 +362,17 @@ async function triggerAdminView() {
     }));
     expensesRegistry.push(...mappedDamages);
   }
+  // Registered Users Database Fetch from Supabase
+  const { data: cloudUsers } = await _supabase.from('pgf_users').select('*');
+  if (cloudUsers) {
+    usersDatabase = cloudUsers.map(u => ({
+      name: u.name,
+      phone: u.phone,
+      email: u.email,
+      password: u.password,
+      registeredOn: u.registered_on
+    }));
+  }
 
   initDefaultDatePickers();
   populateAdminDashboardTables();

@@ -1060,18 +1060,15 @@
             <button type="submit" style="margin-top:10px; background:var(--accent);">Save Farmer Booking to Supabase</button>
           </form>
 
-          <!-- Common Broadcast Box -->
+          <!-- Common Message & Image Box -->
           <div style="background:#fffbeb; border:1px solid #fde68a; padding:14px; border-radius:10px; margin-bottom:15px;">
-            <strong style="font-size:13px; color:#92400e; display:block; margin-bottom:6px;">💬 Common WhatsApp Message & Image Broadcast</strong>
-            <textarea id="farmerCommonMsg" placeholder="Type broadcast message..." rows="2" style="width:100%; padding:8px; border:1px solid var(--line); border-radius:6px; margin-bottom:6px;"></textarea>
-            <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
-              <input type="file" id="farmerCommonImg" accept="image/*" style="font-size:12px;">
-              <button type="button" class="btn" style="background:#25d366; font-size:12px; padding:6px 14px;" onclick="sendBatchWhatsApp('farmer')">🚀 Send to All Farmers</button>
-            </div>
+            <strong style="font-size:13px; color:#92400e; display:block; margin-bottom:6px;">💬 Common WhatsApp Message & Image Sender</strong>
+            <textarea id="farmerCommonMsg" placeholder="Type message to send..." rows="2" style="width:100%; padding:8px; border:1px solid var(--line); border-radius:6px; margin-bottom:6px;"></textarea>
+            <input type="file" id="farmerCommonImg" accept="image/*" style="font-size:12px;">
           </div>
 
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:10px;">
-            <input type="search" id="searchFarmerInput" placeholder="🔍 Search Farmer by Name, Number..." style="max-width:280px;" oninput="filterAdminManagerTable('searchFarmerInput', 'adminFarmerBookingTableBody')">
+            <input type="search" id="searchFarmerInput" placeholder="🔍 Search Farmer..." style="max-width:280px;" oninput="filterAdminManagerTable('searchFarmerInput', 'adminFarmerBookingTableBody')">
           </div>
 
           <div class="table-responsive">
@@ -1079,9 +1076,9 @@
               <thead>
                 <tr>
                   <th>Name</th>
-                  <th>Number & Call</th>
+                  <th>Number, Call & WhatsApp</th>
                   <th>Address</th>
-                  <th>WhatsApp Message & Action</th>
+                  <th>Action</th>
                 </tr>
               </thead>
               <tbody id="adminFarmerBookingTableBody"></tbody>
@@ -1093,24 +1090,21 @@
         <div id="adminSubTabConnector" class="admin-sub-section" style="display:none;">
           <h4>🔌 Farm Connector Data Manager</h4>
           <form onsubmit="saveFarmConnectorAdmin(event)" style="background:#f8fafc; padding:16px; border-radius:10px; border:1px solid var(--line); margin-bottom:20px;">
-            <input type="text" id="adminConnectorName" placeholder="Connector / Partner Name" required>
+            <input type="text" id="adminConnectorName" placeholder="Connector Name" required>
             <input type="tel" id="adminConnectorPhone" placeholder="Mobile Number (10 digits)" maxlength="10" required>
-            <input type="text" id="adminConnectorAddress" placeholder="Complete Address / Location" required>
+            <input type="text" id="adminConnectorAddress" placeholder="Complete Address" required>
             <button type="submit" style="margin-top:10px; background:var(--accent);">Save Farm Connector to Supabase</button>
           </form>
 
-          <!-- Common Broadcast Box -->
+          <!-- Common Message & Image Box -->
           <div style="background:#fffbeb; border:1px solid #fde68a; padding:14px; border-radius:10px; margin-bottom:15px;">
-            <strong style="font-size:13px; color:#92400e; display:block; margin-bottom:6px;">💬 Common WhatsApp Message & Image Broadcast</strong>
-            <textarea id="connectorCommonMsg" placeholder="Type broadcast message..." rows="2" style="width:100%; padding:8px; border:1px solid var(--line); border-radius:6px; margin-bottom:6px;"></textarea>
-            <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
-              <input type="file" id="connectorCommonImg" accept="image/*" style="font-size:12px;">
-              <button type="button" class="btn" style="background:#25d366; font-size:12px; padding:6px 14px;" onclick="sendBatchWhatsApp('connector')">🚀 Send to All Connectors</button>
-            </div>
+            <strong style="font-size:13px; color:#92400e; display:block; margin-bottom:6px;">💬 Common WhatsApp Message & Image Sender</strong>
+            <textarea id="connectorCommonMsg" placeholder="Type message to send..." rows="2" style="width:100%; padding:8px; border:1px solid var(--line); border-radius:6px; margin-bottom:6px;"></textarea>
+            <input type="file" id="connectorCommonImg" accept="image/*" style="font-size:12px;">
           </div>
 
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:10px;">
-            <input type="search" id="searchConnectorInput" placeholder="🔍 Search Connector by Name, Number..." style="max-width:280px;" oninput="filterAdminManagerTable('searchConnectorInput', 'adminConnectorTableBody')">
+            <input type="search" id="searchConnectorInput" placeholder="🔍 Search Connector..." style="max-width:280px;" oninput="filterAdminManagerTable('searchConnectorInput', 'adminConnectorTableBody')">
           </div>
 
           <div class="table-responsive">
@@ -1118,9 +1112,9 @@
               <thead>
                 <tr>
                   <th>Name</th>
-                  <th>Number & Call</th>
+                  <th>Number, Call & WhatsApp</th>
                   <th>Address</th>
-                  <th>WhatsApp Message & Action</th>
+                  <th>Action</th>
                 </tr>
               </thead>
               <tbody id="adminConnectorTableBody"></tbody>
@@ -1133,18 +1127,15 @@
           <h4>👤 Registered User Accounts Data (Automatic)</h4>
           <p class="muted" style="font-size:13px;">Yahan sare registered user accounts automatic show hote hain.</p>
           
-          <!-- Common Broadcast Box -->
+          <!-- Common Message & Image Box -->
           <div style="background:#fffbeb; border:1px solid #fde68a; padding:14px; border-radius:10px; margin-bottom:15px;">
-            <strong style="font-size:13px; color:#92400e; display:block; margin-bottom:6px;">💬 Common WhatsApp Message & Image Broadcast</strong>
-            <textarea id="accountCommonMsg" placeholder="Type broadcast message..." rows="2" style="width:100%; padding:8px; border:1px solid var(--line); border-radius:6px; margin-bottom:6px;"></textarea>
-            <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
-              <input type="file" id="accountCommonImg" accept="image/*" style="font-size:12px;">
-              <button type="button" class="btn" style="background:#25d366; font-size:12px; padding:6px 14px;" onclick="sendBatchWhatsApp('account')">🚀 Send to All Accounts</button>
-            </div>
+            <strong style="font-size:13px; color:#92400e; display:block; margin-bottom:6px;">💬 Common WhatsApp Message & Image Sender</strong>
+            <textarea id="accountCommonMsg" placeholder="Type message to send..." rows="2" style="width:100%; padding:8px; border:1px solid var(--line); border-radius:6px; margin-bottom:6px;"></textarea>
+            <input type="file" id="accountCommonImg" accept="image/*" style="font-size:12px;">
           </div>
 
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:10px;">
-            <input type="search" id="searchAccountInput" placeholder="🔍 Search Account by Name, Email..." style="max-width:280px;" oninput="filterAdminManagerTable('searchAccountInput', 'adminAccountTableBody')">
+            <input type="search" id="searchAccountInput" placeholder="🔍 Search Account..." style="max-width:280px;" oninput="filterAdminManagerTable('searchAccountInput', 'adminAccountTableBody')">
           </div>
 
           <div class="table-responsive">
@@ -1152,16 +1143,17 @@
               <thead>
                 <tr>
                   <th>Name</th>
-                  <th>Number & Call</th>
+                  <th>Number, Call & WhatsApp</th>
                   <th>Email ID</th>
                   <th>Registered Date</th>
-                  <th>WhatsApp Message & Action</th>
                 </tr>
               </thead>
               <tbody id="adminAccountTableBody"></tbody>
             </table>
           </div>
         </div>
+
+      </div>
 
       </div>
 

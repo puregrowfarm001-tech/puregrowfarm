@@ -4221,7 +4221,7 @@ function switchAdminSubTab(subTabId, btnId) {
 let adminFarmerBookingsRegistry = getCleanData('pgf_admin_farmer_bookings');
 let adminFarmConnectorsRegistry = getCleanData('pgf_admin_farm_connectors');
 
-// 1) Save Farmer Booking (Name, Number, Address only)
+// 1) Save Farmer Booking to Supabase
 async function saveFarmerBookingAdmin(e) {
   e.preventDefault();
   const name = document.getElementById("adminFarmerName").value.trim();
@@ -4237,14 +4237,17 @@ async function saveFarmerBookingAdmin(e) {
   };
 
   const { error } = await _supabase.from('pgf_admin_farmer_bookings').insert([payload]);
-  if (error) console.log("Supabase error:", error.message);
+  if (error) {
+    alert("❌ Supabase Error: " + error.message);
+    return;
+  }
 
   adminFarmerBookingsRegistry.unshift(payload);
   localStorage.setItem('pgf_admin_farmer_bookings', JSON.stringify(adminFarmerBookingsRegistry));
 
   e.target.reset();
   renderAdminFarmerBookingTable();
-  alert("✅ Farmer Booking saved successfully!");
+  alert("✅ Farmer Booking saved successfully to Supabase!");
 }
 
 function renderAdminFarmerBookingTable() {
@@ -4259,7 +4262,12 @@ function renderAdminFarmerBookingTable() {
   tbody.innerHTML = adminFarmerBookingsRegistry.map((item, idx) => `
     <tr>
       <td><strong>${item.name}</strong></td>
-      <td><a href="tel:${item.phone}" class="call-link" style="font-weight:bold;">📞 ${item.phone}</a></td>
+      <td>
+        <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+          <a href="tel:${item.phone}" class="call-link" style="font-weight:bold;">📞 ${item.phone}</a>
+          <button type="button" class="btn" style="padding:3px 8px; font-size:11px; min-height:auto; background:#25d366;" onclick="sendSingleWhatsApp('${item.phone}', 'farmerCommonMsg', 'farmerCommonImg')">💬 WhatsApp</button>
+        </div>
+      </td>
       <td><small>${item.address}</small></td>
       <td>
         <button type="button" class="btn" style="padding:4px 8px; font-size:11px; background:var(--danger);" onclick="deleteAdminFarmerBooking(${idx})">🗑️ Delete</button>
@@ -4279,7 +4287,7 @@ async function deleteAdminFarmerBooking(idx) {
   }
 }
 
-// 2) Save Farm Connector (Name, Number, Address only)
+// 2) Save Farm Connector to Supabase
 async function saveFarmConnectorAdmin(e) {
   e.preventDefault();
   const name = document.getElementById("adminConnectorName").value.trim();
@@ -4295,14 +4303,17 @@ async function saveFarmConnectorAdmin(e) {
   };
 
   const { error } = await _supabase.from('pgf_admin_farm_connectors').insert([payload]);
-  if (error) console.log("Supabase error:", error.message);
+  if (error) {
+    alert("❌ Supabase Error: " + error.message);
+    return;
+  }
 
   adminFarmConnectorsRegistry.unshift(payload);
   localStorage.setItem('pgf_admin_farm_connectors', JSON.stringify(adminFarmConnectorsRegistry));
 
   e.target.reset();
   renderAdminConnectorTable();
-  alert("✅ Farm Connector saved successfully!");
+  alert("✅ Farm Connector saved successfully to Supabase!");
 }
 
 function renderAdminConnectorTable() {
@@ -4317,7 +4328,12 @@ function renderAdminConnectorTable() {
   tbody.innerHTML = adminFarmConnectorsRegistry.map((item, idx) => `
     <tr>
       <td><strong>${item.name}</strong></td>
-      <td><a href="tel:${item.phone}" class="call-link" style="font-weight:bold;">📞 ${item.phone}</a></td>
+      <td>
+        <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+          <a href="tel:${item.phone}" class="call-link" style="font-weight:bold;">📞 ${item.phone}</a>
+          <button type="button" class="btn" style="padding:3px 8px; font-size:11px; min-height:auto; background:#25d366;" onclick="sendSingleWhatsApp('${item.phone}', 'connectorCommonMsg', 'connectorCommonImg')">💬 WhatsApp</button>
+        </div>
+      </td>
       <td><small>${item.address}</small></td>
       <td>
         <button type="button" class="btn" style="padding:4px 8px; font-size:11px; background:var(--danger);" onclick="deleteAdminConnector(${idx})">🗑️ Delete</button>
@@ -4337,28 +4353,32 @@ async function deleteAdminConnector(idx) {
   }
 }
 
-// 3) Render Automatic Account Table
+// 3) Render Automatic Account Table with WhatsApp Button
 function renderAdminAccountTable() {
   const tbody = document.getElementById("adminAccountTableBody");
   if (!tbody) return;
 
   if (!usersDatabase.length) {
-    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:var(--muted); padding:15px;">No registered user accounts found.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:var(--muted); padding:15px;">No registered user accounts found.</td></tr>`;
     return;
   }
 
   tbody.innerHTML = usersDatabase.map((user, idx) => `
     <tr>
       <td><strong>${user.name}</strong></td>
-      <td><a href="tel:${user.phone || ''}" class="call-link" style="font-weight:bold;">📞 ${user.phone || 'No Phone'}</a></td>
+      <td>
+        <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+          <a href="tel:${user.phone || ''}" class="call-link" style="font-weight:bold;">📞 ${user.phone || 'No Phone'}</a>
+          ${user.phone ? `<button type="button" class="btn" style="padding:3px 8px; font-size:11px; min-height:auto; background:#25d366;" onclick="sendSingleWhatsApp('${user.phone}', 'accountCommonMsg', 'accountCommonImg')">💬 WhatsApp</button>` : ''}
+        </div>
+      </td>
       <td><code>${user.email}</code></td>
       <td><small>${user.registeredOn || 'N/A'}</small></td>
-      <td>-</td>
     </tr>
   `).join("");
 }
 
-// Search Filter Function for 1, 2, 3
+// Search Filter Function
 function filterAdminManagerTable(inputId, tbodyId) {
   const query = (document.getElementById(inputId)?.value || "").toLowerCase().trim();
   const rows = document.querySelectorAll(`#${tbodyId} tr`);
@@ -4368,43 +4388,25 @@ function filterAdminManagerTable(inputId, tbodyId) {
   });
 }
 
-// Common Broadcast WhatsApp Sender with Message & Image
-function sendBatchWhatsApp(type) {
-  let msgId = "", imgId = "", list = [];
-
-  if (type === 'farmer') {
-    msgId = "farmerCommonMsg"; imgId = "farmerCommonImg"; list = adminFarmerBookingsRegistry;
-  } else if (type === 'connector') {
-    msgId = "connectorCommonMsg"; imgId = "connectorCommonImg"; list = adminFarmConnectorsRegistry;
-  } else if (type === 'account') {
-    msgId = "accountCommonMsg"; imgId = "accountCommonImg"; list = usersDatabase;
-  }
-
-  const messageText = document.getElementById(msgId)?.value.trim() || "Hello from Pure Grow Farm Admin!";
-  const imageInput = document.getElementById(imgId);
-  let imageUrl = "";
-  if (imageInput && imageInput.files && imageInput.files[0]) {
-    imageUrl = URL.createObjectURL(imageInput.files[0]);
-  }
-
-  if (!list.length) {
-    alert("⚠️ List me koi data available nahi hai!");
+// Direct WhatsApp Sender using Common Box text and image reference
+function sendSingleWhatsApp(phone, msgId, imgId) {
+  if (!phone) {
+    alert("⚠️ Valid phone number not available!");
     return;
   }
-
-  // Pehle item ke number par WhatsApp open karega (Common broadcast simulation)
-  let targetItem = list[0];
-  let phone = targetItem.phone || targetItem.email;
-  if (!phone) return alert("Valid phone number not found.");
 
   let cleanPhone = phone.replace(/[^0-9]/g, '');
   if (cleanPhone.length === 10) cleanPhone = "91" + cleanPhone;
 
-  let finalUrlText = messageText;
-  if (imageUrl) {
-    finalUrlText += `\n\n[Attached Image Ref: ${imageUrl}]`;
+  const messageText = document.getElementById(msgId)?.value.trim() || "Hello from Pure Grow Farm!";
+  const imageInput = document.getElementById(imgId);
+  let hasImageMsg = "";
+  
+  if (imageInput && imageInput.files && imageInput.files[0]) {
+    hasImageMsg = "\n[Image Attached]";
   }
 
+  let finalUrlText = messageText + hasImageMsg;
   window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(finalUrlText)}`, '_blank');
 }
 
@@ -4412,7 +4414,6 @@ document.addEventListener("DOMContentLoaded", function() {
   renderAdminFarmerBookingTable();
   renderAdminConnectorTable();
 });
-
 // 1) Save Farmer Booking (Sirf Name, Phone, Address save hoga)
 async function saveFarmerBookingAdmin(e) {
   e.preventDefault();

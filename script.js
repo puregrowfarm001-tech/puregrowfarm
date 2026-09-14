@@ -1253,10 +1253,9 @@ function printActiveAdminReport() {
   // 🗓️ 100% Secure Calendar Date Parser for Ascending Order (Oldest First)
   const parseCalendarDate = (dateStr) => {
     if (!dateStr) return 0;
-    let cleanStr = String(dateStr).trim().split(" ")[0]; // Time hata kar sirf date lein
+    let cleanStr = String(dateStr).trim().split(" ")[0]; 
     let parts = cleanStr.split(/[\/\-]/);
     if (parts.length === 3) {
-      // Agar format DD/MM/YYYY ya DD-MM-YYYY hai
       if (parts[0].length <= 2 && parts[2].length === 4) {
         return new Date(`${parts[2]}-${parts[1]}-${parts[0]}`).getTime() || 0;
       }
@@ -1268,10 +1267,10 @@ function printActiveAdminReport() {
   const sortByCalendarDateAscending = (a, b, dateKey1, dateKey2) => {
     let dateStrA = a[dateKey1] || a[dateKey2] || "";
     let dateStrB = b[dateKey1] || b[dateKey2] || "";
-    return parseCalendarDate(dateStrA) - parseCalendarDate(dateStrB); // 🔄 Oldest to Newest (Calendar Order: e.g. 30/8 then 10/9)
+    return parseCalendarDate(dateStrA) - parseCalendarDate(dateStrB);
   };
 
-  // 1. Filtered Orders & Sorted Oldest First (Print ke liye)
+  // 1. Filtered Orders & Sorted Oldest First
   const filteredOrders = orderRegistry.filter(o => {
     if (!o || !(o.status === 'Approved' || o.status === 'Delivered')) return false;
     if (selectedYear === "ALL") return true;
@@ -1280,7 +1279,7 @@ function printActiveAdminReport() {
   filteredOrders.sort((a, b) => sortByCalendarDateAscending(a, b, 'rawIsoDate', 'dateLogged'));
   const orderTotal = filteredOrders.reduce((sum, o) => sum + Number(o.total || 0), 0);
 
-  // 2. Filtered Bookings & Sorted Oldest First (Print ke liye)
+  // 2. Filtered Bookings & Sorted Oldest First
   const filteredBookings = bookingsRegistry.filter(b => {
     if (!b || !b.name || !(b.status === "Confirmed" || b.status === "Approved")) return false;
     if (selectedYear === "ALL") return true;
@@ -1362,7 +1361,8 @@ function printActiveAdminReport() {
   let combinedHTML = '';
   
   allSections.forEach((section, index) => {
-    if (section.id === 'erpUsersTab' || section.querySelector('#adminLiveStockCardsContainer')) return;
+    // 🛑 Users tab, Admin Manager tab ya live stock card ko print me skip karna
+    if (section.id === 'erpUsersTab' || section.id === 'erpAdminManagerTab' || section.querySelector('#adminLiveStockCardsContainer')) return;
 
     const sectionClone = section.cloneNode(true);
     const sectionTitle = sectionClone.querySelector('h3')?.textContent || `ERP Section ${index + 1}`;
@@ -1377,10 +1377,10 @@ function printActiveAdminReport() {
       }
     });
 
-    const inputs = sectionClone.querySelectorAll('form, input, select, button, input[type="search"]');
+    // 🛑 Sabhi inputs, textareas (WhatsApp box), forms, buttons ko print se remove karna
+    const inputs = sectionClone.querySelectorAll('form, input, textarea, select, button, input[type="search"]');
     inputs.forEach(el => el.remove());
 
-    // 🔄 Print table rows ko properly sorted (Oldest first) data ke sath regenerate karna
     const tables = sectionClone.querySelectorAll('table');
     tables.forEach(table => {
       const headers = table.querySelectorAll('th');
@@ -1392,7 +1392,7 @@ function printActiveAdminReport() {
         }
       });
 
-      // Agar yeh Bookings table hai
+      // 1. Bookings Table Complete Data Render
       if (table.id === 'adminBookingsTableBody' || table.querySelector('th')?.textContent.includes('Booking ID')) {
         const tbody = table.querySelector('tbody') || table;
         tbody.innerHTML = filteredBookings.map(b => `
@@ -1409,7 +1409,7 @@ function printActiveAdminReport() {
           </tr>
         `).join('') || `<tr><td colspan="9" style="text-align:center;">No records</td></tr>`;
       } 
-      // Agar yeh Orders table hai
+      // 2. Orders Table Complete Data Render
       else if (table.querySelector('th')?.textContent.includes('Order ID')) {
         const tbody = table.querySelector('tbody') || table;
         tbody.innerHTML = filteredOrders.map(o => `
@@ -1425,8 +1425,38 @@ function printActiveAdminReport() {
           </tr>
         `).join('') || `<tr><td colspan="8" style="text-align:center;">No records</td></tr>`;
       }
+      // 3. Sales Table Complete Data Render
+      else if (table.id === 'subSellTableBody' || table.querySelector('th')?.textContent.includes('Buyer')) {
+        const tbody = table.querySelector('tbody') || table;
+        tbody.innerHTML = filteredSales.map(s => `
+          <tr>
+            <td>${s.date || ''}</td>
+            <td>${s.product || ''}</td>
+            <td>${s.buyer || ''}</td>
+            <td>${s.qty || 0}</td>
+            <td>Rs ${s.rate || 0}</td>
+            <td>Rs ${s.delivery || 0}</td>
+            <td>Rs ${s.total || 0}</td>
+            <td>Rs ${s.paidAmount || 0}</td>
+          </tr>
+        `).join('') || `<tr><td colspan="8" style="text-align:center;">No records</td></tr>`;
+      }
+      // 4. Purchases Table Complete Data Render
+      else if (table.id === 'subBuyTableBody' || table.querySelector('th')?.textContent.includes('Resource')) {
+        const tbody = table.querySelector('tbody') || table;
+        tbody.innerHTML = filteredPurchases.map(p => `
+          <tr>
+            <td>${p.date || ''}</td>
+            <td>${p.product || ''}</td>
+            <td>${p.funder || ''}</td>
+            <td>${p.vendor || ''}</td>
+            <td>${p.qty || 0}</td>
+            <td>Rs ${p.rate || 0}</td>
+            <td>Rs ${p.total || 0}</td>
+          </tr>
+        `).join('') || `<tr><td colspan="7" style="text-align:center;">No records</td></tr>`;
+      }
 
-      // Unwanted columns remove karna
       const rows = table.querySelectorAll('tr');
       rows.forEach(row => {
         const cols = row.querySelectorAll('th, td');
@@ -1474,6 +1504,8 @@ function printActiveAdminReport() {
         .print-section-wrapper { page-break-before: always; }
         .exp-cat-section { display: block !important; visibility: visible !important; margin-bottom: 20px; }
         .sub-accounting-section { display: block !important; visibility: visible !important; }
+        /* 🛑 Hide textareas and boxes during print */
+        textarea, input, button { display: none !important; }
       </style>
     </head>
     <body>

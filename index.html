@@ -1464,5 +1464,72 @@
     </footer>
 
   </div>
+  <script>
+  // Forcefully inject WhatsApp button into tables if missing
+  setInterval(function() {
+    // 1. Farmer Booking Table
+    const farmerRows = document.querySelectorAll("#adminFarmerBookingTableBody tr");
+    farmerRows.forEach(row => {
+      const td = row.querySelectorAll("td")[1];
+      if (td && !td.querySelector(".wa-injected-btn")) {
+        const phoneLink = td.querySelector("a");
+        if (phoneLink) {
+          const phoneNum = phoneLink.textContent.replace(/[^0-9]/g, '');
+          const btn = document.createElement("button");
+          btn.type = "button";
+          btn.className = "wa-injected-btn btn";
+          btn.style.cssText = "padding:4px 10px; font-size:11px; min-height:auto; background:#25d366; border-radius:999px; font-weight:bold; margin-left:8px;";
+          btn.textContent = "💬 WhatsApp";
+          btn.onclick = function() {
+            sendSingleWhatsApp(phoneNum, 'farmerCommonMsg', 'farmerCommonImg');
+          };
+          td.appendChild(btn);
+        }
+      }
+    });
+
+    // 2. Farm Connector Table
+    const connectorRows = document.querySelectorAll("#adminConnectorTableBody tr");
+    connectorRows.forEach(row => {
+      const td = row.querySelectorAll("td")[1];
+      if (td && !td.querySelector(".wa-injected-btn")) {
+        const phoneLink = td.querySelector("a");
+        if (phoneLink) {
+          const phoneNum = phoneLink.textContent.replace(/[^0-9]/g, '');
+          const btn = document.createElement("button");
+          btn.type = "button";
+          btn.className = "wa-injected-btn btn";
+          btn.style.cssText = "padding:4px 10px; font-size:11px; min-height:auto; background:#25d366; border-radius:999px; font-weight:bold; margin-left:8px;";
+          btn.textContent = "💬 WhatsApp";
+          btn.onclick = function() {
+            sendSingleWhatsApp(phoneNum, 'connectorCommonMsg', 'connectorCommonImg');
+          };
+          td.appendChild(btn);
+        }
+      }
+    });
+
+    // 3. Account Table
+    const accountRows = document.querySelectorAll("#adminAccountTableBody tr");
+    accountRows.forEach(row => {
+      const td = row.querySelectorAll("td")[1];
+      if (td && !td.querySelector(".wa-injected-btn")) {
+        const phoneLink = td.querySelector("a");
+        if (phoneLink) {
+          const phoneNum = phoneLink.textContent.replace(/[^0-9]/g, '');
+          const btn = document.createElement("button");
+          btn.type = "button";
+          btn.className = "wa-injected-btn btn";
+          btn.style.cssText = "padding:4px 10px; font-size:11px; min-height:auto; background:#25d366; border-radius:999px; font-weight:bold; margin-left:8px;";
+          btn.textContent = "💬 WhatsApp";
+          btn.onclick = function() {
+            sendSingleWhatsApp(phoneNum, 'accountCommonMsg', 'accountCommonImg');
+          };
+          td.appendChild(btn);
+        }
+      }
+    });
+  }, 500);
+</script>
 </body>
 </html>

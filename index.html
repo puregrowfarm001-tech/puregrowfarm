@@ -1039,7 +1039,8 @@
           </div>
         </div>
       </div>
-      </div><!-- ERP Segment: Admin Manager Page (Farmer Booking, Farm Connector & Account) -->
+
+      <!-- ERP Segment: Admin Manager Page (Farmer Booking, Farm Connector & Account) -->
       <div id="erpAdminManagerTab" class="erp-section">
         <h3>Admin Management Control Panel</h3>
         
@@ -1059,11 +1060,10 @@
             <button type="submit" style="margin-top:10px; background:var(--accent);">Save Farmer Booking to Supabase</button>
           </form>
 
-          <!-- Common Message & Image Box -->
+          <!-- Message Box (Image option removed) -->
           <div style="background:#fffbeb; border:1px solid #fde68a; padding:14px; border-radius:10px; margin-bottom:15px;">
-            <strong style="font-size:13px; color:#92400e; display:block; margin-bottom:6px;">💬 Common WhatsApp Message & Image Sender Box</strong>
-            <textarea id="farmerCommonMsg" placeholder="Yahan message type karein jo WhatsApp par bhejna hai..." rows="2" style="width:100%; padding:8px; border:1px solid var(--line); border-radius:6px; margin-bottom:6px;"></textarea>
-            <input type="file" id="farmerCommonImg" accept="image/*" style="font-size:12px;">
+            <strong style="font-size:13px; color:#92400e; display:block; margin-bottom:6px;">💬 WhatsApp Message Sender Box</strong>
+            <textarea id="farmerCommonMsg" placeholder="Yahan message type karein jo WhatsApp par bhejna hai..." rows="2" style="width:100%; padding:8px; border:1px solid var(--line); border-radius:6px;"></textarea>
           </div>
 
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:10px;">
@@ -1080,9 +1080,7 @@
                   <th>Action</th>
                 </tr>
               </thead>
-              <tbody id="adminFarmerBookingTableBody">
-                <!-- Data will be rendered dynamically via script.js with WhatsApp Button -->
-              </tbody>
+              <tbody id="adminFarmerBookingTableBody"></tbody>
             </table>
           </div>
         </div>
@@ -1097,11 +1095,10 @@
             <button type="submit" style="margin-top:10px; background:var(--accent);">Save Farm Connector to Supabase</button>
           </form>
 
-          <!-- Common Message & Image Box -->
+          <!-- Message Box (Image option removed) -->
           <div style="background:#fffbeb; border:1px solid #fde68a; padding:14px; border-radius:10px; margin-bottom:15px;">
-            <strong style="font-size:13px; color:#92400e; display:block; margin-bottom:6px;">💬 Common WhatsApp Message & Image Sender Box</strong>
-            <textarea id="connectorCommonMsg" placeholder="Yahan message type karein jo WhatsApp par bhejna hai..." rows="2" style="width:100%; padding:8px; border:1px solid var(--line); border-radius:6px; margin-bottom:6px;"></textarea>
-            <input type="file" id="connectorCommonImg" accept="image/*" style="font-size:12px;">
+            <strong style="font-size:13px; color:#92400e; display:block; margin-bottom:6px;">💬 WhatsApp Message Sender Box</strong>
+            <textarea id="connectorCommonMsg" placeholder="Yahan message type karein jo WhatsApp par bhejna hai..." rows="2" style="width:100%; padding:8px; border:1px solid var(--line); border-radius:6px;"></textarea>
           </div>
 
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:10px;">
@@ -1118,9 +1115,7 @@
                   <th>Action</th>
                 </tr>
               </thead>
-              <tbody id="adminConnectorTableBody">
-                <!-- Data will be rendered dynamically via script.js with WhatsApp Button -->
-              </tbody>
+              <tbody id="adminConnectorTableBody"></tbody>
             </table>
           </div>
         </div>
@@ -1130,11 +1125,10 @@
           <h4>👤 Registered User Accounts Data (Automatic)</h4>
           <p class="muted" style="font-size:13px;">Yahan sare registered user accounts automatic show hote hain.</p>
           
-          <!-- Common Message & Image Box -->
+          <!-- Message Box (Image option removed) -->
           <div style="background:#fffbeb; border:1px solid #fde68a; padding:14px; border-radius:10px; margin-bottom:15px;">
-            <strong style="font-size:13px; color:#92400e; display:block; margin-bottom:6px;">💬 Common WhatsApp Message & Image Sender Box</strong>
-            <textarea id="accountCommonMsg" placeholder="Yahan message type karein jo WhatsApp par bhejna hai..." rows="2" style="width:100%; padding:8px; border:1px solid var(--line); border-radius:6px; margin-bottom:6px;"></textarea>
-            <input type="file" id="accountCommonImg" accept="image/*" style="font-size:12px;">
+            <strong style="font-size:13px; color:#92400e; display:block; margin-bottom:6px;">💬 WhatsApp Message Sender Box</strong>
+            <textarea id="accountCommonMsg" placeholder="Yahan message type karein jo WhatsApp par bhejna hai..." rows="2" style="width:100%; padding:8px; border:1px solid var(--line); border-radius:6px;"></textarea>
           </div>
 
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:10px;">
@@ -1151,16 +1145,11 @@
                   <th>Registered Date</th>
                 </tr>
               </thead>
-              <tbody id="adminAccountTableBody">
-                <!-- Data will be rendered dynamically via script.js with WhatsApp Button -->
-              </tbody>
+              <tbody id="adminAccountTableBody"></tbody>
             </table>
           </div>
         </div>
-
       </div>
-
-
 
       <!-- ERP Segment 4: Overview & Live Summary Ledger -->
       <div id="erpOverviewSummaryTab" class="erp-section">
@@ -1464,72 +1453,5 @@
     </footer>
 
   </div>
-  <script>
-  // Forcefully inject WhatsApp button into tables if missing
-  setInterval(function() {
-    // 1. Farmer Booking Table
-    const farmerRows = document.querySelectorAll("#adminFarmerBookingTableBody tr");
-    farmerRows.forEach(row => {
-      const td = row.querySelectorAll("td")[1];
-      if (td && !td.querySelector(".wa-injected-btn")) {
-        const phoneLink = td.querySelector("a");
-        if (phoneLink) {
-          const phoneNum = phoneLink.textContent.replace(/[^0-9]/g, '');
-          const btn = document.createElement("button");
-          btn.type = "button";
-          btn.className = "wa-injected-btn btn";
-          btn.style.cssText = "padding:4px 10px; font-size:11px; min-height:auto; background:#25d366; border-radius:999px; font-weight:bold; margin-left:8px;";
-          btn.textContent = "💬 WhatsApp";
-          btn.onclick = function() {
-            sendSingleWhatsApp(phoneNum, 'farmerCommonMsg', 'farmerCommonImg');
-          };
-          td.appendChild(btn);
-        }
-      }
-    });
-
-    // 2. Farm Connector Table
-    const connectorRows = document.querySelectorAll("#adminConnectorTableBody tr");
-    connectorRows.forEach(row => {
-      const td = row.querySelectorAll("td")[1];
-      if (td && !td.querySelector(".wa-injected-btn")) {
-        const phoneLink = td.querySelector("a");
-        if (phoneLink) {
-          const phoneNum = phoneLink.textContent.replace(/[^0-9]/g, '');
-          const btn = document.createElement("button");
-          btn.type = "button";
-          btn.className = "wa-injected-btn btn";
-          btn.style.cssText = "padding:4px 10px; font-size:11px; min-height:auto; background:#25d366; border-radius:999px; font-weight:bold; margin-left:8px;";
-          btn.textContent = "💬 WhatsApp";
-          btn.onclick = function() {
-            sendSingleWhatsApp(phoneNum, 'connectorCommonMsg', 'connectorCommonImg');
-          };
-          td.appendChild(btn);
-        }
-      }
-    });
-
-    // 3. Account Table
-    const accountRows = document.querySelectorAll("#adminAccountTableBody tr");
-    accountRows.forEach(row => {
-      const td = row.querySelectorAll("td")[1];
-      if (td && !td.querySelector(".wa-injected-btn")) {
-        const phoneLink = td.querySelector("a");
-        if (phoneLink) {
-          const phoneNum = phoneLink.textContent.replace(/[^0-9]/g, '');
-          const btn = document.createElement("button");
-          btn.type = "button";
-          btn.className = "wa-injected-btn btn";
-          btn.style.cssText = "padding:4px 10px; font-size:11px; min-height:auto; background:#25d366; border-radius:999px; font-weight:bold; margin-left:8px;";
-          btn.textContent = "💬 WhatsApp";
-          btn.onclick = function() {
-            sendSingleWhatsApp(phoneNum, 'accountCommonMsg', 'accountCommonImg');
-          };
-          td.appendChild(btn);
-        }
-      }
-    });
-  }, 500);
-</script>
 </body>
 </html>

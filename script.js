@@ -4221,6 +4221,32 @@ function switchAdminSubTab(subTabId, btnId) {
 let adminFarmerBookingsRegistry = getCleanData('pgf_admin_farmer_bookings');
 let adminFarmConnectorsRegistry = getCleanData('pgf_admin_farm_connectors');
 
+// Supabase se Data Load karne ka function (Admin View khulte hi data aayega)
+async function fetchAdminManagerDataFromCloud() {
+  if (!_supabase) return;
+
+  // 1. Farmer Bookings Fetch
+  const { data: cloudFarmers } = await _supabase.from('pgf_admin_farmer_bookings').select('*');
+  if (cloudFarmers) {
+    adminFarmerBookingsRegistry = cloudFarmers.map(f => ({
+      id: f.id, name: f.name, phone: f.phone, address: f.address, date_logged: f.date_logged
+    }));
+    localStorage.setItem('pgf_admin_farmer_bookings', JSON.stringify(adminFarmerBookingsRegistry));
+  }
+
+  // 2. Farm Connectors Fetch
+  const { data: cloudConnectors } = await _supabase.from('pgf_admin_farm_connectors').select('*');
+  if (cloudConnectors) {
+    adminFarmConnectorsRegistry = cloudConnectors.map(c => ({
+      id: c.id, name: c.name, phone: c.phone, address: c.address, date_logged: c.date_logged
+    }));
+    localStorage.setItem('pgf_admin_farm_connectors', JSON.stringify(adminFarmConnectorsRegistry));
+  }
+
+  renderAdminFarmerBookingTable();
+  renderAdminConnectorTable();
+}
+
 // 1) Save Farmer Booking to Supabase
 async function saveFarmerBookingAdmin(e) {
   e.preventDefault();
@@ -4247,7 +4273,7 @@ async function saveFarmerBookingAdmin(e) {
 
   e.target.reset();
   renderAdminFarmerBookingTable();
-  alert("✅ Farmer Booking saved successfully to Supabase!");
+  alert("✅ Farmer Booking saved successfully!");
 }
 
 function renderAdminFarmerBookingTable() {
@@ -4313,7 +4339,7 @@ async function saveFarmConnectorAdmin(e) {
 
   e.target.reset();
   renderAdminConnectorTable();
-  alert("✅ Farm Connector saved successfully to Supabase!");
+  alert("✅ Farm Connector saved successfully!");
 }
 
 function renderAdminConnectorTable() {
@@ -4410,9 +4436,9 @@ function sendSingleWhatsApp(phone, msgId, imgId) {
   window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(finalUrlText)}`, '_blank');
 }
 
+// Jab admin panel load ho toh cloud se data fetch ho jaye
 document.addEventListener("DOMContentLoaded", function() {
-  renderAdminFarmerBookingTable();
-  renderAdminConnectorTable();
+  fetchAdminManagerDataFromCloud();
 });
 // 1) Save Farmer Booking (Sirf Name, Phone, Address save hoga)
 async function saveFarmerBookingAdmin(e) {

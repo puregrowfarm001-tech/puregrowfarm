@@ -4237,6 +4237,44 @@ function switchConnecterSubTab(subView) {
   renderConnecterTableData();
 }
 
+function renderConnecterTableData() {let manualBookingsRegistry = JSON.parse(localStorage.getItem('pgf_manual_bookings_db')) || [];
+let connecterRegistry = JSON.parse(localStorage.getItem('pgf_farm_connecter_db')) || [];
+
+let currentConnecterSubView = 'booking'; // default view
+
+function switchConnecterSubTab(subView) {
+  currentConnecterSubView = subView;
+  
+  // Update button active styles
+  ['btnSubConnecterBooking', 'btnSubConnecterFarm', 'btnSubConnecterUser'].forEach(bId => {
+    const btn = document.getElementById(bId);
+    if(btn) btn.style.background = 'var(--muted)';
+  });
+
+  const manualFormCard = document.getElementById("connecterManualAddCard");
+
+  if (subView === 'booking') {
+    if(document.getElementById('btnSubConnecterBooking')) document.getElementById('btnSubConnecterBooking').style.background = 'var(--accent)';
+    if(manualFormCard) {
+      manualFormCard.style.display = "block";
+      document.getElementById("manualFormTitle").textContent = "➕ Add New Manual Booking Record";
+    }
+  } else if (subView === 'connecter') {
+    if(document.getElementById('btnSubConnecterFarm')) document.getElementById('btnSubConnecterFarm').style.background = 'var(--accent)';
+    if(manualFormCard) {
+      manualFormCard.style.display = "block";
+      document.getElementById("manualFormTitle").textContent = "➕ Add New Farm Connecter Record";
+    }
+  } else if (subView === 'user') {
+    if(document.getElementById('btnSubConnecterUser')) document.getElementById('btnSubConnecterUser').style.background = 'var(--accent)';
+    if(manualFormCard) {
+      manualFormCard.style.display = "none"; // User data automatic database se aayega
+    }
+  }
+
+  renderConnecterTableData();
+}
+
 function renderConnecterTableData() {
   const titleEl = document.getElementById("connecterActiveTableTitle");
   const tbody = document.getElementById("connecterTableBody");
@@ -4246,52 +4284,28 @@ function renderConnecterTableData() {
   let activeData = [];
 
   if (currentConnecterSubView === 'booking') {
-    if (titleEl) titleEl.textContent = "📋 1) Booking Data Ledger (Orders & Course Bookings)";
+    if (titleEl) titleEl.textContent = "📋 1) Manual Booking Data View (Admin Added)";
     if (headersTr) {
       headersTr.innerHTML = `
-        <th>Client Name</th>
+        <th>Name</th>
         <th>Contact Number</th>
-        <th>Address / Session Details</th>
-        <th>Actions (Call & WhatsApp)</th>
+        <th>Address / Details</th>
+        <th>Actions</th>
       `;
     }
-    
-    // Combine both orders and course bookings as bookings data
-    const combinedBookings = [];
-    orderRegistry.forEach(o => {
-      combinedBookings.push({
-        name: o.name,
-        phone: o.phone,
-        detail: `Order #${o.orderId} - ${o.products} (Rs ${o.total})`,
-        address: o.address || 'N/A'
-      });
-    });
-    bookingsRegistry.forEach(b => {
-      combinedBookings.push({
-        name: b.name,
-        phone: b.phone,
-        detail: `${b.type} Training Booking (#${b.bookingId}) - Fee: Rs ${b.fee}`,
-        address: b.college || b.date || 'Farm Training Center'
-      });
-    });
-    activeData = combinedBookings;
+    activeData = manualBookingsRegistry;
 
   } else if (currentConnecterSubView === 'connecter') {
-    if (titleEl) titleEl.textContent = "📋 2) Farm Connecter & Partners Directory";
+    if (titleEl) titleEl.textContent = "📋 2) Farm Connecter View (Admin Added)";
     if (headersTr) {
       headersTr.innerHTML = `
         <th>Name</th>
         <th>Contact Number</th>
         <th>Address</th>
-        <th>Actions (Call & WhatsApp)</th>
+        <th>Actions</th>
       `;
     }
-    activeData = connecterRegistry.map(c => ({
-      name: c.name,
-      phone: c.contact_number,
-      detail: c.address,
-      address: c.notes || 'Farm Partner'
-    }));
+    activeData = connecterRegistry;
 
   } else if (currentConnecterSubView === 'user') {
     if (titleEl) titleEl.textContent = "📋 3) Registered User Accounts Ledger";
@@ -4300,52 +4314,113 @@ function renderConnecterTableData() {
         <th>User Name</th>
         <th>Mobile Number</th>
         <th>Email & Registered On</th>
-        <th>Actions (Call & WhatsApp)</th>
+        <th>Actions</th>
       `;
     }
     activeData = usersDatabase.map(u => ({
+      id: u.email,
       name: u.name,
-      phone: u.phone,
-      detail: `${u.email} (Reg: ${u.registeredOn || 'N/A'})`,
-      address: 'Registered User'
+      contact_number: u.phone,
+      address: `${u.email} (Reg: ${u.registeredOn || 'N/A'})`
     }));
   }
 
-  // Update counts on Front Page Cards
-  const countBooking = orderRegistry.length + bookingsRegistry.length;
-  const countConnecter = connecterRegistry.length;
-  const countUser = usersDatabase.length;
-
-  if (document.getElementById("countBadgeBooking")) document.getElementById("countBadgeBooking").textContent = countBooking;
-  if (document.getElementById("countBadgeConnecter")) document.getElementById("countBadgeConnecter").textContent = countConnecter;
-  if (document.getElementById("countBadgeUser")) document.getElementById("countBadgeUser").textContent = countUser;
+  // Update counts on Front Page Cards (1, 2, 3)
+  if (document.getElementById("countBadgeBooking")) document.getElementById("countBadgeBooking").textContent = manualBookingsRegistry.length;
+  if (document.getElementById("countBadgeConnecter")) document.getElementById("countBadgeConnecter").textContent = connecterRegistry.length;
+  if (document.getElementById("countBadgeUser")) document.getElementById("countBadgeUser").textContent = usersDatabase.length;
 
   if (!activeData.length) {
-    tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:var(--muted); padding:20px;">No records found in this category.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:var(--muted); padding:20px;">No records found. Add new records using the form above.</td></tr>`;
     return;
   }
 
-  tbody.innerHTML = activeData.map((item) => {
-    const phoneNum = item.phone || '';
-    const cleanPhone = phoneNum.replace(/[^0-9]/g, '');
+  tbody.innerHTML = activeData.map((item, idx) => {
+    const name = item.name || '';
+    const phone = item.contact_number || item.phone || '';
+    const address = item.address || item.detail || '';
+    const cleanPhone = phone.replace(/[^0-9]/g, '');
     const whatsAppText = document.getElementById("adminBroadcastMsgBox")?.value || "Hello from Pure Grow Farm!";
+
+    let deleteActionBtn = '';
+    if (currentConnecterSubView !== 'user') {
+      deleteActionBtn = `<button type="button" class="btn" style="padding:4px 8px; font-size:10px; min-height:auto; background:var(--danger);" onclick="deleteManualConnecterEntry('${currentConnecterSubView}', ${idx})">Delete</button>`;
+    }
 
     return `
       <tr>
-        <td><strong>${item.name}</strong></td>
-        <td>${phoneNum || 'N/A'}</td>
-        <td><small>${item.detail || item.address || 'N/A'}</small></td>
+        <td><strong>${name}</strong></td>
+        <td>${phone || 'N/A'}</td>
+        <td><small>${address}</small></td>
         <td>
-          <div style="display:flex; gap:6px; flex-wrap:wrap;">
-            ${phoneNum ? `
-              <a href="tel:${phoneNum}" class="btn" style="padding:4px 10px; font-size:11px; min-height:auto; background:#0284c7;">📞 Call</a>
-              <a href="https://wa.me/91${cleanPhone}?text=${encodeURIComponent(whatsAppText)}" target="_blank" class="btn" style="padding:4px 10px; font-size:11px; min-height:auto; background:#25d366;">💬 WhatsApp</a>
+          <div style="display:flex; gap:6px; flex-wrap:wrap; align-items:center;">
+            ${phone ? `
+              <a href="tel:${phone}" class="btn" style="padding:4px 8px; font-size:11px; min-height:auto; background:#0284c7;">📞 Call</a>
+              <a href="https://wa.me/91${cleanPhone}?text=${encodeURIComponent(whatsAppText)}" target="_blank" class="btn" style="padding:4px 8px; font-size:11px; min-height:auto; background:#25d366;">💬 WhatsApp</a>
             ` : `<span class="muted" style="font-size:11px;">No Phone</span>`}
+            ${deleteActionBtn}
           </div>
         </td>
       </tr>
     `;
   }).join("");
+}
+
+async function handleManualConnecterAddEntry(e) {
+  e.preventDefault();
+  const name = document.getElementById("manualInputName").value.trim();
+  const contact_number = document.getElementById("manualInputPhone").value.trim();
+  const address = document.getElementById("manualInputAddress").value.trim();
+  const notes = document.getElementById("manualInputNotes").value.trim();
+
+  const newEntry = {
+    id: "REC-" + Date.now().toString().slice(-4),
+    name,
+    contact_number,
+    address,
+    notes
+  };
+
+  if (currentConnecterSubView === 'booking') {
+    manualBookingsRegistry.unshift(newEntry);
+    localStorage.setItem('pgf_manual_bookings_db', JSON.stringify(manualBookingsRegistry));
+    
+    // Supabase me save karein
+    await _supabase.from('pgf_manual_bookings').insert([newEntry]);
+    alert("✅ Booking record successfully added!");
+
+  } else if (currentConnecterSubView === 'connecter') {
+    connecterRegistry.unshift(newEntry);
+    localStorage.setItem('pgf_farm_connecter_db', JSON.stringify(connecterRegistry));
+    
+    // Supabase me save karein
+    await _supabase.from('pgf_farm_connecter').insert([newEntry]);
+    alert("✅ Farm Connecter record successfully added!");
+  }
+
+  e.target.reset();
+  renderConnecterTableData();
+}
+
+async function deleteManualConnecterEntry(subView, idx) {
+  if (confirm("Kya aap sach me is record ko delete karna chahte hain?")) {
+    if (subView === 'booking') {
+      const removed = manualBookingsRegistry.splice(idx, 1)[0];
+      localStorage.setItem('pgf_manual_bookings_db', JSON.stringify(manualBookingsRegistry));
+      if (removed && removed.id) {
+        await _supabase.from('pgf_manual_bookings').delete().eq('id', removed.id);
+      }
+    } else if (subView === 'connecter') {
+      const removed = connecterRegistry.splice(idx, 1)[0];
+      localStorage.setItem('pgf_farm_connecter_db', JSON.stringify(connecterRegistry));
+      if (removed && removed.id) {
+        await _supabase.from('pgf_farm_connecter').delete().eq('id', removed.id);
+      }
+    }
+    renderConnecterTableData();
+    alert("✅ Record successfully deleted!");
+  }
+}
 }
 
 function filterConnecterTable() {
@@ -4404,3 +4479,4 @@ async function sendBroadcastWhatsAppToAll() {
     alert(`✅ ${count} WhatsApp tabs successfully open kar diye gaye hain!`);
   }
 }
+

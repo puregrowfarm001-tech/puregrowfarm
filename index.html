@@ -1142,7 +1142,7 @@
       <!-- ERP Segment: Farm Connecter, Booking & User Broadcast Hub -->
       <div id="erpConnecterTab" class="erp-section">
         <h3>📞 Farm Connecter, Bookings & User Broadcast Hub</h3>
-        <p class="muted" style="font-size:13px; margin-bottom:15px;">Yahan se aap Booking, Farm Connecter aur Registered Users ka data dekh sakte hain, WhatsApp Broadcast bhej sakte hain aur personal notes likh sakte hain.</p>
+        <p class="muted" style="font-size:13px; margin-bottom:15px;">Yahan se aap Booking, Farm Connecter aur Registered Users ka data manage kar sakte hain, WhatsApp Broadcast bhej sakte hain aur personal notes likh sakte hain.</p>
 
         <!-- 3 Count Cards & Buttons on Front Page -->
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; margin-bottom: 20px;">
@@ -1172,6 +1172,24 @@
           <button type="button" class="btn" id="btnSubConnecterBooking" onclick="switchConnecterSubTab('booking')">1) Booking Data View</button>
           <button type="button" class="btn" id="btnSubConnecterFarm" onclick="switchConnecterSubTab('connecter')" style="background:var(--muted);">2) Farm Connecter View</button>
           <button type="button" class="btn" id="btnSubConnecterUser" onclick="switchConnecterSubTab('user')" style="background:var(--muted);">3) User Accounts View</button>
+        </div>
+
+       <!-- Manual Add Form Card (Booking & Farm Connecter ke liye with Image) -->
+        <div id="connecterManualAddCard" class="db-card" style="background:#f8fafc; border:1px solid var(--line); padding:16px; border-radius:12px; margin-bottom:20px;">
+          <h4 id="manualFormTitle" style="margin:0 0 12px 0; color:var(--accent);">➕ Add New Record with Image</h4>
+          <form onsubmit="handleManualConnecterAddEntry(event)">
+            <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:10px;">
+              <input type="text" id="manualInputName" placeholder="Name / Client Name" required>
+              <input type="tel" id="manualInputPhone" placeholder="Contact Number (Mobile Line)" required>
+              <input type="text" id="manualInputAddress" placeholder="Address / Location / Details" required>
+              <input type="text" id="manualInputNotes" placeholder="Additional Notes / Remarks (Optional)">
+              <div style="grid-column: 1 / -1;">
+                <label style="font-size:12px; font-weight:bold; color:#334155; display:block; margin-bottom:4px;">🖼️ Upload / Attach Image (Optional):</label>
+                <input type="file" id="manualInputImage" accept="image/*" style="padding:6px; background:#fff;">
+              </div>
+            </div>
+            <button type="submit" style="margin-top:12px; background:var(--accent);">Save Record with Image to Cloud</button>
+          </form>
         </div>
 
         <!-- Broadcast Message Box & Note Box Panel -->

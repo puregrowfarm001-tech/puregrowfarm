@@ -1563,6 +1563,15 @@ function sendAdminWhatsAppMessage(type, refIdOrIndex) {
 function populateAdminDashboardTables() {
   renderAdminLiveStockSummary();
   renderDailyDryStockTable();
+  renderConnecterTableData();
+
+// Load saved note on startup:
+document.addEventListener("DOMContentLoaded", function() {
+  const savedNote = localStorage.getItem('pgf_admin_connecter_note');
+  if (savedNote && document.getElementById("adminConnecterNoteBox")) {
+    document.getElementById("adminConnecterNoteBox").value = savedNote;
+  }
+});
 
   const selectedYear = document.getElementById("adminYearFilterSelect")?.value || "ALL";
 
@@ -4199,4 +4208,199 @@ async function handleVerifyOtpAndChangePassword(e) {
   document.getElementById("sendProfileOtpBtn").style.display = "block";
   document.getElementById("otpVerifySectionBlock").style.display = "none";
   alert("✅ Password successfully reset & updated in Supabase cloud!");
+}
+
+let connecterRegistry = JSON.parse(localStorage.getItem('pgf_farm_connecter_db')) || [
+  { id: "CON-1", name: "Soham N Gajera", contact_number: "+919067891039", address: "Makhiyala, Junagadh", category: "Farm Connecter", notes: "Co-Founder & Director" },
+  { id: "CON-2", name: "Jeet A Gajera", contact_number: "+918200145732", address: "Makhiyala, Junagadh", category: "Farm Connecter", notes: "Production Head" }
+];
+
+let currentConnecterSubView = 'booking'; // default view
+
+function switchConnecterSubTab(subView) {
+  currentConnecterSubView = subView;
+  
+  // Update button active styles
+  ['btnSubConnecterBooking', 'btnSubConnecterFarm', 'btnSubConnecterUser'].forEach(bId => {
+    const btn = document.getElementById(bId);
+    if(btn) btn.style.background = 'var(--muted)';
+  });
+
+  if (subView === 'booking' && document.getElementById('btnSubConnecterBooking')) {
+    document.getElementById('btnSubConnecterBooking').style.background = 'var(--accent)';
+  } else if (subView === 'connecter' && document.getElementById('btnSubConnecterFarm')) {
+    document.getElementById('btnSubConnecterFarm').style.background = 'var(--accent)';
+  } else if (subView === 'user' && document.getElementById('btnSubConnecterUser')) {
+    document.getElementById('btnSubConnecterUser').style.background = 'var(--accent)';
+  }
+
+  renderConnecterTableData();
+}
+
+function renderConnecterTableData() {
+  const titleEl = document.getElementById("connecterActiveTableTitle");
+  const tbody = document.getElementById("connecterTableBody");
+  const headersTr = document.getElementById("connecterTableHeaders");
+  if (!tbody) return;
+
+  let activeData = [];
+
+  if (currentConnecterSubView === 'booking') {
+    if (titleEl) titleEl.textContent = "📋 1) Booking Data Ledger (Orders & Course Bookings)";
+    if (headersTr) {
+      headersTr.innerHTML = `
+        <th>Client Name</th>
+        <th>Contact Number</th>
+        <th>Address / Session Details</th>
+        <th>Actions (Call & WhatsApp)</th>
+      `;
+    }
+    
+    // Combine both orders and course bookings as bookings data
+    const combinedBookings = [];
+    orderRegistry.forEach(o => {
+      combinedBookings.push({
+        name: o.name,
+        phone: o.phone,
+        detail: `Order #${o.orderId} - ${o.products} (Rs ${o.total})`,
+        address: o.address || 'N/A'
+      });
+    });
+    bookingsRegistry.forEach(b => {
+      combinedBookings.push({
+        name: b.name,
+        phone: b.phone,
+        detail: `${b.type} Training Booking (#${b.bookingId}) - Fee: Rs ${b.fee}`,
+        address: b.college || b.date || 'Farm Training Center'
+      });
+    });
+    activeData = combinedBookings;
+
+  } else if (currentConnecterSubView === 'connecter') {
+    if (titleEl) titleEl.textContent = "📋 2) Farm Connecter & Partners Directory";
+    if (headersTr) {
+      headersTr.innerHTML = `
+        <th>Name</th>
+        <th>Contact Number</th>
+        <th>Address</th>
+        <th>Actions (Call & WhatsApp)</th>
+      `;
+    }
+    activeData = connecterRegistry.map(c => ({
+      name: c.name,
+      phone: c.contact_number,
+      detail: c.address,
+      address: c.notes || 'Farm Partner'
+    }));
+
+  } else if (currentConnecterSubView === 'user') {
+    if (titleEl) titleEl.textContent = "📋 3) Registered User Accounts Ledger";
+    if (headersTr) {
+      headersTr.innerHTML = `
+        <th>User Name</th>
+        <th>Mobile Number</th>
+        <th>Email & Registered On</th>
+        <th>Actions (Call & WhatsApp)</th>
+      `;
+    }
+    activeData = usersDatabase.map(u => ({
+      name: u.name,
+      phone: u.phone,
+      detail: `${u.email} (Reg: ${u.registeredOn || 'N/A'})`,
+      address: 'Registered User'
+    }));
+  }
+
+  // Update counts on Front Page Cards
+  const countBooking = orderRegistry.length + bookingsRegistry.length;
+  const countConnecter = connecterRegistry.length;
+  const countUser = usersDatabase.length;
+
+  if (document.getElementById("countBadgeBooking")) document.getElementById("countBadgeBooking").textContent = countBooking;
+  if (document.getElementById("countBadgeConnecter")) document.getElementById("countBadgeConnecter").textContent = countConnecter;
+  if (document.getElementById("countBadgeUser")) document.getElementById("countBadgeUser").textContent = countUser;
+
+  if (!activeData.length) {
+    tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:var(--muted); padding:20px;">No records found in this category.</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = activeData.map((item) => {
+    const phoneNum = item.phone || '';
+    const cleanPhone = phoneNum.replace(/[^0-9]/g, '');
+    const whatsAppText = document.getElementById("adminBroadcastMsgBox")?.value || "Hello from Pure Grow Farm!";
+
+    return `
+      <tr>
+        <td><strong>${item.name}</strong></td>
+        <td>${phoneNum || 'N/A'}</td>
+        <td><small>${item.detail || item.address || 'N/A'}</small></td>
+        <td>
+          <div style="display:flex; gap:6px; flex-wrap:wrap;">
+            ${phoneNum ? `
+              <a href="tel:${phoneNum}" class="btn" style="padding:4px 10px; font-size:11px; min-height:auto; background:#0284c7;">📞 Call</a>
+              <a href="https://wa.me/91${cleanPhone}?text=${encodeURIComponent(whatsAppText)}" target="_blank" class="btn" style="padding:4px 10px; font-size:11px; min-height:auto; background:#25d366;">💬 WhatsApp</a>
+            ` : `<span class="muted" style="font-size:11px;">No Phone</span>`}
+          </div>
+        </td>
+      </tr>
+    `;
+  }).join("");
+}
+
+function filterConnecterTable() {
+  const query = (document.getElementById("connecterSearchInput")?.value || "").toLowerCase().trim();
+  const rows = document.querySelectorAll("#connecterTableBody tr");
+  rows.forEach(row => {
+    const text = row.textContent.toLowerCase();
+    row.style.display = text.includes(query) ? "" : "none";
+  });
+}
+
+async function saveAdminConnecterNote() {
+  const noteText = document.getElementById("adminConnecterNoteBox")?.value || "";
+  localStorage.setItem('pgf_admin_connecter_note', noteText);
+  
+  // Supabase me save karein
+  await _supabase.from('pgf_admin_notes').upsert([
+    { id: 'NOTE-1', note_content: noteText, updated_at: new Date().toLocaleString() }
+  ]);
+}
+
+async function sendBroadcastWhatsAppToAll() {
+  const msgBox = document.getElementById("adminBroadcastMsgBox");
+  const customMsg = msgBox ? msgBox.value.trim() : "";
+  
+  if (!customMsg) {
+    alert("⚠️ Kripya WhatsApp Message Box me koi message likhein jo sabhi ko bheja ja sake!");
+    if (msgBox) msgBox.focus();
+    return;
+  }
+
+  // Collect all unique phone numbers from Bookings, Connecters & Users
+  let allPhones = new Set();
+  orderRegistry.forEach(o => { if(o.phone) allPhones.add(o.phone); });
+  bookingsRegistry.forEach(b => { if(b.phone) allPhones.add(b.phone); });
+  connecterRegistry.forEach(c => { if(c.contact_number) allPhones.add(c.contact_number); });
+  usersDatabase.forEach(u => { if(u.phone) allPhones.add(u.phone); });
+
+  if (allPhones.size === 0) {
+    alert("Koi bhi phone number available nahi hai!");
+    return;
+  }
+
+  if (confirm(`⚠️ Aapka likha hua message total ${allPhones.size} members ko bheja jayega. Kripya confirm karein.`)) {
+    let count = 0;
+    allPhones.forEach(phone => {
+      let clean = phone.replace(/[^0-9]/g, '');
+      if (clean.length === 10) clean = "91" + clean;
+      if (clean.length >= 10) {
+        setTimeout(() => {
+          window.open(`https://wa.me/${clean}?text=${encodeURIComponent(customMsg)}`, '_blank');
+        }, count * 400); // 400ms delay to prevent browser popup block
+        count++;
+      }
+    });
+    alert(`✅ ${count} WhatsApp tabs successfully open kar diye gaye hain!`);
+  }
 }

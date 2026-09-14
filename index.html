@@ -576,6 +576,7 @@
         <button class="btn" id="tabNavBookings" onclick="switchErpTab('erpBookingsTab', 'tabNavBookings')">Farm Training Bookings Page</button>
         <button class="btn" id="tabNavAccounting" onclick="switchErpTab('erpAccountingTab', 'tabNavAccounting')">Farm Core Financial & Stock Page</button>
         <button class="btn" id="tabNavUsers" onclick="switchErpTab('erpUsersTab', 'tabNavUsers')">Registered Accounts Ledger</button>
+        <button class="btn" id="tabNavConnecter" onclick="switchErpTab('erpConnecterTab', 'tabNavConnecter')">📞 Farm Connecter & Broadcast Hub</button>
         <button class="btn" id="tabNavOverviewSummary" onclick="switchErpTab('erpOverviewSummaryTab', 'tabNavOverviewSummary')">Overview & Live Summary Ledger</button>
       </div>
 
@@ -1136,6 +1137,88 @@
             <tbody id="adminUsersTableBody"></tbody>
           </table>
         </div>
+      </div>
+
+      <!-- ERP Segment: Farm Connecter, Booking & User Broadcast Hub -->
+      <div id="erpConnecterTab" class="erp-section">
+        <h3>📞 Farm Connecter, Bookings & User Broadcast Hub</h3>
+        <p class="muted" style="font-size:13px; margin-bottom:15px;">Yahan se aap Booking, Farm Connecter aur Registered Users ka data dekh sakte hain, WhatsApp Broadcast bhej sakte hain aur personal notes likh sakte hain.</p>
+
+        <!-- 3 Count Cards & Buttons on Front Page -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; margin-bottom: 20px;">
+          
+          <div class="fin-card" style="background:#e0f2fe; border:1px solid #bae6fd; cursor:pointer;" onclick="switchConnecterSubTab('booking')">
+            <div class="muted small-title" style="font-weight:bold; color:#0369a1;">1) Booking Data Count</div>
+            <div class="fin-val" id="countBadgeBooking" style="color:#0284c7;">0</div>
+            <small style="color:#0369a1;">Click to view bookings</small>
+          </div>
+
+          <div class="fin-card" style="background:#fef3c7; border:1px solid #fde68a; cursor:pointer;" onclick="switchConnecterSubTab('connecter')">
+            <div class="muted small-title" style="font-weight:bold; color:#92400e;">2) Farm Connecter Count</div>
+            <div class="fin-val" id="countBadgeConnecter" style="color:#d97706;">0</div>
+            <small style="color:#b45309;">Click to view partners/contacts</small>
+          </div>
+
+          <div class="fin-card" style="background:#f0fdf4; border:1px solid #bbf7d0; cursor:pointer;" onclick="switchConnecterSubTab('user')">
+            <div class="muted small-title" style="font-weight:bold; color:#166534;">3) Registered Users Count</div>
+            <div class="fin-val" id="countBadgeUser" style="color:#15803d;">0</div>
+            <small style="color:#166534;">Click to view accounts database</small>
+          </div>
+
+        </div>
+
+        <!-- 3 Interactive Control Buttons -->
+        <div style="display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;">
+          <button type="button" class="btn" id="btnSubConnecterBooking" onclick="switchConnecterSubTab('booking')">1) Booking Data View</button>
+          <button type="button" class="btn" id="btnSubConnecterFarm" onclick="switchConnecterSubTab('connecter')" style="background:var(--muted);">2) Farm Connecter View</button>
+          <button type="button" class="btn" id="btnSubConnecterUser" onclick="switchConnecterSubTab('user')" style="background:var(--muted);">3) User Accounts View</button>
+        </div>
+
+        <!-- Broadcast Message Box & Note Box Panel -->
+        <div style="background: #f8fafc; border: 1px solid var(--line); padding: 16px; border-radius: 12px; margin-bottom: 20px;">
+          <h4 style="margin: 0 0 10px 0; color: var(--accent);">💬 WhatsApp Broadcast & Admin Note Box</h4>
+          
+          <div style="display: grid; gap: 12px;">
+            <div>
+              <label style="font-size: 12px; font-weight: bold; color: #334155;">📝 Admin General Note Box (Save locally/cloud):</label>
+              <textarea id="adminConnecterNoteBox" rows="3" placeholder="Yahan farm operations ya kisi client ke baare me kuch bhi note likh sakte hain..." style="margin-top: 4px;" oninput="saveAdminConnecterNote()"></textarea>
+            </div>
+
+            <div>
+              <label style="font-size: 12px; font-weight: bold; color: #334155;">💬 WhatsApp Message Box (Jo sabhi ko broadcast hoga):</label>
+              <textarea id="adminBroadcastMsgBox" rows="3" placeholder="Hello! Pure Grow Farm ki taraf se naya oyster mushroom stock aur training update..." style="margin-top: 4px;"></textarea>
+            </div>
+
+            <div>
+              <button type="button" class="btn" style="background: #25d366;" onclick="sendBroadcastWhatsAppToAll()">📢 Send WhatsApp Message to All Listed Members</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Dynamic Data Display Table Container -->
+        <div style="background: #fff; padding: 15px; border-radius: 10px; border: 1px solid var(--line);">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 10px;">
+            <h4 id="connecterActiveTableTitle" style="margin: 0; color: #1e293b;">📋 Data Ledger View</h4>
+            <input type="search" id="connecterSearchInput" placeholder="🔍 Search in list..." style="max-width: 260px;" oninput="filterConnecterTable()">
+          </div>
+
+          <div class="table-responsive">
+            <table>
+              <thead>
+                <tr id="connecterTableHeaders">
+                  <th>Name</th>
+                  <th>Contact Number</th>
+                  <th>Address / Details</th>
+                  <th>Actions (Call & WhatsApp)</th>
+                </tr>
+              </thead>
+              <tbody id="connecterTableBody">
+                <!-- Dynamically populated via JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
       </div>
     </section>
 

@@ -1256,6 +1256,10 @@ function printActiveAdminReport() {
     if (selectedYear === "ALL") return true;
     return (o.rawIsoDate || o.dateLogged || "").includes(selectedYear);
   });
+  
+  // 🔄 Print ke liye: Old Data First (Ascending order - Purana data sabse upar)
+  filteredOrders.sort((a, b) => new Date(a.rawIsoDate || a.dateLogged || 0) - new Date(b.rawIsoDate || b.dateLogged || 0));
+
   const orderTotal = filteredOrders.reduce((sum, o) => sum + Number(o.total || 0), 0);
 
   const filteredBookings = bookingsRegistry.filter(b => {
@@ -1263,6 +1267,10 @@ function printActiveAdminReport() {
     if (selectedYear === "ALL") return true;
     return (b.date || b.dateLogged || "").includes(selectedYear);
   });
+
+  // 🔄 Print ke liye Bookings: Old Data First
+  filteredBookings.sort((a, b) => new Date(a.dateLogged || 0) - new Date(b.dateLogged || 0));
+
   const farmBookingTotal = filteredBookings.reduce((sum, b) => sum + Number(b.fee || 0), 0);
 
   const filteredSales = salesRegistry.filter(s => {
@@ -1270,6 +1278,9 @@ function printActiveAdminReport() {
     if (selectedYear === "ALL") return true;
     return (s.date || "").includes(selectedYear);
   });
+  
+  // 🔄 Print ke liye Sales: Old Data First
+  filteredSales.sort((a, b) => new Date(a.date || 0) - new Date(b.date || 0));
   const sellTotal = filteredSales.reduce((sum, s) => sum + Number(s.paidAmount !== undefined ? s.paidAmount : s.total || 0), 0);
 
   const filteredPurchases = purchasesRegistry.filter(p => {
@@ -1277,6 +1288,9 @@ function printActiveAdminReport() {
     if (selectedYear === "ALL") return true;
     return (p.date || "").includes(selectedYear);
   });
+
+  // 🔄 Print ke liye Purchases: Old Data First
+  filteredPurchases.sort((a, b) => new Date(a.date || 0) - new Date(b.date || 0));
   const buyTotal = filteredPurchases.reduce((sum, p) => sum + Number(p.paidAmount !== undefined ? p.paidAmount : p.total || 0), 0);
 
   const filteredExpenses = expensesRegistry.filter(e => {
@@ -1284,6 +1298,9 @@ function printActiveAdminReport() {
     if (selectedYear === "ALL") return true;
     return (e.date || "").includes(selectedYear);
   });
+
+  // 🔄 Print ke liye Expenses: Old Data First
+  filteredExpenses.sort((a, b) => new Date(a.date || 0) - new Date(b.date || 0));
   const expenseTotal = filteredExpenses.reduce((sum, e) => sum + Number(e.amount || 0), 0);
 
   let sohamBuyTotal = 0, jeetBuyTotal = 0, farmBuyTotal = 0;
@@ -1311,6 +1328,8 @@ function printActiveAdminReport() {
     if (selectedYear === "ALL") return true;
     return (e.date || "").includes(selectedYear);
   });
+
+  filteredDamages.sort((a, b) => new Date(a.date || 0) - new Date(b.date || 0));
   const damageTotal = filteredDamages.reduce((sum, d) => sum + Number(d.amount || 0), 0);
 
   let sohamDmgTotal = 0, jeetDmgTotal = 0, farmDmgTotal = 0;
@@ -1573,6 +1592,13 @@ function populateAdminDashboardTables() {
     return orderDateStr.includes(selectedYear);
   });
   
+  // 🔄 Screen Display ke liye: New Data First (Descending order)
+  validOrders.sort((a, b) => {
+    let dateA = new Date(a.rawIsoDate || a.dateLogged || 0);
+    let dateB = new Date(b.rawIsoDate || b.dateLogged || 0);
+    return dateB - dateA;
+  });
+  
   const approvedOrdersList = validOrders.filter(o => o.status === 'Approved' || o.status === 'Delivered');
   const approvedOnlineRevenue = approvedOrdersList.reduce((sum, o) => sum + Number(o.total || 0), 0);
   
@@ -1700,6 +1726,13 @@ function populateAdminDashboardTables() {
     if (selectedYear === "ALL") return true;
     const bookingDateStr = b.date || b.dateLogged || "";
     return bookingDateStr.includes(selectedYear);
+  });
+
+  // 🔄 Screen Display ke liye Bookings: New Data First (Descending order)
+  validBookings.sort((a, b) => {
+    let dateA = new Date(a.dateLogged || 0);
+    let dateB = new Date(b.dateLogged || 0);
+    return dateB - dateA;
   });
 
   const totalStudents = validBookings.filter(b => b.type === "Student").length;

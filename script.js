@@ -1592,11 +1592,20 @@ function populateAdminDashboardTables() {
     return orderDateStr.includes(selectedYear);
   });
   
-  // 🔄 Screen Display ke liye: New Data First (Descending order)
+  // 🔄 FIX: Secure Sorting for Orders (New Data First / Descending Order)
   validOrders.sort((a, b) => {
-    let dateA = new Date(a.rawIsoDate || a.dateLogged || 0);
-    let dateB = new Date(b.rawIsoDate || b.dateLogged || 0);
-    return dateB - dateA;
+    let timeA = 0, timeB = 0;
+    try {
+      timeA = new Date(a.rawIsoDate || a.dateLogged || a.paymentDate || 0).getTime();
+      if (isNaN(timeA)) timeA = 0;
+    } catch(e) { timeA = 0; }
+
+    try {
+      timeB = new Date(b.rawIsoDate || b.dateLogged || b.paymentDate || 0).getTime();
+      if (isNaN(timeB)) timeB = 0;
+    } catch(e) { timeB = 0; }
+
+    return timeB - timeA; // Newest first
   });
   
   const approvedOrdersList = validOrders.filter(o => o.status === 'Approved' || o.status === 'Delivered');
@@ -1728,11 +1737,20 @@ function populateAdminDashboardTables() {
     return bookingDateStr.includes(selectedYear);
   });
 
-  // 🔄 Screen Display ke liye Bookings: New Data First (Descending order)
+  // 🔄 FIX: Secure Sorting for Bookings (New Data First / Descending Order)
   validBookings.sort((a, b) => {
-    let dateA = new Date(a.dateLogged || 0);
-    let dateB = new Date(b.dateLogged || 0);
-    return dateB - dateA;
+    let timeA = 0, timeB = 0;
+    try {
+      timeA = new Date(a.dateLogged || a.date || 0).getTime();
+      if (isNaN(timeA)) timeA = 0;
+    } catch(e) { timeA = 0; }
+
+    try {
+      timeB = new Date(b.dateLogged || b.date || 0).getTime();
+      if (isNaN(timeB)) timeB = 0;
+    } catch(e) { timeB = 0; }
+
+    return timeB - timeA; // Newest first
   });
 
   const totalStudents = validBookings.filter(b => b.type === "Student").length;

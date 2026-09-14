@@ -1331,8 +1331,8 @@ function printActiveAdminReport() {
   let combinedHTML = '';
   
   allSections.forEach((section, index) => {
-    // 🛑 Yahan check kiya: Agar section me Users tab hai ya Live Stock Summary wala container hai, toh use print me skip kar do!
-    if (section.id === 'erpUsersTab' || section.querySelector('#adminLiveStockCardsContainer')) return;
+    // 🛑 Yahan check kiya: Users, Admin Manager Panel, ya Live Stock Summary ko print me skip kar do!
+    if (section.id === 'erpUsersTab' || section.id === 'erpAdminManagerTab' || section.querySelector('#adminLiveStockCardsContainer')) return;
 
     const sectionClone = section.cloneNode(true);
     const sectionTitle = sectionClone.querySelector('h3')?.textContent || `ERP Section ${index + 1}`;

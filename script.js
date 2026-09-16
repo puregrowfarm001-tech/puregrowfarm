@@ -3054,13 +3054,30 @@ async function saveAdminExpense(e) {
   const amountVal = parseFloat(document.getElementById("expAmount").value);
   const payerType = document.getElementById("expPayer").value;
 
-  // 🛑 Agar Payer 'Farm' hai toh check karo ki Farm Available Balance utna hai ya nahi
+  // 🛑 Strict Check: Agar payer 'Farm' hai toh check karein ki Farm Balance available hai ya nahi
   if (payerType === "Farm") {
-    const currentBalanceText = document.getElementById("ovFarmAvailableBalance")?.textContent || "Rs 0";
-    const currentFarmBalance = parseFloat(currentBalanceText.replace(/[^0-9.-]+/g, "")) || 0;
+    // Live calculation ke mutabiq actual balance nikalte hain taaki DOM text par nirbhar na rehna pade
+    const selectedYear = document.getElementById("adminYearFilterSelect")?.value || "ALL";
+    
+    const filteredOrders = orderRegistry.filter(o => (o.status === 'Approved' || o.status === 'Delivered') && (selectedYear === "ALL" || (o.rawIsoDate || o.dateLogged || "").includes(selectedYear)));
+    const orderTotal = filteredOrders.reduce((sum, o) => sum + Number(o.total || 0), 0);
+
+    const filteredBookings = bookingsRegistry.filter(b => (b.status === "Confirmed" || b.status === "Approved") && (selectedYear === "ALL" || (b.date || b.dateLogged || "").includes(selectedYear)));
+    const farmBookingTotal = filteredBookings.reduce((sum, b) => sum + Number(b.fee || 0), 0);
+
+    const filteredSales = salesRegistry.filter(s => selectedYear === "ALL" || (s.date || "").includes(selectedYear));
+    const sellTotal = filteredSales.reduce((sum, s) => sum + Number(s.paidAmount !== undefined ? s.paidAmount : s.total || 0), 0);
+
+    const filteredExpenses = expensesRegistry.filter(ex => ex.category !== "Damage Received" && (selectedYear === "ALL" || (ex.date || "").includes(selectedYear)));
+    const farmExpTotal = filteredExpenses.reduce((sum, ex) => sum + Number(ex.amount || 0), 0);
+
+    const filteredDamages = expensesRegistry.filter(ex => ex.category === "Damage Received" && (selectedYear === "ALL" || (ex.date || "").includes(selectedYear)));
+    const farmDmgTotal = filteredDamages.reduce((sum, d) => sum + Number(d.amount || 0), 0);
+
+    const currentFarmBalance = (orderTotal + farmBookingTotal + sellTotal + farmDmgTotal) - farmExpTotal;
 
     if (amountVal > currentFarmBalance) {
-      alert(`❌ Farm Account me utne pese nahi hain!\n\n• Current Farm Balance: Rs ${currentFarmBalance.toFixed(2)}\n• Expense Amount: Rs ${amountVal.toFixed(2)}\n\nKripya pehle income ya deposit add karein.`);
+      alert(`❌ Farm Account me utne pese nahi hain!\n\n• Current Farm Balance: Rs ${currentFarmBalance.toFixed(2)}\n• Expense Amount: Rs ${amountVal.toFixed(2)}\n\nKripya pehle income/sales add karein ya Soham/Jeet ko payer banayein.`);
       return;
     }
   }
@@ -3100,26 +3117,31 @@ async function saveAdminSale(e) {
   const notes = document.getElementById("saleNotes") ? document.getElementById("saleNotes").value.trim() : "";
   const prodType = document.getElementById("saleProduct").value;
 
-  // 🛑 Stock Availability Check
-  let availableStock = 99999;
+  // 🛑 Strict Stock Availability Check
+  const dryProd = products.find(p => p.type === "dry") || { stock: 0 };
+  const powderProd = products.find(p => p.type === "powder") || { stock: 0 };
+  const khakhraProd = products.find(p => p.type === "khakhra") || { stock: 0 };
+  const papadProd = products.find(p => p.type === "papad") || { stock: 0 };
+
+  let availableStock = 0;
   let stockUnitName = "units";
 
   if (prodType === "Dry") {
-    availableStock = products.find(p => p.type === "dry")?.stock || 0;
+    availableStock = dryProd.stock;
     stockUnitName = "kg";
   } else if (prodType === "Powder") {
-    availableStock = (products.find(p => p.type === "powder")?.stock || 0) * 10;
+    availableStock = powderProd.stock * 10; // Packets me convert karke check karenge
     stockUnitName = "packets";
   } else if (prodType === "Khakhra") {
-    availableStock = products.find(p => p.type === "khakhra")?.stock || 0;
+    availableStock = khakhraProd.stock;
     stockUnitName = "packs";
   } else if (prodType === "Papad") {
-    availableStock = products.find(p => p.type === "papad")?.stock || 0;
+    availableStock = papadProd.stock;
     stockUnitName = "packs";
   }
 
   if (qty > availableStock) {
-    alert(`❌ Stock me utna item available nahi hai!\n\n• Requested Qty: ${qty} ${stockUnitName}\n• Available Stock: ${availableStock.toFixed(2)} ${stockUnitName}\n\nKripya pehle stock add karein.`);
+    alert(`❌ Stock me utna item available nahi hai!\n\n• Requested Sale Qty: ${qty} ${stockUnitName}\n• Available Stock: ${availableStock.toFixed(2)} ${stockUnitName}\n\nKripya pehle stock add karein.`);
     return;
   }
 
@@ -3170,13 +3192,29 @@ async function saveAdminPurchase(e) {
   const paid = parseFloat(document.getElementById("purPaidAmount").value) || grandTotal;
   const funder = document.getElementById("purFunder").value;
 
-  // 🛑 Agar Funder 'Farm' hai toh check karo ki Farm Balance available hai ya nahi
+  // 🛑 Strict Check: Agar funder 'Farm' hai toh check karein ki Farm Balance available hai ya nahi
   if (funder === "Farm") {
-    const currentBalanceText = document.getElementById("ovFarmAvailableBalance")?.textContent || "Rs 0";
-    const currentFarmBalance = parseFloat(currentBalanceText.replace(/[^0-9.-]+/g, "")) || 0;
+    const selectedYear = document.getElementById("adminYearFilterSelect")?.value || "ALL";
+    
+    const filteredOrders = orderRegistry.filter(o => (o.status === 'Approved' || o.status === 'Delivered') && (selectedYear === "ALL" || (o.rawIsoDate || o.dateLogged || "").includes(selectedYear)));
+    const orderTotal = filteredOrders.reduce((sum, o) => sum + Number(o.total || 0), 0);
+
+    const filteredBookings = bookingsRegistry.filter(b => (b.status === "Confirmed" || b.status === "Approved") && (selectedYear === "ALL" || (b.date || b.dateLogged || "").includes(selectedYear)));
+    const farmBookingTotal = filteredBookings.reduce((sum, b) => sum + Number(b.fee || 0), 0);
+
+    const filteredSales = salesRegistry.filter(s => selectedYear === "ALL" || (s.date || "").includes(selectedYear));
+    const sellTotal = filteredSales.reduce((sum, s) => sum + Number(s.paidAmount !== undefined ? s.paidAmount : s.total || 0), 0);
+
+    const filteredExpenses = expensesRegistry.filter(ex => ex.category !== "Damage Received" && (selectedYear === "ALL" || (ex.date || "").includes(selectedYear)));
+    const farmExpTotal = filteredExpenses.reduce((sum, ex) => sum + Number(ex.amount || 0), 0);
+
+    const filteredDamages = expensesRegistry.filter(ex => ex.category === "Damage Received" && (selectedYear === "ALL" || (ex.date || "").includes(selectedYear)));
+    const farmDmgTotal = filteredDamages.reduce((sum, d) => sum + Number(d.amount || 0), 0);
+
+    const currentFarmBalance = (orderTotal + farmBookingTotal + sellTotal + farmDmgTotal) - farmExpTotal;
 
     if (paid > currentFarmBalance) {
-      alert(`❌ Farm Account me purchase/buy ke liye utne pese nahi hain!\n\n• Current Farm Balance: Rs ${currentFarmBalance.toFixed(2)}\n• Required Paid Amount: Rs ${paid.toFixed(2)}`);
+      alert(`❌ Farm Account me purchase/buy ke liye utne pese nahi hain!\n\n• Current Farm Balance: Rs ${currentFarmBalance.toFixed(2)}\n• Required Paid Amount: Rs ${paid.toFixed(2)}\n\nKripya Soham ya Jeet ko funder banayein.`);
       return;
     }
   }

@@ -4577,151 +4577,192 @@ async function deleteAdminBuyer(idx) {
   }
 }
 
-// --- Farm Announcement Global Functions ---
+// --- Multiple Farm Announcements Global Functions ---
+
+function getCleanAnnouncements() {
+  try {
+    const raw = JSON.parse(localStorage.getItem('pgf_multiple_announcements')) || [];
+    if (!Array.isArray(raw)) return [];
+    return raw;
+  } catch (e) {
+    return [];
+  }
+}
+
 function renderUserAnnouncementBanner() {
   const pubBanner = document.getElementById("publicAdminAnnouncementBanner");
-  const pubTextEl = document.getElementById("publicAnnouncementTextContent");
+  const pubListContainer = document.getElementById("publicAnnouncementListContainer");
   
   const dashBanner = document.getElementById("userAdminAnnouncementBanner");
-  const dashTextEl = document.getElementById("userAnnouncementTextContent");
+  const dashListContainer = document.getElementById("userAnnouncementListContainer");
 
-  const savedData = JSON.parse(localStorage.getItem('pgf_active_announcement'));
-  if (!savedData || !savedData.message || savedData.message.trim() === "") {
+  const announcements = getCleanAnnouncements();
+  const now = new Date().getTime();
+
+  // Expired announcements ko filter karke hata dena
+  const validAnnouncements = announcements.filter(item => {
+    if (!item.expiry || item.expiry.trim() === "") return true; 
+    const expiryTime = new Date(item.expiry).getTime();
+    return now <= expiryTime; 
+  });
+
+  if (validAnnouncements.length === 0) {
     if (pubBanner) pubBanner.style.display = "none";
     if (dashBanner) dashBanner.style.display = "none";
     return;
   }
 
-  const activeMsg = savedData.message;
-  const expiryDateTime = savedData.expiry || ""; 
+  const htmlContent = validAnnouncements.map(item => {
+    let timeRemainingText = "";
+    if (item.expiry && item.expiry.trim() !== "") {
+      const expiryTime = new Date(item.expiry).getTime();
+      const diff = expiryTime - now;
+      if (diff > 0) {
+        const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((diff % (1000 * 60)) / 1000);
 
-  let timeRemainingText = "";
+        let timeParts = [];
+        if (days > 0) timeParts.push(`${days} din`);
+        if (hours > 0) timeParts.push(`${hours} ghante`);
+        if (minutes > 0) timeParts.push(`${minutes} minute`);
+        timeParts.push(`${seconds} second`);
 
-  if (expiryDateTime && expiryDateTime.trim() !== "") {
-    const now = new Date().getTime();
-    const expiryTime = new Date(expiryDateTime).getTime();
-    const diff = expiryTime - now;
-
-    // Agar time khatam ho chuka hai, toh announcement hide kar do
-    if (diff <= 0) {
-      if (pubBanner) pubBanner.style.display = "none";
-      if (dashBanner) dashBanner.style.display = "none";
-      return;
+        timeRemainingText = `<div style="color:#d97706; font-weight:bold; font-size:12px; margin-top:2px;">⏳ Hatne me bacha samay: ${timeParts.join(' ')} (Expiry: ${new Date(item.expiry).toLocaleString()})</div>`;
+      }
+    } else {
+      timeRemainingText = `<div style="color:#16a34a; font-weight:bold; font-size:11px; margin-top:2px;">♾️ Active until manually deleted</div>`;
     }
 
-    // Days, Hours, Minutes aur Seconds calculate karna
-    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-    const seconds = Math.floor((diff % (1000 * 60)) / 1000); // ⏱️ Seconds added
+    return `
+      <div style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px 12px; font-size: 13.5px; color: #1e293b; line-height: 1.4;">
+        <div>${item.message}</div>
+        ${timeRemainingText}
+      </div>
+    `;
+  }).join("");
 
-    let timeParts = [];
-    if (days > 0) timeParts.push(`${days} din`);
-    if (hours > 0) timeParts.push(`${hours} ghante`);
-    if (minutes > 0) timeParts.push(`${minutes} minute`);
-    timeParts.push(`${seconds} second`); // Har second show hoga
-
-    timeRemainingText = ` <br><small style="color:#d97706; font-weight:bold; display:inline-block; margin-top:4px;">⏳ Yeh announcement ${timeParts.join(' ')} baad hat jayegi (Expiry: ${new Date(expiryDateTime).toLocaleString()})</small>`;
-  }
-
-  const fullHtmlContent = `${activeMsg} ${timeRemainingText}`;
-
-  if (pubBanner && pubTextEl) {
-    pubTextEl.innerHTML = fullHtmlContent;
+  if (pubBanner && pubListContainer) {
+    pubListContainer.innerHTML = htmlContent;
     pubBanner.style.display = "block";
   }
-  if (dashBanner && dashTextEl) {
-    dashTextEl.innerHTML = fullHtmlContent;
+  if (dashBanner && dashListContainer) {
+    dashListContainer.innerHTML = htmlContent;
     dashBanner.style.display = "block";
   }
 }
 
-// ⏱️ Har 1 Second me Countdown live update hoga
-setInterval(function() {
-  renderUserAnnouncementBanner();
-}, 1000);
-
-async function renderAdminAnnouncementPanel() {
-  const displayEl = document.getElementById("adminCurrentActiveAnnouncementDisplay");
+function renderAdminAnnouncementPanel() {
+  const container = document.getElementById("adminMultipleAnnouncementsContainer");
   const inputEl = document.getElementById("adminAnnouncementInput");
   const expiryInputEl = document.getElementById("adminAnnouncementExpiryInput");
-  if (!displayEl) return;
+  if (!container) return;
 
-  // Pehle Supabase se fetch karne ki koshish karein, agar wahan hoga toh update ho jayega
-  try {
-    const { data: cloudAnnounce } = await _supabase.from('pgf_announcements').select('*').eq('id', 'ANN-1').single();
-    if (cloudAnnounce && cloudAnnounce.message) {
-      localStorage.setItem('pgf_active_announcement', JSON.stringify(cloudAnnounce));
-    }
-  } catch (err) {}
+  const announcements = getCleanAnnouncements();
 
-  const savedData = JSON.parse(localStorage.getItem('pgf_active_announcement'));
-  const activeMsg = savedData ? savedData.message : "";
-  const expiryVal = savedData ? savedData.expiry : "";
-
-  if (activeMsg && activeMsg.trim() !== "") {
-    let displayStr = activeMsg;
-    if (expiryVal) {
-      displayStr += ` <br><small style="color:#d97706; font-weight:bold;">⏳ Active until: ${new Date(expiryVal).toLocaleString()}</small>`;
-    } else {
-      displayStr += ` <br><small style="color:#16a34a; font-weight:bold;">♾️ Active until manually deleted</small>`;
-    }
-    displayEl.innerHTML = displayStr;
-
-    if (inputEl) inputEl.value = activeMsg;
-    if (expiryInputEl && expiryVal) expiryInputEl.value = expiryVal;
-  } else {
-    displayEl.textContent = "No active announcement published yet.";
-    if (inputEl) inputEl.value = "";
-    if (expiryInputEl) expiryInputEl.value = "";
+  if (announcements.length === 0) {
+    container.innerHTML = `<p class="muted" style="font-size:13px; font-style:italic;">No active announcements published yet.</p>`;
+    return;
   }
+
+  container.innerHTML = announcements.map((item, index) => {
+    let expiryLabel = item.expiry ? `⏳ Expiry: ${new Date(item.expiry).toLocaleString()}` : `♾️ Active until manual delete`;
+    return `
+      <div style="background:#fff; border:1px solid var(--line); border-radius:8px; padding:12px; display:flex; justify-content:space-between; align-items:center; gap:10px;">
+        <div style="flex:1;">
+          <strong style="font-size:14px; color:#1e293b; display:block;">${item.message}</strong>
+          <small style="color:#64748b; display:block; margin-top:3px;">${expiryLabel} | Added: ${item.dateAdded || 'N/A'}</small>
+        </div>
+        <button type="button" class="btn" style="background:var(--danger); padding:6px 12px; font-size:12px; min-height:auto;" onclick="deleteAdminSingleAnnouncement(${index})">🗑️ Delete</button>
+      </div>
+    `;
+  }).join("");
+
+  if (inputEl) inputEl.value = "";
+  if (expiryInputEl) expiryInputEl.value = "";
 }
 
-async function saveAdminAnnouncement(e) {
+async function saveAdminMultipleAnnouncement(e) {
   e.preventDefault();
   const msg = document.getElementById("adminAnnouncementInput").value.trim();
   const expiryVal = document.getElementById("adminAnnouncementExpiryInput") ? document.getElementById("adminAnnouncementExpiryInput").value : "";
   if (!msg) return;
 
-  currentAnnouncementData = {
-    id: "ANN-1",
+  const announcements = getCleanAnnouncements();
+
+  const newAnnounce = {
+    id: "ANN-" + Date.now(),
     message: msg,
     expiry: expiryVal,
-    updated_at: new Date().toLocaleDateString('en-IN') + " " + new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true })
+    dateAdded: new Date().toLocaleDateString('en-IN') + " " + new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true })
   };
 
-  // 1. Sabse pehle LocalStorage me save karein taaki turant dikhne lage
-  localStorage.setItem('pgf_active_announcement', JSON.stringify(currentAnnouncementData));
+  announcements.unshift(newAnnounce);
+  localStorage.setItem('pgf_multiple_announcements', JSON.stringify(announcements));
 
-  // 2. Phir Supabase me bhejne ki koshish karein
   try {
-    const { error } = await _supabase.from('pgf_announcements').upsert([currentAnnouncementData]);
-    if (error) {
-      console.log("Supabase upsert warning: ", error.message);
-    }
+    await _supabase.from('pgf_announcements').upsert([{ id: 'ALL_LIST', announcements_data: announcements }]);
   } catch (err) {
-    console.log("Cloud sync error, running locally:", err);
+    console.log("Cloud sync fallback:", err);
   }
 
   renderAdminAnnouncementPanel();
   renderUserAnnouncementBanner();
-  alert("✅ Announcement successfully published!");
+  alert("✅ Nayi announcement successfully add ho gayi hai!");
 }
 
-async function clearAdminAnnouncement() {
-  if (confirm("Are you sure you want to remove the active announcement?")) {
-    currentAnnouncementData = { message: "" };
-    localStorage.setItem('pgf_active_announcement', JSON.stringify(currentAnnouncementData));
+async function deleteAdminSingleAnnouncement(index) {
+  const announcements = getCleanAnnouncements();
+  if (index < 0 || index >= announcements.length) return;
+
+  if (confirm("Kya aap is announcement ko delete karna chahte hain?")) {
+    announcements.splice(index, 1);
+    localStorage.setItem('pgf_multiple_announcements', JSON.stringify(announcements));
 
     try {
-      await _supabase.from('pgf_announcements').delete().eq('id', 'ANN-1');
+      await _supabase.from('pgf_announcements').upsert([{ id: 'ALL_LIST', announcements_data: announcements }]);
     } catch (err) {}
 
     renderAdminAnnouncementPanel();
     renderUserAnnouncementBanner();
-    alert("✅ Announcement cleared successfully!");
+    alert("✅ Announcement successfully delete ho gayi hai!");
   }
 }
+
+// ⏱️ Har 1 Second me Multiple Announcements ke Seconds countdown live update honge
+setInterval(function() {
+  renderUserAnnouncementBanner();
+}, 1000);
+
+document.addEventListener("DOMContentLoaded", function() {
+  renderUserAnnouncementBanner();
+  renderAdminAnnouncementPanel();
+});
+
+
+// =========================================================
+// 30 SECONDS WEBSITE REFRESH / DATA SYNC (WITH FORM PROTECTION)
+// =========================================================
+setInterval(function() {
+  const activeElement = document.activeElement;
+  const isFillingForm = activeElement && (
+    activeElement.tagName === 'INPUT' || 
+    activeElement.tagName === 'TEXTAREA' || 
+    activeElement.tagName === 'SELECT'
+  );
+
+  if (isFillingForm) {
+    return;
+  }
+
+  if (typeof backgroundDataSync === 'function') {
+    backgroundDataSync();
+  }
+  if (typeof renderUserAnnouncementBanner === 'function') {
+    renderUserAnnouncementBanner();
+  }
+}, 30000);
 
 document.addEventListener("DOMContentLoaded", function() {
   renderUserAnnouncementBanner();
@@ -4731,34 +4772,3 @@ document.addEventListener("DOMContentLoaded", function() {
 
 
 
-// =========================================================
-// 30 SECONDS WEBSITE REFRESH / DATA SYNC (WITH FORM PROTECTION)
-// =========================================================
-setInterval(function() {
-  // Check karein ki kya user abhi kisi form field (input, textarea, select) par focus karke type kar raha hai
-  const activeElement = document.activeElement;
-  const isFillingForm = activeElement && (
-    activeElement.tagName === 'INPUT' || 
-    activeElement.tagName === 'TEXTAREA' || 
-    activeElement.tagName === 'SELECT'
-  );
-
-  // Agar user form fill kar raha hai, toh is device par refresh/sync skip kar do taaki data loss na ho
-  if (isFillingForm) {
-    console.log("Form filling in progress... 30s refresh skipped.");
-    return;
-  }
-
-  // Agar form fill nahi ho raha, toh background me data aur announcements refresh/sync kar lo
-  if (typeof backgroundDataSync === 'function') {
-    backgroundDataSync();
-  }
-  if (typeof renderUserAnnouncementBanner === 'function') {
-    renderUserAnnouncementBanner();
-  }
-
-  // NOTE: Agar aap chahte hain ki poora page hi completely reload (hard refresh) ho jaye, 
-  // toh aap niche wali line ka comment hata sakte hain:
-  // location.reload();
-
-}, 30000); // 30000 milliseconds = 30 Seconds

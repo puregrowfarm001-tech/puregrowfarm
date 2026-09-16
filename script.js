@@ -1256,12 +1256,26 @@ function printActiveAdminReport() {
     if (selectedYear === "ALL") return true;
     return (o.rawIsoDate || o.dateLogged || "").includes(selectedYear);
   });
+  
+  // 📅 Print ke liye Calendar Date wise sorting (1, 2, 3...)
+  filteredOrders.sort((a, b) => {
+    let tA = new Date(a.rawIsoDate || a.dateLogged || 0).getTime();
+    let tB = new Date(b.rawIsoDate || b.dateLogged || 0).getTime();
+    return tA - tB;
+  });
   const orderTotal = filteredOrders.reduce((sum, o) => sum + Number(o.total || 0), 0);
 
   const filteredBookings = bookingsRegistry.filter(b => {
     if (!b || !b.name || !(b.status === "Confirmed" || b.status === "Approved")) return false;
     if (selectedYear === "ALL") return true;
     return (b.date || b.dateLogged || "").includes(selectedYear);
+  });
+
+  // 📅 Print ke liye Calendar Date wise sorting (1, 2, 3...)
+  filteredBookings.sort((a, b) => {
+    let tA = new Date(b.dateLogged || b.date || 0).getTime(); // agar ulta lage toh tA - tB karein
+    let tB = new Date(b.dateLogged || b.date || 0).getTime();
+    return tA - tB;
   });
   const farmBookingTotal = filteredBookings.reduce((sum, b) => sum + Number(b.fee || 0), 0);
 

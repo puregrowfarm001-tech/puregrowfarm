@@ -4577,7 +4577,9 @@ async function deleteAdminBuyer(idx) {
   }
 }
 
-// --- Multiple Farm Announcements Global Functions ---
+// =========================================================
+// MULTIPLE FARM ANNOUNCEMENTS MANAGEMENT (CLEAN & FIXED)
+// =========================================================
 
 function getCleanAnnouncements() {
   try {
@@ -4607,7 +4609,7 @@ async function fetchAnnouncementsFromCloud() {
   renderAdminAnnouncementPanel();
 }
 
-// 2. Multiple Announcement Save karne ka function
+// 2. Multiple Announcement Save karne ka function (Supabase + LocalStorage)
 async function saveAdminAnnouncement(e) {
   e.preventDefault();
   const msg = document.getElementById("adminAnnouncementInput").value.trim();
@@ -4620,9 +4622,8 @@ async function saveAdminAnnouncement(e) {
   const newAnnounce = {
     id: "ANN-" + Date.now(),
     message: msg,
-    // Agar expiry na di jaye toh default 1 din aage ki set ho jayegi taaki show hone me problem na ho
-    expiry: expiryVal || new Date(Date.now() + 86400000).toISOString().slice(0, 16),
-    dateAdded: new Date().toLocaleDateString('en-IN')
+    expiry: expiryVal || "", // Agar expiry khali ho toh blank rahegi
+    dateAdded: new Date().toLocaleDateString('en-IN') + " " + new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true })
   };
 
   announcements.unshift(newAnnounce);
@@ -4638,82 +4639,53 @@ async function saveAdminAnnouncement(e) {
 
   renderAdminAnnouncementPanel();
   renderUserAnnouncementBanner();
-  
+
   document.getElementById("adminAnnouncementInput").value = "";
-  if(document.getElementById("adminAnnouncementExpiryInput")) document.getElementById("adminAnnouncementExpiryInput").value = "";
+  if (document.getElementById("adminAnnouncementExpiryInput")) {
+    document.getElementById("adminAnnouncementExpiryInput").value = "";
+  }
   
-  alert("✅ Announcement successfully saved & Published!");
+  alert("✅ Announcement successfully saved to Database & Published!");
 }
 
-// 3. User/Public Dashboard Banner (Force Show Logic Added)
-function renderUserAnnouncementBanner() {
-  const pubBanner = document.getElementById("publicAdminAnnouncementBanner");
-  const pubListContainer = document.getElementById("publicAnnouncementListContainer");
+// Alias function for form compatibility
+const saveAdminMultipleAnnouncement = saveAdminAnnouncement;
+
+// 3. Admin Panel me list show karne ka function
+function renderAdminAnnouncementPanel() {
+  const container = document.getElementById("adminMultipleAnnouncementsContainer");
+  if (!container) return;
 
   const announcements = getCleanAnnouncements();
-  const now = new Date().getTime();
 
-  // Agar expiry invalid bhi ho, tab bhi safe filtering ke sath show karega
-  const validAnnouncements = announcements.filter(item => {
-    if (!item.expiry || item.expiry.trim() === "") return true; 
-    const expiryTime = new Date(item.expiry).getTime();
-    return now <= expiryTime; 
-  });
-
-  if (!pubBanner || !pubListContainer) return;
-
-  if (validAnnouncements.length === 0) {
-    pubBanner.style.display = "none";
+  if (announcements.length === 0) {
+    container.innerHTML = `<p class="muted" style="font-size:13px; font-style:italic;">No active announcements published yet.</p>`;
     return;
   }
 
-  const htmlContent = validAnnouncements.map(item => {
-    let timeParts = [];
-    if (item.expiry) {
-      const expiryTime = new Date(item.expiry).getTime();
-      const diff = expiryTime - now;
-      if (diff > 0) {
-        const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-        const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-        const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-        const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-
-        if (days > 0) timeParts.push(`${days}d`);
-        if (hours > 0 || days > 0) timeParts.push(`${hours}h`);
-        timeParts.push(`${minutes}m`);
-        timeParts.push(`${seconds}s`);
-      }
-    }
-
-    const formattedExpiryDate = item.expiry ? new Date(item.expiry).toLocaleString('en-IN', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: true
-    }) : 'No Expiry';
+  container.innerHTML = announcements.map((item, index) => {
+    const formattedExpiry = item.expiry ? new Date(item.expiry).toLocaleString('en-IN', {
+      day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true
+    }) : 'No Expiry (Active until deleted)';
 
     return `
-      <div style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px 12px; font-size: 13.5px; color: #1e293b; line-height: 1.4; margin-bottom: 8px;">
-        <div>${item.message}</div>
-        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px; margin-top: 4px; font-size: 12px;">
-          <span style="color: #64748b;">📅 Expiry Target: <strong>${formattedExpiryDate}</strong></span>
-          <span style="color: #d97706; font-weight: bold;">⏳ Bacha Samay: ${timeParts.join(' ')}</span>
+      <div style="background:#fff; border:1px solid var(--line); border-radius:8px; padding:12px; display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:8px;">
+        <div style="flex:1;">
+          <strong style="font-size:14px; color:#1e293b; display:block;">${item.message}</strong>
+          <small style="color:#d97706; display:block; margin-top:3px;">⏳ Target Expiry: ${formattedExpiry}</small>
         </div>
+        <button type="button" class="btn" style="background:var(--danger); padding:6px 12px; font-size:12px; min-height:auto;" onclick="deleteAdminSingleAnnouncement(${index})">🗑️ Delete</button>
       </div>
     `;
   }).join("");
-
-  pubListContainer.innerHTML = htmlContent;
-  pubBanner.style.display = "block"; // Banner ko force display on kar diya hai
 }
-// 4. Single Announcement Delete from Multiple List
+
+// 4. Single Announcement Delete from List
 async function deleteAdminSingleAnnouncement(index) {
   const announcements = getCleanAnnouncements();
   if (index < 0 || index >= announcements.length) return;
 
-  if (confirm("Kya aap is specific announcement ko delete karna chahte hain?")) {
+  if (confirm("Kya aap is announcement ko delete karna chahte hain?")) {
     announcements.splice(index, 1);
     localStorage.setItem('pgf_multiple_announcements', JSON.stringify(announcements));
 
@@ -4728,6 +4700,92 @@ async function deleteAdminSingleAnnouncement(index) {
     alert("✅ Announcement successfully deleted!");
   }
 }
+
+function clearAdminAnnouncement() {
+  if (confirm("Clear all announcements?")) {
+    localStorage.removeItem('pgf_multiple_announcements');
+    renderAdminAnnouncementPanel();
+    renderUserAnnouncementBanner();
+  }
+}
+
+// 5. User & Public Dashboard Banner (Live Countdown + Auto-Hide on Expiry)
+function renderUserAnnouncementBanner() {
+  const pubBanner = document.getElementById("publicAdminAnnouncementBanner");
+  const pubListContainer = document.getElementById("publicAnnouncementListContainer");
+
+  const announcements = getCleanAnnouncements();
+  const now = new Date().getTime();
+
+  // Filter: Agar expiry di gayi hai aur time nikal gaya hai toh hide hogi, warna show hogi
+  const validAnnouncements = announcements.filter(item => {
+    if (!item.expiry || item.expiry.trim() === "") return true; // Agar expiry nahi di, toh hamesha dikhegi
+    const expiryTime = new Date(item.expiry).getTime();
+    return now <= expiryTime; 
+  });
+
+  if (!pubBanner || !pubListContainer) return;
+
+  if (validAnnouncements.length === 0) {
+    pubBanner.style.display = "none";
+    return;
+  }
+
+  const htmlContent = validAnnouncements.map(item => {
+    let timeParts = [];
+    let formattedExpiryDate = "No Expiry";
+
+    if (item.expiry && item.expiry.trim() !== "") {
+      const expiryTime = new Date(item.expiry).getTime();
+      const diff = expiryTime - now;
+
+      if (diff > 0) {
+        const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+        if (days > 0) timeParts.push(`${days}d`);
+        if (hours > 0 || days > 0) timeParts.push(`${hours}h`);
+        timeParts.push(`${minutes}m`);
+        timeParts.push(`${seconds}s`);
+      }
+
+      formattedExpiryDate = new Date(item.expiry).toLocaleString('en-IN', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true
+      });
+    }
+
+    return `
+      <div style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px 12px; font-size: 13.5px; color: #1e293b; line-height: 1.4; margin-bottom: 8px;">
+        <div>${item.message}</div>
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px; margin-top: 4px; font-size: 12px;">
+          <span style="color: #64748b;">📅 Expiry Target: <strong>${formattedExpiryDate}</strong></span>
+          ${item.expiry ? `<span style="color: #d97706; font-weight: bold;">⏳ Bacha Samay: ${timeParts.join(' ')}</span>` : ''}
+        </div>
+      </div>
+    `;
+  }).join("");
+
+  pubListContainer.innerHTML = htmlContent;
+  pubBanner.style.display = "block";
+}
+
+// Har 1 Second me live countdown update karne ke liye
+setInterval(function() {
+  renderUserAnnouncementBanner();
+}, 1000);
+
+document.addEventListener("DOMContentLoaded", function() {
+  fetchAnnouncementsFromCloud();
+  renderUserAnnouncementBanner();
+  renderAdminAnnouncementPanel();
+});
 function renderAdminAnnouncementPanel() {
   const container = document.getElementById("adminMultipleAnnouncementsContainer");
   const inputEl = document.getElementById("adminAnnouncementInput");

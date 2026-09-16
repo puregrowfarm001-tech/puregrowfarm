@@ -1024,7 +1024,7 @@ function renderAdminLiveStockSummary() {
     .filter(s => s && s.product && s.product.toLowerCase().includes("powder"))
     .reduce((sum, s) => sum + Number(s.qty || 0), 0);
 
-  let calculatedPowderStock = (calculatedDryStockKg + totalBuyPowderKg) - (totalOrderPowder + totalSellPowder);
+  let calculatedPowderStock = ((calculatedDryStockKg + totalBuyPowderKg) * 10 - totalOrderPowder - totalSellPowder) / 10;
   if (calculatedPowderStock < 0) calculatedPowderStock = 0;
   powderProd.stock = calculatedPowderStock;
 

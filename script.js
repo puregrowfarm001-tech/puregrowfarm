@@ -4737,55 +4737,60 @@ function renderUserAnnouncementBanner() {
 }
 
 
+// User/Public Dashboard Banner with Set Expiry Date & Time + Live Second-Wise Countdown
 function renderUserAnnouncementBanner() {
   const pubBanner = document.getElementById("publicAdminAnnouncementBanner");
   const pubListContainer = document.getElementById("publicAnnouncementListContainer");
-  
-  const dashBanner = document.getElementById("userAdminAnnouncementBanner");
-  const dashListContainer = document.getElementById("userAnnouncementListContainer");
 
   const announcements = getCleanAnnouncements();
   const now = new Date().getTime();
 
+  // Sirf wahi announcements filter hongi jinki expiry abhi bachi ho
   const validAnnouncements = announcements.filter(item => {
-    if (!item.expiry || item.expiry.trim() === "") return true; 
+    if (!item.expiry || item.expiry.trim() === "") return false; 
     const expiryTime = new Date(item.expiry).getTime();
     return now <= expiryTime; 
   });
 
   if (validAnnouncements.length === 0) {
     if (pubBanner) pubBanner.style.display = "none";
-    if (dashBanner) dashBanner.style.display = "none";
     return;
   }
 
   const htmlContent = validAnnouncements.map(item => {
-    let timeRemainingText = "";
-    if (item.expiry && item.expiry.trim() !== "") {
-      const expiryTime = new Date(item.expiry).getTime();
-      const diff = expiryTime - now;
-      if (diff > 0) {
-        const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-        const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-        const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-        const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+    const expiryTime = new Date(item.expiry).getTime();
+    const diff = expiryTime - now;
 
-        let timeParts = [];
-        if (days > 0) timeParts.push(`${days} din`);
-        if (hours > 0) timeParts.push(`${hours} ghante`);
-        if (minutes > 0) timeParts.push(`${minutes} minute`);
-        timeParts.push(`${seconds} second`);
+    let timeParts = [];
+    if (diff > 0) {
+      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((diff % (1000 * 60)) / 1000);
 
-        timeRemainingText = `<div style="color:#d97706; font-weight:bold; font-size:12px; margin-top:2px;">⏳ Hatne me bacha samay: ${timeParts.join(' ')}</div>`;
-      }
-    } else {
-      timeRemainingText = `<div style="color:#16a34a; font-weight:bold; font-size:11px; margin-top:2px;">♾️ Active until manually deleted</div>`;
+      if (days > 0) timeParts.push(`${days}d`);
+      if (hours > 0 || days > 0) timeParts.push(`${hours}h`);
+      timeParts.push(`${minutes}m`);
+      timeParts.push(`${seconds}s`);
     }
 
+    // Date & Time ko readable format me convert karna (e.g. 20 Oct 2026, 04:30 PM)
+    const formattedExpiryDate = new Date(item.expiry).toLocaleString('en-IN', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true
+    });
+
     return `
-      <div style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px 12px; font-size: 13.5px; color: #1e293b; line-height: 1.4;">
+      <div style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px 12px; font-size: 13.5px; color: #1e293b; line-height: 1.4; margin-bottom: 6px;">
         <div>${item.message}</div>
-        ${timeRemainingText}
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px; margin-top: 4px; font-size: 12px;">
+          <span style="color: #64748b;">📅 Expiry Target: <strong>${formattedExpiryDate}</strong></span>
+          <span style="color: #d97706; font-weight: bold;">⏳ Bacha Samay: ${timeParts.join(' ')}</span>
+        </div>
       </div>
     `;
   }).join("");

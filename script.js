@@ -4609,20 +4609,21 @@ function renderUserAnnouncementBanner() {
       return;
     }
 
-    // Remaining Days, Hours, Minutes calculate karna
+    // Days, Hours, Minutes aur Seconds calculate karna
     const days = Math.floor(diff / (1000 * 60 * 60 * 24));
     const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
     const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    const seconds = Math.floor((diff % (1000 * 60)) / 1000); // ⏱️ Seconds added
 
     let timeParts = [];
     if (days > 0) timeParts.push(`${days} din`);
     if (hours > 0) timeParts.push(`${hours} ghante`);
-    if (minutes > 0 || timeParts.length === 0) timeParts.push(`${minutes} minute`);
+    if (minutes > 0) timeParts.push(`${minutes} minute`);
+    timeParts.push(`${seconds} second`); // Har second show hoga
 
     timeRemainingText = ` <br><small style="color:#d97706; font-weight:bold; display:inline-block; margin-top:4px;">⏳ Yeh announcement ${timeParts.join(' ')} baad hat jayegi (Expiry: ${new Date(expiryDateTime).toLocaleString()})</small>`;
   }
 
-  // Final HTML message render karna jisme remaining time bhi dikhega
   const fullHtmlContent = `${activeMsg} ${timeRemainingText}`;
 
   if (pubBanner && pubTextEl) {
@@ -4634,6 +4635,11 @@ function renderUserAnnouncementBanner() {
     dashBanner.style.display = "block";
   }
 }
+
+// ⏱️ Har 1 Second me Countdown live update hoga
+setInterval(function() {
+  renderUserAnnouncementBanner();
+}, 1000);
 
 async function renderAdminAnnouncementPanel() {
   const displayEl = document.getElementById("adminCurrentActiveAnnouncementDisplay");
@@ -4722,10 +4728,7 @@ document.addEventListener("DOMContentLoaded", function() {
   renderAdminAnnouncementPanel();
 });
 
-// Har 1 minute me announcement banner ka remaining time check aur update hoga
-setInterval(function() {
-  renderUserAnnouncementBanner();
-}, 60000);
+
 
 
 // =========================================================

@@ -48,7 +48,6 @@ let salesRegistry = getCleanData('pgf_sales');
 let purchasesRegistry = getCleanData('pgf_purchases');
 let dailyDryStockRegistry = getCleanData('pgf_daily_dry_stock');
 let notificationsRegistry = getCleanData('pgf_notifications');
-let currentAnnouncementData = JSON.parse(localStorage.getItem('pgf_active_announcement')) || { message: "" };
 
 
 let currentUser = JSON.parse(localStorage.getItem('pgf_session')) || null;
@@ -302,17 +301,6 @@ async function triggerAdminView() {
   document.getElementById("dashboardWorkspace").style.display = "none";
   document.getElementById("publicContent").style.display = "none";
   document.getElementById("adminErpView").classList.add("active");
-
-  // 👇 Yahan Supabase se Active Announcement fetch karne ka code jodein:
-  try {
-    const { data: cloudAnnounce } = await _supabase.from('pgf_announcements').select('*').eq('id', 'ANN-1').single();
-    if (cloudAnnounce) {
-      localStorage.setItem('pgf_active_announcement', JSON.stringify(cloudAnnounce));
-    }
-  } catch (err) {
-    console.log("Announcement fetch note:", err);
-  }
-  renderAdminAnnouncementPanel();
   
   // Orders & Bookings fetch
   const { data: cloudOrders } = await _supabase.from('pgf_orders').select('*');
@@ -466,7 +454,6 @@ async function checkUserSession() {
     document.getElementById("trainingGuardBlock").style.display = "block";
     document.getElementById("trainingMainContent").style.display = "none";
   }
-  renderUserAnnouncementBanner();
 }
 
 async function handleRegister(e) {
@@ -4267,8 +4254,7 @@ function switchAdminSubTab(subTabId, btnId) {
   const targetSec = document.getElementById(subTabId);
   if (targetSec) targetSec.style.display = 'block';
 
-  // 👇 Yahan btnAdminTab5 add kiya gaya hai
-  ['btnAdminTab1', 'btnAdminTab2', 'btnAdminTab3', 'btnAdminTab4', 'btnAdminTab5'].forEach(id => {
+  ['btnAdminTab1', 'btnAdminTab2', 'btnAdminTab3', 'btnAdminTab4'].forEach(id => {
     const b = document.getElementById(id);
     if (b) b.style.background = 'var(--muted)';
   });
@@ -4280,8 +4266,6 @@ function switchAdminSubTab(subTabId, btnId) {
     renderAdminAccountTable();
   } else if (subTabId === 'adminSubTabBuyer') {
     renderAdminBuyerTable();
-  } else if (subTabId === 'adminSubTabAnnouncement') { 
-    renderAdminAnnouncementPanel();
   }
 }
 
@@ -4311,7 +4295,7 @@ async function fetchAdminManagerDataFromCloud() {
   const { data: cloudBuyers } = await _supabase.from('pgf_admin_buyers').select('*');
   if (cloudBuyers) {
     adminBuyersRegistry = cloudBuyers.map(b => ({
-      id: b.id, name: b.name, company: b.company || 'N/A', phone: b.phone, address: b.address, date_logged: b.date_logged
+      id: b.id, name: b.name, phone: b.phone, address: b.address, date_logged: b.date_logged
     }));
     localStorage.setItem('pgf_admin_buyers', JSON.stringify(adminBuyersRegistry));
   }
@@ -4510,14 +4494,12 @@ document.addEventListener("DOMContentLoaded", function() {
 async function saveBuyerAdmin(e) {
   e.preventDefault();
   const name = document.getElementById("adminBuyerName").value.trim();
-  const company = document.getElementById("adminBuyerCompany").value.trim(); // 📥 Company Name capture
   const phone = document.getElementById("adminBuyerPhone").value.trim();
   const address = document.getElementById("adminBuyerAddress").value.trim();
 
   const payload = {
     id: "BUY-" + Date.now().toString().slice(-4),
     name: name,
-    company: company, // ☁️ Supabase column
     phone: phone,
     address: address,
     date_logged: new Date().toLocaleDateString('en-IN')
@@ -4534,7 +4516,7 @@ async function saveBuyerAdmin(e) {
 
   e.target.reset();
   renderAdminBuyerTable();
-  alert("✅ Buyer & Company Name saved successfully to Supabase!");
+  alert("✅ Buyer saved successfully to Supabase!");
 }
 
 function renderAdminBuyerTable() {
@@ -4548,10 +4530,7 @@ function renderAdminBuyerTable() {
 
   tbody.innerHTML = adminBuyersRegistry.map((item, idx) => `
     <tr>
-      <td>
-        <strong>${item.name}</strong><br>
-        <span style="color:var(--accent); font-size:12px; font-weight:bold;">🏢 ${item.company || 'N/A'}</span>
-      </td>
+      <td><strong>${item.name}</strong></td>
       <td>
         <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
           <a href="tel:${item.phone}" class="call-link" style="font-weight:bold;">📞 ${item.phone}</a>
@@ -4576,430 +4555,3 @@ async function deleteAdminBuyer(idx) {
     renderAdminBuyerTable();
   }
 }
-
-// =========================================================
-// MULTIPLE FARM ANNOUNCEMENTS MANAGEMENT (CLEAN & FIXED)
-// =========================================================
-
-function getCleanAnnouncements() {
-  try {
-    const raw = JSON.parse(localStorage.getItem('pgf_multiple_announcements')) || [];
-    if (!Array.isArray(raw)) return [];
-    return raw;
-  } catch (e) {
-    return [];
-  }
-}
-
-// 1. Supabase se Multiple Announcements Fetch karne ka function
-async function fetchAnnouncementsFromCloud() {
-  if (!_supabase) return;
-  try {
-    const { data, error } = await _supabase.from('pgf_announcements').select('*').eq('id', 'ALL_LIST').maybeSingle();
-    
-    if (!error && data && data.announcements_data) {
-      if (Array.isArray(data.announcements_data)) {
-        localStorage.setItem('pgf_multiple_announcements', JSON.stringify(data.announcements_data));
-      }
-    }
-  } catch (err) {
-    console.log("Fetch announcements note:", err);
-  }
-  renderUserAnnouncementBanner();
-  renderAdminAnnouncementPanel();
-}
-
-// 2. Multiple Announcement Save karne ka function (Supabase + LocalStorage)
-async function saveAdminAnnouncement(e) {
-  e.preventDefault();
-  const msg = document.getElementById("adminAnnouncementInput").value.trim();
-  const expiryVal = document.getElementById("adminAnnouncementExpiryInput") ? document.getElementById("adminAnnouncementExpiryInput").value : "";
-  
-  if (!msg) return;
-
-  const announcements = getCleanAnnouncements();
-
-  const newAnnounce = {
-    id: "ANN-" + Date.now(),
-    message: msg,
-    expiry: expiryVal || "", // Agar expiry khali ho toh blank rahegi
-    dateAdded: new Date().toLocaleDateString('en-IN') + " " + new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true })
-  };
-
-  announcements.unshift(newAnnounce);
-  localStorage.setItem('pgf_multiple_announcements', JSON.stringify(announcements));
-
-  try {
-    await _supabase.from('pgf_announcements').upsert([
-      { id: 'ALL_LIST', announcements_data: announcements }
-    ]);
-  } catch (err) {
-    console.log("Cloud sync note:", err);
-  }
-
-  renderAdminAnnouncementPanel();
-  renderUserAnnouncementBanner();
-
-  document.getElementById("adminAnnouncementInput").value = "";
-  if (document.getElementById("adminAnnouncementExpiryInput")) {
-    document.getElementById("adminAnnouncementExpiryInput").value = "";
-  }
-  
-  alert("✅ Announcement successfully saved to Database & Published!");
-}
-
-// Alias function for form compatibility
-const saveAdminMultipleAnnouncement = saveAdminAnnouncement;
-
-// 3. Admin Panel me list show karne ka function
-function renderAdminAnnouncementPanel() {
-  const container = document.getElementById("adminMultipleAnnouncementsContainer");
-  if (!container) return;
-
-  const announcements = getCleanAnnouncements();
-
-  if (announcements.length === 0) {
-    container.innerHTML = `<p class="muted" style="font-size:13px; font-style:italic;">No active announcements published yet.</p>`;
-    return;
-  }
-
-  container.innerHTML = announcements.map((item, index) => {
-    const formattedExpiry = item.expiry ? new Date(item.expiry).toLocaleString('en-IN', {
-      day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true
-    }) : 'No Expiry (Active until deleted)';
-
-    return `
-      <div style="background:#fff; border:1px solid var(--line); border-radius:8px; padding:12px; display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:8px;">
-        <div style="flex:1;">
-          <strong style="font-size:14px; color:#1e293b; display:block;">${item.message}</strong>
-          <small style="color:#d97706; display:block; margin-top:3px;">⏳ Target Expiry: ${formattedExpiry}</small>
-        </div>
-        <button type="button" class="btn" style="background:var(--danger); padding:6px 12px; font-size:12px; min-height:auto;" onclick="deleteAdminSingleAnnouncement(${index})">🗑️ Delete</button>
-      </div>
-    `;
-  }).join("");
-}
-
-// 4. Single Announcement Delete from List
-async function deleteAdminSingleAnnouncement(index) {
-  const announcements = getCleanAnnouncements();
-  if (index < 0 || index >= announcements.length) return;
-
-  if (confirm("Kya aap is announcement ko delete karna chahte hain?")) {
-    announcements.splice(index, 1);
-    localStorage.setItem('pgf_multiple_announcements', JSON.stringify(announcements));
-
-    try {
-      await _supabase.from('pgf_announcements').upsert([
-        { id: 'ALL_LIST', announcements_data: announcements }
-      ]);
-    } catch (err) {}
-
-    renderAdminAnnouncementPanel();
-    renderUserAnnouncementBanner();
-    alert("✅ Announcement successfully deleted!");
-  }
-}
-
-function clearAdminAnnouncement() {
-  if (confirm("Clear all announcements?")) {
-    localStorage.removeItem('pgf_multiple_announcements');
-    renderAdminAnnouncementPanel();
-    renderUserAnnouncementBanner();
-  }
-}
-
-// 5. User & Public Dashboard Banner (Live Countdown + Auto-Hide on Expiry)
-function renderUserAnnouncementBanner() {
-  const pubBanner = document.getElementById("publicAdminAnnouncementBanner");
-  const pubListContainer = document.getElementById("publicAnnouncementListContainer");
-
-  const announcements = getCleanAnnouncements();
-  const now = new Date().getTime();
-
-  // Filter: Agar expiry di gayi hai aur time nikal gaya hai toh hide hogi, warna show hogi
-  const validAnnouncements = announcements.filter(item => {
-    if (!item.expiry || item.expiry.trim() === "") return true; // Agar expiry nahi di, toh hamesha dikhegi
-    const expiryTime = new Date(item.expiry).getTime();
-    return now <= expiryTime; 
-  });
-
-  if (!pubBanner || !pubListContainer) return;
-
-  if (validAnnouncements.length === 0) {
-    pubBanner.style.display = "none";
-    return;
-  }
-
-  const htmlContent = validAnnouncements.map(item => {
-    let timeParts = [];
-    let formattedExpiryDate = "No Expiry";
-
-    if (item.expiry && item.expiry.trim() !== "") {
-      const expiryTime = new Date(item.expiry).getTime();
-      const diff = expiryTime - now;
-
-      if (diff > 0) {
-        const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-        const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-        const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-        const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-
-        if (days > 0) timeParts.push(`${days}d`);
-        if (hours > 0 || days > 0) timeParts.push(`${hours}h`);
-        timeParts.push(`${minutes}m`);
-        timeParts.push(`${seconds}s`);
-      }
-
-      formattedExpiryDate = new Date(item.expiry).toLocaleString('en-IN', {
-        day: 'numeric',
-        month: 'short',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: true
-      });
-    }
-
-    return `
-      <div style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px 12px; font-size: 13.5px; color: #1e293b; line-height: 1.4; margin-bottom: 8px;">
-        <div>${item.message}</div>
-        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px; margin-top: 4px; font-size: 12px;">
-          <span style="color: #64748b;">📅 Expiry Target: <strong>${formattedExpiryDate}</strong></span>
-          ${item.expiry ? `<span style="color: #d97706; font-weight: bold;">⏳ Bacha Samay: ${timeParts.join(' ')}</span>` : ''}
-        </div>
-      </div>
-    `;
-  }).join("");
-
-  pubListContainer.innerHTML = htmlContent;
-  pubBanner.style.display = "block";
-}
-
-// Har 1 Second me live countdown update karne ke liye
-setInterval(function() {
-  renderUserAnnouncementBanner();
-}, 1000);
-
-document.addEventListener("DOMContentLoaded", function() {
-  fetchAnnouncementsFromCloud();
-  renderUserAnnouncementBanner();
-  renderAdminAnnouncementPanel();
-});
-function renderAdminAnnouncementPanel() {
-  const container = document.getElementById("adminMultipleAnnouncementsContainer");
-  const inputEl = document.getElementById("adminAnnouncementInput");
-  const expiryInputEl = document.getElementById("adminAnnouncementExpiryInput");
-  if (!container) return;
-
-  const announcements = getCleanAnnouncements();
-
-  if (announcements.length === 0) {
-    container.innerHTML = `<p class="muted" style="font-size:13px; font-style:italic;">No active announcements published yet.</p>`;
-    return;
-  }
-
-  container.innerHTML = announcements.map((item, index) => {
-    let expiryLabel = item.expiry ? `⏳ Expiry: ${new Date(item.expiry).toLocaleString()}` : `♾️ Active until manual delete`;
-    return `
-      <div style="background:#fff; border:1px solid var(--line); border-radius:8px; padding:12px; display:flex; justify-content:space-between; align-items:center; gap:10px;">
-        <div style="flex:1;">
-          <strong style="font-size:14px; color:#1e293b; display:block;">${item.message}</strong>
-          <small style="color:#64748b; display:block; margin-top:3px;">${expiryLabel} | Added: ${item.dateAdded || 'N/A'}</small>
-        </div>
-        <button type="button" class="btn" style="background:var(--danger); padding:6px 12px; font-size:12px; min-height:auto;" onclick="deleteAdminSingleAnnouncement(${index})">🗑️ Delete</button>
-      </div>
-    `;
-  }).join("");
-
-  if (inputEl) inputEl.value = "";
-  if (expiryInputEl) expiryInputEl.value = "";
-}
-
-async function saveAdminAnnouncement(e) {
-  e.preventDefault();
-  const msg = document.getElementById("adminAnnouncementInput").value.trim();
-  const expiryVal = document.getElementById("adminAnnouncementExpiryInput") ? document.getElementById("adminAnnouncementExpiryInput").value : "";
-  if (!msg) return;
-
-  const announcements = getCleanAnnouncements();
-
-  const newAnnounce = {
-    id: "ANN-" + Date.now(),
-    message: msg,
-    expiry: expiryVal,
-    dateAdded: new Date().toLocaleDateString('en-IN') + " " + new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true })
-  };
-
-  announcements.unshift(newAnnounce);
-  localStorage.setItem('pgf_multiple_announcements', JSON.stringify(announcements));
-
-  try {
-    await _supabase.from('pgf_announcements').upsert([{ id: 'ALL_LIST', announcements_data: announcements }]);
-  } catch (err) {
-    console.log("Cloud sync note:", err);
-  }
-
-  renderAdminAnnouncementPanel();
-  renderUserAnnouncementBanner();
-  alert("✅ Announcement successfully saved to Database & Published!");
-}
-
-async function saveAdminMultipleAnnouncement(e) {
-  e.preventDefault();
-  const msg = document.getElementById("adminAnnouncementInput").value.trim();
-  const expiryVal = document.getElementById("adminAnnouncementExpiryInput") ? document.getElementById("adminAnnouncementExpiryInput").value : "";
-  if (!msg) return;
-
-  const announcements = getCleanAnnouncements();
-
-  const newAnnounce = {
-    id: "ANN-" + Date.now(),
-    message: msg,
-    expiry: expiryVal,
-    dateAdded: new Date().toLocaleDateString('en-IN') + " " + new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true })
-  };
-
-  announcements.unshift(newAnnounce);
-  localStorage.setItem('pgf_multiple_announcements', JSON.stringify(announcements));
-
-  try {
-    await _supabase.from('pgf_announcements').upsert([{ id: 'ALL_LIST', announcements_data: announcements }]);
-  } catch (err) {
-    console.log("Cloud sync fallback:", err);
-  }
-
-  renderAdminAnnouncementPanel();
-  renderUserAnnouncementBanner();
-  alert("✅ Nayi announcement successfully add ho gayi hai!");
-}
-
-async function deleteAdminSingleAnnouncement(index) {
-  const announcements = getCleanAnnouncements();
-  if (index < 0 || index >= announcements.length) return;
-
-  if (confirm("Kya aap is announcement ko delete karna chahte hain?")) {
-    announcements.splice(index, 1);
-    localStorage.setItem('pgf_multiple_announcements', JSON.stringify(announcements));
-
-    try {
-      await _supabase.from('pgf_announcements').upsert([{ id: 'ALL_LIST', announcements_data: announcements }]);
-    } catch (err) {}
-
-    renderAdminAnnouncementPanel();
-    renderUserAnnouncementBanner();
-    alert("✅ Announcement successfully deleted!");
-  }
-}
-
-function clearAdminAnnouncement() {
-  if (confirm("Clear all announcements?")) {
-    localStorage.removeItem('pgf_multiple_announcements');
-    renderAdminAnnouncementPanel();
-    renderUserAnnouncementBanner();
-  }
-}
-
-// 5. User/Public Dashboard Banner (Sari valid multiple announcements show hongi)
-function renderUserAnnouncementBanner() {
-  const pubBanner = document.getElementById("publicAdminAnnouncementBanner");
-  const pubListContainer = document.getElementById("publicAnnouncementListContainer");
-
-  const announcements = getCleanAnnouncements();
-  const now = new Date().getTime();
-
-  // Sirf wahi announcements dikhengi jinka expiry time abhi baaki hai
-  const validAnnouncements = announcements.filter(item => {
-    if (!item.expiry || item.expiry.trim() === "") return false; 
-    const expiryTime = new Date(item.expiry).getTime();
-    return now <= expiryTime; 
-  });
-
-  if (validAnnouncements.length === 0) {
-    if (pubBanner) pubBanner.style.display = "none";
-    return;
-  }
-
-  const htmlContent = validAnnouncements.map(item => {
-    const expiryTime = new Date(item.expiry).getTime();
-    const diff = expiryTime - now;
-
-    let timeParts = [];
-    if (diff > 0) {
-      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-      const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-      const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-
-      if (days > 0) timeParts.push(`${days}d`);
-      if (hours > 0 || days > 0) timeParts.push(`${hours}h`);
-      timeParts.push(`${minutes}m`);
-      timeParts.push(`${seconds}s`);
-    }
-
-    const formattedExpiryDate = new Date(item.expiry).toLocaleString('en-IN', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: true
-    });
-
-    return `
-      <div style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px 12px; font-size: 13.5px; color: #1e293b; line-height: 1.4; margin-bottom: 8px;">
-        <div>${item.message}</div>
-        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px; margin-top: 4px; font-size: 12px;">
-          <span style="color: #64748b;">📅 Expiry Target: <strong>${formattedExpiryDate}</strong></span>
-          <span style="color: #d97706; font-weight: bold;">⏳ Bacha Samay: ${timeParts.join(' ')}</span>
-        </div>
-      </div>
-    `;
-  }).join("");
-
-  if (pubBanner && pubListContainer) {
-    pubListContainer.innerHTML = htmlContent;
-    pubBanner.style.display = "block";
-  }
-}
-
-// Har 1 Second me live countdown update karne ke liye
-setInterval(function() {
-  renderUserAnnouncementBanner();
-}, 1000);
-
-document.addEventListener("DOMContentLoaded", function() {
-  fetchAnnouncementsFromCloud();
-});
-
-// =========================================================
-// 30 SECONDS WEBSITE REFRESH / DATA SYNC (WITH FORM PROTECTION)
-// =========================================================
-setInterval(function() {
-  const activeElement = document.activeElement;
-  const isFillingForm = activeElement && (
-    activeElement.tagName === 'INPUT' || 
-    activeElement.tagName === 'TEXTAREA' || 
-    activeElement.tagName === 'SELECT'
-  );
-
-  if (isFillingForm) {
-    return;
-  }
-
-  if (typeof backgroundDataSync === 'function') {
-    backgroundDataSync();
-  }
-  if (typeof renderUserAnnouncementBanner === 'function') {
-    renderUserAnnouncementBanner();
-  }
-}, 30000);
-
-document.addEventListener("DOMContentLoaded", function() {
-  renderUserAnnouncementBanner();
-  renderAdminAnnouncementPanel();
-});
-
-
-
-

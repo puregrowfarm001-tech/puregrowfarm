@@ -1612,7 +1612,7 @@ function populateAdminDashboardTables() {
     return orderDateStr.includes(selectedYear);
   });
   
-  // 🔄 FIX: Secure Sorting for Orders (New Data First / Descending Order)
+  // 🔄 FIX: Secure Sorting for Orders (Newest / Latest Order First)
   validOrders.sort((a, b) => {
     let timeA = 0, timeB = 0;
     try {
@@ -1625,7 +1625,14 @@ function populateAdminDashboardTables() {
       if (isNaN(timeB)) timeB = 0;
     } catch(e) { timeB = 0; }
 
-    return timeB - timeA; // Newest first
+    // Agar timestamps barabar ho ya na ho, Order ID ke numbers se bhi check karenge
+    if (timeA === timeB) {
+      let idNumA = parseInt((a.orderId || "").replace(/[^0-9]/g, "")) || 0;
+      let idNumB = parseInt((b.orderId || "").replace(/[^0-9]/g, "")) || 0;
+      return idNumB - idNumA;
+    }
+
+    return timeB - timeA; // Newest / Largest timestamp first
   });
   
   const approvedOrdersList = validOrders.filter(o => o.status === 'Approved' || o.status === 'Delivered');

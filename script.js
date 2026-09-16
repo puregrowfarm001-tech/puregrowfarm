@@ -302,6 +302,17 @@ async function triggerAdminView() {
   document.getElementById("dashboardWorkspace").style.display = "none";
   document.getElementById("publicContent").style.display = "none";
   document.getElementById("adminErpView").classList.add("active");
+
+  // 👇 Yahan Supabase se Active Announcement fetch karne ka code jodein:
+  try {
+    const { data: cloudAnnounce } = await _supabase.from('pgf_announcements').select('*').eq('id', 'ANN-1').single();
+    if (cloudAnnounce) {
+      localStorage.setItem('pgf_active_announcement', JSON.stringify(cloudAnnounce));
+    }
+  } catch (err) {
+    console.log("Announcement fetch note:", err);
+  }
+  renderAdminAnnouncementPanel();
   
   // Orders & Bookings fetch
   const { data: cloudOrders } = await _supabase.from('pgf_orders').select('*');

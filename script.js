@@ -48,6 +48,7 @@ let salesRegistry = getCleanData('pgf_sales');
 let purchasesRegistry = getCleanData('pgf_purchases');
 let dailyDryStockRegistry = getCleanData('pgf_daily_dry_stock');
 let notificationsRegistry = getCleanData('pgf_notifications');
+let currentAnnouncementData = JSON.parse(localStorage.getItem('pgf_active_announcement')) || { message: "" };
 
 
 let currentUser = JSON.parse(localStorage.getItem('pgf_session')) || null;

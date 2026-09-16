@@ -4274,18 +4274,27 @@ let adminFarmConnectorsRegistry = getCleanData('pgf_admin_farm_connectors');
 
 let adminBuyersRegistry = getCleanData('pgf_admin_buyers');
 
-// Supabase se Buyer Data Fetch karna
+// Farm Booking & Farm Connector Data Supabase se fetch karne ke liye
 async function fetchAdminManagerDataFromCloud() {
   if (!_supabase) return;
 
-  const { data: cloudBuyers } = await _supabase.from('pgf_admin_buyers').select('*');
-  if (cloudBuyers) {
-    adminBuyersRegistry = cloudBuyers.map(b => ({
-      id: b.id, name: b.name, company: b.company, phone: b.phone, address: b.address, date_logged: b.date_logged
+  const { data: cloudFarmers } = await _supabase.from('pgf_admin_farmer_bookings').select('*');
+  if (cloudFarmers) {
+    adminFarmerBookingsRegistry = cloudFarmers.map(f => ({
+      id: f.id, name: f.name, phone: f.phone, address: f.address, date_logged: f.date_logged
     }));
-    localStorage.setItem('pgf_admin_buyers', JSON.stringify(adminBuyersRegistry));
+    localStorage.setItem('pgf_admin_farmer_bookings', JSON.stringify(adminFarmerBookingsRegistry));
   }
-  renderAdminBuyerTable();
+  renderAdminFarmerBookingTable();
+
+  const { data: cloudConnectors } = await _supabase.from('pgf_admin_farm_connectors').select('*');
+  if (cloudConnectors) {
+    adminFarmConnectorsRegistry = cloudConnectors.map(c => ({
+      id: c.id, name: c.name, phone: c.phone, address: c.address, date_logged: c.date_logged
+    }));
+    localStorage.setItem('pgf_admin_farm_connectors', JSON.stringify(adminFarmConnectorsRegistry));
+  }
+  renderAdminConnectorTable();
 }
 
 // 1) Save Farmer Booking to Supabase

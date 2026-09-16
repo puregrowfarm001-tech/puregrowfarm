@@ -4249,19 +4249,25 @@ async function handleVerifyOtpAndChangePassword(e) {
 }
 
 // --- Admin Manager Sub-Tabs Switcher ---
-['btnAdminTab1', 'btnAdminTab2', 'btnAdminTab3', 'btnAdminTab4'].forEach(id => {
+function switchAdminSubTab(subTabId, btnId) {
+  document.querySelectorAll('.admin-sub-section').forEach(sec => sec.style.display = 'none');
+  const targetSec = document.getElementById(subTabId);
+  if (targetSec) targetSec.style.display = 'block';
+
+  ['btnAdminTab1', 'btnAdminTab2', 'btnAdminTab3', 'btnAdminTab4'].forEach(id => {
     const b = document.getElementById(id);
     if (b) b.style.background = 'var(--muted)';
   });
+  
   const activeBtn = document.getElementById(btnId);
   if (activeBtn) activeBtn.style.background = 'var(--accent)';
 
   if (subTabId === 'adminSubTabAccount') {
     renderAdminAccountTable();
-  } else if (subTabId === 'adminSubTabBuyer') { // 👇 Yeh condition jodi gayi hai
+  } else if (subTabId === 'adminSubTabBuyer') {
     renderAdminBuyerTable();
   }
-
+}
 
 let adminFarmerBookingsRegistry = getCleanData('pgf_admin_farmer_bookings');
 let adminFarmConnectorsRegistry = getCleanData('pgf_admin_farm_connectors');

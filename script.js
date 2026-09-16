@@ -4272,37 +4272,20 @@ function switchAdminSubTab(subTabId, btnId) {
 let adminFarmerBookingsRegistry = getCleanData('pgf_admin_farmer_bookings');
 let adminFarmConnectorsRegistry = getCleanData('pgf_admin_farm_connectors');
 
-// Supabase se Data Load karne ka function
+let adminBuyersRegistry = getCleanData('pgf_admin_buyers');
+
+// Supabase se Buyer Data Fetch karna
 async function fetchAdminManagerDataFromCloud() {
   if (!_supabase) return;
-
-  const { data: cloudFarmers } = await _supabase.from('pgf_admin_farmer_bookings').select('*');
-  if (cloudFarmers) {
-    adminFarmerBookingsRegistry = cloudFarmers.map(f => ({
-      id: f.id, name: f.name, phone: f.phone, address: f.address, date_logged: f.date_logged
-    }));
-    localStorage.setItem('pgf_admin_farmer_bookings', JSON.stringify(adminFarmerBookingsRegistry));
-  }
-
-  const { data: cloudConnectors } = await _supabase.from('pgf_admin_farm_connectors').select('*');
-  if (cloudConnectors) {
-    adminFarmConnectorsRegistry = cloudConnectors.map(c => ({
-      id: c.id, name: c.name, phone: c.phone, address: c.address, date_logged: c.date_logged
-    }));
-    localStorage.setItem('pgf_admin_farm_connectors', JSON.stringify(adminFarmConnectorsRegistry));
-  }
 
   const { data: cloudBuyers } = await _supabase.from('pgf_admin_buyers').select('*');
   if (cloudBuyers) {
     adminBuyersRegistry = cloudBuyers.map(b => ({
-      id: b.id, name: b.name, phone: b.phone, address: b.address, date_logged: b.date_logged
+      id: b.id, name: b.name, company: b.company, phone: b.phone, address: b.address, date_logged: b.date_logged
     }));
     localStorage.setItem('pgf_admin_buyers', JSON.stringify(adminBuyersRegistry));
   }
   renderAdminBuyerTable();
-
-  renderAdminFarmerBookingTable();
-  renderAdminConnectorTable();
 }
 
 // 1) Save Farmer Booking to Supabase
@@ -4494,12 +4477,14 @@ document.addEventListener("DOMContentLoaded", function() {
 async function saveBuyerAdmin(e) {
   e.preventDefault();
   const name = document.getElementById("adminBuyerName").value.trim();
+  const company = document.getElementById("adminBuyerCompany").value.trim();
   const phone = document.getElementById("adminBuyerPhone").value.trim();
   const address = document.getElementById("adminBuyerAddress").value.trim();
 
   const payload = {
     id: "BUY-" + Date.now().toString().slice(-4),
     name: name,
+    company: company,
     phone: phone,
     address: address,
     date_logged: new Date().toLocaleDateString('en-IN')
@@ -4516,9 +4501,10 @@ async function saveBuyerAdmin(e) {
 
   e.target.reset();
   renderAdminBuyerTable();
-  alert("✅ Buyer saved successfully to Supabase!");
+  alert("✅ Buyer & Company saved successfully to Supabase!");
 }
 
+// Render Buyer Table for Admin View
 function renderAdminBuyerTable() {
   const tbody = document.getElementById("adminBuyerTableBody");
   if (!tbody) return;
@@ -4530,7 +4516,10 @@ function renderAdminBuyerTable() {
 
   tbody.innerHTML = adminBuyersRegistry.map((item, idx) => `
     <tr>
-      <td><strong>${item.name}</strong></td>
+      <td>
+        <strong>${item.name}</strong><br>
+        <span style="color:var(--accent); font-weight:bold; font-size:12px;">🏢 ${item.company || 'N/A'}</span>
+      </td>
       <td>
         <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
           <a href="tel:${item.phone}" class="call-link" style="font-weight:bold;">📞 ${item.phone}</a>

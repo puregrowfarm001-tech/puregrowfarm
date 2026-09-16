@@ -4589,7 +4589,7 @@ function getCleanAnnouncements() {
   }
 }
 
-// 1. Supabase se Multiple Announcements Safe Fetch karne ka function
+// 1. Supabase se Multiple Announcements Fetch karne ka function
 async function fetchAnnouncementsFromCloud() {
   if (!_supabase) return;
   try {
@@ -4607,33 +4607,27 @@ async function fetchAnnouncementsFromCloud() {
   renderAdminAnnouncementPanel();
 }
 
-// 2. Multiple Announcement Save karne ka function (Purani list delete nahi hogi, nayi add hogi)
+// 2. Multiple Announcement Save karne ka function
 async function saveAdminAnnouncement(e) {
   e.preventDefault();
   const msg = document.getElementById("adminAnnouncementInput").value.trim();
   const expiryVal = document.getElementById("adminAnnouncementExpiryInput") ? document.getElementById("adminAnnouncementExpiryInput").value : "";
   
   if (!msg) return;
-  if (!expiryVal) {
-    alert("⚠️ Kripya Expiry Date & Time zaroor select karein!");
-    return;
-  }
 
-  // Pehle se stored purani announcements ki list nikalein
   const announcements = getCleanAnnouncements();
 
   const newAnnounce = {
     id: "ANN-" + Date.now(),
     message: msg,
-    expiry: expiryVal,
+    // Agar expiry na di jaye toh default 1 din aage ki set ho jayegi taaki show hone me problem na ho
+    expiry: expiryVal || new Date(Date.now() + 86400000).toISOString().slice(0, 16),
     dateAdded: new Date().toLocaleDateString('en-IN')
   };
 
-  // Nayi announcement ko list ke shuru me add karein (Multiple support)
   announcements.unshift(newAnnounce);
   localStorage.setItem('pgf_multiple_announcements', JSON.stringify(announcements));
 
-  // Supabase me poori list ko ek sath upsert kar dein
   try {
     await _supabase.from('pgf_announcements').upsert([
       { id: 'ALL_LIST', announcements_data: announcements }
@@ -4645,42 +4639,75 @@ async function saveAdminAnnouncement(e) {
   renderAdminAnnouncementPanel();
   renderUserAnnouncementBanner();
   
-  // Input fields reset karein taaki aur bhi nayi add kar sakein
   document.getElementById("adminAnnouncementInput").value = "";
   if(document.getElementById("adminAnnouncementExpiryInput")) document.getElementById("adminAnnouncementExpiryInput").value = "";
   
-  alert("✅ Nayi Announcement successfully add ho gayi hai! (Multiple Announcements Active)");
+  alert("✅ Announcement successfully saved & Published!");
 }
 
-// 3. Admin Panel List View (Sari announcements line se dikhengi)
-function renderAdminAnnouncementPanel() {
-  const container = document.getElementById("adminMultipleAnnouncementsContainer");
-  if (!container) return;
+// 3. User/Public Dashboard Banner (Force Show Logic Added)
+function renderUserAnnouncementBanner() {
+  const pubBanner = document.getElementById("publicAdminAnnouncementBanner");
+  const pubListContainer = document.getElementById("publicAnnouncementListContainer");
 
   const announcements = getCleanAnnouncements();
+  const now = new Date().getTime();
 
-  if (announcements.length === 0) {
-    container.innerHTML = `<p class="muted" style="font-size:13px; font-style:italic;">No active announcements published yet.</p>`;
+  // Agar expiry invalid bhi ho, tab bhi safe filtering ke sath show karega
+  const validAnnouncements = announcements.filter(item => {
+    if (!item.expiry || item.expiry.trim() === "") return true; 
+    const expiryTime = new Date(item.expiry).getTime();
+    return now <= expiryTime; 
+  });
+
+  if (!pubBanner || !pubListContainer) return;
+
+  if (validAnnouncements.length === 0) {
+    pubBanner.style.display = "none";
     return;
   }
 
-  container.innerHTML = announcements.map((item, index) => {
-    const formattedExpiry = item.expiry ? new Date(item.expiry).toLocaleString('en-IN', {
-      day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true
+  const htmlContent = validAnnouncements.map(item => {
+    let timeParts = [];
+    if (item.expiry) {
+      const expiryTime = new Date(item.expiry).getTime();
+      const diff = expiryTime - now;
+      if (diff > 0) {
+        const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+        if (days > 0) timeParts.push(`${days}d`);
+        if (hours > 0 || days > 0) timeParts.push(`${hours}h`);
+        timeParts.push(`${minutes}m`);
+        timeParts.push(`${seconds}s`);
+      }
+    }
+
+    const formattedExpiryDate = item.expiry ? new Date(item.expiry).toLocaleString('en-IN', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true
     }) : 'No Expiry';
 
     return `
-      <div style="background:#fff; border:1px solid var(--line); border-radius:8px; padding:12px; display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:8px;">
-        <div style="flex:1;">
-          <strong style="font-size:14px; color:#1e293b; display:block;">${item.message}</strong>
-          <small style="color:#d97706; display:block; margin-top:3px;">⏳ Target Expiry: ${formattedExpiry}</small>
+      <div style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px 12px; font-size: 13.5px; color: #1e293b; line-height: 1.4; margin-bottom: 8px;">
+        <div>${item.message}</div>
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px; margin-top: 4px; font-size: 12px;">
+          <span style="color: #64748b;">📅 Expiry Target: <strong>${formattedExpiryDate}</strong></span>
+          <span style="color: #d97706; font-weight: bold;">⏳ Bacha Samay: ${timeParts.join(' ')}</span>
         </div>
-        <button type="button" class="btn" style="background:var(--danger); padding:6px 12px; font-size:12px; min-height:auto;" onclick="deleteAdminSingleAnnouncement(${index})">🗑️ Delete</button>
       </div>
     `;
   }).join("");
-}
 
+  pubListContainer.innerHTML = htmlContent;
+  pubBanner.style.display = "block"; // Banner ko force display on kar diya hai
+}
 // 4. Single Announcement Delete from Multiple List
 async function deleteAdminSingleAnnouncement(index) {
   const announcements = getCleanAnnouncements();

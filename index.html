@@ -306,6 +306,16 @@
 
     <!-- User Dashboard Workspace -->
     <section id="dashboardWorkspace" class="user-dashboard" style="display:none;">
+      <!-- User Side Live Admin Announcement Box -->
+<div id="userAdminAnnouncementBanner" style="display:none; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 10px; padding: 14px 18px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.04);">
+  <div style="display: flex; align-items: flex-start; gap: 10px;">
+    <span style="font-size: 20px;">📢</span>
+    <div style="flex: 1;">
+      <strong style="color: #1e40af; font-size: 14px; display: block; margin-bottom: 2px;">Important Farm Announcement (Pure Grow Farm)</strong>
+      <p id="userAnnouncementTextContent" style="margin: 0; color: #1e293b; font-size: 13.5px; line-height: 1.5;"></p>
+    </div>
+  </div>
+</div>
       <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
         <div>
           <h2>Welcome Back, <span id="userDashboardName">Grower</span>!</h2>
@@ -1049,6 +1059,7 @@
           <button type="button" class="btn" id="btnAdminTab2" onclick="switchAdminSubTab('adminSubTabConnector', 'btnAdminTab2')" style="background:var(--muted);">2) Farm Connector</button>
           <button type="button" class="btn" id="btnAdminTab3" onclick="switchAdminSubTab('adminSubTabAccount', 'btnAdminTab3')" style="background:var(--muted);">3) Account (Automatic)</button>
           <button type="button" class="btn" id="btnAdminTab4" onclick="switchAdminSubTab('adminSubTabBuyer', 'btnAdminTab4')" style="background:var(--muted);">4) Buyer</button>
+          <button type="button" class="btn" id="btnAdminTab5" onclick="switchAdminSubTab('adminSubTabAnnouncement', 'btnAdminTab5')" style="background:var(--muted);">5) Announcement</button>
         </div>
 
         <!-- 1) Farmer Booking Sub-Section -->
@@ -1155,7 +1166,8 @@
 <div id="adminSubTabBuyer" class="admin-sub-section" style="display:none;">
   <h4>🛒 Farm Wholesale & Direct Buyers Manager</h4>
   <form onsubmit="saveBuyerAdmin(event)" style="background:#f8fafc; padding:16px; border-radius:10px; border:1px solid var(--line); margin-bottom:20px;">
-    <input type="text" id="adminBuyerName" placeholder="Buyer / Company Name" required>
+    <input type="text" id="adminBuyerName" placeholder="Buyer name" required>
+    <input type="text" id="adminBuyerCompany" placeholder="Company Name / Business Firm Name" required>
     <input type="tel" id="adminBuyerPhone" placeholder="Mobile Number (10 digits)" maxlength="10" required>
     <input type="text" id="adminBuyerAddress" placeholder="Complete Business / Shipping Address" required>
     <button type="submit" style="margin-top:10px; background:var(--accent);">Save Buyer to Supabase</button>
@@ -1184,6 +1196,24 @@
       <tbody id="adminBuyerTableBody"></tbody>
     </table>
   </div>
+</div>
+
+       <!-- 5) Announcement Sub-Section -->
+<div id="adminSubTabAnnouncement" class="admin-sub-section" style="display:none;">
+  <h4>📢 Farm Broadcast Announcement Manager</h4>
+  <p class="muted" style="font-size:13px;">Yahan jo message type karke save karenge, wo sabhi registered users ke dashboard par live show hoga.</p>
+  
+  <form onsubmit="saveAdminAnnouncement(event)" style="background:#f8fafc; padding:16px; border-radius:10px; border:1px solid var(--line); margin-bottom:20px;">
+    <label style="font-size:12px; font-weight:bold; color:#334155;">Type Live Announcement Message:</label>
+    <textarea id="adminAnnouncementInput" rows="3" placeholder="Enter farm announcement or important update here..." required style="width:100%; padding:10px; border:1px solid var(--line); border-radius:8px; font-size:14px; margin-top:4px;"></textarea>
+    <button type="submit" style="margin-top:10px; background:var(--accent);">Publish Announcement to User Dashboard</button>
+  </form>
+
+  <div style="background:#fffbeb; border:1px solid #fde68a; padding:12px; border-radius:8px; font-size:13px; color:#92400e;">
+    <strong>Active Published Announcement:</strong>
+    <p id="adminCurrentActiveAnnouncementDisplay" style="margin: 4px 0 0 0; color:#1e293b; font-style:italic;">No active announcement published yet.</p>
+  </div>
+  <button type="button" class="btn" style="margin-top:12px; background:var(--danger); font-size:12px; padding:6px 12px;" onclick="clearAdminAnnouncement()">🗑️ Remove / Clear Announcement</button>
 </div>
       </div>
 

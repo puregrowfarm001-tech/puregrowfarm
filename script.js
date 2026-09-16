@@ -454,6 +454,7 @@ async function checkUserSession() {
     document.getElementById("trainingGuardBlock").style.display = "block";
     document.getElementById("trainingMainContent").style.display = "none";
   }
+  renderUserAnnouncementBanner();
 }
 
 async function handleRegister(e) {
@@ -4254,7 +4255,8 @@ function switchAdminSubTab(subTabId, btnId) {
   const targetSec = document.getElementById(subTabId);
   if (targetSec) targetSec.style.display = 'block';
 
-  ['btnAdminTab1', 'btnAdminTab2', 'btnAdminTab3', 'btnAdminTab4'].forEach(id => {
+  // 👇 Yahan btnAdminTab5 add kiya gaya hai
+  ['btnAdminTab1', 'btnAdminTab2', 'btnAdminTab3', 'btnAdminTab4', 'btnAdminTab5'].forEach(id => {
     const b = document.getElementById(id);
     if (b) b.style.background = 'var(--muted)';
   });
@@ -4266,6 +4268,8 @@ function switchAdminSubTab(subTabId, btnId) {
     renderAdminAccountTable();
   } else if (subTabId === 'adminSubTabBuyer') {
     renderAdminBuyerTable();
+  } else if (subTabId === 'adminSubTabAnnouncement') { 
+    renderAdminAnnouncementPanel();
   }
 }
 
@@ -4295,7 +4299,7 @@ async function fetchAdminManagerDataFromCloud() {
   const { data: cloudBuyers } = await _supabase.from('pgf_admin_buyers').select('*');
   if (cloudBuyers) {
     adminBuyersRegistry = cloudBuyers.map(b => ({
-      id: b.id, name: b.name, phone: b.phone, address: b.address, date_logged: b.date_logged
+      id: b.id, name: b.name, company: b.company || 'N/A', phone: b.phone, address: b.address, date_logged: b.date_logged
     }));
     localStorage.setItem('pgf_admin_buyers', JSON.stringify(adminBuyersRegistry));
   }
@@ -4494,12 +4498,14 @@ document.addEventListener("DOMContentLoaded", function() {
 async function saveBuyerAdmin(e) {
   e.preventDefault();
   const name = document.getElementById("adminBuyerName").value.trim();
+  const company = document.getElementById("adminBuyerCompany").value.trim(); // 📥 Company Name capture
   const phone = document.getElementById("adminBuyerPhone").value.trim();
   const address = document.getElementById("adminBuyerAddress").value.trim();
 
   const payload = {
     id: "BUY-" + Date.now().toString().slice(-4),
     name: name,
+    company: company, // ☁️ Supabase column
     phone: phone,
     address: address,
     date_logged: new Date().toLocaleDateString('en-IN')
@@ -4516,7 +4522,7 @@ async function saveBuyerAdmin(e) {
 
   e.target.reset();
   renderAdminBuyerTable();
-  alert("✅ Buyer saved successfully to Supabase!");
+  alert("✅ Buyer & Company Name saved successfully to Supabase!");
 }
 
 function renderAdminBuyerTable() {
@@ -4530,7 +4536,10 @@ function renderAdminBuyerTable() {
 
   tbody.innerHTML = adminBuyersRegistry.map((item, idx) => `
     <tr>
-      <td><strong>${item.name}</strong></td>
+      <td>
+        <strong>${item.name}</strong><br>
+        <span style="color:var(--accent); font-size:12px; font-weight:bold;">🏢 ${item.company || 'N/A'}</span>
+      </td>
       <td>
         <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
           <a href="tel:${item.phone}" class="call-link" style="font-weight:bold;">📞 ${item.phone}</a>
@@ -4553,5 +4562,72 @@ async function deleteAdminBuyer(idx) {
     adminBuyersRegistry.splice(idx, 1);
     localStorage.setItem('pgf_admin_buyers', JSON.stringify(adminBuyersRegistry));
     renderAdminBuyerTable();
+  }
+}
+
+// --- Farm Announcement Functions ---
+function renderUserAnnouncementBanner() {
+  const banner = document.getElementById("userAdminAnnouncementBanner");
+  const textEl = document.getElementById("userAnnouncementTextContent");
+  if (!banner || !textEl) return;
+
+  if (currentAnnouncementData && currentAnnouncementData.message && currentAnnouncementData.message.trim() !== "") {
+    textEl.textContent = currentAnnouncementData.message;
+    banner.style.display = "block";
+  } else {
+    banner.style.display = "none";
+  }
+}
+
+function renderAdminAnnouncementPanel() {
+  const displayEl = document.getElementById("adminCurrentActiveAnnouncementDisplay");
+  const inputEl = document.getElementById("adminAnnouncementInput");
+  if (!displayEl) return;
+
+  if (currentAnnouncementData && currentAnnouncementData.message && currentAnnouncementData.message.trim() !== "") {
+    displayEl.textContent = currentAnnouncementData.message;
+    if (inputEl) inputEl.value = currentAnnouncementData.message;
+  } else {
+    displayEl.textContent = "No active announcement published yet.";
+    if (inputEl) inputEl.value = "";
+  }
+}
+
+async function saveAdminAnnouncement(e) {
+  e.preventDefault();
+  const msg = document.getElementById("adminAnnouncementInput").value.trim();
+  if (!msg) return;
+
+  currentAnnouncementData = {
+    id: "ANN-1",
+    message: msg,
+    updated_at: new Date().toLocaleDateString('en-IN') + " " + new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true })
+  };
+
+  localStorage.setItem('pgf_active_announcement', JSON.stringify(currentAnnouncementData));
+
+  try {
+    await _supabase.from('pgf_announcements').upsert([currentAnnouncementData]);
+  } catch (err) {
+    console.log("Cloud sync fallback to local:", err);
+  }
+
+  renderAdminAnnouncementPanel();
+  renderUserAnnouncementBanner();
+  alert("✅ Announcement successfully published to User Dashboard!");
+}
+
+async function clearAdminAnnouncement() {
+  if (confirm("Are you sure you want to remove the active announcement?")) {
+    currentAnnouncementData = { message: "" };
+    localStorage.setItem('pgf_active_announcement', JSON.stringify(currentAnnouncementData));
+
+    try {
+      await _supabase.from('pgf_announcements').delete().eq('id', 'ANN-1');
+    } catch (err) {}
+
+    renderAdminAnnouncementPanel();
+    renderUserAnnouncementBanner();
+    alert("✅ Announcement cleared successfully!");
   }
 }

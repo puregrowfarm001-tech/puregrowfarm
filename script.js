@@ -4577,50 +4577,77 @@ function renderUserAnnouncementBanner() {
   const dashTextEl = document.getElementById("userAnnouncementTextContent");
 
   const savedData = JSON.parse(localStorage.getItem('pgf_active_announcement'));
-  const activeMsg = savedData ? savedData.message : "";
-
-  if (activeMsg && activeMsg.trim() !== "") {
-    // Public page par show karega (bina login ke bhi)
-    if (pubBanner && pubTextEl) {
-      pubTextEl.textContent = activeMsg;
-      pubBanner.style.display = "block";
-    }
-    // User dashboard par show karega (login hone par)
-    if (dashBanner && dashTextEl) {
-      dashTextEl.textContent = activeMsg;
-      dashBanner.style.display = "block";
-    }
-  } else {
+  if (!savedData || !savedData.message || savedData.message.trim() === "") {
     if (pubBanner) pubBanner.style.display = "none";
     if (dashBanner) dashBanner.style.display = "none";
+    return;
+  }
+
+  const activeMsg = savedData.message;
+  const expiryDateTime = savedData.expiry || ""; // Agar date & time diya hoga toh yahan aayega
+
+  // 🕒 Expiry validation check
+  if (expiryDateTime && expiryDateTime.trim() !== "") {
+    const now = new Date().getTime();
+    const expiryTime = new Date(expiryDateTime).getTime();
+
+    // Agar current time expiry time se zyada ho gaya hai, toh announcement hide kar do
+    if (now > expiryTime) {
+      if (pubBanner) pubBanner.style.display = "none";
+      if (dashBanner) dashBanner.style.display = "none";
+      return;
+    }
+  }
+
+  // Agar date/time nahi dala hai, ya expiry time nahi hua hai, toh show karega
+  if (pubBanner && pubTextEl) {
+    pubTextEl.textContent = activeMsg;
+    pubBanner.style.display = "block";
+  }
+  if (dashBanner && dashTextEl) {
+    dashTextEl.textContent = activeMsg;
+    dashBanner.style.display = "block";
   }
 }
 
 function renderAdminAnnouncementPanel() {
   const displayEl = document.getElementById("adminCurrentActiveAnnouncementDisplay");
   const inputEl = document.getElementById("adminAnnouncementInput");
+  const expiryInputEl = document.getElementById("adminAnnouncementExpiryInput");
   if (!displayEl) return;
 
   const savedData = JSON.parse(localStorage.getItem('pgf_active_announcement'));
   const activeMsg = savedData ? savedData.message : "";
+  const expiryVal = savedData ? savedData.expiry : "";
 
   if (activeMsg && activeMsg.trim() !== "") {
-    displayEl.textContent = activeMsg;
+    let displayStr = activeMsg;
+    if (expiryVal) {
+      displayStr += ` <br><small style="color:#d97706; font-weight:bold;">⏳ Active until: ${new Date(expiryVal).toLocaleString()}</small>`;
+    } else {
+      displayStr += ` <br><small style="color:#16a34a; font-weight:bold;">♾️ Active until manually deleted</small>`;
+    }
+    displayEl.innerHTML = displayStr;
+
     if (inputEl) inputEl.value = activeMsg;
+    if (expiryInputEl && expiryVal) expiryInputEl.value = expiryVal;
   } else {
     displayEl.textContent = "No active announcement published yet.";
     if (inputEl) inputEl.value = "";
+    if (expiryInputEl) expiryInputEl.value = "";
   }
 }
 
 async function saveAdminAnnouncement(e) {
   e.preventDefault();
   const msg = document.getElementById("adminAnnouncementInput").value.trim();
+  const expiryVal = document.getElementById("adminAnnouncementExpiryInput") ? document.getElementById("adminAnnouncementExpiryInput").value : "";
   if (!msg) return;
 
   currentAnnouncementData = {
     id: "ANN-1",
     message: msg,
+    expiry: expiryVal, // Expiry date & time save ho raha hai
     updated_at: new Date().toLocaleDateString('en-IN') + " " + new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true })
   };
 

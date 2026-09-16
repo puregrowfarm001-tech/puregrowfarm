@@ -4653,7 +4653,7 @@ async function saveAdminAnnouncement(e) {
   alert("✅ Announcement successfully saved to Supabase Database & Published to Admin/Users!");
 }
 
-// 3. Admin Panel me list show karne ka function
+// 3. Admin Panel me list show karne ka function (Date/Time Removed)
 function renderAdminAnnouncementPanel() {
   const container = document.getElementById("adminMultipleAnnouncementsContainer");
   const inputEl = document.getElementById("adminAnnouncementInput");
@@ -4668,12 +4668,10 @@ function renderAdminAnnouncementPanel() {
   }
 
   container.innerHTML = announcements.map((item, index) => {
-    let expiryLabel = item.expiry ? `⏳ Expiry: ${new Date(item.expiry).toLocaleString()}` : `♾️ Active until manual delete`;
     return `
       <div style="background:#fff; border:1px solid var(--line); border-radius:8px; padding:12px; display:flex; justify-content:space-between; align-items:center; gap:10px;">
         <div style="flex:1;">
           <strong style="font-size:14px; color:#1e293b; display:block;">${item.message}</strong>
-          <small style="color:#64748b; display:block; margin-top:3px;">${expiryLabel} | Added: ${item.dateAdded || 'N/A'}</small>
         </div>
         <button type="button" class="btn" style="background:var(--danger); padding:6px 12px; font-size:12px; min-height:auto;" onclick="deleteAdminSingleAnnouncement('${item.id}', ${index})">🗑️ Delete</button>
       </div>
@@ -4683,7 +4681,6 @@ function renderAdminAnnouncementPanel() {
   if (inputEl) inputEl.value = "";
   if (expiryInputEl) expiryInputEl.value = "";
 }
-
 // 4. Supabase aur Local Storage se Delete karne ka function
 async function deleteAdminSingleAnnouncement(annId, index) {
   if (confirm("Kya aap is announcement ko database se delete karna chahte hain?")) {
@@ -4899,7 +4896,6 @@ function renderUserAnnouncementBanner() {
   const htmlContent = validAnnouncements.map(item => `
     <div style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px 12px; font-size: 13.5px; color: #1e293b; line-height: 1.4; margin-bottom: 6px;">
       <div>${item.message}</div>
-      <small style="color:#d97706; font-weight:bold;">Added: ${item.dateAdded || 'Recent'}</small>
     </div>
   `).join("");
 

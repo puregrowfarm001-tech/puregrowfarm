@@ -4570,11 +4570,16 @@ async function deleteAdminBuyer(idx) {
 function renderUserAnnouncementBanner() {
   const banner = document.getElementById("userAdminAnnouncementBanner");
   const textEl = document.getElementById("userAnnouncementTextContent");
+  
   if (!banner || !textEl) return;
 
-  if (currentAnnouncementData && currentAnnouncementData.message && currentAnnouncementData.message.trim() !== "") {
-    textEl.textContent = currentAnnouncementData.message;
-    banner.style.display = "block";
+  // LocalStorage se fresh data fetch karein taaki phone par sync miss na ho
+  const savedData = JSON.parse(localStorage.getItem('pgf_active_announcement'));
+  const activeMsg = savedData ? savedData.message : (currentAnnouncementData ? currentAnnouncementData.message : "");
+
+  if (activeMsg && activeMsg.trim() !== "") {
+    textEl.textContent = activeMsg;
+    banner.style.display = "block"; // Mobile par show karega
   } else {
     banner.style.display = "none";
   }

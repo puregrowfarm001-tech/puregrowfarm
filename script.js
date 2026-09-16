@@ -4599,7 +4599,6 @@ function renderUserAnnouncementBanner() {
   const announcements = getCleanAnnouncements();
   const now = new Date().getTime();
 
-  // Expired announcements ko filter karke hata dena
   const validAnnouncements = announcements.filter(item => {
     if (!item.expiry || item.expiry.trim() === "") return true; 
     const expiryTime = new Date(item.expiry).getTime();
@@ -4629,7 +4628,7 @@ function renderUserAnnouncementBanner() {
         if (minutes > 0) timeParts.push(`${minutes} minute`);
         timeParts.push(`${seconds} second`);
 
-        timeRemainingText = `<div style="color:#d97706; font-weight:bold; font-size:12px; margin-top:2px;">⏳ Hatne me bacha samay: ${timeParts.join(' ')} (Expiry: ${new Date(item.expiry).toLocaleString()})</div>`;
+        timeRemainingText = `<div style="color:#d97706; font-weight:bold; font-size:12px; margin-top:2px;">⏳ Hatne me bacha samay: ${timeParts.join(' ')}</div>`;
       }
     } else {
       timeRemainingText = `<div style="color:#16a34a; font-weight:bold; font-size:11px; margin-top:2px;">♾️ Active until manually deleted</div>`;
@@ -4646,10 +4645,6 @@ function renderUserAnnouncementBanner() {
   if (pubBanner && pubListContainer) {
     pubListContainer.innerHTML = htmlContent;
     pubBanner.style.display = "block";
-  }
-  if (dashBanner && dashListContainer) {
-    dashListContainer.innerHTML = htmlContent;
-    dashBanner.style.display = "block";
   }
 }
 
@@ -4681,6 +4676,35 @@ function renderAdminAnnouncementPanel() {
 
   if (inputEl) inputEl.value = "";
   if (expiryInputEl) expiryInputEl.value = "";
+}
+
+async function saveAdminAnnouncement(e) {
+  e.preventDefault();
+  const msg = document.getElementById("adminAnnouncementInput").value.trim();
+  const expiryVal = document.getElementById("adminAnnouncementExpiryInput") ? document.getElementById("adminAnnouncementExpiryInput").value : "";
+  if (!msg) return;
+
+  const announcements = getCleanAnnouncements();
+
+  const newAnnounce = {
+    id: "ANN-" + Date.now(),
+    message: msg,
+    expiry: expiryVal,
+    dateAdded: new Date().toLocaleDateString('en-IN') + " " + new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true })
+  };
+
+  announcements.unshift(newAnnounce);
+  localStorage.setItem('pgf_multiple_announcements', JSON.stringify(announcements));
+
+  try {
+    await _supabase.from('pgf_announcements').upsert([{ id: 'ALL_LIST', announcements_data: announcements }]);
+  } catch (err) {
+    console.log("Cloud sync note:", err);
+  }
+
+  renderAdminAnnouncementPanel();
+  renderUserAnnouncementBanner();
+  alert("✅ Announcement successfully saved to Database & Published!");
 }
 
 async function saveAdminMultipleAnnouncement(e) {
@@ -4726,7 +4750,15 @@ async function deleteAdminSingleAnnouncement(index) {
 
     renderAdminAnnouncementPanel();
     renderUserAnnouncementBanner();
-    alert("✅ Announcement successfully delete ho gayi hai!");
+    alert("✅ Announcement successfully deleted!");
+  }
+}
+
+function clearAdminAnnouncement() {
+  if (confirm("Clear all active announcements?")) {
+    localStorage.removeItem('pgf_multiple_announcements');
+    renderAdminAnnouncementPanel();
+    renderUserAnnouncementBanner();
   }
 }
 

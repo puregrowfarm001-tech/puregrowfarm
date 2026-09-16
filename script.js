@@ -382,6 +382,8 @@ async function triggerAdminView() {
   renderAdminLiveStockSummary();
   renderDailyDryStockTable();
   switchSubAccountingTab('subTabDryStock');
+
+  await fetchAdminManagerDataFromCloud();
 }
 
 function exitAdminPanel() { handleLogout(); }
@@ -1000,63 +1002,84 @@ function renderAdminLiveStockSummary() {
     .filter(p => p && p.product && p.product.toLowerCase().includes("dry"))
     .reduce((sum, p) => sum + Number(p.qty || 0), 0);
 
-  const totalOrderDryKg = orderRegistry
-    .filter(o => o && o.status && (o.status === 'Approved' || o.status === 'Delivered') && o.products && o.products.toLowerCase().includes("dry"))
-    .reduce((sum, o) => sum + 1, 0);
-
   const totalSellDryKg = salesRegistry
     .filter(s => s && s.product && s.product.toLowerCase().includes("dry"))
     .reduce((sum, s) => sum + Number(s.qty || 0), 0);
-
-  let calculatedDryStockKg = (totalDailyDryKg + totalBuyDryKg) - (totalOrderDryKg + totalSellDryKg);
-  if (calculatedDryStockKg < 0) calculatedDryStockKg = 0;
-  dryProd.stock = calculatedDryStockKg;
 
   const totalBuyPowderKg = purchasesRegistry
     .filter(p => p && p.product && p.product.toLowerCase().includes("powder"))
     .reduce((sum, p) => sum + Number(p.qty || 0), 0);
 
-  const totalOrderPowder = orderRegistry
-    .filter(o => o && o.status && (o.status === 'Approved' || o.status === 'Delivered') && o.products && o.products.toLowerCase().includes("powder"))
-    .reduce((sum, o) => sum + 1, 0);
-
   const totalSellPowder = salesRegistry
     .filter(s => s && s.product && s.product.toLowerCase().includes("powder"))
     .reduce((sum, s) => sum + Number(s.qty || 0), 0);
-
-  let calculatedPowderStock = ((calculatedDryStockKg + totalBuyPowderKg) * 10 - totalOrderPowder - totalSellPowder) / 10;
-  if (calculatedPowderStock < 0) calculatedPowderStock = 0;
-  powderProd.stock = calculatedPowderStock;
 
   const totalBuyKhakhraKg = purchasesRegistry
     .filter(p => p && p.product && p.product.toLowerCase().includes("khakhra"))
     .reduce((sum, p) => sum + Number(p.qty || 0), 0);
   const totalBuyKhakhraPackets = totalBuyKhakhraKg * 5;
 
-  const totalOrderKhakhra = orderRegistry
-    .filter(o => o && o.status && (o.status === 'Approved' || o.status === 'Delivered') && o.products && o.products.toLowerCase().includes("khakhra"))
-    .reduce((sum, o) => sum + 1, 0);
-
   const totalSellKhakhra = salesRegistry
     .filter(s => s && s.product && s.product.toLowerCase().includes("khakhra"))
     .reduce((sum, s) => sum + Number(s.qty || 0), 0);
-
-  let calculatedKhakhraStock = totalBuyKhakhraPackets - (totalOrderKhakhra + totalSellKhakhra);
-  if (calculatedKhakhraStock < 0) calculatedKhakhraStock = 0;
-  khakhraProd.stock = calculatedKhakhraStock;
 
   const totalBuyPapadKg = purchasesRegistry
     .filter(p => p && p.product && p.product.toLowerCase().includes("papad"))
     .reduce((sum, p) => sum + Number(p.qty || 0), 0);
   const totalBuyPapadPackets = totalBuyPapadKg * 5;
 
-  const totalOrderPapad = orderRegistry
-    .filter(o => o && o.status && (o.status === 'Approved' || o.status === 'Delivered') && o.products && o.products.toLowerCase().includes("papad"))
-    .reduce((sum, o) => sum + 1, 0);
-
   const totalSellPapad = salesRegistry
     .filter(s => s && s.product && s.product.toLowerCase().includes("papad"))
     .reduce((sum, s) => sum + Number(s.qty || 0), 0);
+
+  // Helper function to extract exact ordered quantity from product string (e.g., "[x5]")
+  function getOrderQty(productsText, keyword) {
+    try {
+      let total = 0;
+      const parts = productsText.split(',');
+      parts.forEach(part => {
+        if (part.toLowerCase().includes(keyword)) {
+          const match = part.match(/\[x(\d+)\]/);
+          if (match && match[1]) {
+            total += parseInt(match[1], 10);
+          } else {
+            total += 1;
+          }
+        }
+      });
+      return total;
+    } catch(e) {
+      return 1;
+    }
+  }
+
+  const totalOrderDryKg = orderRegistry
+    .filter(o => o && o.status && (o.status === 'Approved' || o.status === 'Delivered') && o.products && o.products.toLowerCase().includes("dry"))
+    .reduce((sum, o) => sum + getOrderQty(o.products, "dry"), 0);
+
+  const totalOrderPowder = orderRegistry
+    .filter(o => o && o.status && (o.status === 'Approved' || o.status === 'Delivered') && o.products && o.products.toLowerCase().includes("powder"))
+    .reduce((sum, o) => sum + getOrderQty(o.products, "powder"), 0);
+
+  const totalOrderKhakhra = orderRegistry
+    .filter(o => o && o.status && (o.status === 'Approved' || o.status === 'Delivered') && o.products && o.products.toLowerCase().includes("khakhra"))
+    .reduce((sum, o) => sum + getOrderQty(o.products, "khakhra"), 0);
+
+  const totalOrderPapad = orderRegistry
+    .filter(o => o && o.status && (o.status === 'Approved' || o.status === 'Delivered') && o.products && o.products.toLowerCase().includes("papad"))
+    .reduce((sum, o) => sum + getOrderQty(o.products, "papad"), 0);
+
+  let calculatedDryStockKg = (totalDailyDryKg + totalBuyDryKg) - (totalOrderDryKg + totalSellDryKg);
+  if (calculatedDryStockKg < 0) calculatedDryStockKg = 0;
+  dryProd.stock = calculatedDryStockKg;
+
+  let calculatedPowderStock = ((calculatedDryStockKg + totalBuyPowderKg) * 10 - totalOrderPowder - totalSellPowder) / 10;
+  if (calculatedPowderStock < 0) calculatedPowderStock = 0;
+  powderProd.stock = calculatedPowderStock;
+
+  let calculatedKhakhraStock = totalBuyKhakhraPackets - (totalOrderKhakhra + totalSellKhakhra);
+  if (calculatedKhakhraStock < 0) calculatedKhakhraStock = 0;
+  khakhraProd.stock = calculatedKhakhraStock;
 
   let calculatedPapadStock = totalBuyPapadPackets - (totalOrderPapad + totalSellPapad);
   if (calculatedPapadStock < 0) calculatedPapadStock = 0;
@@ -1100,43 +1123,7 @@ function renderAdminLiveStockSummary() {
   `;
 }
 
-// Helper function to extract ordered quantity from product string (e.g., "[x5]")
-  function getOrderQty(productsText, keyword) {
-    try {
-      let total = 0;
-      const parts = productsText.split(',');
-      parts.forEach(part => {
-        if (part.toLowerCase().includes(keyword)) {
-          const match = part.match(/\[x(\d+)\]/);
-          if (match && match[1]) {
-            total += parseInt(match[1], 10);
-          } else {
-            total += 1;
-          }
-        }
-      });
-      return total;
-    } catch(e) {
-      return 1;
-    }
-  }
 
-  const totalOrderDryKg = orderRegistry
-    .filter(o => o && o.status && (o.status === 'Approved' || o.status === 'Delivered') && o.products && o.products.toLowerCase().includes("dry"))
-    .reduce((sum, o) => sum + getOrderQty(o.products, "dry"), 0);
-
-  const totalOrderPowder = orderRegistry
-    .filter(o => o && o.status && (o.status === 'Approved' || o.status === 'Delivered') && o.products && o.products.toLowerCase().includes("powder"))
-    .reduce((sum, o) => sum + getOrderQty(o.products, "powder"), 0);
-
-  const totalOrderKhakhra = orderRegistry
-    .filter(o => o && o.status && (o.status === 'Approved' || o.status === 'Delivered') && o.products && o.products.toLowerCase().includes("khakhra"))
-    .reduce((sum, o) => sum + getOrderQty(o.products, "khakhra"), 0);
-
-  const totalOrderPapad = orderRegistry
-    .filter(o => o && o.status && (o.status === 'Approved' || o.status === 'Delivered') && o.products && o.products.toLowerCase().includes("papad"))
-    .reduce((sum, o) => sum + getOrderQty(o.products, "papad"), 0);
-    
 async function saveDailyDryStockEntry(e) {
   e.preventDefault();
   const rawDate = document.getElementById("dryLogDate").value;

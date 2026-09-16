@@ -3052,12 +3052,24 @@ async function saveAdminExpense(e) {
   e.preventDefault();
   const rawDate = document.getElementById("expLogDate").value;
   const amountVal = parseFloat(document.getElementById("expAmount").value);
+  const payerType = document.getElementById("expPayer").value;
+
+  // 🛑 Agar Payer 'Farm' hai toh check karo ki Farm Available Balance utna hai ya nahi
+  if (payerType === "Farm") {
+    const currentBalanceText = document.getElementById("ovFarmAvailableBalance")?.textContent || "Rs 0";
+    const currentFarmBalance = parseFloat(currentBalanceText.replace(/[^0-9.-]+/g, "")) || 0;
+
+    if (amountVal > currentFarmBalance) {
+      alert(`❌ Farm Account me utne pese nahi hain!\n\n• Current Farm Balance: Rs ${currentFarmBalance.toFixed(2)}\n• Expense Amount: Rs ${amountVal.toFixed(2)}\n\nKripya pehle income ya deposit add karein.`);
+      return;
+    }
+  }
 
   const dbData = {
     exp_id: "EXP-" + Date.now().toString().slice(-4),
     date: rawDate ? new Date(rawDate).toLocaleDateString('en-IN') : new Date().toLocaleDateString('en-IN'),
     category: document.getElementById("expCategory").value,
-    payer: document.getElementById("expPayer").value,
+    payer: payerType,
     mode: document.getElementById("expMode").value,
     desc: document.getElementById("expDesc").value.trim(),
     amount: amountVal,
@@ -3075,7 +3087,7 @@ async function saveAdminExpense(e) {
   e.target.reset();
   initDefaultDatePickers();
   computeFinancialLedgerStatements();
-  alert(`✅ Data cloud me save ho gaya hai! Expense Amount: Rs ${amountVal}`);
+  alert(`✅ Expense successfully saved! Amount: Rs ${amountVal}`);
 }
 
 async function saveAdminSale(e) {
@@ -3087,6 +3099,29 @@ async function saveAdminSale(e) {
   const paid = parseFloat(document.getElementById("salePaidAmount").value) || 0;
   const notes = document.getElementById("saleNotes") ? document.getElementById("saleNotes").value.trim() : "";
   const prodType = document.getElementById("saleProduct").value;
+
+  // 🛑 Stock Availability Check
+  let availableStock = 99999;
+  let stockUnitName = "units";
+
+  if (prodType === "Dry") {
+    availableStock = products.find(p => p.type === "dry")?.stock || 0;
+    stockUnitName = "kg";
+  } else if (prodType === "Powder") {
+    availableStock = (products.find(p => p.type === "powder")?.stock || 0) * 10;
+    stockUnitName = "packets";
+  } else if (prodType === "Khakhra") {
+    availableStock = products.find(p => p.type === "khakhra")?.stock || 0;
+    stockUnitName = "packs";
+  } else if (prodType === "Papad") {
+    availableStock = products.find(p => p.type === "papad")?.stock || 0;
+    stockUnitName = "packs";
+  }
+
+  if (qty > availableStock) {
+    alert(`❌ Stock me utna item available nahi hai!\n\n• Requested Qty: ${qty} ${stockUnitName}\n• Available Stock: ${availableStock.toFixed(2)} ${stockUnitName}\n\nKripya pehle stock add karein.`);
+    return;
+  }
 
   const subtotal = qty * rate;
   const grandTotal = subtotal + delivery;
@@ -3121,7 +3156,7 @@ async function saveAdminSale(e) {
   initDefaultDatePickers();
   computeFinancialLedgerStatements();
   renderAdminLiveStockSummary();
-  alert(`✅ Data cloud me save ho gaya hai! Wholesale Sale Total: Rs ${grandTotal}`);
+  alert(`✅ Wholesale Sale successfully saved! Total: Rs ${grandTotal}`);
 }
 
 async function saveAdminPurchase(e) {
@@ -3133,9 +3168,20 @@ async function saveAdminPurchase(e) {
   const subtotal = qty * rate;
   const grandTotal = subtotal + delivery;
   const paid = parseFloat(document.getElementById("purPaidAmount").value) || grandTotal;
+  const funder = document.getElementById("purFunder").value;
+
+  // 🛑 Agar Funder 'Farm' hai toh check karo ki Farm Balance available hai ya nahi
+  if (funder === "Farm") {
+    const currentBalanceText = document.getElementById("ovFarmAvailableBalance")?.textContent || "Rs 0";
+    const currentFarmBalance = parseFloat(currentBalanceText.replace(/[^0-9.-]+/g, "")) || 0;
+
+    if (paid > currentFarmBalance) {
+      alert(`❌ Farm Account me purchase/buy ke liye utne pese nahi hain!\n\n• Current Farm Balance: Rs ${currentFarmBalance.toFixed(2)}\n• Required Paid Amount: Rs ${paid.toFixed(2)}`);
+      return;
+    }
+  }
 
   const purType = document.getElementById("purProduct").value;
-  const funder = document.getElementById("purFunder").value;
   const vendor = document.getElementById("purVendor").value.trim();
   const vendorPhoneInput = document.getElementById("purVendorPhone") ? document.getElementById("purVendorPhone").value.trim() : "";
   const notes = document.getElementById("purNotes") ? document.getElementById("purNotes").value.trim() : "";
@@ -3168,7 +3214,7 @@ async function saveAdminPurchase(e) {
   initDefaultDatePickers();
   computeFinancialLedgerStatements();
   renderAdminLiveStockSummary();
-  alert(`✅ Data cloud me save ho gaya hai! Purchase Total: Rs ${grandTotal}`);
+  alert(`✅ Purchase successfully saved! Total: Rs ${grandTotal}`);
 }
 
 async function saveAdminDamage(e) {

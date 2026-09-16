@@ -4621,11 +4621,19 @@ function renderUserAnnouncementBanner() {
   }
 }
 
-function renderAdminAnnouncementPanel() {
+async function renderAdminAnnouncementPanel() {
   const displayEl = document.getElementById("adminCurrentActiveAnnouncementDisplay");
   const inputEl = document.getElementById("adminAnnouncementInput");
   const expiryInputEl = document.getElementById("adminAnnouncementExpiryInput");
   if (!displayEl) return;
+
+  // Pehle Supabase se fetch karne ki koshish karein, agar wahan hoga toh update ho jayega
+  try {
+    const { data: cloudAnnounce } = await _supabase.from('pgf_announcements').select('*').eq('id', 'ANN-1').single();
+    if (cloudAnnounce && cloudAnnounce.message) {
+      localStorage.setItem('pgf_active_announcement', JSON.stringify(cloudAnnounce));
+    }
+  } catch (err) {}
 
   const savedData = JSON.parse(localStorage.getItem('pgf_active_announcement'));
   const activeMsg = savedData ? savedData.message : "";
@@ -4658,21 +4666,26 @@ async function saveAdminAnnouncement(e) {
   currentAnnouncementData = {
     id: "ANN-1",
     message: msg,
-    expiry: expiryVal, // Expiry date & time save ho raha hai
+    expiry: expiryVal,
     updated_at: new Date().toLocaleDateString('en-IN') + " " + new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true })
   };
 
+  // 1. Sabse pehle LocalStorage me save karein taaki turant dikhne lage
   localStorage.setItem('pgf_active_announcement', JSON.stringify(currentAnnouncementData));
 
+  // 2. Phir Supabase me bhejne ki koshish karein
   try {
-    await _supabase.from('pgf_announcements').upsert([currentAnnouncementData]);
+    const { error } = await _supabase.from('pgf_announcements').upsert([currentAnnouncementData]);
+    if (error) {
+      console.log("Supabase upsert warning: ", error.message);
+    }
   } catch (err) {
-    console.log("Cloud sync fallback to local:", err);
+    console.log("Cloud sync error, running locally:", err);
   }
 
   renderAdminAnnouncementPanel();
   renderUserAnnouncementBanner();
-  alert("✅ Announcement successfully published to User Dashboard!");
+  alert("✅ Announcement successfully published!");
 }
 
 async function clearAdminAnnouncement() {

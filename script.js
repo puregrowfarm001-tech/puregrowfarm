@@ -48,6 +48,7 @@ let salesRegistry = getCleanData('pgf_sales');
 let purchasesRegistry = getCleanData('pgf_purchases');
 let dailyDryStockRegistry = getCleanData('pgf_daily_dry_stock');
 let notificationsRegistry = getCleanData('pgf_notifications');
+let adminBuyersRegistry = getCleanData('pgf_admin_buyers');
 
 let currentUser = JSON.parse(localStorage.getItem('pgf_session')) || null;
 
@@ -4248,11 +4249,7 @@ async function handleVerifyOtpAndChangePassword(e) {
 }
 
 // --- Admin Manager Sub-Tabs Switcher ---
-function switchAdminSubTab(subTabId, btnId) {
-  document.querySelectorAll('.admin-sub-section').forEach(sec => sec.style.display = 'none');
-  document.getElementById(subTabId).style.display = 'block';
-
-  ['btnAdminTab1', 'btnAdminTab2', 'btnAdminTab3'].forEach(id => {
+['btnAdminTab1', 'btnAdminTab2', 'btnAdminTab3', 'btnAdminTab4'].forEach(id => {
     const b = document.getElementById(id);
     if (b) b.style.background = 'var(--muted)';
   });
@@ -4261,8 +4258,10 @@ function switchAdminSubTab(subTabId, btnId) {
 
   if (subTabId === 'adminSubTabAccount') {
     renderAdminAccountTable();
+  } else if (subTabId === 'adminSubTabBuyer') { // 👇 Yeh condition jodi gayi hai
+    renderAdminBuyerTable();
   }
-}
+
 
 let adminFarmerBookingsRegistry = getCleanData('pgf_admin_farmer_bookings');
 let adminFarmConnectorsRegistry = getCleanData('pgf_admin_farm_connectors');
@@ -4286,6 +4285,15 @@ async function fetchAdminManagerDataFromCloud() {
     }));
     localStorage.setItem('pgf_admin_farm_connectors', JSON.stringify(adminFarmConnectorsRegistry));
   }
+
+  const { data: cloudBuyers } = await _supabase.from('pgf_admin_buyers').select('*');
+  if (cloudBuyers) {
+    adminBuyersRegistry = cloudBuyers.map(b => ({
+      id: b.id, name: b.name, phone: b.phone, address: b.address, date_logged: b.date_logged
+    }));
+    localStorage.setItem('pgf_admin_buyers', JSON.stringify(adminBuyersRegistry));
+  }
+  renderAdminBuyerTable();
 
   renderAdminFarmerBookingTable();
   renderAdminConnectorTable();
@@ -4475,3 +4483,69 @@ function sendSingleWhatsApp(phone, msgId) {
 document.addEventListener("DOMContentLoaded", function() {
   fetchAdminManagerDataFromCloud();
 });
+
+// Save Buyer to Supabase
+async function saveBuyerAdmin(e) {
+  e.preventDefault();
+  const name = document.getElementById("adminBuyerName").value.trim();
+  const phone = document.getElementById("adminBuyerPhone").value.trim();
+  const address = document.getElementById("adminBuyerAddress").value.trim();
+
+  const payload = {
+    id: "BUY-" + Date.now().toString().slice(-4),
+    name: name,
+    phone: phone,
+    address: address,
+    date_logged: new Date().toLocaleDateString('en-IN')
+  };
+
+  const { error } = await _supabase.from('pgf_admin_buyers').insert([payload]);
+  if (error) {
+    alert("❌ Supabase Error: " + error.message);
+    return;
+  }
+
+  adminBuyersRegistry.unshift(payload);
+  localStorage.setItem('pgf_admin_buyers', JSON.stringify(adminBuyersRegistry));
+
+  e.target.reset();
+  renderAdminBuyerTable();
+  alert("✅ Buyer saved successfully to Supabase!");
+}
+
+function renderAdminBuyerTable() {
+  const tbody = document.getElementById("adminBuyerTableBody");
+  if (!tbody) return;
+
+  if (!adminBuyersRegistry.length) {
+    tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:var(--muted); padding:15px;">No buyers added yet.</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = adminBuyersRegistry.map((item, idx) => `
+    <tr>
+      <td><strong>${item.name}</strong></td>
+      <td>
+        <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+          <a href="tel:${item.phone}" class="call-link" style="font-weight:bold;">📞 ${item.phone}</a>
+          <button type="button" class="btn" style="padding:4px 10px; font-size:11px; min-height:auto; background:#25d366; border-radius:999px; font-weight:bold; box-shadow:0 2px 4px rgba(0,0,0,0.1);" onclick="sendSingleWhatsApp('${item.phone}', 'buyerCommonMsg')">💬 WhatsApp</button>
+        </div>
+      </td>
+      <td><small>${item.address}</small></td>
+      <td>
+        <button type="button" class="btn" style="padding:4px 8px; font-size:11px; background:var(--danger);" onclick="deleteAdminBuyer(${idx})">🗑️ Delete</button>
+      </td>
+    </tr>
+  `).join("");
+}
+
+async function deleteAdminBuyer(idx) {
+  const item = adminBuyersRegistry[idx];
+  if (!item) return;
+  if (confirm("Delete this buyer record?")) {
+    await _supabase.from('pgf_admin_buyers').delete().eq('id', item.id);
+    adminBuyersRegistry.splice(idx, 1);
+    localStorage.setItem('pgf_admin_buyers', JSON.stringify(adminBuyersRegistry));
+    renderAdminBuyerTable();
+  }
+}

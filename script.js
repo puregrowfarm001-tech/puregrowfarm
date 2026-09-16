@@ -4579,11 +4579,9 @@ async function deleteAdminBuyer(idx) {
 
 // --- Farm Announcement Global Functions ---
 function renderUserAnnouncementBanner() {
-  // Public / Home page banner
   const pubBanner = document.getElementById("publicAdminAnnouncementBanner");
   const pubTextEl = document.getElementById("publicAnnouncementTextContent");
   
-  // Logged-in Dashboard banner
   const dashBanner = document.getElementById("userAdminAnnouncementBanner");
   const dashTextEl = document.getElementById("userAnnouncementTextContent");
 
@@ -4595,28 +4593,44 @@ function renderUserAnnouncementBanner() {
   }
 
   const activeMsg = savedData.message;
-  const expiryDateTime = savedData.expiry || ""; // Agar date & time diya hoga toh yahan aayega
+  const expiryDateTime = savedData.expiry || ""; 
 
-  // 🕒 Expiry validation check
+  let timeRemainingText = "";
+
   if (expiryDateTime && expiryDateTime.trim() !== "") {
     const now = new Date().getTime();
     const expiryTime = new Date(expiryDateTime).getTime();
+    const diff = expiryTime - now;
 
-    // Agar current time expiry time se zyada ho gaya hai, toh announcement hide kar do
-    if (now > expiryTime) {
+    // Agar time khatam ho chuka hai, toh announcement hide kar do
+    if (diff <= 0) {
       if (pubBanner) pubBanner.style.display = "none";
       if (dashBanner) dashBanner.style.display = "none";
       return;
     }
+
+    // Remaining Days, Hours, Minutes calculate karna
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+
+    let timeParts = [];
+    if (days > 0) timeParts.push(`${days} din`);
+    if (hours > 0) timeParts.push(`${hours} ghante`);
+    if (minutes > 0 || timeParts.length === 0) timeParts.push(`${minutes} minute`);
+
+    timeRemainingText = ` <br><small style="color:#d97706; font-weight:bold; display:inline-block; margin-top:4px;">⏳ Yeh announcement ${timeParts.join(' ')} baad hat jayegi (Expiry: ${new Date(expiryDateTime).toLocaleString()})</small>`;
   }
 
-  // Agar date/time nahi dala hai, ya expiry time nahi hua hai, toh show karega
+  // Final HTML message render karna jisme remaining time bhi dikhega
+  const fullHtmlContent = `${activeMsg} ${timeRemainingText}`;
+
   if (pubBanner && pubTextEl) {
-    pubTextEl.textContent = activeMsg;
+    pubTextEl.innerHTML = fullHtmlContent;
     pubBanner.style.display = "block";
   }
   if (dashBanner && dashTextEl) {
-    dashTextEl.textContent = activeMsg;
+    dashTextEl.innerHTML = fullHtmlContent;
     dashBanner.style.display = "block";
   }
 }
@@ -4707,3 +4721,41 @@ document.addEventListener("DOMContentLoaded", function() {
   renderUserAnnouncementBanner();
   renderAdminAnnouncementPanel();
 });
+
+// Har 1 minute me announcement banner ka remaining time check aur update hoga
+setInterval(function() {
+  renderUserAnnouncementBanner();
+}, 60000);
+
+
+// =========================================================
+// 30 SECONDS WEBSITE REFRESH / DATA SYNC (WITH FORM PROTECTION)
+// =========================================================
+setInterval(function() {
+  // Check karein ki kya user abhi kisi form field (input, textarea, select) par focus karke type kar raha hai
+  const activeElement = document.activeElement;
+  const isFillingForm = activeElement && (
+    activeElement.tagName === 'INPUT' || 
+    activeElement.tagName === 'TEXTAREA' || 
+    activeElement.tagName === 'SELECT'
+  );
+
+  // Agar user form fill kar raha hai, toh is device par refresh/sync skip kar do taaki data loss na ho
+  if (isFillingForm) {
+    console.log("Form filling in progress... 30s refresh skipped.");
+    return;
+  }
+
+  // Agar form fill nahi ho raha, toh background me data aur announcements refresh/sync kar lo
+  if (typeof backgroundDataSync === 'function') {
+    backgroundDataSync();
+  }
+  if (typeof renderUserAnnouncementBanner === 'function') {
+    renderUserAnnouncementBanner();
+  }
+
+  // NOTE: Agar aap chahte hain ki poora page hi completely reload (hard refresh) ho jaye, 
+  // toh aap niche wali line ka comment hata sakte hain:
+  // location.reload();
+
+}, 30000); // 30000 milliseconds = 30 Seconds

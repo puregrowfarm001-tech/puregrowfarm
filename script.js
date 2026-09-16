@@ -4637,3 +4637,7 @@ async function clearAdminAnnouncement() {
     alert("✅ Announcement cleared successfully!");
   }
 }
+
+document.addEventListener("DOMContentLoaded", function() {
+  renderUserAnnouncementBanner();
+});

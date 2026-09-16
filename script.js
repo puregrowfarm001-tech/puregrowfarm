@@ -4589,6 +4589,121 @@ function getCleanAnnouncements() {
   }
 }
 
+// 1. Supabase se Database se Announcements Fetch karne ka function
+async function fetchAnnouncementsFromCloud() {
+  if (!_supabase) return;
+  try {
+    const { data, error } = await _supabase.from('pgf_announcements').select('*');
+    if (!error && data && data.length > 0) {
+      let combinedList = [];
+      data.forEach(row => {
+        if (row.announcements_data && Array.isArray(row.announcements_data)) {
+          combinedList.push(...row.announcements_data);
+        } else if (row.message) {
+          combinedList.push(row);
+        }
+      });
+      if (combinedList.length > 0) {
+        localStorage.setItem('pgf_multiple_announcements', JSON.stringify(combinedList));
+      }
+    }
+  } catch (err) {
+    console.log("Fetch announcements note:", err);
+  }
+  renderUserAnnouncementBanner();
+  renderAdminAnnouncementPanel();
+}
+
+// 2. Admin Panel se Supabase me Save karne ka function
+async function saveAdminAnnouncement(e) {
+  e.preventDefault();
+  const msg = document.getElementById("adminAnnouncementInput").value.trim();
+  const expiryVal = document.getElementById("adminAnnouncementExpiryInput") ? document.getElementById("adminAnnouncementExpiryInput").value : "";
+  if (!msg) return;
+
+  const announcementId = "ANN-" + Date.now();
+  const newAnnounce = {
+    id: announcementId,
+    message: msg,
+    expiry: expiryVal,
+    dateAdded: new Date().toLocaleDateString('en-IN') + " " + new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true })
+  };
+
+  // Supabase Database me Insert karein
+  const { error } = await _supabase.from('pgf_announcements').insert([{
+    id: announcementId,
+    message: msg,
+    expiry: expiryVal,
+    date_added: newAnnounce.dateAdded,
+    announcements_data: [newAnnounce]
+  }]);
+
+  if (error) {
+    alert("❌ Supabase Save Error: " + error.message);
+    return;
+  }
+
+  // Local storage bhi update karein
+  const announcements = getCleanAnnouncements();
+  announcements.unshift(newAnnounce);
+  localStorage.setItem('pgf_multiple_announcements', JSON.stringify(announcements));
+
+  renderAdminAnnouncementPanel();
+  renderUserAnnouncementBanner();
+  alert("✅ Announcement successfully saved to Supabase Database & Published to Admin/Users!");
+}
+
+// 3. Admin Panel me list show karne ka function
+function renderAdminAnnouncementPanel() {
+  const container = document.getElementById("adminMultipleAnnouncementsContainer");
+  const inputEl = document.getElementById("adminAnnouncementInput");
+  const expiryInputEl = document.getElementById("adminAnnouncementExpiryInput");
+  if (!container) return;
+
+  const announcements = getCleanAnnouncements();
+
+  if (announcements.length === 0) {
+    container.innerHTML = `<p class="muted" style="font-size:13px; font-style:italic;">No active announcements published yet.</p>`;
+    return;
+  }
+
+  container.innerHTML = announcements.map((item, index) => {
+    let expiryLabel = item.expiry ? `⏳ Expiry: ${new Date(item.expiry).toLocaleString()}` : `♾️ Active until manual delete`;
+    return `
+      <div style="background:#fff; border:1px solid var(--line); border-radius:8px; padding:12px; display:flex; justify-content:space-between; align-items:center; gap:10px;">
+        <div style="flex:1;">
+          <strong style="font-size:14px; color:#1e293b; display:block;">${item.message}</strong>
+          <small style="color:#64748b; display:block; margin-top:3px;">${expiryLabel} | Added: ${item.dateAdded || 'N/A'}</small>
+        </div>
+        <button type="button" class="btn" style="background:var(--danger); padding:6px 12px; font-size:12px; min-height:auto;" onclick="deleteAdminSingleAnnouncement('${item.id}', ${index})">🗑️ Delete</button>
+      </div>
+    `;
+  }).join("");
+
+  if (inputEl) inputEl.value = "";
+  if (expiryInputEl) expiryInputEl.value = "";
+}
+
+// 4. Supabase aur Local Storage se Delete karne ka function
+async function deleteAdminSingleAnnouncement(annId, index) {
+  if (confirm("Kya aap is announcement ko database se delete karna chahte hain?")) {
+    // Supabase se delete karein
+    const { error } = await _supabase.from('pgf_announcements').delete().eq('id', annId);
+    
+    if (error) {
+      console.log("Delete error notes:", error.message);
+    }
+
+    const announcements = getCleanAnnouncements();
+    announcements.splice(index, 1);
+    localStorage.setItem('pgf_multiple_announcements', JSON.stringify(announcements));
+
+    renderAdminAnnouncementPanel();
+    renderUserAnnouncementBanner();
+    alert("✅ Announcement successfully deleted from Supabase database!");
+  }
+}
+
 function renderUserAnnouncementBanner() {
   const pubBanner = document.getElementById("publicAdminAnnouncementBanner");
   const pubListContainer = document.getElementById("publicAnnouncementListContainer");
@@ -4755,12 +4870,49 @@ async function deleteAdminSingleAnnouncement(index) {
 }
 
 function clearAdminAnnouncement() {
-  if (confirm("Clear all active announcements?")) {
+  if (confirm("Clear all announcements?")) {
     localStorage.removeItem('pgf_multiple_announcements');
     renderAdminAnnouncementPanel();
     renderUserAnnouncementBanner();
   }
 }
+
+// 5. User/Public dashboard par live banner show karne ka function
+function renderUserAnnouncementBanner() {
+  const pubBanner = document.getElementById("publicAdminAnnouncementBanner");
+  const pubListContainer = document.getElementById("publicAnnouncementListContainer");
+
+  const announcements = getCleanAnnouncements();
+  const now = new Date().getTime();
+
+  const validAnnouncements = announcements.filter(item => {
+    if (!item.expiry || item.expiry.trim() === "") return true; 
+    const expiryTime = new Date(item.expiry).getTime();
+    return now <= expiryTime; 
+  });
+
+  if (validAnnouncements.length === 0) {
+    if (pubBanner) pubBanner.style.display = "none";
+    return;
+  }
+
+  const htmlContent = validAnnouncements.map(item => `
+    <div style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px 12px; font-size: 13.5px; color: #1e293b; line-height: 1.4; margin-bottom: 6px;">
+      <div>${item.message}</div>
+      <small style="color:#d97706; font-weight:bold;">Added: ${item.dateAdded || 'Recent'}</small>
+    </div>
+  `).join("");
+
+  if (pubBanner && pubListContainer) {
+    pubListContainer.innerHTML = htmlContent;
+    pubBanner.style.display = "block";
+  }
+}
+
+// Page load hone par Supabase se data fetch karne ke liye call lagayein:
+document.addEventListener("DOMContentLoaded", function() {
+  fetchAnnouncementsFromCloud();
+});
 
 // ⏱️ Har 1 Second me Multiple Announcements ke Seconds countdown live update honge
 setInterval(function() {

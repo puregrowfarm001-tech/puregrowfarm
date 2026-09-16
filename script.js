@@ -1100,6 +1100,43 @@ function renderAdminLiveStockSummary() {
   `;
 }
 
+// Helper function to extract ordered quantity from product string (e.g., "[x5]")
+  function getOrderQty(productsText, keyword) {
+    try {
+      let total = 0;
+      const parts = productsText.split(',');
+      parts.forEach(part => {
+        if (part.toLowerCase().includes(keyword)) {
+          const match = part.match(/\[x(\d+)\]/);
+          if (match && match[1]) {
+            total += parseInt(match[1], 10);
+          } else {
+            total += 1;
+          }
+        }
+      });
+      return total;
+    } catch(e) {
+      return 1;
+    }
+  }
+
+  const totalOrderDryKg = orderRegistry
+    .filter(o => o && o.status && (o.status === 'Approved' || o.status === 'Delivered') && o.products && o.products.toLowerCase().includes("dry"))
+    .reduce((sum, o) => sum + getOrderQty(o.products, "dry"), 0);
+
+  const totalOrderPowder = orderRegistry
+    .filter(o => o && o.status && (o.status === 'Approved' || o.status === 'Delivered') && o.products && o.products.toLowerCase().includes("powder"))
+    .reduce((sum, o) => sum + getOrderQty(o.products, "powder"), 0);
+
+  const totalOrderKhakhra = orderRegistry
+    .filter(o => o && o.status && (o.status === 'Approved' || o.status === 'Delivered') && o.products && o.products.toLowerCase().includes("khakhra"))
+    .reduce((sum, o) => sum + getOrderQty(o.products, "khakhra"), 0);
+
+  const totalOrderPapad = orderRegistry
+    .filter(o => o && o.status && (o.status === 'Approved' || o.status === 'Delivered') && o.products && o.products.toLowerCase().includes("papad"))
+    .reduce((sum, o) => sum + getOrderQty(o.products, "papad"), 0);
+    
 async function saveDailyDryStockEntry(e) {
   e.preventDefault();
   const rawDate = document.getElementById("dryLogDate").value;

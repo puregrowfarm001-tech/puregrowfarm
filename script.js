@@ -4589,7 +4589,7 @@ function getCleanAnnouncements() {
   }
 }
 
-// 1. Supabase se Database se Announcements Fetch karne ka function
+// 1. Fetch announcements with expiry check
 async function fetchAnnouncementsFromCloud() {
   if (!_supabase) return;
   try {
@@ -4614,27 +4614,29 @@ async function fetchAnnouncementsFromCloud() {
   renderAdminAnnouncementPanel();
 }
 
-// 2. Admin Panel se Supabase me Save karne ka function
+// 2. Save Announcement with expiry data
 async function saveAdminAnnouncement(e) {
   e.preventDefault();
   const msg = document.getElementById("adminAnnouncementInput").value.trim();
   const expiryVal = document.getElementById("adminAnnouncementExpiryInput") ? document.getElementById("adminAnnouncementExpiryInput").value : "";
+  
   if (!msg) return;
+  if (!expiryVal) {
+    alert("⚠️ Kripya Expiry Date & Time zaroor select karein, taaki announcement time par khatam ho sake!");
+    return;
+  }
 
   const announcementId = "ANN-" + Date.now();
   const newAnnounce = {
     id: announcementId,
     message: msg,
-    expiry: expiryVal,
-    dateAdded: new Date().toLocaleDateString('en-IN') + " " + new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true })
+    expiry: expiryVal
   };
 
-  // Supabase Database me Insert karein
   const { error } = await _supabase.from('pgf_announcements').insert([{
     id: announcementId,
     message: msg,
     expiry: expiryVal,
-    date_added: newAnnounce.dateAdded,
     announcements_data: [newAnnounce]
   }]);
 
@@ -4643,17 +4645,16 @@ async function saveAdminAnnouncement(e) {
     return;
   }
 
-  // Local storage bhi update karein
   const announcements = getCleanAnnouncements();
   announcements.unshift(newAnnounce);
   localStorage.setItem('pgf_multiple_announcements', JSON.stringify(announcements));
 
   renderAdminAnnouncementPanel();
   renderUserAnnouncementBanner();
-  alert("✅ Announcement successfully saved to Supabase Database & Published to Admin/Users!");
+  alert("✅ Announcement successfully saved with Expiry Timer!");
 }
 
-// 3. Admin Panel me list show karne ka function (Date/Time Removed)
+// 3. Admin Panel List View
 function renderAdminAnnouncementPanel() {
   const container = document.getElementById("adminMultipleAnnouncementsContainer");
   const inputEl = document.getElementById("adminAnnouncementInput");
@@ -4668,10 +4669,12 @@ function renderAdminAnnouncementPanel() {
   }
 
   container.innerHTML = announcements.map((item, index) => {
+    let expiryLabel = item.expiry ? `⏳ Expiry: ${new Date(item.expiry).toLocaleString()}` : `♾️ No Expiry set`;
     return `
       <div style="background:#fff; border:1px solid var(--line); border-radius:8px; padding:12px; display:flex; justify-content:space-between; align-items:center; gap:10px;">
         <div style="flex:1;">
           <strong style="font-size:14px; color:#1e293b; display:block;">${item.message}</strong>
+          <small style="color:#d97706; display:block; margin-top:3px;">${expiryLabel}</small>
         </div>
         <button type="button" class="btn" style="background:var(--danger); padding:6px 12px; font-size:12px; min-height:auto;" onclick="deleteAdminSingleAnnouncement('${item.id}', ${index})">🗑️ Delete</button>
       </div>
@@ -4681,25 +4684,58 @@ function renderAdminAnnouncementPanel() {
   if (inputEl) inputEl.value = "";
   if (expiryInputEl) expiryInputEl.value = "";
 }
-// 4. Supabase aur Local Storage se Delete karne ka function
-async function deleteAdminSingleAnnouncement(annId, index) {
-  if (confirm("Kya aap is announcement ko database se delete karna chahte hain?")) {
-    // Supabase se delete karein
-    const { error } = await _supabase.from('pgf_announcements').delete().eq('id', annId);
-    
-    if (error) {
-      console.log("Delete error notes:", error.message);
+
+// 4. User/Public Dashboard Banner with Second-Wise Live Countdown & Auto-Hide
+function renderUserAnnouncementBanner() {
+  const pubBanner = document.getElementById("publicAdminAnnouncementBanner");
+  const pubListContainer = document.getElementById("publicAnnouncementListContainer");
+
+  const announcements = getCleanAnnouncements();
+  const now = new Date().getTime();
+
+  // Sirf wahi announcements filter honi chahiye jinki expiry abhi bachi ho
+  const validAnnouncements = announcements.filter(item => {
+    if (!item.expiry || item.expiry.trim() === "") return false; // Bina expiry wali show nahi hogi
+    const expiryTime = new Date(item.expiry).getTime();
+    return now <= expiryTime; 
+  });
+
+  if (validAnnouncements.length === 0) {
+    if (pubBanner) pubBanner.style.display = "none";
+    return;
+  }
+
+  const htmlContent = validAnnouncements.map(item => {
+    const expiryTime = new Date(item.expiry).getTime();
+    const diff = expiryTime - now;
+
+    let timeParts = [];
+    if (diff > 0) {
+      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+      if (days > 0) timeParts.push(`${days}d`);
+      if (hours > 0 || days > 0) timeParts.push(`${hours}h`);
+      timeParts.push(`${minutes}m`);
+      timeParts.push(`${seconds}s`);
     }
 
-    const announcements = getCleanAnnouncements();
-    announcements.splice(index, 1);
-    localStorage.setItem('pgf_multiple_announcements', JSON.stringify(announcements));
+    return `
+      <div style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px 12px; font-size: 13.5px; color: #1e293b; line-height: 1.4; margin-bottom: 6px;">
+        <div>${item.message}</div>
+        <div style="color:#d97706; font-weight:bold; font-size:12px; margin-top:3px;">⏳ Khatam hone me bacha samay: ${timeParts.join(' ')}</div>
+      </div>
+    `;
+  }).join("");
 
-    renderAdminAnnouncementPanel();
-    renderUserAnnouncementBanner();
-    alert("✅ Announcement successfully deleted from Supabase database!");
+  if (pubBanner && pubListContainer) {
+    pubListContainer.innerHTML = htmlContent;
+    pubBanner.style.display = "block";
   }
 }
+
 
 function renderUserAnnouncementBanner() {
   const pubBanner = document.getElementById("publicAdminAnnouncementBanner");

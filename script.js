@@ -4589,11 +4589,12 @@ function getCleanAnnouncements() {
   }
 }
 
-// 1. Supabase se Announcements Fetch karne ka function
+// 1. Supabase se Multiple Announcements Safe Fetch karne ka function
 async function fetchAnnouncementsFromCloud() {
   if (!_supabase) return;
   try {
-    const { data, error } = await _supabase.from('pgf_announcements').select('*').eq('id', 'ALL_LIST').single();
+    const { data, error } = await _supabase.from('pgf_announcements').select('*').eq('id', 'ALL_LIST').maybeSingle();
+    
     if (!error && data && data.announcements_data) {
       if (Array.isArray(data.announcements_data)) {
         localStorage.setItem('pgf_multiple_announcements', JSON.stringify(data.announcements_data));
@@ -4606,7 +4607,7 @@ async function fetchAnnouncementsFromCloud() {
   renderAdminAnnouncementPanel();
 }
 
-// 2. Save Announcement with Expiry (406 Error Fixed using JSONB Upsert)
+// 2. Multiple Announcement Save karne ka function (Purani list delete nahi hogi, nayi add hogi)
 async function saveAdminAnnouncement(e) {
   e.preventDefault();
   const msg = document.getElementById("adminAnnouncementInput").value.trim();
@@ -4618,6 +4619,7 @@ async function saveAdminAnnouncement(e) {
     return;
   }
 
+  // Pehle se stored purani announcements ki list nikalein
   const announcements = getCleanAnnouncements();
 
   const newAnnounce = {
@@ -4627,10 +4629,11 @@ async function saveAdminAnnouncement(e) {
     dateAdded: new Date().toLocaleDateString('en-IN')
   };
 
+  // Nayi announcement ko list ke shuru me add karein (Multiple support)
   announcements.unshift(newAnnounce);
   localStorage.setItem('pgf_multiple_announcements', JSON.stringify(announcements));
 
-  // Supabase me 406 error se bachne ke liye upsert with JSONB use kiya gaya hai
+  // Supabase me poori list ko ek sath upsert kar dein
   try {
     await _supabase.from('pgf_announcements').upsert([
       { id: 'ALL_LIST', announcements_data: announcements }
@@ -4641,11 +4644,15 @@ async function saveAdminAnnouncement(e) {
 
   renderAdminAnnouncementPanel();
   renderUserAnnouncementBanner();
-  e.target.reset();
-  alert("✅ Announcement successfully saved to Supabase & Published with Expiry Time!");
+  
+  // Input fields reset karein taaki aur bhi nayi add kar sakein
+  document.getElementById("adminAnnouncementInput").value = "";
+  if(document.getElementById("adminAnnouncementExpiryInput")) document.getElementById("adminAnnouncementExpiryInput").value = "";
+  
+  alert("✅ Nayi Announcement successfully add ho gayi hai! (Multiple Announcements Active)");
 }
 
-// 3. Admin Panel List View (Date & Time show hogi)
+// 3. Admin Panel List View (Sari announcements line se dikhengi)
 function renderAdminAnnouncementPanel() {
   const container = document.getElementById("adminMultipleAnnouncementsContainer");
   if (!container) return;
@@ -4674,12 +4681,12 @@ function renderAdminAnnouncementPanel() {
   }).join("");
 }
 
-// 4. Delete Announcement from Supabase & LocalStorage
+// 4. Single Announcement Delete from Multiple List
 async function deleteAdminSingleAnnouncement(index) {
   const announcements = getCleanAnnouncements();
   if (index < 0 || index >= announcements.length) return;
 
-  if (confirm("Kya aap is announcement ko delete karna chahte hain?")) {
+  if (confirm("Kya aap is specific announcement ko delete karna chahte hain?")) {
     announcements.splice(index, 1);
     localStorage.setItem('pgf_multiple_announcements', JSON.stringify(announcements));
 
@@ -4694,71 +4701,6 @@ async function deleteAdminSingleAnnouncement(index) {
     alert("✅ Announcement successfully deleted!");
   }
 }
-
-// User/Public Dashboard Banner with Set Expiry Date & Time + Live Second-Wise Countdown
-function renderUserAnnouncementBanner() {
-  const pubBanner = document.getElementById("publicAdminAnnouncementBanner");
-  const pubListContainer = document.getElementById("publicAnnouncementListContainer");
-
-  const announcements = getCleanAnnouncements();
-  const now = new Date().getTime();
-
-  // Sirf wahi announcements filter hongi jinki expiry abhi bachi ho
-  const validAnnouncements = announcements.filter(item => {
-    if (!item.expiry || item.expiry.trim() === "") return false; 
-    const expiryTime = new Date(item.expiry).getTime();
-    return now <= expiryTime; 
-  });
-
-  if (validAnnouncements.length === 0) {
-    if (pubBanner) pubBanner.style.display = "none";
-    return;
-  }
-
-  const htmlContent = validAnnouncements.map(item => {
-    const expiryTime = new Date(item.expiry).getTime();
-    const diff = expiryTime - now;
-
-    let timeParts = [];
-    if (diff > 0) {
-      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-      const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-      const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-
-      if (days > 0) timeParts.push(`${days}d`);
-      if (hours > 0 || days > 0) timeParts.push(`${hours}h`);
-      timeParts.push(`${minutes}m`);
-      timeParts.push(`${seconds}s`);
-    }
-
-    // Date & Time ko readable format me convert karna (e.g. 20 Oct 2026, 04:30 PM)
-    const formattedExpiryDate = new Date(item.expiry).toLocaleString('en-IN', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: true
-    });
-
-    return `
-      <div style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px 12px; font-size: 13.5px; color: #1e293b; line-height: 1.4; margin-bottom: 6px;">
-        <div>${item.message}</div>
-        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px; margin-top: 4px; font-size: 12px;">
-          <span style="color: #64748b;">📅 Expiry Target: <strong>${formattedExpiryDate}</strong></span>
-          <span style="color: #d97706; font-weight: bold;">⏳ Bacha Samay: ${timeParts.join(' ')}</span>
-        </div>
-      </div>
-    `;
-  }).join("");
-
-  if (pubBanner && pubListContainer) {
-    pubListContainer.innerHTML = htmlContent;
-    pubBanner.style.display = "block";
-  }
-}
-
 function renderAdminAnnouncementPanel() {
   const container = document.getElementById("adminMultipleAnnouncementsContainer");
   const inputEl = document.getElementById("adminAnnouncementInput");
@@ -4873,7 +4815,7 @@ function clearAdminAnnouncement() {
   }
 }
 
-// 5. User/Public Dashboard Banner (Live Date & Time + Second-wise Countdown)
+// 5. User/Public Dashboard Banner (Sari valid multiple announcements show hongi)
 function renderUserAnnouncementBanner() {
   const pubBanner = document.getElementById("publicAdminAnnouncementBanner");
   const pubListContainer = document.getElementById("publicAnnouncementListContainer");
@@ -4881,6 +4823,7 @@ function renderUserAnnouncementBanner() {
   const announcements = getCleanAnnouncements();
   const now = new Date().getTime();
 
+  // Sirf wahi announcements dikhengi jinka expiry time abhi baaki hai
   const validAnnouncements = announcements.filter(item => {
     if (!item.expiry || item.expiry.trim() === "") return false; 
     const expiryTime = new Date(item.expiry).getTime();
@@ -4919,7 +4862,7 @@ function renderUserAnnouncementBanner() {
     });
 
     return `
-      <div style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px 12px; font-size: 13.5px; color: #1e293b; line-height: 1.4; margin-bottom: 6px;">
+      <div style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px 12px; font-size: 13.5px; color: #1e293b; line-height: 1.4; margin-bottom: 8px;">
         <div>${item.message}</div>
         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px; margin-top: 4px; font-size: 12px;">
           <span style="color: #64748b;">📅 Expiry Target: <strong>${formattedExpiryDate}</strong></span>
@@ -4935,7 +4878,7 @@ function renderUserAnnouncementBanner() {
   }
 }
 
-// Har 1 Second me banner ko re-render karega taaki live countdown chale
+// Har 1 Second me live countdown update karne ke liye
 setInterval(function() {
   renderUserAnnouncementBanner();
 }, 1000);

@@ -4566,22 +4566,33 @@ async function deleteAdminBuyer(idx) {
   }
 }
 
-// --- Farm Announcement Functions ---
+// --- Farm Announcement Global Functions ---
 function renderUserAnnouncementBanner() {
-  const banner = document.getElementById("userAdminAnnouncementBanner");
-  const textEl = document.getElementById("userAnnouncementTextContent");
+  // Public / Home page banner
+  const pubBanner = document.getElementById("publicAdminAnnouncementBanner");
+  const pubTextEl = document.getElementById("publicAnnouncementTextContent");
   
-  if (!banner || !textEl) return;
+  // Logged-in Dashboard banner
+  const dashBanner = document.getElementById("userAdminAnnouncementBanner");
+  const dashTextEl = document.getElementById("userAnnouncementTextContent");
 
-  // LocalStorage se fresh data fetch karein taaki phone par sync miss na ho
   const savedData = JSON.parse(localStorage.getItem('pgf_active_announcement'));
-  const activeMsg = savedData ? savedData.message : (currentAnnouncementData ? currentAnnouncementData.message : "");
+  const activeMsg = savedData ? savedData.message : "";
 
   if (activeMsg && activeMsg.trim() !== "") {
-    textEl.textContent = activeMsg;
-    banner.style.display = "block"; // Mobile par show karega
+    // Public page par show karega (bina login ke bhi)
+    if (pubBanner && pubTextEl) {
+      pubTextEl.textContent = activeMsg;
+      pubBanner.style.display = "block";
+    }
+    // User dashboard par show karega (login hone par)
+    if (dashBanner && dashTextEl) {
+      dashTextEl.textContent = activeMsg;
+      dashBanner.style.display = "block";
+    }
   } else {
-    banner.style.display = "none";
+    if (pubBanner) pubBanner.style.display = "none";
+    if (dashBanner) dashBanner.style.display = "none";
   }
 }
 
@@ -4590,9 +4601,12 @@ function renderAdminAnnouncementPanel() {
   const inputEl = document.getElementById("adminAnnouncementInput");
   if (!displayEl) return;
 
-  if (currentAnnouncementData && currentAnnouncementData.message && currentAnnouncementData.message.trim() !== "") {
-    displayEl.textContent = currentAnnouncementData.message;
-    if (inputEl) inputEl.value = currentAnnouncementData.message;
+  const savedData = JSON.parse(localStorage.getItem('pgf_active_announcement'));
+  const activeMsg = savedData ? savedData.message : "";
+
+  if (activeMsg && activeMsg.trim() !== "") {
+    displayEl.textContent = activeMsg;
+    if (inputEl) inputEl.value = activeMsg;
   } else {
     displayEl.textContent = "No active announcement published yet.";
     if (inputEl) inputEl.value = "";
@@ -4640,4 +4654,5 @@ async function clearAdminAnnouncement() {
 
 document.addEventListener("DOMContentLoaded", function() {
   renderUserAnnouncementBanner();
+  renderAdminAnnouncementPanel();
 });

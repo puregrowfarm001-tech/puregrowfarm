@@ -4343,25 +4343,36 @@ async function handleUpdateProfile(e) {
   const newName = document.getElementById("editProfileName").value.trim();
   const newPhone = document.getElementById("editProfilePhone").value.trim();
 
-  // Supabase Database me update karein
-  const { error } = await _supabase
-    .from('pgf_users')
-    .update({ name: newName, phone: newPhone })
-    .eq('email', currentUser.email);
+  // 1. Loader chalu karo
+  showPgfLoader("Updating your profile details...");
 
-  if (error) {
-    alert("❌ Profile update karne me error aayi: " + error.message);
-    return;
+  try {
+    // Supabase Database me update karein
+    const { error } = await _supabase
+      .from('pgf_users')
+      .update({ name: newName, phone: newPhone })
+      .eq('email', currentUser.email);
+
+    // 2. Loader bandh karo
+    hidePgfLoader();
+
+    if (error) {
+      alert("❌ Profile update karne me error aayi: " + error.message);
+      return;
+    }
+
+    // Local session update
+    currentUser.name = newName;
+    currentUser.phone = newPhone;
+    localStorage.setItem('pgf_session', JSON.stringify(currentUser));
+
+    closeEditProfileModal();
+    checkUserSession();
+    alert("✅ Profile successfully updated and synced to Supabase cloud!");
+  } catch (err) {
+    hidePgfLoader();
+    alert("❌ Profile update failed. Please check network connection.");
   }
-
-  // Local session update
-  currentUser.name = newName;
-  currentUser.phone = newPhone;
-  localStorage.setItem('pgf_session', JSON.stringify(currentUser));
-
-  closeEditProfileModal();
-  checkUserSession();
-  alert("✅ Profile successfully updated and synced to Supabase cloud!");
 }
 
 // Update Password & Sync to Supabase Database

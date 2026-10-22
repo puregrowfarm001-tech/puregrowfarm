@@ -699,19 +699,32 @@ async function handleVerifyAndReset(e) {
 }
 
 function handleLogout() {
-  currentUser = null;
-  localStorage.removeItem('pgf_session');
-  
-  const ordersModal = document.getElementById("userOrdersModal");
-  if (ordersModal) ordersModal.classList.remove("active-modal");
+  // 1. Loader show karo ane message aapo
+  showPgfLoader("Logging out, please wait...");
 
-  const bookingsModal = document.getElementById("userBookingsModal");
-  if (bookingsModal) bookingsModal.classList.remove("active-modal");
+  // 2. Thodi sec (500ms) no smooth time aapo jethi user ne loading ane blur asar dekhay
+  setTimeout(() => {
+    currentUser = null;
+    localStorage.removeItem('pgf_session');
+    
+    const ordersModal = document.getElementById("userOrdersModal");
+    if (ordersModal) ordersModal.classList.remove("active-modal");
 
-  const filterModal = document.getElementById("adminFilterPopupModal");
-  if (filterModal) filterModal.classList.remove("active-modal");
+    const bookingsModal = document.getElementById("userBookingsModal");
+    if (bookingsModal) bookingsModal.classList.remove("active-modal");
 
-  checkUserSession();
+    const filterModal = document.getElementById("adminFilterPopupModal");
+    if (filterModal) filterModal.classList.remove("active-modal");
+
+    const userProfileDropdown = document.getElementById("userProfileDropdownPanel");
+    if (userProfileDropdown) userProfileDropdown.style.display = "none";
+
+    // Session update karo
+    checkUserSession();
+
+    // 3. Logout thai gaya pachi loader bandh karo
+    hidePgfLoader();
+  }, 500);
 }
 
 function toggleOrderDetailsView(orderId) {
@@ -4798,3 +4811,10 @@ function hidePgfLoader() {
     loader.classList.remove("active-loader");
   }
 }
+
+// Website poori open hote hi loader automatically hide ho jayega
+window.addEventListener('load', function() {
+  setTimeout(() => {
+    hidePgfLoader();
+  }, 400);
+});

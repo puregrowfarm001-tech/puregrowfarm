@@ -470,68 +470,89 @@ async function handleRegister(e) {
     return;
   }
 
-  const { data: existingUser } = await _supabase
-    .from('pgf_users')
-    .select('*')
-    .eq('email', email)
-    .single();
+  showPgfLoader("Creating and syncing your account...");
 
-  if (existingUser) {
-    alert("Is Email ID se account pehle se bana hua hai!");
-    return;
+  try {
+    const { data: existingUser } = await _supabase
+      .from('pgf_users')
+      .select('email')
+      .eq('email', email)
+      .limit(1)
+      .maybeSingle();
+
+    if (existingUser) {
+      hidePgfLoader();
+      alert("Is Email ID se account pehle se bana hua hai!");
+      return;
+    }
+
+    const now = new Date();
+    const currentFormattedDateTime = now.toLocaleDateString('en-IN') + " " + now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+    const newUser = { name, phone, email, password, registered_on: currentFormattedDateTime };
+
+    const { error } = await _supabase.from('pgf_users').insert([newUser]);
+    if (error) {
+      hidePgfLoader();
+      alert("Registration error: " + error.message);
+      return;
+    }
+
+    pushNotification('ADMIN', '👤 New Account Created', `${name} (${email}) has registered.`, 'general');
+
+    currentUser = { name, email, phone, isAdmin: false };
+    localStorage.setItem('pgf_session', JSON.stringify(currentUser));
+    hidePgfLoader();
+    alert("✅ Account Successfully Created & Synced to Cloud!");
+    checkUserSession();
+  } catch (err) {
+    hidePgfLoader();
+    alert("Something went wrong while creating account.");
   }
-
-  const now = new Date();
-  const currentFormattedDateTime = now.toLocaleDateString('en-IN') + " " + now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
-
-  const newUser = { name, phone, email, password, registered_on: currentFormattedDateTime };
-
-  const { error } = await _supabase.from('pgf_users').insert([newUser]);
-  if (error) {
-    alert("Registration error: " + error.message);
-    return;
-  }
-
-  pushNotification('ADMIN', '👤 New Account Created', `${name} (${email}) has registered.`, 'general');
-
-  currentUser = { name, email, phone, isAdmin: false };
-  localStorage.setItem('pgf_session', JSON.stringify(currentUser));
-  alert("✅ Account Successfully Created & Synced to Cloud!");
-  checkUserSession();
 }
-
 async function handleLogin(e) {
   e.preventDefault();
-  let userInput = document.getElementById("loginEmail").value.trim();
-  const passInput = document.getElementById("loginPassword").value;
+  showPgfLoader("Logging into your account...");
 
-  if (userInput === ADMIN_CREDENTIALS.user && passInput === ADMIN_CREDENTIALS.pass) {
-    currentUser = { name: "System Admin", email: "admin@puregrowfarm.internal", isAdmin: true };
+  try {
+    let userInput = document.getElementById("loginEmail").value.trim();
+    const passInput = document.getElementById("loginPassword").value;
+
+    if (userInput === ADMIN_CREDENTIALS.user && passInput === ADMIN_CREDENTIALS.pass) {
+      currentUser = { name: "System Admin", email: "admin@puregrowfarm.internal", isAdmin: true };
+      localStorage.setItem('pgf_session', JSON.stringify(currentUser));
+      hidePgfLoader();
+      checkUserSession();
+      return;
+    }
+
+    if (userInput.includes('@')) {
+      userInput = userInput.toLowerCase();
+    }
+
+    const { data: dbUser, error } = await _supabase
+      .from('pgf_users')
+      .select('name, email, phone, password')
+      .or(`email.eq.${userInput},phone.eq.${userInput}`)
+      .limit(1)
+      .maybeSingle();
+
+    if (error || !dbUser || dbUser.password !== passInput) {
+      hidePgfLoader();
+      alert("Invalid credentials or Account does not exist!");
+      return;
+    }
+
+    currentUser = { name: dbUser.name, email: dbUser.email, phone: dbUser.phone, isAdmin: false };
     localStorage.setItem('pgf_session', JSON.stringify(currentUser));
+    hidePgfLoader();
+    alert(`✅ Welcome back, ${currentUser.name}!`);
     checkUserSession();
-    return;
+
+  } catch (err) {
+    hidePgfLoader();
+    console.error("Login Error:", err);
+    alert("Connection error! Please try again.");
   }
-
-  if (userInput.includes('@')) {
-    userInput = userInput.toLowerCase();
-  }
-
-  const { data: dbUser, error } = await _supabase
-    .from('pgf_users')
-    .select('*')
-    .or(`email.eq.${userInput},phone.eq.${userInput}`)
-    .single();
-
-  if (error || !dbUser || dbUser.password !== passInput) {
-    alert("Invalid credentials or Account does not exist!");
-    return;
-  }
-
-  currentUser = { name: dbUser.name, email: dbUser.email, phone: dbUser.phone, isAdmin: false };
-  localStorage.setItem('pgf_session', JSON.stringify(currentUser));
-  
-  alert(`✅ Welcome back, ${currentUser.name}!`);
-  checkUserSession();
 }
 
 let pendingResetEmail = "";
@@ -541,40 +562,102 @@ async function handleSendOtp(e) {
   e.preventDefault();
   const email = document.getElementById("forgotEmail").value.trim();
 
-  const { data: user, error } = await _supabase
-    .from('pgf_users')
-    .select('*')
-    .eq('email', email)
-    .single();
+  showPgfLoader("Verifying email & sending OTP...");
 
-  if (error || !user) {
-    alert("⚠️ Yeh email hamare database me registered nahi hai!");
+  try {
+    const { data: user, error } = await _supabase
+      .from('pgf_users')
+      .select('name, email')
+      .eq('email', email)
+      .limit(1)
+      .maybeSingle();
+
+    if (error || !user) {
+      hidePgfLoader();
+      alert("⚠️ Yeh email hamare database me registered nahi hai!");
+      return;
+    }
+
+    generatedOtpCode = Math.floor(100000 + Math.random() * 900000).toString();
+    pendingResetEmail = email;
+
+    await _supabase
+      .from('pgf_users')
+      .update({ forgot_otp: generatedOtpCode })
+      .eq('email', email);
+
+    const templateParams = {
+      to_email: email,
+      to_name: user.name,
+      otp_code: generatedOtpCode
+    };
+
+    emailjs.send('service_jk9zdkf', 'template_zihxosq', templateParams)
+      .then(function(response) {
+         hidePgfLoader();
+         alert(`✅ 6-digit OTP successfully aapke Gmail (${email}) par bhej diya gaya hai! Kripya inbox check karein.`);
+         document.getElementById("forgotRequestForm").style.display = "none";
+         document.getElementById("forgotVerifyForm").style.display = "grid";
+      }, function(error) {
+         hidePgfLoader();
+         alert("❌ Email send karne me error aayi: " + JSON.stringify(error));
+      });
+  } catch(err) {
+    hidePgfLoader();
+    alert("Error sending OTP.");
+  }
+}
+
+async function handleVerifyAndReset(e) {
+  e.preventDefault();
+  const enteredOtp = document.getElementById("otpInputCode").value.trim();
+  const newPassword = document.getElementById("newResetPassword").value;
+
+  if (!isPasswordStrong(newPassword)) {
+    alert("⚠️ Kripya Strong Password dalein!\n(8+ chars, 1 Uppercase, 1 Number, 1 Special character)");
     return;
   }
 
-  generatedOtpCode = Math.floor(100000 + Math.random() * 900000).toString();
-  pendingResetEmail = email;
+  showPgfLoader("Updating your password...");
 
-  await _supabase
-    .from('pgf_users')
-    .update({ forgot_otp: generatedOtpCode })
-    .eq('email', email);
+  try {
+    const { data: user, error } = await _supabase
+      .from('pgf_users')
+      .select('forgot_otp')
+      .eq('email', pendingResetEmail)
+      .limit(1)
+      .maybeSingle();
 
-  const templateParams = {
-    to_email: email,
-    to_name: user.name,
-    otp_code: generatedOtpCode
-  };
+    if (error || !user || user.forgot_otp !== enteredOtp) {
+      hidePgfLoader();
+      alert("❌ Invalid OTP! Kripya sahi 6-digit OTP enter karein.");
+      return;
+    }
 
-  emailjs.send('service_jk9zdkf', 'template_zihxosq', templateParams)
-    .then(function(response) {
-       alert(`✅ 6-digit OTP successfully aapke Gmail (${email}) par bhej diya gaya hai! Kripya inbox check karein.`);
-       document.getElementById("forgotRequestForm").style.display = "none";
-       document.getElementById("forgotVerifyForm").style.display = "grid";
-    }, function(error) {
-       alert("❌ Email send karne me error aayi: " + JSON.stringify(error));
-    });
+    const { error: updateError } = await _supabase
+      .from('pgf_users')
+      .update({ password: newPassword, forgot_otp: null })
+      .eq('email', pendingResetEmail);
+
+    hidePgfLoader();
+
+    if (updateError) {
+      alert("Password update karne me error aayi: " + updateError.message);
+      return;
+    }
+
+    alert("✅ Password successfully change ho gaya hai! Ab aap naye password se Sign In kar sakte hain.");
+    document.getElementById("forgotVerifyForm").reset();
+    document.getElementById("forgotRequestForm").reset();
+    document.getElementById("forgotVerifyForm").style.display = "none";
+    document.getElementById("forgotRequestForm").style.display = "grid";
+    switchAuthBox('loginBox');
+  } catch (err) {
+    hidePgfLoader();
+    alert("Error updating password.");
+  }
 }
+
 async function handleVerifyAndReset(e) {
   e.preventDefault();
   const enteredOtp = document.getElementById("otpInputCode").value.trim();
@@ -3550,14 +3633,7 @@ async function confirmOrder(e) {
   const paymentDateStr = new Date().toLocaleDateString('en-IN');
   const generatedOrderId = "PGF-INV-" + Date.now().toString().slice(-5);
 
-  cart.forEach((item, prodId) => {
-    const prod = products.find(p => p.id === prodId);
-    if (prod && !prod.bulk) {
-      prod.stock = Math.max(0, prod.stock - item.qty);
-    }
-  });
-  saveProductsToStorage();
-  renderProducts();
+  showPgfLoader("Placing your purchase order...");
 
   const data = {
     order_id: generatedOrderId,
@@ -3582,69 +3658,86 @@ async function confirmOrder(e) {
     status: "Pending Verification"
   };
 
-  const { error } = await _supabase.from('pgf_orders').insert([data]);
-  if (error) {
-    console.error("Cloud Error:", error);
-    alert("Order save karne me error aayi: " + error.message);
-    return;
+  try {
+    const { error } = await _supabase.from('pgf_orders').insert([data]);
+    hidePgfLoader();
+
+    if (error) {
+      console.error("Cloud Error:", error);
+      alert("Order save karne me error aayi: " + error.message);
+      return;
+    }
+
+    cart.forEach((item, prodId) => {
+      const prod = products.find(p => p.id === prodId);
+      if (prod && !prod.bulk) {
+        prod.stock = Math.max(0, prod.stock - item.qty);
+      }
+    });
+    saveProductsToStorage();
+    renderProducts();
+
+    pushNotification('ADMIN', '📦 New Order Received', `${data.name} ne naya order place kiya hai (Ref: #${data.order_id}).`, 'order');
+
+    orderRegistry.unshift({
+      orderId: data.order_id,
+      name: data.name,
+      phone: data.phone,
+      email: data.email,
+      address: data.address,
+      userUpiId: data.user_upi_id,
+      products: data.products,
+      subtotal: data.subtotal,
+      delivery: data.delivery,
+      total: data.total,
+      paymentMode: data.payment_mode,
+      txnId: data.txn_id,
+      dateLogged: data.date_logged,
+      paymentDate: data.payment_date,
+      rawIsoDate: data.raw_iso_date,
+      currentLocation: data.current_location,
+      status: data.status
+    });
+
+    document.getElementById("invNum").textContent = data.order_id;
+    document.getElementById("invDate").textContent = new Date().toLocaleDateString('en-IN');
+    document.getElementById("invClientName").textContent = data.name;
+    document.getElementById("invClientEmail").textContent = "Email: " + data.email + " | Ph: " + data.phone;
+    document.getElementById("invClientAddr").textContent = "Address: " + data.address + " | User UPI: " + data.user_upi_id;
+    
+    document.getElementById("invoiceTableItemsBody").innerHTML = [...cart.values()].map(item => `
+      <tr>
+        <td style="padding:12px 14px; border-bottom:1px solid #e6e9ec; font-weight: 600;">${item.name} (${item.unit})</td>
+        <td style="padding:12px 14px; border-bottom:1px solid #e6e9ec; text-align:right;">Rs ${item.price}</td>
+        <td style="padding:12px 14px; border-bottom:1px solid #e6e9ec; text-align:center;">${item.qty}</td>
+        <td style="padding:12px 14px; border-bottom:1px solid #e6e9ec; text-align:right; font-weight:600; color:var(--accent);">Rs ${item.price * item.qty}</td>
+      </tr>
+    `).join("");
+    
+    document.getElementById("invSub").textContent = "Rs " + bill.subtotal;
+    document.getElementById("invDelivery").textContent = "Rs " + bill.delivery;
+    document.getElementById("invTotal").textContent = "Rs " + bill.total;
+
+    const waMessage = `NEW GOODS ORDER VERIFICATION FLOW:\n----------------------------------------\nInvoice Ref Code: ${data.order_id}\nClient Legal Name: ${data.name}\nClient UPI ID: ${data.user_upi_id}\nProducts Mapped: ${data.products}\nTotal Paid Amount: Rs ${data.total}\nPayment Method: ${data.payment_mode}\nTransaction Hash ID Code: ${data.txn_id}\nPayment Date: ${paymentDateStr}\n----------------------------------------`;
+    
+    alert("Order successfully synced to Cloud & Submitted!");
+    
+    setTimeout(() => {
+      window.open(`https://wa.me/${farmWhatsapp}?text=${encodeURIComponent(waMessage)}`, '_blank');
+    }, 300);
+    
+    document.getElementById("invoiceDialog").showModal();
+    
+    cart.clear();
+    renderCart();
+    document.getElementById("orderForm").reset();
+    checkUserSession();
+  } catch (err) {
+    hidePgfLoader();
+    alert("Order processing failed.");
   }
-
-  pushNotification('ADMIN', '📦 New Order Received', `${data.name} ne naya order place kiya hai (Ref: #${data.order_id}).`, 'order');
-
-  orderRegistry.unshift({
-    orderId: data.order_id,
-    name: data.name,
-    phone: data.phone,
-    email: data.email,
-    address: data.address,
-    userUpiId: data.user_upi_id,
-    products: data.products,
-    subtotal: data.subtotal,
-    delivery: data.delivery,
-    total: data.total,
-    paymentMode: data.payment_mode,
-    txnId: data.txn_id,
-    dateLogged: data.date_logged,
-    paymentDate: data.payment_date,
-    rawIsoDate: data.raw_iso_date,
-    currentLocation: data.current_location,
-    status: data.status
-  });
-
-  document.getElementById("invNum").textContent = data.order_id;
-  document.getElementById("invDate").textContent = new Date().toLocaleDateString('en-IN');
-  document.getElementById("invClientName").textContent = data.name;
-  document.getElementById("invClientEmail").textContent = "Email: " + data.email + " | Ph: " + data.phone;
-  document.getElementById("invClientAddr").textContent = "Address: " + data.address + " | User UPI: " + data.user_upi_id;
-  
-  document.getElementById("invoiceTableItemsBody").innerHTML = [...cart.values()].map(item => `
-    <tr>
-      <td style="padding:12px 14px; border-bottom:1px solid #e6e9ec; font-weight: 600;">${item.name} (${item.unit})</td>
-      <td style="padding:12px 14px; border-bottom:1px solid #e6e9ec; text-align:right;">Rs ${item.price}</td>
-      <td style="padding:12px 14px; border-bottom:1px solid #e6e9ec; text-align:center;">${item.qty}</td>
-      <td style="padding:12px 14px; border-bottom:1px solid #e6e9ec; text-align:right; font-weight:600; color:var(--accent);">Rs ${item.price * item.qty}</td>
-    </tr>
-  `).join("");
-  
-  document.getElementById("invSub").textContent = "Rs " + bill.subtotal;
-  document.getElementById("invDelivery").textContent = "Rs " + bill.delivery;
-  document.getElementById("invTotal").textContent = "Rs " + bill.total;
-
-  const waMessage = `NEW GOODS ORDER VERIFICATION FLOW:\n----------------------------------------\nInvoice Ref Code: ${data.order_id}\nClient Legal Name: ${data.name}\nClient UPI ID: ${data.user_upi_id}\nProducts Mapped: ${data.products}\nTotal Paid Amount: Rs ${data.total}\nPayment Method: ${data.payment_mode}\nTransaction Hash ID Code: ${data.txn_id}\nPayment Date: ${paymentDateStr}\n----------------------------------------`;
-  
-  alert("Order successfully synced to Cloud & Submitted!");
-  
-  setTimeout(() => {
-    window.open(`https://wa.me/${farmWhatsapp}?text=${encodeURIComponent(waMessage)}`, '_blank');
-  }, 300);
-  
-  document.getElementById("invoiceDialog").showModal();
-  
-  cart.clear();
-  renderCart();
-  document.getElementById("orderForm").reset();
-  checkUserSession();
 }
+
 function closeInvoice() { document.getElementById("invoiceDialog").close(); }
 
 function showVisitForm(id) {
@@ -3730,6 +3823,8 @@ async function submitStudentVisit(e) {
   e.preventDefault();
   const currentTimestamp = new Date().toLocaleDateString('en-IN') + " " + new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
   
+  showPgfLoader("Submitting Student Internship Booking...");
+
   const data = {
     booking_id: "PGF-STU-" + Date.now().toString().slice(-4),
     type: "Student",
@@ -3750,50 +3845,59 @@ async function submitStudentVisit(e) {
     cert_issued: false
   };
 
-  const { error } = await _supabase.from('pgf_bookings').insert([data]);
-  if (error) {
-    alert("Registration Error: " + error.message);
-    return;
+  try {
+    const { error } = await _supabase.from('pgf_bookings').insert([data]);
+    hidePgfLoader();
+
+    if (error) {
+      alert("Registration Error: " + error.message);
+      return;
+    }
+
+    pushNotification('ADMIN', '🎓 New Training Booking', `${currentUser.name} ne Student training ke liye booking ki hai (Ref: #${data.booking_id}).`, 'booking');
+
+    bookingsRegistry.unshift({
+      bookingId: data.booking_id,
+      type: data.type,
+      name: data.name,
+      phone: data.phone,
+      email: data.email,
+      enrollment: data.enrollment,
+      college: data.college,
+      course: data.course,
+      start: data.start_date,
+      end: data.end_date,
+      userUpiId: data.user_upi_id,
+      fee: data.fee,
+      paymentMode: data.payment_mode,
+      txnId: data.txn_id,
+      dateLogged: data.date_logged,
+      status: data.status,
+      certIssued: data.cert_issued
+    });
+
+    const waText = `NEW STUDENT INTERNSHIP REGISTRATION:\n----------------------------------------\nBooking Ref ID: ${data.booking_id}\nName: ${data.name}\nStudent UPI ID: ${data.user_upi_id}\nCollege: ${data.college}\nCourse: ${data.course}\nUTR Tracking Number: ${data.txn_id}\n----------------------------------------`;
+    
+    setTimeout(() => {
+      window.open(`https://wa.me/${farmWhatsapp}?text=${encodeURIComponent(waText)}`, '_blank');
+    }, 300);
+
+    alert("✅ Success! Aapka Student Internship Registration cloud database me save ho gaya hai.");
+    document.getElementById("studentForm").reset();
+    document.getElementById("spayment").disabled = true;
+    checkUserSession();
+  } catch (err) {
+    hidePgfLoader();
+    alert("Internship submission failed.");
   }
-
-  pushNotification('ADMIN', '🎓 New Training Booking', `${currentUser.name} ne Student training ke liye booking ki hai (Ref: #${data.booking_id}).`, 'booking');
-
-  bookingsRegistry.unshift({
-    bookingId: data.booking_id,
-    type: data.type,
-    name: data.name,
-    phone: data.phone,
-    email: data.email,
-    enrollment: data.enrollment,
-    college: data.college,
-    course: data.course,
-    start: data.start_date,
-    end: data.end_date,
-    userUpiId: data.user_upi_id,
-    fee: data.fee,
-    paymentMode: data.payment_mode,
-    txnId: data.txn_id,
-    dateLogged: data.date_logged,
-    status: data.status,
-    certIssued: data.cert_issued
-  });
-
-  const waText = `NEW STUDENT INTERNSHIP REGISTRATION:\n----------------------------------------\nBooking Ref ID: ${data.booking_id}\nName: ${data.name}\nStudent UPI ID: ${data.user_upi_id}\nCollege: ${data.college}\nCourse: ${data.course}\nUTR Tracking Number: ${data.txn_id}\n----------------------------------------`;
-  
-  setTimeout(() => {
-    window.open(`https://wa.me/${farmWhatsapp}?text=${encodeURIComponent(waText)}`, '_blank');
-  }, 300);
-
-  alert("✅ Success! Aapka Student Internship Registration cloud database me save ho gaya hai. Aapki profile me iska status dikhega.");
-  document.getElementById("studentForm").reset();
-  document.getElementById("spayment").disabled = true;
-  checkUserSession();
 }
 
 async function submitFarmerVisit(e) {
   e.preventDefault();
   const currentTimestamp = new Date().toLocaleDateString('en-IN') + " " + new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
   
+  showPgfLoader("Submitting Farmer Training Registration...");
+
   const data = {
     booking_id: "PGF-FAR-" + Date.now().toString().slice(-4),
     type: "Farmer",
@@ -3810,41 +3914,50 @@ async function submitFarmerVisit(e) {
     cert_issued: false
   };
 
-  const { error } = await _supabase.from('pgf_bookings').insert([data]);
-  if (error) {
-    alert("Farmer Registration Error: " + error.message);
-    return;
+  try {
+    const { error } = await _supabase.from('pgf_bookings').insert([data]);
+    hidePgfLoader();
+
+    if (error) {
+      alert("Farmer Registration Error: " + error.message);
+      return;
+    }
+
+    pushNotification('ADMIN', '🎓 New Training Booking', `${currentUser.name} ne Farmer training ke liye booking ki hai (Ref: #${data.booking_id}).`, 'booking');
+
+    bookingsRegistry.unshift({
+      bookingId: data.booking_id,
+      type: data.type,
+      name: data.name,
+      phone: data.phone,
+      email: data.email,
+      date: data.session_date,
+      userUpiId: data.user_upi_id,
+      fee: data.fee,
+      paymentMode: data.payment_mode,
+      txnId: data.txn_id,
+      dateLogged: data.date_logged,
+      status: data.status,
+      certIssued: data.cert_issued
+    });
+
+    const waText = `NEW FARMER TRAINING BOOKING:\n----------------------------------------\nBooking Ref ID: ${data.booking_id}\nName: ${data.name}\nFarmer UPI ID: ${data.user_upi_id}\nTraining Date: ${data.session_date}\nUTR Tracking Number: ${data.txn_id}\n----------------------------------------`;
+    
+    setTimeout(() => {
+      window.open(`https://wa.me/${farmWhatsapp}?text=${encodeURIComponent(waText)}`, '_blank');
+    }, 300);
+    
+    alert("✅ Success! Aapka Farmer Training Workshop booking cloud database me save ho gaya hai.");
+    document.getElementById("farmerForm").reset();
+    document.getElementById("fpayment").disabled = true;
+    checkUserSession();
+  } catch (err) {
+    hidePgfLoader();
+    alert("Farmer booking submission failed.");
   }
-
-  pushNotification('ADMIN', '🎓 New Training Booking', `${currentUser.name} ne Farmer training ke liye booking ki hai (Ref: #${data.booking_id}).`, 'booking');
-
-  bookingsRegistry.unshift({
-    bookingId: data.booking_id,
-    type: data.type,
-    name: data.name,
-    phone: data.phone,
-    email: data.email,
-    date: data.session_date,
-    userUpiId: data.user_upi_id,
-    fee: data.fee,
-    paymentMode: data.payment_mode,
-    txnId: data.txn_id,
-    dateLogged: data.date_logged,
-    status: data.status,
-    certIssued: data.cert_issued
-  });
-
-  const waText = `NEW FARMER TRAINING BOOKING:\n----------------------------------------\nBooking Ref ID: ${data.booking_id}\nName: ${data.name}\nFarmer UPI ID: ${data.user_upi_id}\nTraining Date: ${data.session_date}\nUTR Tracking Number: ${data.txn_id}\n----------------------------------------`;
-  
-  setTimeout(() => {
-    window.open(`https://wa.me/${farmWhatsapp}?text=${encodeURIComponent(waText)}`, '_blank');
-  }, 300);
-  
-  alert("✅ Success! Aapka Farmer Training Workshop booking cloud database me save ho gaya hai. Aapki profile me iska status dikhega.");
-  document.getElementById("farmerForm").reset();
-  document.getElementById("fpayment").disabled = true;
-  checkUserSession();
 }
+
+
 
 function downloadCertificatePDF(bookingId) {
   const targetBooking = bookingsRegistry.find(b => b && b.bookingId === bookingId);
@@ -4666,5 +4779,22 @@ async function deleteAdminBuyer(idx) {
     adminBuyersRegistry.splice(idx, 1);
     localStorage.setItem('pgf_admin_buyers', JSON.stringify(adminBuyersRegistry));
     renderAdminBuyerTable();
+  }
+}
+
+
+function showPgfLoader(message = "Processing, please wait...") {
+  const loader = document.getElementById("globalPageLoader");
+  const msgEl = document.getElementById("globalLoaderText");
+  if (loader) {
+    if (msgEl) msgEl.textContent = message;
+    loader.classList.add("active-loader");
+  }
+}
+
+function hidePgfLoader() {
+  const loader = document.getElementById("globalPageLoader");
+  if (loader) {
+    loader.classList.remove("active-loader");
   }
 }

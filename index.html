@@ -1182,6 +1182,7 @@
             <input type="text" id="adminFarmerName" placeholder="Farmer Name" required>
             <input type="tel" id="adminFarmerPhone" placeholder="Mobile Number (10 digits)" maxlength="10" required>
             <input type="text" id="adminFarmerAddress" placeholder="Complete Address" required>
+            <input type="tel" id="adminFarmerPhone" placeholder="Mobile Number (10 digits)" maxlength="10" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10); checkDuplicateFarmerPhone(this);" required>
             <button type="submit" style="margin-top:10px; background:var(--accent);">Save Farmer Booking to Supabase</button>
           </form>
 
@@ -1217,6 +1218,7 @@
             <input type="text" id="adminConnectorName" placeholder="Connector Name" required>
             <input type="tel" id="adminConnectorPhone" placeholder="Mobile Number (10 digits)" maxlength="10" required>
             <input type="text" id="adminConnectorAddress" placeholder="Complete Address" required>
+            <input type="tel" id="adminConnectorPhone" placeholder="Mobile Number (10 digits)" maxlength="10" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10); checkDuplicateConnectorPhone(this);" required>
             <button type="submit" style="margin-top:10px; background:var(--accent);">Save Farm Connector to Supabase</button>
           </form>
 
@@ -1283,6 +1285,7 @@
     <input type="text" id="adminBuyerCompany" placeholder="Company Name *" required>
     <input type="tel" id="adminBuyerPhone" placeholder="Mobile Number (10 digits)" maxlength="10" required>
     <input type="text" id="adminBuyerAddress" placeholder="Complete Business / Shipping Address" required>
+    <input type="tel" id="adminBuyerPhone" placeholder="Mobile Number (10 digits)" maxlength="10" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10); checkDuplicateBuyerPhone(this);" required>
     <button type="submit" style="margin-top:10px; background:var(--accent);">Save Buyer to Supabase</button>
   </form>
 

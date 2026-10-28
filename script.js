@@ -476,6 +476,20 @@ async function checkUserSession() {
 }
 
 async function handleRegister(e) {
+  // handleRegister ke andar email check ke theek baad phone check karein:
+const cleanPhone = phone.replace(/[^0-9]/g, '').slice(-10);
+const { data: existingPhoneUser } = await _supabase
+  .from('pgf_users')
+  .select('phone')
+  .eq('phone', cleanPhone)
+  .limit(1)
+  .maybeSingle();
+
+if (existingPhoneUser) {
+  hidePgfLoader();
+  alert("⚠️ Is Mobile Number se account pehle se registered hai! Duplicate number allow nahi hai.");
+  return;
+}
   e.preventDefault();
   const name = document.getElementById("regName").value.trim();
   const phone = document.getElementById("regPhone").value.trim();
@@ -4948,12 +4962,40 @@ async function fetchAdminManagerDataFromCloud() {
   renderAdminConnectorTable();
 }
 
-// 1) Save Farmer Booking to Supabase
+// =========================================================
+// DUPLICATE PHONE NUMBER CHECK & LIVE VALIDATION
+// =========================================================
+
+// 1) Farmer Booking - Duplicate Check & Save
+function checkDuplicateFarmerPhone(phoneInput) {
+  const clean = phoneInput.value.replace(/[^0-9]/g, '');
+  if (clean.length === 10) {
+    const exists = adminFarmerBookingsRegistry.some(f => f.phone && f.phone.replace(/[^0-9]/g, '').slice(-10) === clean);
+    if (exists) {
+      alert("⚠️ Yeh Phone Number pehle se Farmer Booking me registered hai! Duplicate number allow nahi hai.");
+      phoneInput.value = "";
+      phoneInput.focus();
+    }
+  }
+}
+
 async function saveFarmerBookingAdmin(e) {
   e.preventDefault();
   const name = document.getElementById("adminFarmerName").value.trim();
-  const phone = document.getElementById("adminFarmerPhone").value.trim();
+  const phone = document.getElementById("adminFarmerPhone").value.trim().replace(/[^0-9]/g, '');
   const address = document.getElementById("adminFarmerAddress").value.trim();
+
+  if (phone.length !== 10) {
+    alert("⚠️ Kripya valid 10-digit mobile number dalein!");
+    return;
+  }
+
+  // Duplicate Check in Local Registry & Cloud
+  const isDuplicate = adminFarmerBookingsRegistry.some(f => f.phone && f.phone.replace(/[^0-9]/g, '').slice(-10) === phone);
+  if (isDuplicate) {
+    alert("⚠️ Yeh Phone Number pehle se Farmer Booking me registered hai! Duplicate number nahi dal sakte.");
+    return;
+  }
 
   const payload = {
     id: "FB-" + Date.now().toString().slice(-4),
@@ -4975,6 +5017,112 @@ async function saveFarmerBookingAdmin(e) {
   e.target.reset();
   renderAdminFarmerBookingTable();
   alert("✅ Farmer Booking saved successfully!");
+}
+
+// 2) Farm Connector - Duplicate Check & Save
+function checkDuplicateConnectorPhone(phoneInput) {
+  const clean = phoneInput.value.replace(/[^0-9]/g, '');
+  if (clean.length === 10) {
+    const exists = adminFarmConnectorsRegistry.some(c => c.phone && c.phone.replace(/[^0-9]/g, '').slice(-10) === clean);
+    if (exists) {
+      alert("⚠️ Yeh Phone Number pehle se Farm Connector me registered hai! Duplicate number allow nahi hai.");
+      phoneInput.value = "";
+      phoneInput.focus();
+    }
+  }
+}
+
+async function saveFarmConnectorAdmin(e) {
+  e.preventDefault();
+  const name = document.getElementById("adminConnectorName").value.trim();
+  const phone = document.getElementById("adminConnectorPhone").value.trim().replace(/[^0-9]/g, '');
+  const address = document.getElementById("adminConnectorAddress").value.trim();
+
+  if (phone.length !== 10) {
+    alert("⚠️ Kripya valid 10-digit mobile number dalein!");
+    return;
+  }
+
+  const isDuplicate = adminFarmConnectorsRegistry.some(c => c.phone && c.phone.replace(/[^0-9]/g, '').slice(-10) === phone);
+  if (isDuplicate) {
+    alert("⚠️ Yeh Phone Number pehle se Farm Connector me registered hai! Duplicate number nahi dal sakte.");
+    return;
+  }
+
+  const payload = {
+    id: "FC-" + Date.now().toString().slice(-4),
+    name: name,
+    phone: phone,
+    address: address,
+    date_logged: new Date().toLocaleDateString('en-IN')
+  };
+
+  const { error } = await _supabase.from('pgf_admin_farm_connectors').insert([payload]);
+  if (error) {
+    alert("❌ Supabase Error: " + error.message);
+    return;
+  }
+
+  adminFarmConnectorsRegistry.unshift(payload);
+  localStorage.setItem('pgf_admin_farm_connectors', JSON.stringify(adminFarmConnectorsRegistry));
+
+  e.target.reset();
+  renderAdminConnectorTable();
+  alert("✅ Farm Connector saved successfully!");
+}
+
+// 3) Buyer - Duplicate Check & Save
+function checkDuplicateBuyerPhone(phoneInput) {
+  const clean = phoneInput.value.replace(/[^0-9]/g, '');
+  if (clean.length === 10) {
+    const exists = adminBuyersRegistry.some(b => b.phone && b.phone.replace(/[^0-9]/g, '').slice(-10) === clean);
+    if (exists) {
+      alert("⚠️ Yeh Phone Number pehle se Buyer list me registered hai! Duplicate number allow nahi hai.");
+      phoneInput.value = "";
+      phoneInput.focus();
+    }
+  }
+}
+
+async function saveBuyerAdmin(e) {
+  e.preventDefault();
+  const name = document.getElementById("adminBuyerName").value.trim();
+  const company = document.getElementById("adminBuyerCompany").value.trim();
+  const phone = document.getElementById("adminBuyerPhone").value.trim().replace(/[^0-9]/g, '');
+  const address = document.getElementById("adminBuyerAddress").value.trim();
+
+  if (phone.length !== 10) {
+    alert("⚠️ Kripya valid 10-digit mobile number dalein!");
+    return;
+  }
+
+  const isDuplicate = adminBuyersRegistry.some(b => b.phone && b.phone.replace(/[^0-9]/g, '').slice(-10) === phone);
+  if (isDuplicate) {
+    alert("⚠️ Yeh Phone Number pehle se Buyer database me registered hai! Duplicate number nahi dal sakte.");
+    return;
+  }
+
+  const payload = {
+    id: "BUY-" + Date.now().toString().slice(-4),
+    name: name,
+    company: company,
+    phone: phone,
+    address: address,
+    date_logged: new Date().toLocaleDateString('en-IN')
+  };
+
+  const { error } = await _supabase.from('pgf_admin_buyers').insert([payload]);
+  if (error) {
+    alert("❌ Supabase Error: " + error.message);
+    return;
+  }
+
+  adminBuyersRegistry.unshift(payload);
+  localStorage.setItem('pgf_admin_buyers', JSON.stringify(adminBuyersRegistry));
+
+  e.target.reset();
+  renderAdminBuyerTable();
+  alert("✅ Buyer & Company saved successfully to Supabase!");
 }
 
 function renderAdminFarmerBookingTable() {

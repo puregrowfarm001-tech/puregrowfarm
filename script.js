@@ -5387,7 +5387,8 @@ async function deleteBatchAdmin(batchId) {
   await loadTrainingBatchesFromCloud();
 }
 
-// 4. Batch History Render (Counting registrations from bookingsRegistry)
+// 4. 
+// Batch History Tables Render with Exact Registration Time Window Matching
 function renderBatchHistoryTables() {
   const stuTbody = document.getElementById("studentBatchHistoryTableBody");
   const farTbody = document.getElementById("farmerBatchHistoryTableBody");
@@ -5397,11 +5398,40 @@ function renderBatchHistoryTables() {
 
   const nowTime = new Date().getTime();
 
+  // Helper date formatter
   const fmt = (dt) => {
-    try { return new Date(dt).toLocaleString('en-IN', { dateStyle:'short', timeStyle:'short' }); } catch(e) { return dt; }
+    try { 
+      return new Date(dt).toLocaleString('en-IN', { dateStyle: 'short', timeStyle: 'short' }); 
+    } catch(e) { 
+      return dt; 
+    }
   };
 
-  // Student Table
+  // Helper function: Booking ke timestamp ko milliseconds me convert karna
+  const parseBookingTime = (book) => {
+    try {
+      // Agar booking me dateLogged (e.g. "28/10/2026, 09:30 pm") ya rawIsoDate ho
+      if (book.rawIsoDate) return new Date(book.rawIsoDate).getTime();
+      if (book.dateLogged) {
+        // Indian date format DD/MM/YYYY ko parse karna
+        const parts = book.dateLogged.split(" ");
+        if (parts[0] && parts[0].includes("/")) {
+          const dParts = parts[0].split("/");
+          // DD/MM/YYYY -> YYYY-MM-DD
+          const isoDateStr = `${dParts[2]}-${dParts[1]}-${dParts[0]} ${parts.slice(1).join(" ")}`;
+          const parsed = new Date(isoDateStr).getTime();
+          if (!isNaN(parsed)) return parsed;
+        }
+        const fallbackParsed = new Date(book.dateLogged).getTime();
+        if (!isNaN(fallbackParsed)) return fallbackParsed;
+      }
+    } catch (err) {
+      console.log("Time parsing error:", err);
+    }
+    return 0;
+  };
+
+  // 1. Student Batches History Table
   if (stuTbody) {
     if (!stuBatches.length) {
       stuTbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:15px;" class="muted">No student batches launched yet.</td></tr>`;
@@ -5419,7 +5449,20 @@ function renderBatchHistoryTables() {
           statusBadge = `<span class="badge" style="background:#dcfce7; color:#15803d;">🟢 Active Live</span>`;
         }
 
-        const filledCount = bookingsRegistry.filter(book => book.type === 'Student' && book.start === b.start_date && book.end === b.end_date).length;
+        // 🎯 EXACT TIME WINDOW FILTER:
+        // Batch open date-time aur close date-time ke beech me kitne students ne register kiya
+        const filledCount = bookingsRegistry.filter(book => {
+          if (book.type !== 'Student') return false;
+
+          const bookTime = parseBookingTime(book);
+          // Agar booking time window ke andar aata ho:
+          if (bookTime > 0 && !isNaN(openMs) && !isNaN(closeMs)) {
+            return bookTime >= openMs && bookTime <= closeMs;
+          }
+
+          // Fallback agar purane record me time parse na ho sake:
+          return (book.start === b.start_date && book.end === b.end_date);
+        }).length;
 
         return `
           <tr>
@@ -5430,6 +5473,7 @@ function renderBatchHistoryTables() {
             <td>${statusBadge}</td>
             <td>
               <strong style="font-size:14px; color:#0284c7;">👥 ${filledCount} Students</strong>
+              <div style="font-size:10px; color:#64748b;">(Within Active Window)</div>
             </td>
             <td>
               <button class="btn" style="padding:2px 6px; font-size:11px; background:var(--danger); min-height:auto;" onclick="deleteBatchAdmin('${b.id}')">Delete</button>
@@ -5440,12 +5484,12 @@ function renderBatchHistoryTables() {
     }
   }
 
-  // Farmer Table
+  // 2. Farmer Batches History Table
   if (farTbody) {
     if (!farBatches.length) {
       farTbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:15px;" class="muted">No farmer batches launched yet.</td></tr>`;
     } else {
-      farBatches.map(b => {
+      farTbody.innerHTML = farBatches.map(b => {
         const openMs = new Date(b.reg_open).getTime();
         const closeMs = new Date(b.reg_close).getTime();
         
@@ -5458,7 +5502,18 @@ function renderBatchHistoryTables() {
           statusBadge = `<span class="badge" style="background:#dcfce7; color:#15803d;">🟢 Active Live</span>`;
         }
 
-        const filledCount = bookingsRegistry.filter(book => book.type === 'Farmer' && book.date === b.session_date).length;
+        // 🎯 EXACT TIME WINDOW FILTER:
+        // Batch open date-time aur close date-time ke beech me kitne farmers ne register kiya
+        const filledCount = bookingsRegistry.filter(book => {
+          if (book.type !== 'Farmer') return false;
+
+          const bookTime = parseBookingTime(book);
+          if (bookTime > 0 && !isNaN(openMs) && !isNaN(closeMs)) {
+            return bookTime >= openMs && bookTime <= closeMs;
+          }
+
+          return (book.date === b.session_date);
+        }).length;
 
         return `
           <tr>
@@ -5469,6 +5524,7 @@ function renderBatchHistoryTables() {
             <td>${statusBadge}</td>
             <td>
               <strong style="font-size:14px; color:#b45309;">👨‍🌾 ${filledCount} Farmers</strong>
+              <div style="font-size:10px; color:#64748b;">(Within Active Window)</div>
             </td>
             <td>
               <button class="btn" style="padding:2px 6px; font-size:11px; background:var(--danger); min-height:auto;" onclick="deleteBatchAdmin('${b.id}')">Delete</button>

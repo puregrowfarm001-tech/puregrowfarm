@@ -299,6 +299,14 @@ function switchAuthBox(boxId) {
 }
 
 async function triggerAdminView() {
+  // Header me logged-in admin ka naam dikhane ke liye
+const adminBadge = document.getElementById("adminHeaderBadge");
+const adminNameText = document.getElementById("adminHeaderNameDisplay");
+
+if (adminBadge && adminNameText) {
+  adminBadge.style.display = "inline-flex";
+  adminNameText.textContent = currentUser ? currentUser.name : "Admin";
+}
   document.getElementById("mainNav").style.display = "none";
   document.getElementById("authSection").style.display = "none";
   document.getElementById("dashboardWorkspace").style.display = "none";
@@ -418,6 +426,12 @@ async function checkUserSession() {
     } else {
       // Normal Customer ke liye profile menu dikhao
       if (profileWrapper) profileWrapper.style.display = "inline-block";
+
+      // 👇 YAHAN YEH CODE ADD KAREIN (taaki customer login ho tab admin badge na dikhe)
+      const adminBadge = document.getElementById("adminHeaderBadge");
+      if (adminBadge) {
+        adminBadge.style.display = "none";
+      }
       
       if (document.getElementById("headerUserNameDisplay")) document.getElementById("headerUserNameDisplay").textContent = currentUser.name;
       if (document.getElementById("dropUserName")) document.getElementById("dropUserName").textContent = currentUser.name;
@@ -729,6 +743,12 @@ function handleLogout() {
 
     const userProfileDropdown = document.getElementById("userProfileDropdownPanel");
     if (userProfileDropdown) userProfileDropdown.style.display = "none";
+
+    // 👇 YAHAN YEH CODE ADD KAREIN (taaki logout hote hi admin badge gayab ho jaye)
+    const adminBadge = document.getElementById("adminHeaderBadge");
+    if (adminBadge) {
+      adminBadge.style.display = "none";
+    }
 
     // Session update karo
     checkUserSession();

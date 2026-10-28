@@ -3794,14 +3794,17 @@ function showVisitForm(id) {
   const btnFarmer = document.getElementById("btnTabFarmer");
 
   if (id === 'studentForm') {
-    if (indicator) indicator.textContent = "📝 Currently Filling: Student Internship Program Application (Fee: Rs 100)";
+    if (indicator) indicator.textContent = "📝 Currently Filling: Student Internship Program Application";
     if (btnStudent) btnStudent.style.background = "var(--accent)";
     if (btnFarmer) btnFarmer.style.background = "var(--muted)";
   } else {
-    if (indicator) indicator.textContent = "📝 Currently Filling: Farmer Training Workshop Registration (Fee: Rs 699)";
+    if (indicator) indicator.textContent = "📝 Currently Filling: Farmer Training Workshop Registration";
     if (btnFarmer) btnFarmer.style.background = "var(--accent)";
     if (btnStudent) btnStudent.style.background = "var(--muted)";
   }
+
+  // Active form badalte hi timer aur form ko refresh karein
+  applyCurrentBatchToForms();
 }
 
 function openVisitPayment(formId, amount) {
@@ -5129,14 +5132,24 @@ function applyCurrentBatchToForms() {
   const submitBtn = isStudent ? document.getElementById("studentSubmitBtn") : document.getElementById("farmerSubmitBtn");
   const currentForm = isStudent ? document.getElementById("studentForm") : document.getElementById("farmerForm");
 
-  // Agar admin ne abhi tak koi batch schedule hi nahi kiya hai:
+  if (!currentForm) return;
+
+  // 1. Agar Admin ne is category ka batch announce nahi kiya:
   if (!currentBatch) {
-    if (timerBanner) { timerBanner.style.background = "#fffbeb"; timerBanner.style.borderColor = "#fde68a"; }
-    if (labelEl) { labelEl.textContent = "⚠️ Batch Not Announced:"; labelEl.style.color = "#b45309"; }
-    if (countEl) { countEl.textContent = "No active batches currently."; countEl.style.color = "#92400e"; }
+    if (timerBanner) { 
+      timerBanner.style.background = "#fffbeb"; 
+      timerBanner.style.borderColor = "#fde68a"; 
+    }
+    if (labelEl) { 
+      labelEl.textContent = "⚠️ Batch Not Announced:"; 
+      labelEl.style.color = "#b45309"; 
+    }
+    if (countEl) { 
+      countEl.textContent = isStudent ? "Student batch not launched yet." : "Farmer batch not launched yet."; 
+      countEl.style.color = "#92400e"; 
+    }
     if (rangeEl) rangeEl.textContent = "Admin has not launched a batch yet.";
-    
-    // Form Inputs reset aur lock
+
     if (isStudent) {
       if (document.getElementById("sstart")) document.getElementById("sstart").value = "";
       if (document.getElementById("send")) document.getElementById("send").value = "";
@@ -5147,48 +5160,56 @@ function applyCurrentBatchToForms() {
       if (document.getElementById("dispFarmerFee")) document.getElementById("dispFarmerFee").textContent = "Rs 0";
       if (document.getElementById("dispFarmerTotalFee")) document.getElementById("dispFarmerTotalFee").textContent = "Rs 0";
     }
+
     disableFormRegistration(currentForm, submitBtn, "No batch available");
     return;
   }
 
-  // Agar batch available hai, toh dates aur fee auto-set karo:
+  // 2. Dates aur Fees set karein
   if (isStudent) {
-    if (document.getElementById("sstart")) document.getElementById("sstart").value = currentBatch.start_date;
-    if (document.getElementById("send")) document.getElementById("send").value = currentBatch.end_date;
-    if (document.getElementById("dispStudentFee")) document.getElementById("dispStudentFee").textContent = `Rs ${currentBatch.fee}`;
-    if (document.getElementById("dispStudentTotalFee")) document.getElementById("dispStudentTotalFee").textContent = `Rs ${currentBatch.fee}`;
+    if (document.getElementById("sstart")) document.getElementById("sstart").value = currentBatch.start_date || "";
+    if (document.getElementById("send")) document.getElementById("send").value = currentBatch.end_date || "";
+    if (document.getElementById("dispStudentFee")) document.getElementById("dispStudentFee").textContent = `Rs ${currentBatch.fee || 0}`;
+    if (document.getElementById("dispStudentTotalFee")) document.getElementById("dispStudentTotalFee").textContent = `Rs ${currentBatch.fee || 0}`;
   } else {
-    if (document.getElementById("fdate")) document.getElementById("fdate").value = currentBatch.session_date;
-    if (document.getElementById("dispFarmerFee")) document.getElementById("dispFarmerFee").textContent = `Rs ${currentBatch.fee}`;
-    if (document.getElementById("dispFarmerTotalFee")) document.getElementById("dispFarmerTotalFee").textContent = `Rs ${currentBatch.fee}`;
+    if (document.getElementById("fdate")) document.getElementById("fdate").value = currentBatch.session_date || "";
+    if (document.getElementById("dispFarmerFee")) document.getElementById("dispFarmerFee").textContent = `Rs ${currentBatch.fee || 0}`;
+    if (document.getElementById("dispFarmerTotalFee")) document.getElementById("dispFarmerTotalFee").textContent = `Rs ${currentBatch.fee || 0}`;
   }
 
-  // Live Timer Check:
-  const now = new Date().getTime();
+  // 3. Exact Time Parse Karein (Local time ke hisaab se)
+  const now = Date.now();
   const openTime = new Date(currentBatch.reg_open).getTime();
   const closeTime = new Date(currentBatch.reg_close).getTime();
 
   const fmt = (dt) => {
-    try { return new Date(dt).toLocaleString('en-IN', { dateStyle:'short', timeStyle:'short' }); } catch(e) { return dt; }
+    try { 
+      return new Date(dt).toLocaleString('en-IN', { dateStyle: 'short', timeStyle: 'short' }); 
+    } catch(e) { 
+      return dt; 
+    }
   };
-  if (rangeEl) rangeEl.innerHTML = `Window: <strong>${fmt(currentBatch.reg_open)}</strong> till <strong>${fmt(currentBatch.reg_close)}</strong>`;
 
-  // Case A: Form abhi shuru nahi hua
+  if (rangeEl) {
+    rangeEl.innerHTML = `Window: <strong>${fmt(currentBatch.reg_open)}</strong> till <strong>${fmt(currentBatch.reg_close)}</strong>`;
+  }
+
+  // Case A: Form abhi shuru nahi hua (Future time)
   if (now < openTime) {
     const diff = openTime - now;
     if (timerBanner) { timerBanner.style.background = "#fffbeb"; timerBanner.style.borderColor = "#fde68a"; }
     if (labelEl) { labelEl.textContent = "⏳ Registration Opens In:"; labelEl.style.color = "#b45309"; }
     if (countEl) { countEl.textContent = getDurationString(diff); countEl.style.color = "#b45309"; }
     disableFormRegistration(currentForm, submitBtn, "Registration will open soon.");
-  }
-  // Case B: Form End Date & Time par close ho gaya
+  } 
+  // Case B: Close time nikal gaya
   else if (now > closeTime) {
     if (timerBanner) { timerBanner.style.background = "#fef2f2"; timerBanner.style.borderColor = "#fecaca"; }
     if (labelEl) { labelEl.textContent = "❌ Registration Window Closed:"; labelEl.style.color = "#dc2626"; }
     if (countEl) { countEl.textContent = "Closed for this batch"; countEl.style.color = "#dc2626"; }
     disableFormRegistration(currentForm, submitBtn, "Registration Closed");
-  }
-  // Case C: Form active hai (Open hai)
+  } 
+  // Case C: Form active aur open hai
   else {
     const diff = closeTime - now;
     if (timerBanner) { timerBanner.style.background = "#f0fdf4"; timerBanner.style.borderColor = "#bbf7d0"; }
@@ -5240,3 +5261,31 @@ document.addEventListener("DOMContentLoaded", () => {
   loadTrainingBatchesFromCloud();
   setInterval(applyCurrentBatchToForms, 1000);
 });
+
+function enableFormRegistration(formEl) {
+  if (!formEl) return;
+
+  // Sare input fields unlock karein (locked date aur payment UTR ko chhodkar)
+  const inputs = formEl.querySelectorAll("input, select");
+  inputs.forEach(el => {
+    // Readonly fields ko readonly hi rehne dein, baaki unlock karein
+    if (el.id !== "sstart" && el.id !== "send" && el.id !== "fdate" && el.id !== "sname" && el.id !== "fname" && el.id !== "semail" && el.id !== "femail" && el.id !== "sphone" && el.id !== "fphone") {
+      if (el.id !== "spayment" && el.id !== "fpayment") {
+        el.disabled = false;
+      }
+    }
+  });
+
+  // Submit button ka text wapas original karein
+  const isStudent = formEl.id === "studentForm";
+  const submitBtn = isStudent ? document.getElementById("studentSubmitBtn") : document.getElementById("farmerSubmitBtn");
+  
+  if (submitBtn) {
+    submitBtn.textContent = isStudent ? "Confirm Student Registration" : "Confirm Farmer Training Seat";
+    if (isStudent) {
+      if (typeof validateStudentForm === "function") validateStudentForm();
+    } else {
+      if (typeof validateFarmerForm === "function") validateFarmerForm();
+    }
+  }
+}

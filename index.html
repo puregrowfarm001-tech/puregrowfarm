@@ -540,11 +540,9 @@
               <input type="text" id="suserUpi" placeholder="Your UPI ID (e.g. student@okaxis) *" required oninput="validateStudentForm()">
 
               <select id="spaymentMode" required onchange="openDynamicVisitPayment('student')">
-                <option value="">Select online payment mode</option>
                 <option value="GPay">GPay App</option>
                 <option value="PhonePe">PhonePe App</option>
                 <option value="Paytm">Paytm App</option>
-                <option value="UPI">Any UPI App / Gateway</option>
               </select>
 
               <div id="studentPaymentHelp" class="payment-help"></div>
@@ -572,11 +570,9 @@
               <input type="text" id="fuserUpi" placeholder="Your UPI ID (e.g. farmer@upi) *" required oninput="validateFarmerForm()">
 
               <select id="fpaymentMode" required onchange="openDynamicVisitPayment('farmer')">
-                <option value="">Select online payment mode</option>
                 <option value="GPay">GPay App</option>
                 <option value="PhonePe">PhonePe App</option>
                 <option value="Paytm">Paytm App</option>
-                <option value="UPI">Any UPI App / Gateway</option>
               </select>
 
               <div id="farmerPaymentHelp" class="payment-help"></div>

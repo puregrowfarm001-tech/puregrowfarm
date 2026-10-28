@@ -503,6 +503,26 @@
                  📝 Currently Filling: Student Internship Program Application
             </div>
 
+            <div id="trainingMainContent" style="display:none;">
+            <div class="visit-tabs">
+             <button type="button" class="btn" id="btnTabStudent" onclick="showVisitForm('studentForm')">🎓 Student Internship Block</button>
+             <button type="button" class="btn" id="btnTabFarmer" onclick="showVisitForm('farmerForm')" style="background:var(--muted);">👨‍🌾 Farmer Training Workshop Block</button>
+            </div>
+
+            <!-- Indicator Title -->
+            <div id="activeFormIndicatorTitle" style="margin-bottom: 8px; font-weight: bold; color: var(--accent); font-size: 15px;">
+                 📝 Currently Filling: Student Internship Program Application
+            </div>
+
+            <!-- Live Window & Countdown Alert Banner -->
+            <div id="bookingTimerAlertBox" style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:10px; padding:12px; margin-bottom:14px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+              <div>
+                <strong id="timerStatusLabel" style="color:#1d4ed8; font-size:13px;">⏳ Registration Closing In:</strong>
+                <div id="liveCountdownDisplay" style="font-size:18px; font-weight:800; color:#0f172a; margin-top:2px;">Calculating...</div>
+              </div>
+              <div id="windowRangeText" style="font-size:11px; color:#64748b; text-align:right;"></div>
+            </div>
+
             <!-- Student Form -->
             <form id="studentForm" class="visit-form active" onsubmit="submitStudentVisit(event)">
               <input type="text" id="sname" placeholder="Student Name" readonly required style="background:#f3f4f6; cursor:not-allowed;">
@@ -511,23 +531,30 @@
               <input type="text" id="senroll" placeholder="Enrollment / Roll Number" required>
               <input type="text" id="scollege" placeholder="College / University Name" required>
               <input type="text" id="scourse" placeholder="Degree / Course Name" required>
-              <label>Target Internship Start Date <input type="date" id="sstart" required></label>
-              <label>Target Internship End Date <input type="date" id="send" required></label>
+              
+              <!-- Locked Dates (Admin Configured) -->
+              <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                <label style="font-size:12px; font-weight:bold;">Internship Start Date (Fixed): 
+                  <input type="date" id="sstart" readonly required style="background:#f3f4f6; cursor:not-allowed;">
+                </label>
+                <label style="font-size:12px; font-weight:bold;">Internship End Date (Fixed): 
+                  <input type="date" id="send" readonly required style="background:#f3f4f6; cursor:not-allowed;">
+                </label>
+              </div>
               
               <div style="background: #f8faf8; padding: 14px; border-radius: 10px; border: 1px solid var(--line); margin: 6px 0;">
-                <div class="bill-row"><span>Internship Program Fee</span><strong>Rs 100</strong></div>
+                <div class="bill-row"><span>Internship Program Fee</span><strong id="dispStudentFee">Rs 0</strong></div>
                 <div class="bill-row"><span>Taxes & Cert Logistics</span><strong>Rs 0</strong></div>
-                <div class="bill-row total"><span>Grand Total Fee</span><strong style="color:var(--accent);">Rs 100</strong></div>
+                <div class="bill-row total"><span>Grand Total Fee</span><strong id="dispStudentTotalFee" style="color:var(--accent);">Rs 0</strong></div>
               </div>
               
               <input type="text" id="suserUpi" placeholder="Your UPI ID (e.g. student@okaxis) *" required oninput="validateStudentForm()">
 
-              <select id="spaymentMode" required onchange="openVisitPayment('studentForm', 100)">
+              <select id="spaymentMode" required onchange="openDynamicVisitPayment('student')">
                 <option value="">Select online payment mode</option>
                 <option value="GPay">GPay App</option>
                 <option value="PhonePe">PhonePe App</option>
                 <option value="Paytm">Paytm App</option>
-                <option value="UPI">Any UPI App / Gateway</option>
               </select>
 
               <div id="studentPaymentHelp" class="payment-help"></div>
@@ -540,22 +567,25 @@
               <input type="text" id="fname" placeholder="Farmer Name" readonly required style="background:#f3f4f6; cursor:not-allowed;">
               <input type="tel" id="fphone" placeholder="Phone Number" readonly required style="background:#f3f4f6; cursor:not-allowed;">
               <input type="email" id="femail" placeholder="Email" readonly required style="background:#f3f4f6; cursor:not-allowed;">
-              <label>Target Training Session Date <input type="date" id="fdate" required></label>
+              
+              <!-- Locked Date (Admin Configured) -->
+              <label style="font-size:12px; font-weight:bold;">Training Session Date (Fixed): 
+                <input type="date" id="fdate" readonly required style="background:#f3f4f6; cursor:not-allowed;">
+              </label>
               
               <div style="background: #f8faf8; padding: 14px; border-radius: 10px; border: 1px solid var(--line); margin: 6px 0;">
-                <div class="bill-row"><span>Farmer Training Workshop Fee</span><strong>Rs 699</strong></div>
+                <div class="bill-row"><span>Farmer Training Workshop Fee</span><strong id="dispFarmerFee">Rs 0</strong></div>
                 <div class="bill-row"><span>Practical Kit & Cert Logistics</span><strong>Rs 0</strong></div>
-                <div class="bill-row total"><span>Grand Total Fee</span><strong style="color:var(--accent);">Rs 699</strong></div>
+                <div class="bill-row total"><span>Grand Total Fee</span><strong id="dispFarmerTotalFee" style="color:var(--accent);">Rs 0</strong></div>
               </div>
 
               <input type="text" id="fuserUpi" placeholder="Your UPI ID (e.g. farmer@upi) *" required oninput="validateFarmerForm()">
 
-              <select id="fpaymentMode" required onchange="openVisitPayment('farmerForm', 699)">
+              <select id="fpaymentMode" required onchange="openDynamicVisitPayment('farmer')">
                 <option value="">Select online payment mode</option>
                 <option value="GPay">GPay App</option>
                 <option value="PhonePe">PhonePe App</option>
                 <option value="Paytm">Paytm App</option>
-                <option value="UPI">Any UPI App / Gateway</option>
               </select>
 
               <div id="farmerPaymentHelp" class="payment-help"></div>
@@ -614,7 +644,7 @@
             </div>
           </form>
         </section>
-        
+
       </main>
     </div>
 
@@ -644,6 +674,7 @@
         <button class="btn" id="tabNavAccounting" onclick="switchErpTab('erpAccountingTab', 'tabNavAccounting')">Farm Core Financial & Stock Page</button>
         <button class="btn" id="tabNavAdminManager" onclick="switchErpTab('erpAdminManagerTab', 'tabNavAdminManager')">Admin Manager Page</button>
         <button class="btn" id="tabNavUsers" onclick="switchErpTab('erpUsersTab', 'tabNavUsers')">Registered Accounts Ledger</button>
+        <button class="btn" id="tabNavBookingConfig" onclick="switchErpTab('erpBookingConfigTab', 'tabNavBookingConfig')">⚙️ Booking Window & Fee Config</button>
         <button class="btn" id="tabNavOverviewSummary" onclick="switchErpTab('erpOverviewSummaryTab', 'tabNavOverviewSummary')">Overview & Live Summary Ledger</button>
       </div>
 
@@ -1254,6 +1285,74 @@
   </div>
 </div>
       </div>
+       
+      <!-- ERP Segment: Booking Window, Dates & Fees Configuration -->
+<div id="erpBookingConfigTab" class="erp-section">
+  <h3>⚙️ Farm Training Schedule, Booking Windows & Fees Setup</h3>
+  <p class="muted" style="font-size:13px;">Yahan se aap jo Date, Fees aur Registration Window (Start/End Date & Time) set karenge, wahi users ke liye live reflect hogi aur form automatic open/close hoga.</p>
+
+  <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap:20px; margin-top:15px;">
+    
+    <!-- Student Internship Setup -->
+    <div style="background:#f8fafc; border:1px solid #cbd5e1; border-radius:12px; padding:18px;">
+      <h4 style="color:#0284c7; margin-top:0;">🎓 Student Internship Configuration</h4>
+      <form onsubmit="saveBookingConfigAdmin(event, 'student')" style="display:grid; gap:10px;">
+        <label style="font-size:12px; font-weight:bold;">Program Fee (Rs):
+          <input type="number" id="cfgStudentFee" min="0" required>
+        </label>
+        
+        <label style="font-size:12px; font-weight:bold;">Fixed Internship Start Date:
+          <input type="date" id="cfgStudentStartDate" required>
+        </label>
+
+        <label style="font-size:12px; font-weight:bold;">Fixed Internship End Date:
+          <input type="date" id="cfgStudentEndDate" required>
+        </label>
+
+        <hr style="border:0; border-top:1px dashed #cbd5e1; margin:4px 0;">
+        <strong style="font-size:12px; color:#475569;">🕒 Registration Open/Close Window:</strong>
+
+        <label style="font-size:12px;">Registration Opens At:
+          <input type="datetime-local" id="cfgStudentRegOpen" required>
+        </label>
+
+        <label style="font-size:12px;">Registration Closes At:
+          <input type="datetime-local" id="cfgStudentRegClose" required>
+        </label>
+
+        <button type="submit" style="background:#0284c7; margin-top:6px;">💾 Save Student Settings</button>
+      </form>
+    </div>
+
+    <!-- Farmer Workshop Setup -->
+    <div style="background:#f8fafc; border:1px solid #cbd5e1; border-radius:12px; padding:18px;">
+      <h4 style="color:#b45309; margin-top:0;">👨‍🌾 Farmer Training Configuration</h4>
+      <form onsubmit="saveBookingConfigAdmin(event, 'farmer')" style="display:grid; gap:10px;">
+        <label style="font-size:12px; font-weight:bold;">Program Fee (Rs):
+          <input type="number" id="cfgFarmerFee" min="0" required>
+        </label>
+
+        <label style="font-size:12px; font-weight:bold;">Fixed Training Session Date:
+          <input type="date" id="cfgFarmerSessionDate" required>
+        </label>
+
+        <hr style="border:0; border-top:1px dashed #cbd5e1; margin:4px 0;">
+        <strong style="font-size:12px; color:#475569;">🕒 Registration Open/Close Window:</strong>
+
+        <label style="font-size:12px;">Registration Opens At:
+          <input type="datetime-local" id="cfgFarmerRegOpen" required>
+        </label>
+
+        <label style="font-size:12px;">Registration Closes At:
+          <input type="datetime-local" id="cfgFarmerRegClose" required>
+        </label>
+
+        <button type="submit" style="background:#b45309; margin-top:6px;">💾 Save Farmer Settings</button>
+      </form>
+    </div>
+
+  </div>
+</div>
 
       <!-- ERP Segment 4: Overview & Live Summary Ledger -->
       <div id="erpOverviewSummaryTab" class="erp-section">

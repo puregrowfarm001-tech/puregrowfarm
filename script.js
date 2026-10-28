@@ -4929,3 +4929,228 @@ Thank you!`;
   // Standard mailto link open karega jisse user ke phone/PC ka Gmail ya default mail composer open ho jayega
   window.location.href = `mailto:${targetEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(emailBody)}`;
 }
+
+
+
+// =========================================================
+// DYNAMIC BOOKING WINDOW, FEES & AUTO OPEN/CLOSE TIMER
+// =========================================================
+
+const DEFAULT_BOOKING_CONFIG = {
+  student: {
+    fee: 100,
+    startDate: "2026-11-01",
+    endDate: "2026-11-15",
+    regOpen: "2026-10-25T00:00",
+    regClose: "2026-10-31T23:59"
+  },
+  farmer: {
+    fee: 699,
+    sessionDate: "2026-11-05",
+    regOpen: "2026-10-25T00:00",
+    regClose: "2026-11-04T18:00"
+  }
+};
+
+let bookingConfig = JSON.parse(localStorage.getItem('pgf_booking_config')) || DEFAULT_BOOKING_CONFIG;
+
+// Supabase se config fetch karein (agar table banayi ho toh) ya local storage use karein
+async function initBookingConfig() {
+  try {
+    const { data } = await _supabase.from('pgf_booking_config').select('*').limit(1).maybeSingle();
+    if (data && data.config_json) {
+      bookingConfig = data.config_json;
+      localStorage.setItem('pgf_booking_config', JSON.stringify(bookingConfig));
+    }
+  } catch(e) {
+    console.log("Config load fallback to local", e);
+  }
+  applyBookingConfigToForms();
+  populateAdminBookingConfigInputs();
+}
+
+function populateAdminBookingConfigInputs() {
+  if (document.getElementById("cfgStudentFee")) {
+    document.getElementById("cfgStudentFee").value = bookingConfig.student.fee;
+    document.getElementById("cfgStudentStartDate").value = bookingConfig.student.startDate;
+    document.getElementById("cfgStudentEndDate").value = bookingConfig.student.endDate;
+    document.getElementById("cfgStudentRegOpen").value = bookingConfig.student.regOpen;
+    document.getElementById("cfgStudentRegClose").value = bookingConfig.student.regClose;
+  }
+  if (document.getElementById("cfgFarmerFee")) {
+    document.getElementById("cfgFarmerFee").value = bookingConfig.farmer.fee;
+    document.getElementById("cfgFarmerSessionDate").value = bookingConfig.farmer.sessionDate;
+    document.getElementById("cfgFarmerRegOpen").value = bookingConfig.farmer.regOpen;
+    document.getElementById("cfgFarmerRegClose").value = bookingConfig.farmer.regClose;
+  }
+}
+
+async function saveBookingConfigAdmin(e, type) {
+  e.preventDefault();
+  if (type === 'student') {
+    bookingConfig.student = {
+      fee: Number(document.getElementById("cfgStudentFee").value),
+      startDate: document.getElementById("cfgStudentStartDate").value,
+      endDate: document.getElementById("cfgStudentEndDate").value,
+      regOpen: document.getElementById("cfgStudentRegOpen").value,
+      regClose: document.getElementById("cfgStudentRegClose").value
+    };
+  } else {
+    bookingConfig.farmer = {
+      fee: Number(document.getElementById("cfgFarmerFee").value),
+      sessionDate: document.getElementById("cfgFarmerSessionDate").value,
+      regOpen: document.getElementById("cfgFarmerRegOpen").value,
+      regClose: document.getElementById("cfgFarmerRegClose").value
+    };
+  }
+
+  localStorage.setItem('pgf_booking_config', JSON.stringify(bookingConfig));
+
+  // Sync to Supabase
+  try {
+    await _supabase.from('pgf_booking_config').upsert([{ id: 1, config_json: bookingConfig }]);
+  } catch(err) {
+    console.log("Cloud config sync note:", err);
+  }
+
+  applyBookingConfigToForms();
+  alert(`✅ ${type === 'student' ? 'Student Internship' : 'Farmer Training'} Configuration Saved & Live Updated!`);
+}
+
+function applyBookingConfigToForms() {
+  // 1. Student Values Apply
+  if (document.getElementById("sstart")) document.getElementById("sstart").value = bookingConfig.student.startDate || "";
+  if (document.getElementById("send")) document.getElementById("send").value = bookingConfig.student.endDate || "";
+  if (document.getElementById("dispStudentFee")) document.getElementById("dispStudentFee").textContent = `Rs ${bookingConfig.student.fee}`;
+  if (document.getElementById("dispStudentTotalFee")) document.getElementById("dispStudentTotalFee").textContent = `Rs ${bookingConfig.student.fee}`;
+
+  // 2. Farmer Values Apply
+  if (document.getElementById("fdate")) document.getElementById("fdate").value = bookingConfig.farmer.sessionDate || "";
+  if (document.getElementById("dispFarmerFee")) document.getElementById("dispFarmerFee").textContent = `Rs ${bookingConfig.farmer.fee}`;
+  if (document.getElementById("dispFarmerTotalFee")) document.getElementById("dispFarmerTotalFee").textContent = `Rs ${bookingConfig.farmer.fee}`;
+
+  updateLiveBookingTimer();
+}
+
+// Live Countdown & Auto Open/Close Logic
+let timerInterval = null;
+function updateLiveBookingTimer() {
+  const isStudentActive = document.getElementById("studentForm")?.classList.contains("active");
+  const currentType = isStudentActive ? 'student' : 'farmer';
+  const cfg = bookingConfig[currentType];
+  if (!cfg) return;
+
+  const now = new Date().getTime();
+  const openTime = new Date(cfg.regOpen).getTime();
+  const closeTime = new Date(cfg.regClose).getTime();
+
+  const labelEl = document.getElementById("timerStatusLabel");
+  const countEl = document.getElementById("liveCountdownDisplay");
+  const rangeEl = document.getElementById("windowRangeText");
+  const banner = document.getElementById("bookingTimerAlertBox");
+  
+  const submitBtn = isStudentActive ? document.getElementById("studentSubmitBtn") : document.getElementById("farmerSubmitBtn");
+  const activeForm = isStudentActive ? document.getElementById("studentForm") : document.getElementById("farmerForm");
+
+  const formatDateTime = (dtStr) => {
+    try { return new Date(dtStr).toLocaleString('en-IN', { dateStyle:'medium', timeStyle:'short' }); } catch(e) { return dtStr; }
+  };
+  if (rangeEl) rangeEl.innerHTML = `Window: <strong>${formatDateTime(cfg.regOpen)}</strong><br>till <strong>${formatDateTime(cfg.regClose)}</strong>`;
+
+  // Case 1: Registration Yet to Open
+  if (now < openTime) {
+    const diff = openTime - now;
+    if (banner) { banner.style.background = "#fffbeb"; banner.style.borderColor = "#fde68a"; }
+    if (labelEl) { labelEl.textContent = "⏳ Registration Opens In:"; labelEl.style.color = "#b45309"; }
+    if (countEl) countEl.textContent = getDurationString(diff);
+    disableFormRegistration(activeForm, submitBtn, "Registration will open soon.");
+  } 
+  // Case 2: Registration Closed / Expired
+  else if (now > closeTime) {
+    if (banner) { banner.style.background = "#fef2f2"; banner.style.borderColor = "#fecaca"; }
+    if (labelEl) { labelEl.textContent = "❌ Registration Window Closed:"; labelEl.style.color = "#dc2626"; }
+    if (countEl) { countEl.textContent = "Closed for this batch"; countEl.style.color = "#dc2626"; }
+    disableFormRegistration(activeForm, submitBtn, "Registrations are closed for this batch.");
+  } 
+  // Case 3: Registration Active / Live
+  else {
+    const diff = closeTime - now;
+    if (banner) { banner.style.background = "#f0fdf4"; banner.style.borderColor = "#bbf7d0"; }
+    if (labelEl) { labelEl.textContent = "🟢 Registration Open! Closes In:"; labelEl.style.color = "#15803d"; }
+    if (countEl) { countEl.textContent = getDurationString(diff); countEl.style.color = "#166534"; }
+    enableFormRegistration(activeForm);
+  }
+}
+
+function getDurationString(ms) {
+  const totalSecs = Math.floor(ms / 1000);
+  const days = Math.floor(totalSecs / (3600 * 24));
+  const hours = Math.floor((totalSecs % (3600 * 24)) / 3600);
+  const mins = Math.floor((totalSecs % 3600) / 60);
+  const secs = totalSecs % 60;
+  return `${days}d : ${hours}h : ${mins}m : ${secs}s`;
+}
+
+function disableFormRegistration(formEl, btnEl, reasonMsg) {
+  if (!formEl) return;
+  const inputs = formEl.querySelectorAll("input:not([readonly]), select");
+  inputs.forEach(el => el.disabled = true);
+  if (btnEl) {
+    btnEl.disabled = true;
+    btnEl.dataset.originalText = btnEl.dataset.originalText || btnEl.textContent;
+    btnEl.textContent = `🔒 ${reasonMsg}`;
+  }
+}
+
+function enableFormRegistration(formEl) {
+  if (!formEl) return;
+  const inputs = formEl.querySelectorAll("input, select");
+  inputs.forEach(el => {
+    if (el.id !== "spayment" && el.id !== "fpayment") el.disabled = false;
+  });
+}
+
+// Tab badalte waqt countdown turant switch ho
+const oldShowVisitForm = window.showVisitForm;
+window.showVisitForm = function(formId) {
+  if (typeof oldShowVisitForm === "function") oldShowVisitForm(formId);
+  updateLiveBookingTimer();
+};
+
+// UPI Payment Launch (Admin Configured Fees Ke Sath)
+function openDynamicVisitPayment(type) {
+  const isStudent = type === 'student';
+  const modeSelectId = isStudent ? "spaymentMode" : "fpaymentMode";
+  const helpId = isStudent ? "studentPaymentHelp" : "farmerPaymentHelp";
+  const txnInputId = isStudent ? "spayment" : "fpayment";
+  const mode = document.getElementById(modeSelectId).value;
+  const amount = isStudent ? bookingConfig.student.fee : bookingConfig.farmer.fee;
+
+  if (!mode) {
+    document.getElementById(txnInputId).value = "";
+    document.getElementById(txnInputId).disabled = true;
+    if (isStudent) validateStudentForm(); else validateFarmerForm();
+    return;
+  }
+  
+  document.getElementById(helpId).style.display = "block";
+  document.getElementById(helpId).textContent = `Launching UPI App for program fee Rs ${amount}.`;
+  
+  window.location.href = `upi://pay?pa=${encodeURIComponent(farmUpiId)}&pn=${encodeURIComponent(farmName)}&am=${amount}&cu=INR`;
+  
+  document.getElementById(txnInputId).disabled = false;
+  if (isStudent) validateStudentForm(); else validateFarmerForm();
+}
+
+// Existing submit functions me admin fee pass ho
+// submitStudentVisit me:
+// fee: bookingConfig.student.fee
+// submitFarmerVisit me:
+// fee: bookingConfig.farmer.fee
+
+// Timer aur Config start karein
+document.addEventListener("DOMContentLoaded", () => {
+  initBookingConfig();
+  if (timerInterval) clearInterval(timerInterval);
+  timerInterval = setInterval(updateLiveBookingTimer, 1000);
+});

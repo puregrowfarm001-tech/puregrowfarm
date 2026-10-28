@@ -1286,72 +1286,121 @@
 </div>
       </div>
        
-      <!-- ERP Segment: Booking Window, Dates & Fees Configuration -->
+     <!-- ERP Segment: Dynamic Batch Scheduler & History Ledger -->
 <div id="erpBookingConfigTab" class="erp-section">
-  <h3>⚙️ Farm Training Schedule, Booking Windows & Fees Setup</h3>
-  <p class="muted" style="font-size:13px;">Yahan se aap jo Date, Fees aur Registration Window (Start/End Date & Time) set karenge, wahi users ke liye live reflect hogi aur form automatic open/close hoga.</p>
+  <h3>⚙️ Farm Training Batch Scheduler & History Manager</h3>
+  <p class="muted" style="font-size:13px;">Yahan se admin naya batch announce karega. Jo batch add karenge wo Supabase me save hoga aur usi date-time par live open/close hoga.</p>
 
-  <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap:20px; margin-top:15px;">
+  <!-- 1. Create New Batch Section -->
+  <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap:20px; margin-top:15px; margin-bottom:25px;">
     
-    <!-- Student Internship Setup -->
+    <!-- Student Batch Form -->
     <div style="background:#f8fafc; border:1px solid #cbd5e1; border-radius:12px; padding:18px;">
-      <h4 style="color:#0284c7; margin-top:0;">🎓 Student Internship Configuration</h4>
-      <form onsubmit="saveBookingConfigAdmin(event, 'student')" style="display:grid; gap:10px;">
+      <h4 style="color:#0284c7; margin-top:0;">🎓 Schedule New Student Internship Batch</h4>
+      <form onsubmit="saveNewBatchAdmin(event, 'Student')" style="display:grid; gap:10px;">
         <label style="font-size:12px; font-weight:bold;">Program Fee (Rs):
-          <input type="number" id="cfgStudentFee" min="0" required>
+          <input type="number" id="admStuFee" min="0" required placeholder="e.g. 100">
         </label>
         
-        <label style="font-size:12px; font-weight:bold;">Fixed Internship Start Date:
-          <input type="date" id="cfgStudentStartDate" required>
-        </label>
-
-        <label style="font-size:12px; font-weight:bold;">Fixed Internship End Date:
-          <input type="date" id="cfgStudentEndDate" required>
-        </label>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+          <label style="font-size:12px; font-weight:bold;">Internship Start Date:
+            <input type="date" id="admStuStartDate" required>
+          </label>
+          <label style="font-size:12px; font-weight:bold;">Internship End Date:
+            <input type="date" id="admStuEndDate" required>
+          </label>
+        </div>
 
         <hr style="border:0; border-top:1px dashed #cbd5e1; margin:4px 0;">
-        <strong style="font-size:12px; color:#475569;">🕒 Registration Open/Close Window:</strong>
+        <strong style="font-size:12px; color:#475569;">🕒 Form Registration Window (Auto Open / Close):</strong>
 
-        <label style="font-size:12px;">Registration Opens At:
-          <input type="datetime-local" id="cfgStudentRegOpen" required>
+        <label style="font-size:12px;">Form Open Date & Time:
+          <input type="datetime-local" id="admStuRegOpen" required>
         </label>
 
-        <label style="font-size:12px;">Registration Closes At:
-          <input type="datetime-local" id="cfgStudentRegClose" required>
+        <label style="font-size:12px;">Form Close Date & Time:
+          <input type="datetime-local" id="admStuRegClose" required>
         </label>
 
-        <button type="submit" style="background:#0284c7; margin-top:6px;">💾 Save Student Settings</button>
+        <button type="submit" style="background:#0284c7; margin-top:6px;">🚀 Save & Launch Student Batch</button>
       </form>
     </div>
 
-    <!-- Farmer Workshop Setup -->
+    <!-- Farmer Batch Form -->
     <div style="background:#f8fafc; border:1px solid #cbd5e1; border-radius:12px; padding:18px;">
-      <h4 style="color:#b45309; margin-top:0;">👨‍🌾 Farmer Training Configuration</h4>
-      <form onsubmit="saveBookingConfigAdmin(event, 'farmer')" style="display:grid; gap:10px;">
-        <label style="font-size:12px; font-weight:bold;">Program Fee (Rs):
-          <input type="number" id="cfgFarmerFee" min="0" required>
+      <h4 style="color:#b45309; margin-top:0;">👨‍🌾 Schedule New Farmer Workshop Batch</h4>
+      <form onsubmit="saveNewBatchAdmin(event, 'Farmer')" style="display:grid; gap:10px;">
+        <label style="font-size:12px; font-weight:bold;">Workshop Fee (Rs):
+          <input type="number" id="admFarFee" min="0" required placeholder="e.g. 699">
         </label>
 
-        <label style="font-size:12px; font-weight:bold;">Fixed Training Session Date:
-          <input type="date" id="cfgFarmerSessionDate" required>
+        <label style="font-size:12px; font-weight:bold;">Practical Training Date:
+          <input type="date" id="admFarSessionDate" required>
         </label>
 
         <hr style="border:0; border-top:1px dashed #cbd5e1; margin:4px 0;">
-        <strong style="font-size:12px; color:#475569;">🕒 Registration Open/Close Window:</strong>
+        <strong style="font-size:12px; color:#475569;">🕒 Form Registration Window (Auto Open / Close):</strong>
 
-        <label style="font-size:12px;">Registration Opens At:
-          <input type="datetime-local" id="cfgFarmerRegOpen" required>
+        <label style="font-size:12px;">Form Open Date & Time:
+          <input type="datetime-local" id="admFarRegOpen" required>
         </label>
 
-        <label style="font-size:12px;">Registration Closes At:
-          <input type="datetime-local" id="cfgFarmerRegClose" required>
+        <label style="font-size:12px;">Form Close Date & Time:
+          <input type="datetime-local" id="admFarRegClose" required>
         </label>
 
-        <button type="submit" style="background:#b45309; margin-top:6px;">💾 Save Farmer Settings</button>
+        <button type="submit" style="background:#b45309; margin-top:6px;">🚀 Save & Launch Farmer Batch</button>
       </form>
     </div>
-
   </div>
+
+  <!-- 2. Batch History Ledgers -->
+  <h3 style="border-top:2px solid var(--line); padding-top:20px;">📜 Batch History & Student/Farmer Counts</h3>
+
+  <!-- Student History Table -->
+  <h4 style="color:#0284c7; margin-bottom:8px;">🎓 Student Internship Batches History</h4>
+  <div class="table-responsive" style="margin-bottom:24px;">
+    <table>
+      <thead>
+        <tr>
+          <th>Batch ID</th>
+          <th>Fees</th>
+          <th>Internship Dates (Start - End)</th>
+          <th>Form Active Window (Open - Close)</th>
+          <th>Live Status</th>
+          <th>People Filled (Total Registrations)</th>
+          <th>Created By</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody id="studentBatchHistoryTableBody">
+        <tr><td colspan="8" style="text-align:center; padding:15px;" class="muted">No student batches launched yet.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Farmer History Table -->
+  <h4 style="color:#b45309; margin-bottom:8px;">👨‍🌾 Farmer Workshop Batches History</h4>
+  <div class="table-responsive">
+    <table>
+      <thead>
+        <tr>
+          <th>Batch ID</th>
+          <th>Fees</th>
+          <th>Training Session Date</th>
+          <th>Form Active Window (Open - Close)</th>
+          <th>Live Status</th>
+          <th>People Filled (Total Registrations)</th>
+          <th>Created By</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody id="farmerBatchHistoryTableBody">
+        <tr><td colspan="8" style="text-align:center; padding:15px;" class="muted">No farmer batches launched yet.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
 </div>
 
       <!-- ERP Segment 4: Overview & Live Summary Ledger -->

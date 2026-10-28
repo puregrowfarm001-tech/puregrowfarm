@@ -4933,198 +4933,285 @@ Thank you!`;
 
 
 // =========================================================
-// DYNAMIC BOOKING WINDOW, FEES & AUTO OPEN/CLOSE TIMER
+// REAL DATABASE-DRIVEN BATCH SCHEDULER & AUTO LOCK
 // =========================================================
 
-const DEFAULT_BOOKING_CONFIG = {
-  student: {
-    fee: 100,
-    startDate: "2026-11-01",
-    endDate: "2026-11-15",
-    regOpen: "2026-10-25T00:00",
-    regClose: "2026-10-31T23:59"
-  },
-  farmer: {
-    fee: 699,
-    sessionDate: "2026-11-05",
-    regOpen: "2026-10-25T00:00",
-    regClose: "2026-11-04T18:00"
-  }
-};
+let allTrainingBatches = [];
+let activeStudentBatch = null;
+let activeFarmerBatch = null;
 
-let bookingConfig = JSON.parse(localStorage.getItem('pgf_booking_config')) || DEFAULT_BOOKING_CONFIG;
-
-// Supabase se config fetch karein (agar table banayi ho toh) ya local storage use karein
-async function initBookingConfig() {
+// 1. Supabase se batches fetch karein
+async function loadTrainingBatchesFromCloud() {
+  if (!_supabase) return;
   try {
-    const { data } = await _supabase.from('pgf_booking_config').select('*').limit(1).maybeSingle();
-    if (data && data.config_json) {
-      bookingConfig = data.config_json;
-      localStorage.setItem('pgf_booking_config', JSON.stringify(bookingConfig));
+    const { data, error } = await _supabase
+      .from('pgf_training_batches')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (!error && data) {
+      allTrainingBatches = data;
+      
+      // Sabse latest active batch find karein
+      activeStudentBatch = allTrainingBatches.find(b => b.type === 'Student') || null;
+      activeFarmerBatch = allTrainingBatches.find(b => b.type === 'Farmer') || null;
+
+      renderBatchHistoryTables();
+      applyCurrentBatchToForms();
     }
-  } catch(e) {
-    console.log("Config load fallback to local", e);
-  }
-  applyBookingConfigToForms();
-  populateAdminBookingConfigInputs();
-}
-
-function populateAdminBookingConfigInputs() {
-  if (document.getElementById("cfgStudentFee")) {
-    document.getElementById("cfgStudentFee").value = bookingConfig.student.fee;
-    document.getElementById("cfgStudentStartDate").value = bookingConfig.student.startDate;
-    document.getElementById("cfgStudentEndDate").value = bookingConfig.student.endDate;
-    document.getElementById("cfgStudentRegOpen").value = bookingConfig.student.regOpen;
-    document.getElementById("cfgStudentRegClose").value = bookingConfig.student.regClose;
-  }
-  if (document.getElementById("cfgFarmerFee")) {
-    document.getElementById("cfgFarmerFee").value = bookingConfig.farmer.fee;
-    document.getElementById("cfgFarmerSessionDate").value = bookingConfig.farmer.sessionDate;
-    document.getElementById("cfgFarmerRegOpen").value = bookingConfig.farmer.regOpen;
-    document.getElementById("cfgFarmerRegClose").value = bookingConfig.farmer.regClose;
+  } catch (err) {
+    console.error("Batch fetch error:", err);
   }
 }
 
-async function saveBookingConfigAdmin(e, type) {
+// 2. Admin se naya batch create aur save karna
+async function saveNewBatchAdmin(e, batchType) {
   e.preventDefault();
-  if (type === 'student') {
-    bookingConfig.student = {
-      fee: Number(document.getElementById("cfgStudentFee").value),
-      startDate: document.getElementById("cfgStudentStartDate").value,
-      endDate: document.getElementById("cfgStudentEndDate").value,
-      regOpen: document.getElementById("cfgStudentRegOpen").value,
-      regClose: document.getElementById("cfgStudentRegClose").value
-    };
+  const currentAdmin = (currentUser && currentUser.name) ? currentUser.name : "Admin";
+  const now = new Date();
+  const timestampStr = now.toLocaleDateString('en-IN') + " " + now.toLocaleTimeString('en-IN');
+
+  let payload = {
+    id: (batchType === 'Student' ? "STU-BATCH-" : "FAR-BATCH-") + Date.now().toString().slice(-5),
+    type: batchType,
+    created_at: timestampStr,
+    created_by: currentAdmin
+  };
+
+  if (batchType === 'Student') {
+    payload.fee = Number(document.getElementById("admStuFee").value);
+    payload.start_date = document.getElementById("admStuStartDate").value;
+    payload.end_date = document.getElementById("admStuEndDate").value;
+    payload.reg_open = document.getElementById("admStuRegOpen").value;
+    payload.reg_close = document.getElementById("admStuRegClose").value;
   } else {
-    bookingConfig.farmer = {
-      fee: Number(document.getElementById("cfgFarmerFee").value),
-      sessionDate: document.getElementById("cfgFarmerSessionDate").value,
-      regOpen: document.getElementById("cfgFarmerRegOpen").value,
-      regClose: document.getElementById("cfgFarmerRegClose").value
-    };
+    payload.fee = Number(document.getElementById("admFarFee").value);
+    payload.session_date = document.getElementById("admFarSessionDate").value;
+    payload.reg_open = document.getElementById("admFarRegOpen").value;
+    payload.reg_close = document.getElementById("admFarRegClose").value;
   }
 
-  localStorage.setItem('pgf_booking_config', JSON.stringify(bookingConfig));
+  showPgfLoader("Saving new batch to Supabase...");
 
-  // Sync to Supabase
-  try {
-    await _supabase.from('pgf_booking_config').upsert([{ id: 1, config_json: bookingConfig }]);
-  } catch(err) {
-    console.log("Cloud config sync note:", err);
+  const { error } = await _supabase.from('pgf_training_batches').insert([payload]);
+  hidePgfLoader();
+
+  if (error) {
+    alert("❌ Error saving batch: " + error.message);
+    return;
   }
 
-  applyBookingConfigToForms();
-  alert(`✅ ${type === 'student' ? 'Student Internship' : 'Farmer Training'} Configuration Saved & Live Updated!`);
+  alert(`✅ New ${batchType} Batch created & synced to cloud!`);
+  e.target.reset();
+  await loadTrainingBatchesFromCloud();
 }
 
-function applyBookingConfigToForms() {
-  // 1. Student Values Apply
-  if (document.getElementById("sstart")) document.getElementById("sstart").value = bookingConfig.student.startDate || "";
-  if (document.getElementById("send")) document.getElementById("send").value = bookingConfig.student.endDate || "";
-  if (document.getElementById("dispStudentFee")) document.getElementById("dispStudentFee").textContent = `Rs ${bookingConfig.student.fee}`;
-  if (document.getElementById("dispStudentTotalFee")) document.getElementById("dispStudentTotalFee").textContent = `Rs ${bookingConfig.student.fee}`;
+// 3. Delete Batch from Cloud
+async function deleteBatchAdmin(batchId) {
+  if (!confirm("Are you sure you want to delete this batch record?")) return;
+  showPgfLoader("Deleting batch...");
+  const { error } = await _supabase.from('pgf_training_batches').delete().eq('id', batchId);
+  hidePgfLoader();
 
-  // 2. Farmer Values Apply
-  if (document.getElementById("fdate")) document.getElementById("fdate").value = bookingConfig.farmer.sessionDate || "";
-  if (document.getElementById("dispFarmerFee")) document.getElementById("dispFarmerFee").textContent = `Rs ${bookingConfig.farmer.fee}`;
-  if (document.getElementById("dispFarmerTotalFee")) document.getElementById("dispFarmerTotalFee").textContent = `Rs ${bookingConfig.farmer.fee}`;
-
-  updateLiveBookingTimer();
+  if (error) {
+    alert("Delete error: " + error.message);
+    return;
+  }
+  await loadTrainingBatchesFromCloud();
 }
 
-// Live Countdown & Auto Open/Close Logic
-let timerInterval = null;
-function updateLiveBookingTimer() {
-  const isStudentActive = document.getElementById("studentForm")?.classList.contains("active");
-  const currentType = isStudentActive ? 'student' : 'farmer';
-  const cfg = bookingConfig[currentType];
-  if (!cfg) return;
+// 4. Batch History Render (Counting registrations from bookingsRegistry)
+function renderBatchHistoryTables() {
+  const stuTbody = document.getElementById("studentBatchHistoryTableBody");
+  const farTbody = document.getElementById("farmerBatchHistoryTableBody");
 
-  const now = new Date().getTime();
-  const openTime = new Date(cfg.regOpen).getTime();
-  const closeTime = new Date(cfg.regClose).getTime();
+  const stuBatches = allTrainingBatches.filter(b => b.type === 'Student');
+  const farBatches = allTrainingBatches.filter(b => b.type === 'Farmer');
 
+  const nowTime = new Date().getTime();
+
+  // Helper date formatter
+  const fmt = (dt) => {
+    try { return new Date(dt).toLocaleString('en-IN', { dateStyle:'short', timeStyle:'short' }); } catch(e) { return dt; }
+  };
+
+  // Student Table
+  if (stuTbody) {
+    if (!stuBatches.length) {
+      stuTbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:15px;" class="muted">No student batches launched yet.</td></tr>`;
+    } else {
+      stuTbody.innerHTML = stuBatches.map(b => {
+        const openMs = new Date(b.reg_open).getTime();
+        const closeMs = new Date(b.reg_close).getTime();
+        
+        let statusBadge = "";
+        if (nowTime < openMs) {
+          statusBadge = `<span class="badge" style="background:#fef3c7; color:#b45309;">Upcoming</span>`;
+        } else if (nowTime > closeMs) {
+          statusBadge = `<span class="badge" style="background:#fee2e2; color:#dc2626;">Closed</span>`;
+        } else {
+          statusBadge = `<span class="badge" style="background:#dcfce7; color:#15803d;">🟢 Active Live</span>`;
+        }
+
+        // Kitne logon ne form bhara (bookingsRegistry me se match karna)
+        const filledCount = bookingsRegistry.filter(book => book.type === 'Student' && book.start === b.start_date && book.end === b.end_date).length;
+
+        return `
+          <tr>
+            <td><strong>${b.id}</strong></td>
+            <td style="color:var(--accent); font-weight:bold;">Rs ${b.fee}</td>
+            <td>${b.start_date} to ${b.end_date}</td>
+            <td><small>${fmt(b.reg_open)}<br>to <strong>${fmt(b.reg_close)}</strong></small></td>
+            <td>${statusBadge}</td>
+            <td>
+              <strong style="font-size:14px; color:#0284c7;">👥 ${filledCount} Students</strong>
+            </td>
+            <td><small>${b.created_by || 'Admin'}</small></td>
+            <td>
+              <button class="btn" style="padding:2px 6px; font-size:11px; background:var(--danger); min-height:auto;" onclick="deleteBatchAdmin('${b.id}')">Delete</button>
+            </td>
+          </tr>
+        `;
+      }).join("");
+    }
+  }
+
+  // Farmer Table
+  if (farTbody) {
+    if (!farBatches.length) {
+      farTbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:15px;" class="muted">No farmer batches launched yet.</td></tr>`;
+    } else {
+      farTbody.innerHTML = farBatches.map(b => {
+        const openMs = new Date(b.reg_open).getTime();
+        const closeMs = new Date(b.reg_close).getTime();
+        
+        let statusBadge = "";
+        if (nowTime < openMs) {
+          statusBadge = `<span class="badge" style="background:#fef3c7; color:#b45309;">Upcoming</span>`;
+        } else if (nowTime > closeMs) {
+          statusBadge = `<span class="badge" style="background:#fee2e2; color:#dc2626;">Closed</span>`;
+        } else {
+          statusBadge = `<span class="badge" style="background:#dcfce7; color:#15803d;">🟢 Active Live</span>`;
+        }
+
+        const filledCount = bookingsRegistry.filter(book => book.type === 'Farmer' && book.date === b.session_date).length;
+
+        return `
+          <tr>
+            <td><strong>${b.id}</strong></td>
+            <td style="color:var(--accent); font-weight:bold;">Rs ${b.fee}</td>
+            <td>${b.session_date}</td>
+            <td><small>${fmt(b.reg_open)}<br>to <strong>${fmt(b.reg_close)}</strong></small></td>
+            <td>${statusBadge}</td>
+            <td>
+              <strong style="font-size:14px; color:#b45309;">👨‍🌾 ${filledCount} Farmers</strong>
+            </td>
+            <td><small>${b.created_by || 'Admin'}</small></td>
+            <td>
+              <button class="btn" style="padding:2px 6px; font-size:11px; background:var(--danger); min-height:auto;" onclick="deleteBatchAdmin('${b.id}')">Delete</button>
+            </td>
+          </tr>
+        `;
+      }).join("");
+    }
+  }
+}
+
+// 5. User UI par batch data aur auto open/close countdown lagana
+function applyCurrentBatchToForms() {
+  const isStudent = document.getElementById("studentForm")?.classList.contains("active");
+  const currentBatch = isStudent ? activeStudentBatch : activeFarmerBatch;
+
+  const timerBanner = document.getElementById("bookingTimerAlertBox");
   const labelEl = document.getElementById("timerStatusLabel");
   const countEl = document.getElementById("liveCountdownDisplay");
   const rangeEl = document.getElementById("windowRangeText");
-  const banner = document.getElementById("bookingTimerAlertBox");
-  
-  const submitBtn = isStudentActive ? document.getElementById("studentSubmitBtn") : document.getElementById("farmerSubmitBtn");
-  const activeForm = isStudentActive ? document.getElementById("studentForm") : document.getElementById("farmerForm");
+  const submitBtn = isStudent ? document.getElementById("studentSubmitBtn") : document.getElementById("farmerSubmitBtn");
+  const currentForm = isStudent ? document.getElementById("studentForm") : document.getElementById("farmerForm");
 
-  const formatDateTime = (dtStr) => {
-    try { return new Date(dtStr).toLocaleString('en-IN', { dateStyle:'medium', timeStyle:'short' }); } catch(e) { return dtStr; }
+  // Agar admin ne abhi tak koi batch schedule hi nahi kiya hai:
+  if (!currentBatch) {
+    if (timerBanner) { timerBanner.style.background = "#fffbeb"; timerBanner.style.borderColor = "#fde68a"; }
+    if (labelEl) { labelEl.textContent = "⚠️ Batch Not Announced:"; labelEl.style.color = "#b45309"; }
+    if (countEl) { countEl.textContent = "No active batches currently."; countEl.style.color = "#92400e"; }
+    if (rangeEl) rangeEl.textContent = "Admin has not launched a batch yet.";
+    
+    // Form Inputs reset aur lock
+    if (isStudent) {
+      if (document.getElementById("sstart")) document.getElementById("sstart").value = "";
+      if (document.getElementById("send")) document.getElementById("send").value = "";
+      if (document.getElementById("dispStudentFee")) document.getElementById("dispStudentFee").textContent = "Rs 0";
+      if (document.getElementById("dispStudentTotalFee")) document.getElementById("dispStudentTotalFee").textContent = "Rs 0";
+    } else {
+      if (document.getElementById("fdate")) document.getElementById("fdate").value = "";
+      if (document.getElementById("dispFarmerFee")) document.getElementById("dispFarmerFee").textContent = "Rs 0";
+      if (document.getElementById("dispFarmerTotalFee")) document.getElementById("dispFarmerTotalFee").textContent = "Rs 0";
+    }
+    disableFormRegistration(currentForm, submitBtn, "No batch available");
+    return;
+  }
+
+  // Agar batch available hai, toh dates aur fee auto-set karo:
+  if (isStudent) {
+    if (document.getElementById("sstart")) document.getElementById("sstart").value = currentBatch.start_date;
+    if (document.getElementById("send")) document.getElementById("send").value = currentBatch.end_date;
+    if (document.getElementById("dispStudentFee")) document.getElementById("dispStudentFee").textContent = `Rs ${currentBatch.fee}`;
+    if (document.getElementById("dispStudentTotalFee")) document.getElementById("dispStudentTotalFee").textContent = `Rs ${currentBatch.fee}`;
+  } else {
+    if (document.getElementById("fdate")) document.getElementById("fdate").value = currentBatch.session_date;
+    if (document.getElementById("dispFarmerFee")) document.getElementById("dispFarmerFee").textContent = `Rs ${currentBatch.fee}`;
+    if (document.getElementById("dispFarmerTotalFee")) document.getElementById("dispFarmerTotalFee").textContent = `Rs ${currentBatch.fee}`;
+  }
+
+  // Live Timer Check:
+  const now = new Date().getTime();
+  const openTime = new Date(currentBatch.reg_open).getTime();
+  const closeTime = new Date(currentBatch.reg_close).getTime();
+
+  const fmt = (dt) => {
+    try { return new Date(dt).toLocaleString('en-IN', { dateStyle:'short', timeStyle:'short' }); } catch(e) { return dt; }
   };
-  if (rangeEl) rangeEl.innerHTML = `Window: <strong>${formatDateTime(cfg.regOpen)}</strong><br>till <strong>${formatDateTime(cfg.regClose)}</strong>`;
+  if (rangeEl) rangeEl.innerHTML = `Window: <strong>${fmt(currentBatch.reg_open)}</strong> till <strong>${fmt(currentBatch.reg_close)}</strong>`;
 
-  // Case 1: Registration Yet to Open
+  // Case A: Form abhi shuru nahi hua
   if (now < openTime) {
     const diff = openTime - now;
-    if (banner) { banner.style.background = "#fffbeb"; banner.style.borderColor = "#fde68a"; }
+    if (timerBanner) { timerBanner.style.background = "#fffbeb"; timerBanner.style.borderColor = "#fde68a"; }
     if (labelEl) { labelEl.textContent = "⏳ Registration Opens In:"; labelEl.style.color = "#b45309"; }
-    if (countEl) countEl.textContent = getDurationString(diff);
-    disableFormRegistration(activeForm, submitBtn, "Registration will open soon.");
-  } 
-  // Case 2: Registration Closed / Expired
+    if (countEl) { countEl.textContent = getDurationString(diff); countEl.style.color = "#b45309"; }
+    disableFormRegistration(currentForm, submitBtn, "Registration will open soon.");
+  }
+  // Case B: Form End Date & Time par close ho gaya
   else if (now > closeTime) {
-    if (banner) { banner.style.background = "#fef2f2"; banner.style.borderColor = "#fecaca"; }
+    if (timerBanner) { timerBanner.style.background = "#fef2f2"; timerBanner.style.borderColor = "#fecaca"; }
     if (labelEl) { labelEl.textContent = "❌ Registration Window Closed:"; labelEl.style.color = "#dc2626"; }
     if (countEl) { countEl.textContent = "Closed for this batch"; countEl.style.color = "#dc2626"; }
-    disableFormRegistration(activeForm, submitBtn, "Registrations are closed for this batch.");
-  } 
-  // Case 3: Registration Active / Live
+    disableFormRegistration(currentForm, submitBtn, "Registration Closed");
+  }
+  // Case C: Form active hai (Open hai)
   else {
     const diff = closeTime - now;
-    if (banner) { banner.style.background = "#f0fdf4"; banner.style.borderColor = "#bbf7d0"; }
+    if (timerBanner) { timerBanner.style.background = "#f0fdf4"; timerBanner.style.borderColor = "#bbf7d0"; }
     if (labelEl) { labelEl.textContent = "🟢 Registration Open! Closes In:"; labelEl.style.color = "#15803d"; }
     if (countEl) { countEl.textContent = getDurationString(diff); countEl.style.color = "#166534"; }
-    enableFormRegistration(activeForm);
+    enableFormRegistration(currentForm);
   }
 }
 
-function getDurationString(ms) {
-  const totalSecs = Math.floor(ms / 1000);
-  const days = Math.floor(totalSecs / (3600 * 24));
-  const hours = Math.floor((totalSecs % (3600 * 24)) / 3600);
-  const mins = Math.floor((totalSecs % 3600) / 60);
-  const secs = totalSecs % 60;
-  return `${days}d : ${hours}h : ${mins}m : ${secs}s`;
-}
-
-function disableFormRegistration(formEl, btnEl, reasonMsg) {
-  if (!formEl) return;
-  const inputs = formEl.querySelectorAll("input:not([readonly]), select");
-  inputs.forEach(el => el.disabled = true);
-  if (btnEl) {
-    btnEl.disabled = true;
-    btnEl.dataset.originalText = btnEl.dataset.originalText || btnEl.textContent;
-    btnEl.textContent = `🔒 ${reasonMsg}`;
-  }
-}
-
-function enableFormRegistration(formEl) {
-  if (!formEl) return;
-  const inputs = formEl.querySelectorAll("input, select");
-  inputs.forEach(el => {
-    if (el.id !== "spayment" && el.id !== "fpayment") el.disabled = false;
-  });
-}
-
-// Tab badalte waqt countdown turant switch ho
-const oldShowVisitForm = window.showVisitForm;
-window.showVisitForm = function(formId) {
-  if (typeof oldShowVisitForm === "function") oldShowVisitForm(formId);
-  updateLiveBookingTimer();
-};
-
-// UPI Payment Launch (Admin Configured Fees Ke Sath)
+// 6. Dynamic Payment Trigger with Admin fee from cloud
 function openDynamicVisitPayment(type) {
   const isStudent = type === 'student';
+  const currentBatch = isStudent ? activeStudentBatch : activeFarmerBatch;
+  if (!currentBatch) {
+    alert("⚠️ Batch is not active!");
+    return;
+  }
+
   const modeSelectId = isStudent ? "spaymentMode" : "fpaymentMode";
   const helpId = isStudent ? "studentPaymentHelp" : "farmerPaymentHelp";
   const txnInputId = isStudent ? "spayment" : "fpayment";
   const mode = document.getElementById(modeSelectId).value;
-  const amount = isStudent ? bookingConfig.student.fee : bookingConfig.farmer.fee;
+  const amount = currentBatch.fee;
 
   if (!mode) {
     document.getElementById(txnInputId).value = "";
@@ -5134,7 +5221,7 @@ function openDynamicVisitPayment(type) {
   }
   
   document.getElementById(helpId).style.display = "block";
-  document.getElementById(helpId).textContent = `Launching UPI App for program fee Rs ${amount}.`;
+  document.getElementById(helpId).textContent = `Launching UPI App for batch fee Rs ${amount}.`;
   
   window.location.href = `upi://pay?pa=${encodeURIComponent(farmUpiId)}&pn=${encodeURIComponent(farmName)}&am=${amount}&cu=INR`;
   
@@ -5142,15 +5229,14 @@ function openDynamicVisitPayment(type) {
   if (isStudent) validateStudentForm(); else validateFarmerForm();
 }
 
-// Existing submit functions me admin fee pass ho
+// 7. Booking submissions me cloud fee map karein
 // submitStudentVisit me:
-// fee: bookingConfig.student.fee
+// fee: activeStudentBatch ? activeStudentBatch.fee : 100
 // submitFarmerVisit me:
-// fee: bookingConfig.farmer.fee
+// fee: activeFarmerBatch ? activeFarmerBatch.fee : 699
 
-// Timer aur Config start karein
+// 8. Start Load on Page Ready & Admin view
 document.addEventListener("DOMContentLoaded", () => {
-  initBookingConfig();
-  if (timerInterval) clearInterval(timerInterval);
-  timerInterval = setInterval(updateLiveBookingTimer, 1000);
+  loadTrainingBatchesFromCloud();
+  setInterval(applyCurrentBatchToForms, 1000);
 });

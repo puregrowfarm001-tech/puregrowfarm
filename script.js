@@ -5289,3 +5289,29 @@ function enableFormRegistration(formEl) {
     }
   }
 }
+
+// =========================================================
+// MISSING HELPER FUNCTIONS FOR BATCH SCHEDULER & TIMER
+// =========================================================
+
+function getDurationString(ms) {
+  if (isNaN(ms) || ms <= 0) return "0d : 00h : 00m : 00s";
+  const totalSecs = Math.floor(ms / 1000);
+  const days = Math.floor(totalSecs / (3600 * 24));
+  const hours = Math.floor((totalSecs % (3600 * 24)) / 3600);
+  const mins = Math.floor((totalSecs % 3600) / 60);
+  const secs = totalSecs % 60;
+  return `${days}d : ${String(hours).padStart(2, '0')}h : ${String(mins).padStart(2, '0')}m : ${String(secs).padStart(2, '0')}s`;
+}
+
+function disableFormRegistration(formEl, btnEl, reasonMsg) {
+  if (!formEl) return;
+  const inputs = formEl.querySelectorAll("input:not([readonly]), select");
+  inputs.forEach(el => {
+    el.disabled = true;
+  });
+  if (btnEl) {
+    btnEl.disabled = true;
+    btnEl.textContent = `🔒 ${reasonMsg}`;
+  }
+}

@@ -450,25 +450,35 @@
               </div>
 
               <!-- Product Order Form -->
-              <form id="orderForm" style="display:none;" onsubmit="confirmOrder(event)">
-                <input type="text" id="name" placeholder="Your name" readonly required style="background:#f3f4f6; cursor:not-allowed;">
-                <input type="tel" id="phone" placeholder="Phone number" readonly required style="background:#f3f4f6; cursor:not-allowed;">
-                <input type="email" id="email" placeholder="Email" readonly required style="background:#f3f4f6; cursor:not-allowed;">
-                <input type="text" id="address" placeholder="Complete Shipping Address" required>
-                
-                <input type="text" id="userUpiId" placeholder="Your UPI ID (e.g. name@okhdfcbank / 9876543210@paytm) *" required oninput="validateOrderForm()">
-                
-                <select id="paymentMode" required onchange="openProductPayment()">
-                  <option value="">Select online payment mode</option>
-                  <option value="GPay">GPay App</option>
-                  <option value="PhonePe">PhonePe App</option>
-                  <option value="Paytm">Paytm App</option>
-                  <option value="UPI">Any UPI App / Gateway</option>
-                </select>
-                <div id="productPaymentHelp" class="payment-help"></div>
-                <input type="text" id="paymentId" placeholder="Online payment transaction ID (UTR) *" disabled required oninput="validateOrderForm()">
-                <button type="submit" id="confirmOrderBtn" disabled>Confirm Purchase Order</button>
-              </form>
+<form id="orderForm" style="display:none;" onsubmit="confirmOrder(event)">
+  <input type="text" id="name" placeholder="Your name" readonly required style="background:#f3f4f6; cursor:not-allowed;">
+  <input type="tel" id="phone" placeholder="Phone number" readonly required style="background:#f3f4f6; cursor:not-allowed;">
+  <input type="email" id="email" placeholder="Email" readonly required style="background:#f3f4f6; cursor:not-allowed;">
+  
+  <!-- Step 1: Shipping Address -->
+  <label style="font-size:12px; font-weight:bold;">Shipping Address *</label>
+  <input type="text" id="address" placeholder="Enter complete shipping address (Min 5 chars)" required oninput="handleOrderStepProgress()">
+  
+  <!-- Step 2: Customer UPI ID -->
+  <label style="font-size:12px; font-weight:bold;">UPI ID *</label>
+  <input type="text" id="userUpiId" class="step-locked" disabled placeholder="e.g. name@okhdfcbank" required oninput="handleOrderStepProgress()">
+  
+  <!-- Step 3: Payment App -->
+  <label style="font-size:12px; font-weight:bold;"> Select Payment App *</label>
+  <select id="paymentMode" class="step-locked" disabled required onchange="openProductPayment()">
+    <option value="">Select online payment app</option>
+    <option value="GPay">GPay App</option>
+    <option value="PhonePe">PhonePe App</option>
+    <option value="Paytm">Paytm App</option>
+  </select>
+  <div id="productPaymentHelp" class="payment-help"></div>
+  
+  <!-- Step 4: UTR / Txn ID -->
+  <label style="font-size:12px; font-weight:bold;">12-Digit Payment UTR / Transaction ID *</label>
+  <input type="text" id="paymentId" class="step-locked" placeholder="Enter UTR after payment" disabled required oninput="handleOrderStepProgress()">
+  
+  <button type="submit" id="confirmOrderBtn" disabled>Confirm Purchase Order</button>
+</form>
             </aside>
           </div>
         </section>
@@ -513,73 +523,95 @@
             </div>
 
             <!-- Student Form -->
-            <form id="studentForm" class="visit-form active" style="display: grid;" onsubmit="submitStudentVisit(event)">
-              <input type="text" id="sname" placeholder="Student Name" readonly required style="background:#f3f4f6; cursor:not-allowed;">
-              <input type="tel" id="sphone" placeholder="Phone Number" readonly required style="background:#f3f4f6; cursor:not-allowed;">
-              <input type="email" id="semail" placeholder="Email" readonly required style="background:#f3f4f6; cursor:not-allowed;">
-              <input type="text" id="senroll" placeholder="Enrollment / Roll Number" required>
-              <input type="text" id="scollege" placeholder="College / University Name" required>
-              <input type="text" id="scourse" placeholder="Degree / Course Name" required>
-              
-              <!-- Locked Dates (Admin Configured) -->
-              <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
-                <label style="font-size:12px; font-weight:bold;">Internship Start Date (Fixed): 
-                  <input type="date" id="sstart" readonly required style="background:#f3f4f6; cursor:not-allowed;">
-                </label>
-                <label style="font-size:12px; font-weight:bold;">Internship End Date (Fixed): 
-                  <input type="date" id="send" readonly required style="background:#f3f4f6; cursor:not-allowed;">
-                </label>
-              </div>
-              
-              <div style="background: #f8faf8; padding: 14px; border-radius: 10px; border: 1px solid var(--line); margin: 6px 0;">
-                <div class="bill-row"><span>Internship Program Fee</span><strong id="dispStudentFee">Rs 0</strong></div>
-                <div class="bill-row"><span>Taxes & Cert Logistics</span><strong>Rs 0</strong></div>
-                <div class="bill-row total"><span>Grand Total Fee</span><strong id="dispStudentTotalFee" style="color:var(--accent);">Rs 0</strong></div>
-              </div>
-              
-              <input type="text" id="suserUpi" placeholder="Your UPI ID (e.g. student@okaxis) *" required oninput="validateStudentForm()">
+<form id="studentForm" class="visit-form active" style="display: grid;" onsubmit="submitStudentVisit(event)">
+  <input type="text" id="sname" placeholder="Student Name" readonly required style="background:#f3f4f6; cursor:not-allowed;">
+  <input type="tel" id="sphone" placeholder="Phone Number" readonly required style="background:#f3f4f6; cursor:not-allowed;">
+  <input type="email" id="semail" placeholder="Email" readonly required style="background:#f3f4f6; cursor:not-allowed;">
+  
+  <!-- Step 1: Academic details -->
+  <label style="font-size:12px; font-weight:bold;">Enrollment / Roll Number *</label>
+  <input type="text" id="senroll" placeholder="Enter Roll Number" required oninput="handleStudentStepProgress()">
 
-              <select id="spaymentMode" required onchange="openDynamicVisitPayment('student')">
-                <option value="GPay">GPay App</option>
-                <option value="PhonePe">PhonePe App</option>
-                <option value="Paytm">Paytm App</option>
-              </select>
+  <label style="font-size:12px; font-weight:bold;">College / University Name *</label>
+  <input type="text" id="scollege" class="step-locked" disabled placeholder="Enter College Name" required oninput="handleStudentStepProgress()">
 
-              <div id="studentPaymentHelp" class="payment-help"></div>
-              <input type="text" id="spayment" placeholder="Online payment transaction ID (UTR) *" disabled required oninput="validateStudentForm()">
-              <button type="submit" id="studentSubmitBtn" disabled>Confirm Student Registration</button>
-            </form>
+  <label style="font-size:12px; font-weight:bold;">Degree / Course Name *</label>
+  <input type="text" id="scourse" class="step-locked" disabled placeholder="e.g. B.Sc Agriculture / BCA" required oninput="handleStudentStepProgress()">
+  
+  <!-- Locked Dates (Admin Configured) -->
+  <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+    <label style="font-size:12px; font-weight:bold;">Internship Start Date (Fixed): 
+      <input type="date" id="sstart" readonly required style="background:#f3f4f6; cursor:not-allowed;">
+    </label>
+    <label style="font-size:12px; font-weight:bold;">Internship End Date (Fixed): 
+      <input type="date" id="send" readonly required style="background:#f3f4f6; cursor:not-allowed;">
+    </label>
+  </div>
+  
+  <div style="background: #f8faf8; padding: 14px; border-radius: 10px; border: 1px solid var(--line); margin: 6px 0;">
+    <div class="bill-row"><span>Internship Program Fee</span><strong id="dispStudentFee">Rs 0</strong></div>
+    <div class="bill-row"><span>Taxes & Cert Logistics</span><strong>Rs 0</strong></div>
+    <div class="bill-row total"><span>Grand Total Fee</span><strong id="dispStudentTotalFee" style="color:var(--accent);">Rs 0</strong></div>
+  </div>
+  
+  <!-- Step 4: UPI ID -->
+  <label style="font-size:12px; font-weight:bold;">UPI ID *</label>
+  <input type="text" id="suserUpi" class="step-locked" disabled placeholder="e.g. student@okaxis" required oninput="handleStudentStepProgress()">
 
-            <!-- Farmer Form -->
-            <form id="farmerForm" class="visit-form" style="display: none;" onsubmit="submitFarmerVisit(event)">
-              <input type="text" id="fname" placeholder="Farmer Name" readonly required style="background:#f3f4f6; cursor:not-allowed;">
-              <input type="tel" id="fphone" placeholder="Phone Number" readonly required style="background:#f3f4f6; cursor:not-allowed;">
-              <input type="email" id="femail" placeholder="Email" readonly required style="background:#f3f4f6; cursor:not-allowed;">
-              
-              <!-- Locked Date (Admin Configured) -->
-              <label style="font-size:12px; font-weight:bold;">Training Session Date (Fixed): 
-                <input type="date" id="fdate" readonly required style="background:#f3f4f6; cursor:not-allowed;">
-              </label>
-              
-              <div style="background: #f8faf8; padding: 14px; border-radius: 10px; border: 1px solid var(--line); margin: 6px 0;">
-                <div class="bill-row"><span>Farmer Training Workshop Fee</span><strong id="dispFarmerFee">Rs 0</strong></div>
-                <div class="bill-row"><span>Practical Kit & Cert Logistics</span><strong>Rs 0</strong></div>
-                <div class="bill-row total"><span>Grand Total Fee</span><strong id="dispFarmerTotalFee" style="color:var(--accent);">Rs 0</strong></div>
-              </div>
+  <!-- Step 5: Payment App -->
+  <label style="font-size:12px; font-weight:bold;">Select Payment Mode *</label>
+  <select id="spaymentMode" class="step-locked" disabled required onchange="openDynamicVisitPayment('student')">
+    <option value="">Select online payment app</option>
+    <option value="GPay">GPay App</option>
+    <option value="PhonePe">PhonePe App</option>
+    <option value="Paytm">Paytm App</option>
+  </select>
 
-              <input type="text" id="fuserUpi" placeholder="Your UPI ID (e.g. farmer@upi) *" required oninput="validateFarmerForm()">
+  <div id="studentPaymentHelp" class="payment-help"></div>
+  
+  <!-- Step 6: UTR -->
+  <label style="font-size:12px; font-weight:bold;">12-Digit Payment UTR / Transaction ID *</label>
+  <input type="text" id="spayment" class="step-locked" placeholder="Enter 12-Digit UTR after payment" disabled required oninput="handleStudentStepProgress()">
+  <button type="submit" id="studentSubmitBtn" disabled>Confirm Student Registration</button>
+</form>
 
-              <select id="fpaymentMode" required onchange="openDynamicVisitPayment('farmer')">
-                <option value="GPay">GPay App</option>
-                <option value="PhonePe">PhonePe App</option>
-                <option value="Paytm">Paytm App</option>
-              </select>
+<!-- Farmer Form -->
+<form id="farmerForm" class="visit-form" style="display: none;" onsubmit="submitFarmerVisit(event)">
+  <input type="text" id="fname" placeholder="Farmer Name" readonly required style="background:#f3f4f6; cursor:not-allowed;">
+  <input type="tel" id="fphone" placeholder="Phone Number" readonly required style="background:#f3f4f6; cursor:not-allowed;">
+  <input type="email" id="femail" placeholder="Email" readonly required style="background:#f3f4f6; cursor:not-allowed;">
+  
+  <!-- Locked Date -->
+  <label style="font-size:12px; font-weight:bold;">Training Session Date (Fixed): 
+    <input type="date" id="fdate" readonly required style="background:#f3f4f6; cursor:not-allowed;">
+  </label>
+  
+  <div style="background: #f8faf8; padding: 14px; border-radius: 10px; border: 1px solid var(--line); margin: 6px 0;">
+    <div class="bill-row"><span>Farmer Training Workshop Fee</span><strong id="dispFarmerFee">Rs 0</strong></div>
+    <div class="bill-row"><span>Practical Kit & Cert Logistics</span><strong>Rs 0</strong></div>
+    <div class="bill-row total"><span>Grand Total Fee</span><strong id="dispFarmerTotalFee" style="color:var(--accent);">Rs 0</strong></div>
+  </div>
 
-              <div id="farmerPaymentHelp" class="payment-help"></div>
-              <input type="text" id="fpayment" placeholder="Online payment transaction ID (UTR) *" disabled required oninput="validateFarmerForm()">
-              <button type="submit" id="farmerSubmitBtn" disabled>Confirm Farmer Training Seat</button>
-            </form>
-          </div>
+  <!-- Step 1: Farmer UPI ID -->
+  <label style="font-size:12px; font-weight:bold;">UPI ID *</label>
+  <input type="text" id="fuserUpi" placeholder="e.g. farmer@upi" required oninput="handleFarmerStepProgress()">
+
+  <!-- Step 2: Payment App -->
+  <label style="font-size:12px; font-weight:bold;">Select Payment Mode *</label>
+  <select id="fpaymentMode" class="step-locked" disabled required onchange="openDynamicVisitPayment('farmer')">
+    <option value="">Select online payment app</option>
+    <option value="GPay">GPay App</option>
+    <option value="PhonePe">PhonePe App</option>
+    <option value="Paytm">Paytm App</option>
+  </select>
+
+  <div id="farmerPaymentHelp" class="payment-help"></div>
+  
+  <!-- Step 3: UTR -->
+  <label style="font-size:12px; font-weight:bold;">12-Digit Payment UTR / Transaction ID *</label>
+  <input type="text" id="fpayment" class="step-locked" placeholder="Enter 12-Digit UTR after payment" disabled required oninput="handleFarmerStepProgress()">
+  <button type="submit" id="farmerSubmitBtn" disabled>Confirm Farmer Training Seat</button>
+</form>
 
           <div class="thankyou" id="visitThankyouBox">
             <h2>Registration Parameters Generated</h2>

@@ -3749,6 +3749,13 @@ if(document.getElementById("address")) {
 }
 
 async function confirmOrder(e) {
+  e.preventDefault();
+  
+  const missingMsg = getOrderMissingFieldMessage();
+  if (missingMsg) {
+    alert("⚠️ " + missingMsg);
+    return;
+  }
   const txnDisabled = document.getElementById("paymentId").disabled;
 if (txnDisabled || !document.getElementById("paymentMode").value) {
   alert("⚠️ Kripya valid payment app se payment complete karke Transaction ID dalein!");
@@ -3966,6 +3973,13 @@ if(document.getElementById("farmerForm")) {
 }
 
 async function submitStudentVisit(e) {
+  e.preventDefault();
+
+  const missingMsg = getStudentMissingFieldMessage();
+  if (missingMsg) {
+    alert("⚠️ " + missingMsg);
+    return;
+  }
   const txnDisabled = document.getElementById("spayment").disabled;
 if (txnDisabled || !document.getElementById("spaymentMode").value) {
   alert("⚠️ Kripya payment option select karke UTR ID enter karein!");
@@ -4044,6 +4058,13 @@ if (txnDisabled || !document.getElementById("spaymentMode").value) {
 }
 
 async function submitFarmerVisit(e) {
+  e.preventDefault();
+
+  const missingMsg = getFarmerMissingFieldMessage();
+  if (missingMsg) {
+    alert("⚠️ " + missingMsg);
+    return;
+  }
   const txnDisabled = document.getElementById("fpayment").disabled;
 if (txnDisabled || !document.getElementById("fpaymentMode").value) {
   alert("⚠️ Kripya payment option select karke UTR ID enter karein!");
@@ -5461,4 +5482,224 @@ function disableFormRegistration(formEl, btnEl, reasonMsg) {
     btnEl.disabled = true;
     btnEl.textContent = `🔒 ${reasonMsg}`;
   }
+}
+
+// =========================================================
+// 1. PRODUCT ORDER: STEP PROGRESSION & MISSING FIELD CHECK
+// =========================================================
+
+function handleOrderStepProgress() {
+  const addressEl = document.getElementById("address");
+  const upiEl = document.getElementById("userUpiId");
+  const modeEl = document.getElementById("paymentMode");
+  const txnEl = document.getElementById("paymentId");
+  const btn = document.getElementById("confirmOrderBtn");
+
+  const addressVal = addressEl ? addressEl.value.trim() : "";
+  const upiVal = upiEl ? upiEl.value.trim() : "";
+  const modeVal = modeEl ? modeEl.value : "";
+  const txnVal = txnEl ? txnEl.value.trim() : "";
+
+  // Step 1 Check -> Unlock Step 2 (UPI)
+  if (addressVal.length >= 5) {
+    upiEl.disabled = false;
+    upiEl.classList.remove("step-locked");
+  } else {
+    upiEl.disabled = true;
+    upiEl.classList.add("step-locked");
+    modeEl.disabled = true;
+    modeEl.classList.add("step-locked");
+    txnEl.disabled = true;
+    txnEl.classList.add("step-locked");
+    if (btn) btn.disabled = true;
+    return;
+  }
+
+  // Step 2 Check -> Unlock Step 3 (Payment Mode)
+  if (upiVal.length >= 5 && upiVal.includes("@")) {
+    modeEl.disabled = false;
+    modeEl.classList.remove("step-locked");
+  } else {
+    modeEl.disabled = true;
+    modeEl.classList.add("step-locked");
+    txnEl.disabled = true;
+    txnEl.classList.add("step-locked");
+    if (btn) btn.disabled = true;
+    return;
+  }
+
+  // Step 3 (Payment Mode) select hone par app open hogi aur txn unlock hoga
+  // Step 4 Check -> Unlock Confirm Button
+  if (modeVal && txnVal.length >= 6) {
+    if (btn) btn.disabled = false;
+  } else {
+    if (btn) btn.disabled = true;
+  }
+}
+
+// Order submit par agar koi field miss ho to exact message aayega
+function getOrderMissingFieldMessage() {
+  if (!cart.size) return "Aapka cart selection khali hai! Pehle product add karein.";
+  
+  const address = document.getElementById("address")?.value.trim() || "";
+  if (address.length < 5) return "Step 1 baki hai: Kripya pura Shipping Address dalein (kam se kam 5 characters)!";
+
+  const upi = document.getElementById("userUpiId")?.value.trim() || "";
+  if (!upi || !upi.includes("@") || upi.length < 5) return "Step 2 baki hai: Kripya apna valid UPI ID (e.g. name@okhdfcbank) dalein!";
+
+  const mode = document.getElementById("paymentMode")?.value || "";
+  if (!mode) return "Step 3 baki hai: Kripya payment karne ke liye Payment App select karein!";
+
+  const txn = document.getElementById("paymentId")?.value.trim() || "";
+  if (!txn || txn.length < 6) return "Step 4 baki hai: Payment karne ke baad mila hua Transaction ID / UTR dalein!";
+
+  return null;
+}
+
+
+// =========================================================
+// 2. STUDENT INTERNSHIP: STEP PROGRESSION & MISSING FIELD CHECK
+// =========================================================
+
+function handleStudentStepProgress() {
+  const enrollEl = document.getElementById("senroll");
+  const collegeEl = document.getElementById("scollege");
+  const courseEl = document.getElementById("scourse");
+  const upiEl = document.getElementById("suserUpi");
+  const modeEl = document.getElementById("spaymentMode");
+  const txnEl = document.getElementById("spayment");
+  const btn = document.getElementById("studentSubmitBtn");
+
+  const enrollVal = enrollEl ? enrollEl.value.trim() : "";
+  const collegeVal = collegeEl ? collegeEl.value.trim() : "";
+  const courseVal = courseEl ? courseEl.value.trim() : "";
+  const upiVal = upiEl ? upiEl.value.trim() : "";
+  const modeVal = modeEl ? modeEl.value : "";
+  const txnVal = txnEl ? txnEl.value.trim() : "";
+
+  // Step 1 -> Step 2
+  if (enrollVal.length >= 2) {
+    collegeEl.disabled = false;
+    collegeEl.classList.remove("step-locked");
+  } else {
+    [collegeEl, courseEl, upiEl, modeEl, txnEl].forEach(el => {
+      if (el) { el.disabled = true; el.classList.add("step-locked"); }
+    });
+    if (btn) btn.disabled = true;
+    return;
+  }
+
+  // Step 2 -> Step 3
+  if (collegeVal.length >= 3) {
+    courseEl.disabled = false;
+    courseEl.classList.remove("step-locked");
+  } else {
+    [courseEl, upiEl, modeEl, txnEl].forEach(el => {
+      if (el) { el.disabled = true; el.classList.add("step-locked"); }
+    });
+    if (btn) btn.disabled = true;
+    return;
+  }
+
+  // Step 3 -> Step 4
+  if (courseVal.length >= 2) {
+    upiEl.disabled = false;
+    upiEl.classList.remove("step-locked");
+  } else {
+    [upiEl, modeEl, txnEl].forEach(el => {
+      if (el) { el.disabled = true; el.classList.add("step-locked"); }
+    });
+    if (btn) btn.disabled = true;
+    return;
+  }
+
+  // Step 4 -> Step 5
+  if (upiVal.length >= 5 && upiVal.includes("@")) {
+    modeEl.disabled = false;
+    modeEl.classList.remove("step-locked");
+  } else {
+    [modeEl, txnEl].forEach(el => {
+      if (el) { el.disabled = true; el.classList.add("step-locked"); }
+    });
+    if (btn) btn.disabled = true;
+    return;
+  }
+
+  // Step 6 & Confirm Button
+  if (modeVal && txnVal.length >= 6) {
+    if (btn) btn.disabled = false;
+  } else {
+    if (btn) btn.disabled = true;
+  }
+}
+
+function getStudentMissingFieldMessage() {
+  const enroll = document.getElementById("senroll")?.value.trim() || "";
+  if (!enroll) return "Step 1 baki hai: Kripya Enrollment / Roll Number dalein!";
+
+  const college = document.getElementById("scollege")?.value.trim() || "";
+  if (!college) return "Step 2 baki hai: Kripya College / University ka naam dalein!";
+
+  const course = document.getElementById("scourse")?.value.trim() || "";
+  if (!course) return "Step 3 baki hai: Kripya Course / Degree ka naam dalein!";
+
+  const upi = document.getElementById("suserUpi")?.value.trim() || "";
+  if (!upi || !upi.includes("@") || upi.length < 5) return "Step 4 baki hai: Kripya valid UPI ID (e.g. name@okaxis) dalein!";
+
+  const mode = document.getElementById("spaymentMode")?.value || "";
+  if (!mode) return "Step 5 baki hai: Kripya Payment App select karein!";
+
+  const txn = document.getElementById("spayment")?.value.trim() || "";
+  if (!txn || txn.length < 6) return "Step 6 baki hai: Kripya payment ka Transaction ID (UTR) dalein!";
+
+  return null;
+}
+
+
+// =========================================================
+// 3. FARMER TRAINING: STEP PROGRESSION & MISSING FIELD CHECK
+// =========================================================
+
+function handleFarmerStepProgress() {
+  const upiEl = document.getElementById("fuserUpi");
+  const modeEl = document.getElementById("fpaymentMode");
+  const txnEl = document.getElementById("fpayment");
+  const btn = document.getElementById("farmerSubmitBtn");
+
+  const upiVal = upiEl ? upiEl.value.trim() : "";
+  const modeVal = modeEl ? modeEl.value : "";
+  const txnVal = txnEl ? txnEl.value.trim() : "";
+
+  // Step 1 -> Step 2
+  if (upiVal.length >= 5 && upiVal.includes("@")) {
+    modeEl.disabled = false;
+    modeEl.classList.remove("step-locked");
+  } else {
+    modeEl.disabled = true;
+    modeEl.classList.add("step-locked");
+    txnEl.disabled = true;
+    txnEl.classList.add("step-locked");
+    if (btn) btn.disabled = true;
+    return;
+  }
+
+  // Step 3 & Confirm Button
+  if (modeVal && txnVal.length >= 6) {
+    if (btn) btn.disabled = false;
+  } else {
+    if (btn) btn.disabled = true;
+  }
+}
+
+function getFarmerMissingFieldMessage() {
+  const upi = document.getElementById("fuserUpi")?.value.trim() || "";
+  if (!upi || !upi.includes("@") || upi.length < 5) return "Step 1 baki hai: Kripya valid UPI ID (e.g. farmer@upi) dalein!";
+
+  const mode = document.getElementById("fpaymentMode")?.value || "";
+  if (!mode) return "Step 2 baki hai: Kripya Payment App select karein!";
+
+  const txn = document.getElementById("fpayment")?.value.trim() || "";
+  if (!txn || txn.length < 6) return "Step 3 baki hai: Kripya payment ka Transaction ID (UTR) dalein!";
+
+  return null;
 }

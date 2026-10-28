@@ -520,7 +520,7 @@ async function handleLogin(e) {
     let userInput = document.getElementById("loginEmail").value.trim();
     const passInput = document.getElementById("loginPassword").value;
 
-   // Check for Multiple Admin Logins
+    // Check for Multiple Admin Logins
 const matchedAdmin = ADMIN_USERS.find(adm => adm.user.toLowerCase() === userInput.toLowerCase() && adm.pass === passInput);
 
 if (matchedAdmin) {

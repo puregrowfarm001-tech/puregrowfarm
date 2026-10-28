@@ -12,7 +12,10 @@ const farmWhatsapp = "919067891039";
 const farmUpiId = "sohamgajera01@okhdfcbank";
 const farmName = "Pure Grow Farm";
 
-const ADMIN_CREDENTIALS = { user: "admin", pass: "PureGrow@2026" };
+const ADMIN_USERS = [
+  { user: "soham_gajera", pass: "Soham@2026pgf", name: "Soham N Gajera" },
+  { user: "jeet_gajera", pass: "Jeet@2026pgf", name: "Jeet A Gajera" }
+];
 
 const BASE_PRODUCTS = [
   { id: 1, name: "Fresh Green Oyster Mushroom", price: 180, unit: "1kg", image: "mushroom/Screenshot 2025-10-24 154001.png", detail: "Picked fresh, chilled and delivered within 24-48 hours.", type: "green", stock: 0 },
@@ -517,13 +520,21 @@ async function handleLogin(e) {
     let userInput = document.getElementById("loginEmail").value.trim();
     const passInput = document.getElementById("loginPassword").value;
 
-    if (userInput === ADMIN_CREDENTIALS.user && passInput === ADMIN_CREDENTIALS.pass) {
-      currentUser = { name: "System Admin", email: "admin@puregrowfarm.internal", isAdmin: true };
-      localStorage.setItem('pgf_session', JSON.stringify(currentUser));
-      hidePgfLoader();
-      checkUserSession();
-      return;
-    }
+   // Check for Multiple Admin Logins
+const matchedAdmin = ADMIN_USERS.find(adm => adm.user.toLowerCase() === userInput.toLowerCase() && adm.pass === passInput);
+
+if (matchedAdmin) {
+  currentUser = { 
+    name: matchedAdmin.name, 
+    email: `${matchedAdmin.user}@puregrowfarm.internal`, 
+    isAdmin: true 
+  };
+  localStorage.setItem('pgf_session', JSON.stringify(currentUser));
+  hidePgfLoader();
+  alert(`✅ Welcome Admin, ${matchedAdmin.name}!`);
+  checkUserSession();
+  return;
+}
 
     if (userInput.includes('@')) {
       userInput = userInput.toLowerCase();

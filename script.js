@@ -582,10 +582,76 @@ if (matchedAdmin) {
 
 let pendingResetEmail = "";
 let generatedOtpCode = "";
+let otpExpiryTimestamp = 0;
+let forgotTimerInterval = null;
 
+// 1. Timer Function for Forgot Password Form
+function startForgotOtpTimer(durationSeconds = 90) {
+  if (forgotTimerInterval) {
+    clearInterval(forgotTimerInterval);
+    forgotTimerInterval = null;
+  }
+
+  let timeLeft = durationSeconds;
+  otpExpiryTimestamp = Date.now() + (durationSeconds * 1000);
+
+  const countdownEl = document.getElementById("forgotCountdown");
+  const timerTextEl = document.getElementById("forgotTimerText");
+  const resendBtn = document.getElementById("forgotResendOtpBtn");
+  const verifyBtn = document.getElementById("verifyResetBtn");
+  const wrapper = document.getElementById("forgotOtpTimerWrapper");
+
+  if (countdownEl) countdownEl.textContent = timeLeft;
+  if (timerTextEl) {
+    timerTextEl.innerHTML = `⏳ OTP Expires in: <span id="forgotCountdown">${timeLeft}</span>s`;
+    timerTextEl.style.color = "#15803d";
+  }
+  if (wrapper) {
+    wrapper.style.background = "#f0fdf4";
+    wrapper.style.borderColor = "#bbf7d0";
+  }
+  if (resendBtn) resendBtn.style.display = "none";
+  if (verifyBtn) verifyBtn.disabled = false;
+
+  forgotTimerInterval = setInterval(() => {
+    timeLeft--;
+    const currentCountdown = document.getElementById("forgotCountdown");
+    if (currentCountdown) currentCountdown.textContent = timeLeft;
+
+    if (timeLeft <= 0) {
+      clearInterval(forgotTimerInterval);
+      forgotTimerInterval = null;
+
+      const tText = document.getElementById("forgotTimerText");
+      const tWrap = document.getElementById("forgotOtpTimerWrapper");
+      const rBtn = document.getElementById("forgotResendOtpBtn");
+      const vBtn = document.getElementById("verifyResetBtn");
+
+      if (tText) {
+        tText.textContent = "❌ OTP Expired! Kripya naya OTP mangwayein.";
+        tText.style.color = "#dc2626";
+      }
+      if (tWrap) {
+        tWrap.style.background = "#fef2f2";
+        tWrap.style.borderColor = "#fca5a5";
+      }
+      if (rBtn) rBtn.style.display = "inline-flex";
+      if (vBtn) vBtn.disabled = true;
+    }
+  }, 1000);
+}
+
+// 2. Forgot Password - Send OTP
 async function handleSendOtp(e) {
-  e.preventDefault();
-  const email = document.getElementById("forgotEmail").value.trim();
+  if (e && e.preventDefault) e.preventDefault();
+
+  const emailInput = document.getElementById("forgotEmail");
+  let email = (emailInput && emailInput.value ? emailInput.value.trim() : pendingResetEmail).toLowerCase();
+
+  if (!email) {
+    alert("Kripya valid email address dalein!");
+    return;
+  }
 
   showPgfLoader("Verifying email & sending OTP...");
 
@@ -618,25 +684,40 @@ async function handleSendOtp(e) {
     };
 
     emailjs.send('service_jk9zdkf', 'template_zihxosq', templateParams)
-      .then(function(response) {
-         hidePgfLoader();
-         alert(`✅ 6-digit OTP successfully aapke Gmail (${email}) par bhej diya gaya hai! Kripya inbox check karein.`);
-         document.getElementById("forgotRequestForm").style.display = "none";
-         document.getElementById("forgotVerifyForm").style.display = "grid";
+      .then(function() {
+        hidePgfLoader();
+        alert(`✅ 6-digit OTP successfully aapke Gmail (${email}) par bhej diya gaya hai! Yeh 90 seconds tak valid hai.`);
+
+        const reqForm = document.getElementById("forgotRequestForm");
+        const verForm = document.getElementById("forgotVerifyForm");
+        const otpInput = document.getElementById("otpInputCode");
+
+        if (reqForm) reqForm.style.display = "none";
+        if (verForm) verForm.style.display = "grid";
+        if (otpInput) otpInput.value = "";
+
+        startForgotOtpTimer(90);
       }, function(error) {
-         hidePgfLoader();
-         alert("❌ Email send karne me error aayi: " + JSON.stringify(error));
+        hidePgfLoader();
+        alert("❌ Email send karne me error aayi: " + JSON.stringify(error));
       });
-  } catch(err) {
+  } catch (err) {
     hidePgfLoader();
     alert("Error sending OTP.");
   }
 }
 
+// 3. Forgot Password - Verify OTP & Reset
 async function handleVerifyAndReset(e) {
-  e.preventDefault();
-  const enteredOtp = document.getElementById("otpInputCode").value.trim();
-  const newPassword = document.getElementById("newResetPassword").value;
+  if (e && e.preventDefault) e.preventDefault();
+
+  if (Date.now() > otpExpiryTimestamp) {
+    alert("❌ OTP Expire ho chuka hai! Kripya 'Resend OTP' button par click karke naya code mangwayein.");
+    return;
+  }
+
+  const enteredOtp = document.getElementById("otpInputCode") ? document.getElementById("otpInputCode").value.trim() : "";
+  const newPassword = document.getElementById("newResetPassword") ? document.getElementById("newResetPassword").value : "";
 
   if (!isPasswordStrong(newPassword)) {
     alert("⚠️ Kripya Strong Password dalein!\n(8+ chars, 1 Uppercase, 1 Number, 1 Special character)");
@@ -671,11 +752,24 @@ async function handleVerifyAndReset(e) {
       return;
     }
 
+    if (forgotTimerInterval) {
+      clearInterval(forgotTimerInterval);
+      forgotTimerInterval = null;
+    }
+
     alert("✅ Password successfully change ho gaya hai! Ab aap naye password se Sign In kar sakte hain.");
-    document.getElementById("forgotVerifyForm").reset();
-    document.getElementById("forgotRequestForm").reset();
-    document.getElementById("forgotVerifyForm").style.display = "none";
-    document.getElementById("forgotRequestForm").style.display = "grid";
+
+    const verForm = document.getElementById("forgotVerifyForm");
+    const reqForm = document.getElementById("forgotRequestForm");
+    if (verForm) {
+      verForm.reset();
+      verForm.style.display = "none";
+    }
+    if (reqForm) {
+      reqForm.reset();
+      reqForm.style.display = "grid";
+    }
+
     switchAuthBox('loginBox');
   } catch (err) {
     hidePgfLoader();
@@ -683,44 +777,173 @@ async function handleVerifyAndReset(e) {
   }
 }
 
-async function handleVerifyAndReset(e) {
-  e.preventDefault();
-  const enteredOtp = document.getElementById("otpInputCode").value.trim();
-  const newPassword = document.getElementById("newResetPassword").value;
+// =========================================================
+// PROFILE POPUP: CHANGE PASSWORD VIA OTP
+// =========================================================
 
-  if (!isPasswordStrong(newPassword)) {
-    alert("⚠️ Kripya Strong Password dalein!\n(8+ chars, 1 Uppercase, 1 Number, 1 Special character)");
-    return;
+let profileResetOtpCode = "";
+let profileOtpExpiryTimestamp = 0;
+let profileTimerInterval = null;
+
+function startProfileOtpTimer(durationSeconds = 90) {
+  if (profileTimerInterval) {
+    clearInterval(profileTimerInterval);
+    profileTimerInterval = null;
   }
 
-  const { data: user, error } = await _supabase
+  let timeLeft = durationSeconds;
+  profileOtpExpiryTimestamp = Date.now() + (durationSeconds * 1000);
+
+  const countdownEl = document.getElementById("profileCountdown");
+  const timerTextEl = document.getElementById("profileTimerText");
+  const resendBtn = document.getElementById("profileResendOtpBtn");
+  const verifyBtn = document.getElementById("profileVerifyResetBtn");
+  const wrapper = document.getElementById("profileOtpTimerWrapper");
+
+  if (countdownEl) countdownEl.textContent = timeLeft;
+  if (timerTextEl) {
+    timerTextEl.innerHTML = `⏳ OTP Expires in: <span id="profileCountdown">${timeLeft}</span>s`;
+    timerTextEl.style.color = "#15803d";
+  }
+  if (wrapper) {
+    wrapper.style.background = "#f0fdf4";
+    wrapper.style.borderColor = "#bbf7d0";
+  }
+  if (resendBtn) resendBtn.style.display = "none";
+  if (verifyBtn) verifyBtn.disabled = false;
+
+  profileTimerInterval = setInterval(() => {
+    timeLeft--;
+    const currentCountdown = document.getElementById("profileCountdown");
+    if (currentCountdown) currentCountdown.textContent = timeLeft;
+
+    if (timeLeft <= 0) {
+      clearInterval(profileTimerInterval);
+      profileTimerInterval = null;
+
+      const pText = document.getElementById("profileTimerText");
+      const pWrap = document.getElementById("profileOtpTimerWrapper");
+      const pResend = document.getElementById("profileResendOtpBtn");
+      const pVerify = document.getElementById("profileVerifyResetBtn");
+
+      if (pText) {
+        pText.textContent = "❌ OTP Expired! Kripya naya OTP mangwayein.";
+        pText.style.color = "#dc2626";
+      }
+      if (pWrap) {
+        pWrap.style.background = "#fef2f2";
+        pWrap.style.borderColor = "#fca5a5";
+      }
+      if (pResend) pResend.style.display = "inline-flex";
+      if (pVerify) pVerify.disabled = true;
+    }
+  }, 1000);
+}
+
+async function sendProfileResetOtp() {
+  if (!currentUser) return;
+
+  showPgfLoader("Sending 6-digit OTP...");
+  profileResetOtpCode = Math.floor(100000 + Math.random() * 900000).toString();
+
+  const { error: dbErr } = await _supabase
     .from('pgf_users')
-    .select('*')
-    .eq('email', pendingResetEmail)
-    .single();
+    .update({ forgot_otp: profileResetOtpCode })
+    .eq('email', currentUser.email);
 
-  if (error || !user || user.forgot_otp !== enteredOtp) {
-    alert("❌ Invalid OTP! Kripya sahi 6-digit OTP enter karein.");
+  if (dbErr) {
+    hidePgfLoader();
+    alert("Database error: " + dbErr.message);
     return;
   }
 
-  const { error: updateError } = await _supabase
+  const templateParams = {
+    to_email: currentUser.email,
+    to_name: currentUser.name,
+    otp_code: profileResetOtpCode
+  };
+
+  emailjs.send('service_jk9zdkf', 'template_zihxosq', templateParams)
+    .then(function() {
+      hidePgfLoader();
+      alert(`✅ 6-digit OTP has been sent to your email (${currentUser.email})! Yeh 90 seconds tak valid hai.`);
+
+      const sendBtn = document.getElementById("sendProfileOtpBtn");
+      const verifyBlock = document.getElementById("otpVerifySectionBlock");
+      const otpCodeInput = document.getElementById("profileOtpInputCode");
+
+      if (sendBtn) sendBtn.style.display = "none";
+      if (verifyBlock) verifyBlock.style.display = "grid";
+      if (otpCodeInput) otpCodeInput.value = "";
+
+      startProfileOtpTimer(90);
+    }, function(error) {
+      hidePgfLoader();
+      alert("❌ Failed to send email: " + JSON.stringify(error));
+    });
+}
+
+async function handleVerifyOtpAndChangePassword(e) {
+  if (e && e.preventDefault) e.preventDefault();
+
+  if (Date.now() > profileOtpExpiryTimestamp) {
+    alert("❌ OTP Expire ho chuka hai! Kripya 'Resend OTP' button par click karein.");
+    return;
+  }
+
+  const enteredOtp = document.getElementById("profileOtpInputCode") ? document.getElementById("profileOtpInputCode").value.trim() : "";
+  const newPass = document.getElementById("newOtpPasswordInput") ? document.getElementById("newOtpPasswordInput").value : "";
+
+  if (!isPasswordStrong(newPass)) {
+    alert("⚠️ Please enter a strong password!\n(8+ chars, 1 Uppercase, 1 Number, 1 Special character)");
+    return;
+  }
+
+  showPgfLoader("Updating password...");
+
+  const { data: dbUser, error } = await _supabase
     .from('pgf_users')
-    .update({ password: newPassword, forgot_otp: null })
-    .eq('email', pendingResetEmail);
+    .select('forgot_otp')
+    .eq('email', currentUser.email)
+    .limit(1)
+    .maybeSingle();
 
-  if (updateError) {
-    alert("Password update karne me error aayi: " + updateError.message);
+  if (error || !dbUser || dbUser.forgot_otp !== enteredOtp) {
+    hidePgfLoader();
+    alert("❌ Invalid OTP! Please enter the correct 6-digit OTP.");
     return;
   }
 
-  alert("✅ Password successfully change ho gaya hai! Ab aap naye password se Sign In kar sakte hain.");
-  
-  document.getElementById("forgotVerifyForm").reset();
-  document.getElementById("forgotRequestForm").reset();
-  document.getElementById("forgotVerifyForm").style.display = "none";
-  document.getElementById("forgotRequestForm").style.display = "grid";
-  switchAuthBox('loginBox');
+  const { error: updateErr } = await _supabase
+    .from('pgf_users')
+    .update({ password: newPass, forgot_otp: null })
+    .eq('email', currentUser.email);
+
+  hidePgfLoader();
+
+  if (updateErr) {
+    alert("Password update error: " + updateErr.message);
+    return;
+  }
+
+  if (profileTimerInterval) {
+    clearInterval(profileTimerInterval);
+    profileTimerInterval = null;
+  }
+
+  closeChangePasswordModal();
+
+  const otpForm = document.getElementById("passwordChangeOtpForm");
+  if (otpForm) otpForm.reset();
+
+  switchToStandardPasswordMode();
+
+  const pSendBtn = document.getElementById("sendProfileOtpBtn");
+  const pVerBlock = document.getElementById("otpVerifySectionBlock");
+  if (pSendBtn) pSendBtn.style.display = "block";
+  if (pVerBlock) pVerBlock.style.display = "none";
+
+  alert("✅ Password successfully reset & updated in Supabase cloud!");
 }
 
 function handleLogout() {
@@ -4592,11 +4815,12 @@ function switchToStandardPasswordMode() {
   document.getElementById("passwordChangeStandardForm").style.display = "grid";
 }
 
-let profileResetOtpCode = "";
+// Neeche line 4818 se 'let profileResetOtpCode' hata kar sirf functions rakhein:
 
 async function sendProfileResetOtp() {
   if (!currentUser) return;
   
+  showPgfLoader("Sending 6-digit OTP...");
   profileResetOtpCode = Math.floor(100000 + Math.random() * 900000).toString();
 
   const { error: dbErr } = await _supabase
@@ -4605,6 +4829,7 @@ async function sendProfileResetOtp() {
     .eq('email', currentUser.email);
 
   if (dbErr) {
+    hidePgfLoader();
     alert("Database error: " + dbErr.message);
     return;
   }
@@ -4616,12 +4841,22 @@ async function sendProfileResetOtp() {
   };
 
   emailjs.send('service_jk9zdkf', 'template_zihxosq', templateParams)
-    .then(function(response) {
-       alert(`✅ 6-digit OTP has been sent to your email (${currentUser.email})!`);
-       document.getElementById("sendProfileOtpBtn").style.display = "none";
-       document.getElementById("otpVerifySectionBlock").style.display = "grid";
+    .then(function() {
+      hidePgfLoader();
+      alert(`✅ 6-digit OTP has been sent to your email (${currentUser.email})! Yeh 90 seconds tak valid hai.`);
+
+      const sendBtn = document.getElementById("sendProfileOtpBtn");
+      const verifyBlock = document.getElementById("otpVerifySectionBlock");
+      const otpCodeInput = document.getElementById("profileOtpInputCode");
+
+      if (sendBtn) sendBtn.style.display = "none";
+      if (verifyBlock) verifyBlock.style.display = "grid";
+      if (otpCodeInput) otpCodeInput.value = "";
+
+      startProfileOtpTimer(90);
     }, function(error) {
-       alert("❌ Failed to send email: " + JSON.stringify(error));
+      hidePgfLoader();
+      alert("❌ Failed to send email: " + JSON.stringify(error));
     });
 }
 

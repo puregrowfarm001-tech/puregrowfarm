@@ -315,6 +315,13 @@
         <!-- Step 2: Verify OTP & Change Password -->
         <form id="forgotVerifyForm" style="display:none; margin-top:10px;" onsubmit="handleVerifyAndReset(event)">
           <p class="muted" style="font-size:12px; margin-bottom:8px; color:var(--accent); font-weight:bold;">Enter 6-digit OTP sent to your email & new password.</p>
+          
+          <!-- 90s Timer & Resend Status Box -->
+          <div id="forgotOtpTimerWrapper" style="display:flex; justify-content:space-between; align-items:center; background:#f0fdf4; border:1px solid #bbf7d0; padding:6px 12px; border-radius:8px; margin-bottom:8px; font-size:12px;">
+            <span id="forgotTimerText" style="color:#15803d; font-weight:bold;">⏳ OTP Expires in: <span id="forgotCountdown">90</span>s</span>
+            <button type="button" id="forgotResendOtpBtn" style="display:none; padding:3px 10px; min-height:26px; font-size:11px; background:#0284c7; border-radius:6px; color:#fff;" onclick="handleSendOtp(event)">🔄 Resend OTP</button>
+          </div>
+
           <input type="text" id="otpInputCode" placeholder="Enter 6-Digit OTP" maxlength="6" required style="letter-spacing: 4px; font-weight: bold; text-align: center;">
           <div class="password-input-group" style="margin-top:8px;">
             <input type="password" id="newResetPassword" placeholder="Enter New Strong Password" required>
@@ -1657,12 +1664,18 @@
           <button type="button" id="sendProfileOtpBtn" class="btn" style="background:#0284c7; width:100%; margin-bottom:10px;" onclick="sendProfileResetOtp()">Send 6-Digit OTP</button>
           
           <div id="otpVerifySectionBlock" style="display:none; display:grid; gap:8px;">
+            <!-- 90s Timer & Resend Status Box for Profile -->
+            <div id="profileOtpTimerWrapper" style="display:flex; justify-content:space-between; align-items:center; background:#f0fdf4; border:1px solid #bbf7d0; padding:6px 12px; border-radius:8px; font-size:12px;">
+              <span id="profileTimerText" style="color:#15803d; font-weight:bold;">⏳ OTP Expires in: <span id="profileCountdown">90</span>s</span>
+              <button type="button" id="profileResendOtpBtn" style="display:none; padding:3px 10px; min-height:26px; font-size:11px; background:#0284c7; border-radius:6px; color:#fff;" onclick="sendProfileResetOtp()">🔄 Resend OTP</button>
+            </div>
+
             <input type="text" id="profileOtpInputCode" placeholder="Enter 6-Digit OTP" maxlength="6" required style="letter-spacing: 4px; font-weight: bold; text-align: center;">
             <div class="password-input-group">
               <input type="password" id="newOtpPasswordInput" placeholder="Enter New Strong Password" required oninput="checkPasswordStrength(this.value)">
               <button type="button" class="toggle-password-btn" onclick="togglePasswordVisibility('newOtpPasswordInput', this)">👁️</button>
             </div>
-            <button type="submit" style="background:var(--accent); margin-top:6px;">Verify & Reset Password</button>
+            <button type="submit" id="profileVerifyResetBtn" style="background:var(--accent); margin-top:6px;">Verify & Reset Password</button>
           </div>
 
           <div style="text-align:right; margin-top:8px;">

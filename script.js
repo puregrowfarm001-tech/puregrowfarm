@@ -3637,23 +3637,101 @@ function renderCart() {
   validateOrderForm();
 }
 
+// Specific App URL Generator & App Installation Detector
+function launchSpecificUpiApp(mode, amount, onAppMissing, onAppFound) {
+  const upiQuery = `pa=${encodeURIComponent(farmUpiId)}&pn=${encodeURIComponent(farmName)}&am=${amount}&cu=INR`;
+  let appUrl = "";
+
+  if (mode === "GPay") {
+    appUrl = `tez://upi/pay?${upiQuery}`;
+  } else if (mode === "PhonePe") {
+    appUrl = `phonepe://pay?${upiQuery}`;
+  } else if (mode === "Paytm") {
+    appUrl = `paytmmp://pay?${upiQuery}`;
+  } else {
+    appUrl = `upi://pay?${upiQuery}`;
+  }
+
+  let appOpened = false;
+
+  // Agar user ke phone me app open hogi, to page hide / blur hoga
+  const handleVisibilityChange = () => {
+    if (document.hidden) {
+      appOpened = true;
+      if (typeof onAppFound === "function") onAppFound();
+    }
+  };
+
+  document.addEventListener("visibilitychange", handleVisibilityChange, { once: true });
+
+  // Deep-link trigger karein
+  window.location.href = appUrl;
+
+  // 2.5 seconds ke andar check karein agar app nahi khuli
+  setTimeout(() => {
+    document.removeEventListener("visibilitychange", handleVisibilityChange);
+    if (!appOpened && !document.hidden) {
+      if (typeof onAppMissing === "function") onAppMissing();
+    } else {
+      if (typeof onAppFound === "function") onAppFound();
+    }
+  }, 2500);
+}
+
 function openProductPayment() {
   const mode = document.getElementById("paymentMode").value;
   const bill = getTotals();
-  if(!mode || !cart.size) {
-    document.getElementById("paymentId").value = "";
-    document.getElementById("paymentId").disabled = true;
+  const helpEl = document.getElementById("productPaymentHelp");
+  const txnInput = document.getElementById("paymentId");
+  const confirmBtn = document.getElementById("confirmOrderBtn");
+
+  if (!mode || !cart.size) {
+    txnInput.value = "";
+    txnInput.disabled = true;
+    confirmBtn.disabled = true;
+    if (helpEl) helpEl.style.display = "none";
     validateOrderForm();
     return;
   }
-  
-  document.getElementById("productPaymentHelp").style.display = "block";
-  document.getElementById("productPaymentHelp").textContent = `Launching UPI Payment app link for Rs ${bill.total}.`;
-  
-  window.location.href = `upi://pay?pa=${encodeURIComponent(farmUpiId)}&pn=${encodeURIComponent(farmName)}&am=${bill.total}&cu=INR`;
-  
-  document.getElementById("paymentId").disabled = false;
-  validateOrderForm();
+
+  // Pehle input aur button ko lock karein jab tak app verify na ho
+  txnInput.disabled = true;
+  confirmBtn.disabled = true;
+
+  if (helpEl) {
+    helpEl.style.display = "block";
+    helpEl.style.background = "#eef7ee";
+    helpEl.style.color = "#246e33";
+    helpEl.textContent = `Opening ${mode} for Rs ${bill.total}...`;
+  }
+
+  launchSpecificUpiApp(
+    mode,
+    bill.total,
+    // Callback: Agar app phone me NAHI mili
+    () => {
+      txnInput.disabled = true;
+      confirmBtn.disabled = true;
+      if (helpEl) {
+        helpEl.style.background = "#fee2e2";
+        helpEl.style.color = "#991b1b";
+        helpEl.textContent = `⚠️ Aapke phone me ${mode} app install nahi hai! Kripya dusra payment option chunein.`;
+      }
+      alert(`⚠️ ${mode} app aapke mobile me nahi mili!\n\nKripya dusri app select karein ya payment app install karein. Iske bina order confirm nahi ho sakta.`);
+      document.getElementById("paymentMode").value = "";
+      validateOrderForm();
+    },
+    // Callback: Agar app phone me successfully OPEN ho gayi
+    () => {
+      txnInput.disabled = false;
+      if (helpEl) {
+        helpEl.style.background = "#eef7ee";
+        helpEl.style.color = "#246e33";
+        helpEl.textContent = `✅ ${mode} open ho chuki hai. Payment pura karke niche UTR / Transaction ID dalein.`;
+      }
+      validateOrderForm();
+    }
+  );
 }
 
 function validateOrderForm() {
@@ -3671,6 +3749,11 @@ if(document.getElementById("address")) {
 }
 
 async function confirmOrder(e) {
+  const txnDisabled = document.getElementById("paymentId").disabled;
+if (txnDisabled || !document.getElementById("paymentMode").value) {
+  alert("⚠️ Kripya valid payment app se payment complete karke Transaction ID dalein!");
+  return;
+}
   e.preventDefault();
   const bill = getTotals();
   const currentTimestamp = new Date().toLocaleDateString('en-IN') + " " + new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
@@ -3883,6 +3966,11 @@ if(document.getElementById("farmerForm")) {
 }
 
 async function submitStudentVisit(e) {
+  const txnDisabled = document.getElementById("spayment").disabled;
+if (txnDisabled || !document.getElementById("spaymentMode").value) {
+  alert("⚠️ Kripya payment option select karke UTR ID enter karein!");
+  return;
+}
   e.preventDefault();
   const currentTimestamp = new Date().toLocaleDateString('en-IN') + " " + new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
   
@@ -3956,6 +4044,11 @@ async function submitStudentVisit(e) {
 }
 
 async function submitFarmerVisit(e) {
+  const txnDisabled = document.getElementById("fpayment").disabled;
+if (txnDisabled || !document.getElementById("fpaymentMode").value) {
+  alert("⚠️ Kripya payment option select karke UTR ID enter karein!");
+  return;
+}
   e.preventDefault();
   const currentTimestamp = new Date().toLocaleDateString('en-IN') + " " + new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
   
@@ -5247,23 +5340,61 @@ function openDynamicVisitPayment(type) {
   const modeSelectId = isStudent ? "spaymentMode" : "fpaymentMode";
   const helpId = isStudent ? "studentPaymentHelp" : "farmerPaymentHelp";
   const txnInputId = isStudent ? "spayment" : "fpayment";
+  const submitBtnId = isStudent ? "studentSubmitBtn" : "farmerSubmitBtn";
+
   const mode = document.getElementById(modeSelectId).value;
+  const helpEl = document.getElementById(helpId);
+  const txnInput = document.getElementById(txnInputId);
+  const submitBtn = document.getElementById(submitBtnId);
   const amount = currentBatch.fee;
 
   if (!mode) {
-    document.getElementById(txnInputId).value = "";
-    document.getElementById(txnInputId).disabled = true;
+    txnInput.value = "";
+    txnInput.disabled = true;
+    submitBtn.disabled = true;
+    if (helpEl) helpEl.style.display = "none";
     if (isStudent) validateStudentForm(); else validateFarmerForm();
     return;
   }
-  
-  document.getElementById(helpId).style.display = "block";
-  document.getElementById(helpId).textContent = `Launching UPI App for batch fee Rs ${amount}.`;
-  
-  window.location.href = `upi://pay?pa=${encodeURIComponent(farmUpiId)}&pn=${encodeURIComponent(farmName)}&am=${amount}&cu=INR`;
-  
-  document.getElementById(txnInputId).disabled = false;
-  if (isStudent) validateStudentForm(); else validateFarmerForm();
+
+  // Default lock karein
+  txnInput.disabled = true;
+  submitBtn.disabled = true;
+
+  if (helpEl) {
+    helpEl.style.display = "block";
+    helpEl.style.background = "#eef7ee";
+    helpEl.style.color = "#246e33";
+    helpEl.textContent = `Opening ${mode} for program fee Rs ${amount}...`;
+  }
+
+  launchSpecificUpiApp(
+    mode,
+    amount,
+    // Callback: Agar app phone me NAHI mili
+    () => {
+      txnInput.disabled = true;
+      submitBtn.disabled = true;
+      if (helpEl) {
+        helpEl.style.background = "#fee2e2";
+        helpEl.style.color = "#991b1b";
+        helpEl.textContent = `⚠️ Aapke phone me ${mode} app install nahi hai! Kripya dusra payment option chunein.`;
+      }
+      alert(`⚠️ ${mode} app aapke mobile me nahi mili!\n\nKripya wahi option select karein jo aapke phone me install ho. Iske bina registration confirm nahi hoga.`);
+      document.getElementById(modeSelectId).value = "";
+      if (isStudent) validateStudentForm(); else validateFarmerForm();
+    },
+    // Callback: Agar app phone me OPEN ho gayi
+    () => {
+      txnInput.disabled = false;
+      if (helpEl) {
+        helpEl.style.background = "#eef7ee";
+        helpEl.style.color = "#246e33";
+        helpEl.textContent = `✅ ${mode} open ho chuki hai. Payment ke baad 12-digit UTR ID enter karein.`;
+      }
+      if (isStudent) validateStudentForm(); else validateFarmerForm();
+    }
+  );
 }
 
 // 7. Booking submissions me cloud fee map karein

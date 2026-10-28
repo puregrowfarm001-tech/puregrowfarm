@@ -4860,3 +4860,72 @@ window.addEventListener('load', function() {
     hidePgfLoader();
   }, 400);
 });
+
+// =========================================================
+// GENERAL INQUIRY HANDLERS (WHATSAPP & EMAIL)
+// =========================================================
+
+function getInquiryFormData() {
+  const name = document.getElementById("inqName")?.value.trim() || "";
+  const phone = document.getElementById("inqPhone")?.value.trim() || "";
+  const email = document.getElementById("inqEmail")?.value.trim() || "";
+  const message = document.getElementById("inqMessage")?.value.trim() || "";
+
+  if (!name || !phone || !email || !message) {
+    alert("⚠️ Kripya form ke charo (Name, Phone, Email, Message) options bharein!");
+    return null;
+  }
+
+  if (phone.length < 10) {
+    alert("⚠️ Kripya valid 10-digit mobile number dalein!");
+    return null;
+  }
+
+  return { name, phone, email, message };
+}
+
+// 1) Send inquiry directly to WhatsApp
+function handleSendWhatsAppInquiry() {
+  const data = getInquiryFormData();
+  if (!data) return;
+
+  const waText = 
+`*NEW INQUIRY - PURE GROW FARM*
+----------------------------------
+👤 *Name:* ${data.name}
+📞 *Phone:* ${data.phone}
+✉️ *Email:* ${data.email}
+📝 *Inquiry Details:*
+${data.message}
+----------------------------------
+_Sent from Pure Grow Farm Website_`;
+
+  const targetWaNumber = farmWhatsapp || "919067891039";
+  window.open(`https://wa.me/${targetWaNumber}?text=${encodeURIComponent(waText)}`, '_blank');
+}
+
+// 2) Send inquiry directly via Email / Mailto
+function handleSendEmailInquiry() {
+  const data = getInquiryFormData();
+  if (!data) return;
+
+  const targetEmail = farmEmail || "puregrowfarm001@gmail.com";
+  const subject = `Pure Grow Farm Inquiry from ${data.name}`;
+  
+  const emailBody = 
+`Hello Pure Grow Farm Team,
+
+I have an inquiry regarding your products/services:
+
+Name: ${data.name}
+Phone: ${data.phone}
+Email: ${data.email}
+
+Message:
+${data.message}
+
+Thank you!`;
+
+  // Standard mailto link open karega jisse user ke phone/PC ka Gmail ya default mail composer open ho jayega
+  window.location.href = `mailto:${targetEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(emailBody)}`;
+}

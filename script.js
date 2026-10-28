@@ -5342,8 +5342,7 @@ async function saveNewBatchAdmin(e, batchType) {
   let payload = {
     id: (batchType === 'Student' ? "STU-BATCH-" : "FAR-BATCH-") + Date.now().toString().slice(-5),
     type: batchType,
-    created_at: timestampStr,
-    created_by: currentAdmin
+    created_at: timestampStr
   };
 
   if (batchType === 'Student') {
@@ -5398,7 +5397,6 @@ function renderBatchHistoryTables() {
 
   const nowTime = new Date().getTime();
 
-  // Helper date formatter
   const fmt = (dt) => {
     try { return new Date(dt).toLocaleString('en-IN', { dateStyle:'short', timeStyle:'short' }); } catch(e) { return dt; }
   };
@@ -5406,7 +5404,7 @@ function renderBatchHistoryTables() {
   // Student Table
   if (stuTbody) {
     if (!stuBatches.length) {
-      stuTbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:15px;" class="muted">No student batches launched yet.</td></tr>`;
+      stuTbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:15px;" class="muted">No student batches launched yet.</td></tr>`;
     } else {
       stuTbody.innerHTML = stuBatches.map(b => {
         const openMs = new Date(b.reg_open).getTime();
@@ -5421,7 +5419,6 @@ function renderBatchHistoryTables() {
           statusBadge = `<span class="badge" style="background:#dcfce7; color:#15803d;">🟢 Active Live</span>`;
         }
 
-        // Kitne logon ne form bhara (bookingsRegistry me se match karna)
         const filledCount = bookingsRegistry.filter(book => book.type === 'Student' && book.start === b.start_date && book.end === b.end_date).length;
 
         return `
@@ -5434,7 +5431,6 @@ function renderBatchHistoryTables() {
             <td>
               <strong style="font-size:14px; color:#0284c7;">👥 ${filledCount} Students</strong>
             </td>
-            <td><small>${b.created_by || 'Admin'}</small></td>
             <td>
               <button class="btn" style="padding:2px 6px; font-size:11px; background:var(--danger); min-height:auto;" onclick="deleteBatchAdmin('${b.id}')">Delete</button>
             </td>
@@ -5447,9 +5443,9 @@ function renderBatchHistoryTables() {
   // Farmer Table
   if (farTbody) {
     if (!farBatches.length) {
-      farTbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:15px;" class="muted">No farmer batches launched yet.</td></tr>`;
+      farTbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:15px;" class="muted">No farmer batches launched yet.</td></tr>`;
     } else {
-      farTbody.innerHTML = farBatches.map(b => {
+      farBatches.map(b => {
         const openMs = new Date(b.reg_open).getTime();
         const closeMs = new Date(b.reg_close).getTime();
         
@@ -5474,7 +5470,6 @@ function renderBatchHistoryTables() {
             <td>
               <strong style="font-size:14px; color:#b45309;">👨‍🌾 ${filledCount} Farmers</strong>
             </td>
-            <td><small>${b.created_by || 'Admin'}</small></td>
             <td>
               <button class="btn" style="padding:2px 6px; font-size:11px; background:var(--danger); min-height:auto;" onclick="deleteBatchAdmin('${b.id}')">Delete</button>
             </td>

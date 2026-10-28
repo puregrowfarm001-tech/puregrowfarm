@@ -13,8 +13,8 @@ const farmUpiId = "sohamgajera01@okhdfcbank";
 const farmName = "Pure Grow Farm";
 
 const ADMIN_USERS = [
-  { user: "soham_gajera", pass: "Soham@2026pgf", name: "Soham N Gajera" },
-  { user: "jeet_gajera", pass: "Jeet@2026pgf", name: "Jeet A Gajera" }
+  { user: "soham_gajera", pass: "Soham@2026pgf", name: "Soham N Gajera (Co-Founder & Managing Director)" },
+  { user: "jeet_gajera", pass: "Jeet@2026pgf", name: "Jeet A Gajera (Co-Founder & Director – Agriculture & Production)" }
 ];
 
 const BASE_PRODUCTS = [

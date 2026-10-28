@@ -3785,26 +3785,42 @@ async function confirmOrder(e) {
 function closeInvoice() { document.getElementById("invoiceDialog").close(); }
 
 function showVisitForm(id) {
-  document.getElementById("studentForm").classList.remove("active");
-  document.getElementById("farmerForm").classList.remove("active");
-  document.getElementById(id).classList.add("active");
-
+  const studentForm = document.getElementById("studentForm");
+  const farmerForm = document.getElementById("farmerForm");
   const indicator = document.getElementById("activeFormIndicatorTitle");
   const btnStudent = document.getElementById("btnTabStudent");
   const btnFarmer = document.getElementById("btnTabFarmer");
 
   if (id === 'studentForm') {
+    if (studentForm) {
+      studentForm.classList.add("active");
+      studentForm.style.display = "grid";
+    }
+    if (farmerForm) {
+      farmerForm.classList.remove("active");
+      farmerForm.style.display = "none";
+    }
     if (indicator) indicator.textContent = "📝 Currently Filling: Student Internship Program Application";
     if (btnStudent) btnStudent.style.background = "var(--accent)";
     if (btnFarmer) btnFarmer.style.background = "var(--muted)";
   } else {
+    if (farmerForm) {
+      farmerForm.classList.add("active");
+      farmerForm.style.display = "grid";
+    }
+    if (studentForm) {
+      studentForm.classList.remove("active");
+      studentForm.style.display = "none";
+    }
     if (indicator) indicator.textContent = "📝 Currently Filling: Farmer Training Workshop Registration";
     if (btnFarmer) btnFarmer.style.background = "var(--accent)";
     if (btnStudent) btnStudent.style.background = "var(--muted)";
   }
 
-  // Active form badalte hi timer aur form ko refresh karein
-  applyCurrentBatchToForms();
+  // Batch details aur timer refresh
+  if (typeof applyCurrentBatchToForms === "function") {
+    applyCurrentBatchToForms();
+  }
 }
 
 function openVisitPayment(formId, amount) {

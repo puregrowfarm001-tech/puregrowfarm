@@ -507,35 +507,36 @@ async function checkUserSession() {
   }
 }
 
-async function handleRegister(e) {
-  // handleRegister ke andar email check ke theek baad phone check karein:
-const cleanPhone = phone.replace(/[^0-9]/g, '').slice(-10);
-const { data: existingPhoneUser } = await _supabase
-  .from('pgf_users')
-  .select('phone')
-  .eq('phone', cleanPhone)
-  .limit(1)
-  .maybeSingle();
+let registerGeneratedOtp = "";
+let isRegisterEmailVerified = false;
+let verifiedRegisterEmail = "";
 
-if (existingPhoneUser) {
-  hidePgfLoader();
-  alert("⚠️ Is Mobile Number se account pehle se registered hai! Duplicate number allow nahi hai.");
-  return;
-}
-  e.preventDefault();
-  const name = document.getElementById("regName").value.trim();
-  const phone = document.getElementById("regPhone").value.trim();
-  const email = document.getElementById("regEmail").value.trim().toLowerCase();
-  const password = document.getElementById("regPassword").value;
+// 1. Check real domain & Send OTP via EmailJS
+async function handleSendRegisterOtp(e) {
+  if (e && e.preventDefault) e.preventDefault();
 
-  if (!isPasswordStrong(password)) {
-    alert("⚠️ Kripya Strong Password dalein!\n(8+ chars, 1 Uppercase, 1 Number, 1 Special character)");
+  const emailInput = document.getElementById("regEmail");
+  const email = emailInput ? emailInput.value.trim().toLowerCase() : "";
+
+  // Basic format check
+  const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+  if (!email || !emailRegex.test(email)) {
+    alert("⚠️ Kripya sahi format wala valid Email address dalein (e.g. name@gmail.com)!");
     return;
   }
 
-  showPgfLoader("Creating and syncing your account...");
+  // Common fake domain block (temp mail blocking)
+  const fakeDomains = ["tempmail.com", "10minutemail.com", "throwawaymail.com", "mailinator.com", "guerrillamail.com"];
+  const domain = email.split("@")[1];
+  if (fakeDomains.includes(domain)) {
+    alert("⚠️ Temporary / Fake email address allow nahi hai! Kripya apna real Gmail address dalein.");
+    return;
+  }
+
+  showPgfLoader("Checking email & sending verification code...");
 
   try {
+    // Pehle check karein ki ye email database me pehle se registered to nahi hai
     const { data: existingUser } = await _supabase
       .from('pgf_users')
       .select('email')
@@ -545,13 +546,105 @@ if (existingPhoneUser) {
 
     if (existingUser) {
       hidePgfLoader();
-      alert("Is Email ID se account pehle se bana hua hai!");
+      alert("⚠️ Is Email ID se account pehle se bana hua hai! Kripya Sign In karein.");
+      return;
+    }
+
+    // 6-digit OTP generate karein
+    registerGeneratedOtp = Math.floor(100000 + Math.random() * 900000).toString();
+
+    const templateParams = {
+      to_email: email,
+      to_name: document.getElementById("regName")?.value.trim() || "User",
+      otp_code: registerGeneratedOtp
+    };
+
+    // EmailJS se user ke Gmail par OTP send karein
+    emailjs.send('service_jk9zdkf', 'template_zihxosq', templateParams)
+      .then(function() {
+        hidePgfLoader();
+        alert(`✅ 6-digit OTP aapke Gmail (${email}) par bhej diya gaya hai! Kripya check karke enter karein.`);
+
+        document.getElementById("regOtpSection").style.display = "block";
+        document.getElementById("btnSendRegOtp").textContent = "Resend";
+      }, function(error) {
+        hidePgfLoader();
+        alert("❌ Is Email par message send nahi ho paya! Kripya check karein ki email sach me exist karta hai ya nahi.");
+      });
+
+  } catch (err) {
+    hidePgfLoader();
+    alert("Connection error! Please try again.");
+  }
+}
+
+// 2. OTP Verify karna
+function handleVerifyRegisterOtp() {
+  const enteredOtp = document.getElementById("regOtpInput")?.value.trim();
+  const currentEmail = document.getElementById("regEmail")?.value.trim().toLowerCase();
+
+  if (!enteredOtp || enteredOtp !== registerGeneratedOtp) {
+    alert("❌ Invalid OTP! Kripya aapke Gmail par aaya hua sahi 6-digit code dalein.");
+    return;
+  }
+
+  // Agar OTP sahi hai
+  isRegisterEmailVerified = true;
+  verifiedRegisterEmail = currentEmail;
+
+  // UI Unlock karein
+  document.getElementById("regEmail").readOnly = true;
+  document.getElementById("regEmail").style.background = "#f1f5f9";
+  document.getElementById("btnSendRegOtp").style.display = "none";
+  document.getElementById("regOtpInput").disabled = true;
+  document.getElementById("regEmailVerifiedBadge").style.display = "block";
+
+  // Password & Submit button unlock
+  document.getElementById("regPassword").disabled = false;
+  document.getElementById("regSubmitBtn").disabled = false;
+
+  alert("✅ Email verify ho chuka hai! Ab apna password banayein aur account create karein.");
+}
+
+// 3. Form Submit aur Account Save
+async function handleRegister(e) {
+  e.preventDefault();
+
+  if (!isRegisterEmailVerified) {
+    alert("⚠️ Pehle apna Email OTP daal kar verify karein!");
+    return;
+  }
+
+  const name = document.getElementById("regName").value.trim();
+  const phone = document.getElementById("regPhone").value.trim();
+  const email = verifiedRegisterEmail;
+  const password = document.getElementById("regPassword").value;
+
+  if (!isPasswordStrong(password)) {
+    alert("⚠️ Kripya Strong Password dalein!\n(8+ chars, 1 Uppercase, 1 Number, 1 Special character)");
+    return;
+  }
+
+  showPgfLoader("Creating your verified account...");
+
+  try {
+    const cleanPhone = phone.replace(/[^0-9]/g, '').slice(-10);
+    const { data: existingPhoneUser } = await _supabase
+      .from('pgf_users')
+      .select('phone')
+      .eq('phone', cleanPhone)
+      .limit(1)
+      .maybeSingle();
+
+    if (existingPhoneUser) {
+      hidePgfLoader();
+      alert("⚠️ Is Mobile Number se account pehle se registered hai! Duplicate number allow nahi hai.");
       return;
     }
 
     const now = new Date();
     const currentFormattedDateTime = now.toLocaleDateString('en-IN') + " " + now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
-    const newUser = { name, phone, email, password, registered_on: currentFormattedDateTime };
+    const newUser = { name, phone: cleanPhone, email, password, registered_on: currentFormattedDateTime };
 
     const { error } = await _supabase.from('pgf_users').insert([newUser]);
     if (error) {
@@ -560,18 +653,22 @@ if (existingPhoneUser) {
       return;
     }
 
-    pushNotification('ADMIN', '👤 New Account Created', `${name} (${email}) has registered.`, 'general');
+    pushNotification('ADMIN', '👤 New Verified Account', `${name} (${email}) has registered.`, 'general');
 
-    currentUser = { name, email, phone, isAdmin: false };
+    currentUser = { name, email, phone: cleanPhone, isAdmin: false };
     localStorage.setItem('pgf_session', JSON.stringify(currentUser));
     hidePgfLoader();
-    alert("✅ Account Successfully Created & Synced to Cloud!");
+    alert("✅ Real Email Verified & Account Successfully Created!");
     checkUserSession();
   } catch (err) {
     hidePgfLoader();
     alert("Something went wrong while creating account.");
   }
 }
+
+// Form submit event attach karein
+document.getElementById("userRegistrationForm")?.addEventListener("submit", handleRegister);
+
 async function handleLogin(e) {
   e.preventDefault();
   showPgfLoader("Logging into your account...");

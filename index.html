@@ -282,27 +282,41 @@
       </div>
 
       <div id="registerBox" class="auth-box">
-        <h2>Create Account</h2>
-        <form onsubmit="handleRegister(event)">
-          <input type="text" id="regName" placeholder="Your Full Name" required>
-          <input type="text" id="regPhone" placeholder="Mobile Number" required>
-          <input type="email" id="regEmail" placeholder="Email Address" required>
-          
-          <div class="password-input-group">
-            <input type="password" id="regPassword" placeholder="Create Strong Password" oninput="checkPasswordStrength(this.value)" required>
-            <button type="button" class="toggle-password-btn" onclick="togglePasswordVisibility('regPassword', this)">👁️</button>
-          </div>
-          <div id="passwordStrengthFeedback" class="strength-indicator" style="color: #94a3b8;">
-            Password must have 8+ chars, 1 uppercase, 1 number & 1 special character (@$!%*?&).
-          </div>
-          
-          <button type="submit" id="regSubmitBtn" style="margin-top:10px;">Create Your Account</button>
-        </form>
-        <div class="auth-toggle-links">
-          <span>Already have an account?</span>
-          <a onclick="switchAuthBox('loginBox')">Sign In</a>
-        </div>
+  <h2>Create Account</h2>
+  <form id="userRegistrationForm" onsubmit="handleSendRegisterOtp(event)">
+    <input type="text" id="regName" placeholder="Your Full Name" required>
+    <input type="tel" id="regPhone" placeholder="Mobile Number (10 digits)" maxlength="10" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10);" required>
+    
+    <div style="display: flex; gap: 6px;">
+      <input type="email" id="regEmail" placeholder="Enter Real Gmail Address" required style="flex: 1;">
+      <button type="button" id="btnSendRegOtp" class="btn" style="padding: 6px 12px; font-size: 12px; min-height: 40px; background: #0284c7; white-space: nowrap;" onclick="handleSendRegisterOtp(event)">Send OTP</button>
+    </div>
+
+    <!-- OTP Input Section (Email verify karne ke baad hi password unlock hoga) -->
+    <div id="regOtpSection" style="display: none; background: #f0fdf4; border: 1px solid #bbf7d0; padding: 10px; border-radius: 8px; margin: 4px 0;">
+      <span style="font-size: 11px; color: #166534; font-weight: bold; display: block; margin-bottom: 6px;">📩 Enter 6-digit verification code sent to your Gmail:</span>
+      <div style="display: flex; gap: 6px;">
+        <input type="text" id="regOtpInput" placeholder="6-Digit OTP" maxlength="6" style="letter-spacing: 4px; text-align: center; font-weight: bold;">
+        <button type="button" class="btn" style="padding: 6px 14px; font-size: 12px; background: #16a34a;" onclick="handleVerifyRegisterOtp()">Verify</button>
       </div>
+      <div id="regEmailVerifiedBadge" style="display: none; color: #15803d; font-size: 12px; font-weight: bold; margin-top: 6px;">✅ Email Verified Successfully!</div>
+    </div>
+    
+    <div class="password-input-group">
+      <input type="password" id="regPassword" placeholder="Create Strong Password" oninput="checkPasswordStrength(this.value)" disabled required>
+      <button type="button" class="toggle-password-btn" onclick="togglePasswordVisibility('regPassword', this)">👁️</button>
+    </div>
+    <div id="passwordStrengthFeedback" class="strength-indicator" style="color: #94a3b8;">
+      Password must have 8+ chars, 1 uppercase, 1 number & 1 special character (@$!%*?&).
+    </div>
+    
+    <button type="submit" id="regSubmitBtn" disabled style="margin-top:10px;">Create Your Account</button>
+  </form>
+  <div class="auth-toggle-links">
+    <span>Already have an account?</span>
+    <a onclick="switchAuthBox('loginBox')">Sign In</a>
+  </div>
+</div>
 
       <div id="forgotBox" class="auth-box">
         <h2>Password Assistance</h2>

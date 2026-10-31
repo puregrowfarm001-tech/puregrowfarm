@@ -312,20 +312,20 @@ function switchAuthBox(boxId) {
 
 async function triggerAdminView() {
   // Header me logged-in admin ka naam dikhane ke liye
-const adminBadge = document.getElementById("adminHeaderBadge");
-const adminNameText = document.getElementById("adminHeaderNameDisplay");
+  const adminBadge = document.getElementById("adminHeaderBadge");
+  const adminNameText = document.getElementById("adminHeaderNameDisplay");
 
-if (adminBadge && adminNameText) {
-  adminBadge.style.display = "inline-flex";
-  adminNameText.textContent = currentUser ? currentUser.name : "Admin";
-}
+  if (adminBadge && adminNameText) {
+    adminBadge.style.display = "inline-flex";
+    adminNameText.textContent = currentUser ? currentUser.name : "Admin";
+  }
   document.getElementById("mainNav").style.display = "none";
   document.getElementById("authSection").style.display = "none";
   document.getElementById("dashboardWorkspace").style.display = "none";
   document.getElementById("publicContent").style.display = "none";
   document.getElementById("adminErpView").classList.add("active");
   
-  // Orders & Bookings fetch
+  // 1. Orders Fetch
   const { data: cloudOrders } = await _supabase.from('pgf_orders').select('*');
   if (cloudOrders) {
     orderRegistry = cloudOrders.map(o => ({
@@ -339,38 +339,39 @@ if (adminBadge && adminNameText) {
     }));
   }
 
+  // 2. Bookings Fetch (Sirf ek bar declare karein)
   const { data: cloudBookings } = await _supabase.from('pgf_bookings').select('*');
-if (cloudBookings) {
-  bookingsRegistry = cloudBookings.map(b => ({
-    bookingId: b.booking_id,
-    type: b.type,
-    name: b.name,
-    phone: b.phone,
-    email: b.email,
-    enrollment: b.enrollment,
-    college: b.college,
-    course: b.course,
-    start: b.start_date,
-    end: b.end_date,
-    date: b.session_date,
-    userUpiId: b.user_upi_id,
-    fee: Number(b.fee || b.total_fee || 0),
-    baseFee: Number(b.base_fee || 0),
-    taxLogistics: Number(b.tax_logistics || 0),
-    lateFee: Number(b.late_fee || 0),
-    totalFee: Number(b.total_fee || b.fee || 0),
-    paidFee: Number(b.paid_fee || b.fee || 0),
-    paymentMode: b.payment_mode,
-    txnId: b.txn_id,
-    dateLogged: b.date_logged,
-    status: b.status,
-    approvedDate: b.approved_date,
-    certIssued: b.cert_issued,
-    certIssueDate: b.cert_issue_date
-  }));
-}
+  if (cloudBookings) {
+    bookingsRegistry = cloudBookings.map(b => ({
+      bookingId: b.booking_id,
+      type: b.type,
+      name: b.name,
+      phone: b.phone,
+      email: b.email,
+      enrollment: b.enrollment,
+      college: b.college,
+      course: b.course,
+      start: b.start_date,
+      end: b.end_date,
+      date: b.session_date,
+      userUpiId: b.user_upi_id,
+      fee: Number(b.fee || b.total_fee || 0),
+      baseFee: Number(b.base_fee || 0),
+      taxLogistics: Number(b.tax_logistics || 0),
+      lateFee: Number(b.late_fee || 0),
+      totalFee: Number(b.total_fee || b.fee || 0),
+      paidFee: Number(b.paid_fee || b.fee || 0),
+      paymentMode: b.payment_mode,
+      txnId: b.txn_id,
+      dateLogged: b.date_logged,
+      status: b.status,
+      approvedDate: b.approved_date,
+      certIssued: b.cert_issued,
+      certIssueDate: b.cert_issue_date
+    }));
+  }
 
-  // Expense, Sell, Buy, Damage & Dry Stock Tables Fetch From Cloud Supabase:
+  // 3. Dry Stock, Expense, Sales, Purchases, Damages Fetch
   const { data: cloudDry } = await _supabase.from('pgf_daily_dry_stock').select('*');
   if (cloudDry) {
     dailyDryStockRegistry = cloudDry.map(d => ({
@@ -406,7 +407,7 @@ if (cloudBookings) {
     }));
     expensesRegistry.push(...mappedDamages);
   }
-  // Registered Users Database Fetch from Supabase
+
   const { data: cloudUsers } = await _supabase.from('pgf_users').select('*');
   if (cloudUsers) {
     usersDatabase = cloudUsers.map(u => ({
@@ -427,6 +428,7 @@ if (cloudBookings) {
   switchSubAccountingTab('subTabDryStock');
 
   await fetchAdminManagerDataFromCloud();
+  await loadTrainingBatchesFromCloud(); // 👈 Isse admin batch table reload hoga
 }
 
 function exitAdminPanel() { handleLogout(); }
@@ -4719,35 +4721,36 @@ async function backgroundDataSync() {
     }
 
     const { data: cloudBookings } = await _supabase.from('pgf_bookings').select('*');
-if (cloudBookings) {
-  bookingsRegistry = cloudBookings.map(b => ({
-    bookingId: b.booking_id,
-    type: b.type,
-    name: b.name,
-    phone: b.phone,
-    email: b.email,
-    enrollment: b.enrollment,
-    college: b.college,
-    course: b.course,
-    start: b.start_date,
-    end: b.end_date,
-    date: b.session_date,
-    userUpiId: b.user_upi_id,
-    fee: Number(b.fee || b.total_fee || 0),
-    baseFee: Number(b.base_fee || 0),
-    taxLogistics: Number(b.tax_logistics || 0),
-    lateFee: Number(b.late_fee || 0),
-    totalFee: Number(b.total_fee || b.fee || 0),
-    paidFee: Number(b.paid_fee || b.fee || 0),
-    paymentMode: b.payment_mode,
-    txnId: b.txn_id,
-    dateLogged: b.date_logged,
-    status: b.status,
-    approvedDate: b.approved_date,
-    certIssued: b.cert_issued,
-    certIssueDate: b.cert_issue_date
-  }));
-}
+    if (cloudBookings) {
+      bookingsRegistry = cloudBookings.map(b => ({
+        bookingId: b.booking_id,
+        type: b.type,
+        name: b.name,
+        phone: b.phone,
+        email: b.email,
+        enrollment: b.enrollment,
+        college: b.college,
+        course: b.course,
+        start: b.start_date,
+        end: b.end_date,
+        date: b.session_date,
+        userUpiId: b.user_upi_id,
+        fee: Number(b.fee || b.total_fee || 0),
+        baseFee: Number(b.base_fee || 0),
+        taxLogistics: Number(b.tax_logistics || 0),
+        lateFee: Number(b.late_fee || 0),
+        totalFee: Number(b.total_fee || b.fee || 0),
+        paidFee: Number(b.paid_fee || b.fee || 0),
+        paymentMode: b.payment_mode,
+        txnId: b.txn_id,
+        dateLogged: b.date_logged,
+        status: b.status,
+        approvedDate: b.approved_date,
+        certIssued: b.cert_issued,
+        certIssueDate: b.cert_issue_date
+      }));
+    }
+
     const localNotifs = JSON.parse(localStorage.getItem('pgf_notifications')) || [];
     if (Array.isArray(localNotifs)) {
       notificationsRegistry = localNotifs;
@@ -6069,19 +6072,37 @@ function applyCurrentBatchToForms() {
     if (labelEl) { labelEl.textContent = "⏳ Registration Opens In:"; labelEl.style.color = "#b45309"; }
     if (countEl) { countEl.textContent = getDurationString(diff); countEl.style.color = "#b45309"; }
     disableFormRegistration(currentForm, submitBtn, "Registration will open soon.");
-  } else if (now > closeTime) {
+    
+    // Upcoming hone par WhatsApp card hide rahega
+    const actionCard = document.getElementById("bookingClosedActionCard");
+    if (actionCard) actionCard.style.display = "none";
+  } 
+  else if (now > closeTime) {
     if (timerBanner) { timerBanner.style.background = "#fef2f2"; timerBanner.style.borderColor = "#fecaca"; }
     if (labelEl) { labelEl.textContent = "❌ Registration Window Closed:"; labelEl.style.color = "#dc2626"; }
     if (countEl) { countEl.textContent = "Closed for this batch"; countEl.style.color = "#dc2626"; }
     disableFormRegistration(currentForm, submitBtn, "Registration Closed");
-  } else {
+
+    // 👇 Closed hone par WhatsApp card screen par show hoga:
+    const actionCard = document.getElementById("bookingClosedActionCard");
+    if (actionCard) {
+      actionCard.style.display = "block";
+    }
+  } 
+  else {
     const diff = closeTime - now;
     if (timerBanner) { timerBanner.style.background = "#f0fdf4"; timerBanner.style.borderColor = "#bbf7d0"; }
     if (labelEl) { labelEl.textContent = "🟢 Registration Open! Closes In:"; labelEl.style.color = "#15803d"; }
     if (countEl) { countEl.textContent = getDurationString(diff); countEl.style.color = "#166534"; }
     enableFormRegistration(currentForm);
+
+    // 👇 Batch open hone par WhatsApp card wapas hide ho jayega:
+    const actionCard = document.getElementById("bookingClosedActionCard");
+    if (actionCard) {
+      actionCard.style.display = "none";
+    }
   }
-}
+} 
 
 // 6. Dynamic Payment Trigger with Admin fee from cloud
 function openDynamicVisitPayment(type) {

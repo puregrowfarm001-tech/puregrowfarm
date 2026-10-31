@@ -6437,3 +6437,28 @@ function getFarmerMissingFieldMessage() {
 
   return null;
 }
+
+function handleDirectBookingWhatsApp() {
+  const isStudent = document.getElementById("studentForm")?.classList.contains("active");
+  const programType = isStudent ? "Student Internship Program" : "Farmer Workshop Training";
+  const currentBatch = isStudent ? activeStudentBatch : activeFarmerBatch;
+  const batchId = currentBatch ? currentBatch.id : "N/A";
+
+  const userName = currentUser ? currentUser.name : (document.getElementById(isStudent ? "sname" : "fname")?.value.trim() || "Interested Candidate");
+  const userPhone = currentUser ? (currentUser.phone || "N/A") : (document.getElementById(isStudent ? "sphone" : "fphone")?.value.trim() || "N/A");
+  const userEmail = currentUser ? currentUser.email : (document.getElementById(isStudent ? "semail" : "femail")?.value.trim() || "N/A");
+
+  const waText = 
+`*NEW TRAINING BOOKING REQUEST - PURE GROW FARM*
+----------------------------------------
+👤 *Candidate Name:* ${userName}
+📱 *Mobile Number:* ${userPhone}
+✉️ *Email Address:* ${userEmail}
+🎓 *Program Interest:* ${programType}
+🆔 *Batch ID:* ${batchId}
+----------------------------------------
+*Hello Admin*, website par registration window closed dikh rahi hai. Mujhe is training program me join/booking karna hai. Kripya mujhe seat ya agle batch ke bare me batayein.`;
+
+  const farmPhone = farmWhatsapp || "919067891039";
+  window.open(`https://wa.me/${farmPhone}?text=${encodeURIComponent(waText)}`, '_blank');
+}

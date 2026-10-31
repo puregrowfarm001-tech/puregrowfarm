@@ -545,6 +545,16 @@
               <div id="windowRangeText" style="font-size:11px; color:#64748b; text-align:right;"></div>
             </div>
 
+            <!-- Closed Batch Direct WhatsApp Action Card -->
+<div id="bookingClosedActionCard" style="display:none; background:#fff7ed; border:1.5px dashed #25d366; border-radius:12px; padding:16px; margin-bottom:16px; text-align:center;">
+  <strong style="color:#15803d; font-size:15px; display:block; margin-bottom:4px;">📢 Registration Window Closed! Kya aapko booking karna hai?</strong>
+  <p class="muted" style="font-size:13px; margin:0 0 12px 0;">Is program ki registration window close ho chuki hai. Agar aapko isme seat chahiye ya agle batch ki jaankari leni hai, toh seedha WhatsApp par baat karein.</p>
+  
+  <button type="button" class="btn" style="background:#25d366; font-size:14px; font-weight:bold; padding:8px 20px; box-shadow:0 3px 10px rgba(37,211,102,0.3);" onclick="handleDirectBookingWhatsApp()">
+    💬 WhatsApp par Admin se Baat Karein
+  </button>
+</div>
+
             <!-- Student Form -->
 <form id="studentForm" class="visit-form active" style="display: grid;" onsubmit="submitStudentVisit(event)">
   <input type="text" id="sname" placeholder="Student Name" readonly required style="background:#f3f4f6; cursor:not-allowed;">

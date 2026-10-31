@@ -5727,8 +5727,8 @@ async function deleteBatchAdmin(batchId) {
   await loadTrainingBatchesFromCloud();
 }
 
-// 4. 
-// Batch History Tables Render with Fee Breakdown (Base Fee, Tax/Logistics & Late Fee)
+// 4. // Batch History Tables Render with Fee Breakdown (Base Fee, Tax/Logistics & Late Fee)
+// Batch History Tables Render with Total Registrations in Date Range & Fee Details
 function renderBatchHistoryTables() {
   const stuTbody = document.getElementById("studentBatchHistoryTableBody");
   const farTbody = document.getElementById("farmerBatchHistoryTableBody");
@@ -5746,6 +5746,7 @@ function renderBatchHistoryTables() {
     }
   };
 
+  // Helper: Booking timestamp ko parse karna
   const parseBookingTime = (book) => {
     try {
       if (book.rawIsoDate) return new Date(book.rawIsoDate).getTime();
@@ -5753,6 +5754,7 @@ function renderBatchHistoryTables() {
         const parts = book.dateLogged.split(" ");
         if (parts[0] && parts[0].includes("/")) {
           const dParts = parts[0].split("/");
+          // DD/MM/YYYY -> YYYY-MM-DD
           const isoDateStr = `${dParts[2]}-${dParts[1]}-${dParts[0]} ${parts.slice(1).join(" ")}`;
           const parsed = new Date(isoDateStr).getTime();
           if (!isNaN(parsed)) return parsed;
@@ -5784,16 +5786,28 @@ function renderBatchHistoryTables() {
           statusBadge = `<span class="badge" style="background:#dcfce7; color:#15803d;">🟢 Active Live</span>`;
         }
 
-        const filledCount = bookingsRegistry.filter(book => {
+        // 🎯 Start & End Date (Registration Window & Batch Dates) ke beech ke Total Registrations
+        const matchedBookings = bookingsRegistry.filter(book => {
           if (book.type !== 'Student') return false;
-          const bookTime = parseBookingTime(book);
-          if (bookTime > 0 && !isNaN(openMs) && !isNaN(closeMs)) {
-            return bookTime >= openMs && bookTime <= closeMs;
-          }
-          return (book.start === b.start_date && book.end === b.end_date);
-        }).length;
 
-        // 👇 Student Fee Breakdown
+          const bookTime = parseBookingTime(book);
+          // Case A: Form Registration Window (Open - Close Date Time) ke andar
+          if (bookTime > 0 && !isNaN(openMs) && !isNaN(closeMs)) {
+            if (bookTime >= openMs && bookTime <= closeMs) return true;
+          }
+
+          // Case B: Agar dates exactly match karti hon (Internship Start - End Date)
+          if (b.start_date && b.end_date && book.start === b.start_date && book.end === b.end_date) {
+            return true;
+          }
+
+          return false;
+        });
+
+        const filledCount = matchedBookings.length;
+        const confirmedCount = matchedBookings.filter(book => book.status === 'Confirmed' || book.status === 'Approved').length;
+
+        // Fees Breakdown
         const baseFee = Number(b.base_fee !== undefined ? b.base_fee : b.fee || 0);
         const taxFee = Number(b.tax_logistics || 0);
         const lateFee = Number(b.late_fee || 0);
@@ -5802,8 +5816,8 @@ function renderBatchHistoryTables() {
         const studentFeeDisplay = `
           <div style="line-height: 1.3; font-size: 12px; min-width: 140px;">
             <strong style="color:var(--accent); font-size: 13.5px; display: block; margin-bottom: 2px;">Total: Rs ${grandTotal}</strong>
-            <div style="color: #475569;">Base Fee: Rs ${baseFee}</div>
-            <div style="color: #475569;">Tax & Cert: Rs ${taxFee}</div>
+            <div style="color: #475569;">Base: Rs ${baseFee}</div>
+            <div style="color: #475569;">Tax/Cert: Rs ${taxFee}</div>
             ${lateFee > 0 ? `<div style="color: #dc2626; font-weight: bold;">Late Fee: +Rs ${lateFee}</div>` : ''}
           </div>
         `;
@@ -5812,15 +5826,20 @@ function renderBatchHistoryTables() {
           <tr>
             <td><strong>${b.id}</strong></td>
             <td>${studentFeeDisplay}</td>
-            <td>${b.start_date} to ${b.end_date}</td>
+            <td>
+              <span style="font-weight: 600; color: #0f172a;">${b.start_date}</span> to <span style="font-weight: 600; color: #0f172a;">${b.end_date}</span>
+            </td>
             <td><small>${fmt(b.reg_open)}<br>to <strong>${fmt(b.reg_close)}</strong></small></td>
             <td>${statusBadge}</td>
             <td>
-              <strong style="font-size:14px; color:#0284c7;">👥 ${filledCount} Students</strong>
-              <div style="font-size:10px; color:#64748b;">(Within Active Window)</div>
+              <div style="line-height: 1.4;">
+                <strong style="font-size:15px; color:#0284c7;">👥 Total: ${filledCount} Students</strong><br>
+                <span style="font-size:11.5px; color:#16a34a; font-weight:bold;">✅ Confirmed: ${confirmedCount}</span>
+                <div style="font-size:10px; color:#64748b;">(Start se End Date ke beech)</div>
+              </div>
             </td>
             <td>
-              <button class="btn" style="padding:2px 6px; font-size:11px; background:var(--danger); min-height:auto;" onclick="deleteBatchAdmin('${b.id}')">Delete</button>
+              <button class="btn" style="padding:4px 8px; font-size:11px; background:var(--danger); min-height:auto;" onclick="deleteBatchAdmin('${b.id}')">Delete</button>
             </td>
           </tr>
         `;
@@ -5846,16 +5865,26 @@ function renderBatchHistoryTables() {
           statusBadge = `<span class="badge" style="background:#dcfce7; color:#15803d;">🟢 Active Live</span>`;
         }
 
-        const filledCount = bookingsRegistry.filter(book => {
+        // 🎯 Start & End Date (Registration Window) ke beech ke Total Farmer Registrations
+        const matchedBookings = bookingsRegistry.filter(book => {
           if (book.type !== 'Farmer') return false;
+
           const bookTime = parseBookingTime(book);
           if (bookTime > 0 && !isNaN(openMs) && !isNaN(closeMs)) {
-            return bookTime >= openMs && bookTime <= closeMs;
+            if (bookTime >= openMs && bookTime <= closeMs) return true;
           }
-          return (book.date === b.session_date);
-        }).length;
 
-        // 👇 Farmer Fee Breakdown
+          if (b.session_date && book.date === b.session_date) {
+            return true;
+          }
+
+          return false;
+        });
+
+        const filledCount = matchedBookings.length;
+        const confirmedCount = matchedBookings.filter(book => book.status === 'Confirmed' || book.status === 'Approved').length;
+
+        // Fees Breakdown
         const baseFee = Number(b.base_fee !== undefined ? b.base_fee : b.fee || 0);
         const taxFee = Number(b.tax_logistics || 0);
         const lateFee = Number(b.late_fee || 0);
@@ -5864,8 +5893,8 @@ function renderBatchHistoryTables() {
         const farmerFeeDisplay = `
           <div style="line-height: 1.3; font-size: 12px; min-width: 140px;">
             <strong style="color:var(--accent); font-size: 13.5px; display: block; margin-bottom: 2px;">Total: Rs ${grandTotal}</strong>
-            <div style="color: #475569;">Workshop Fee: Rs ${baseFee}</div>
-            <div style="color: #475569;">Kit & Cert: Rs ${taxFee}</div>
+            <div style="color: #475569;">Workshop: Rs ${baseFee}</div>
+            <div style="color: #475569;">Kit/Cert: Rs ${taxFee}</div>
             ${lateFee > 0 ? `<div style="color: #dc2626; font-weight: bold;">Late Fee: +Rs ${lateFee}</div>` : ''}
           </div>
         `;
@@ -5874,15 +5903,20 @@ function renderBatchHistoryTables() {
           <tr>
             <td><strong>${b.id}</strong></td>
             <td>${farmerFeeDisplay}</td>
-            <td>${b.session_date}</td>
+            <td>
+              <span style="font-weight: 600; color: #0f172a;">${b.session_date}</span>
+            </td>
             <td><small>${fmt(b.reg_open)}<br>to <strong>${fmt(b.reg_close)}</strong></small></td>
             <td>${statusBadge}</td>
             <td>
-              <strong style="font-size:14px; color:#b45309;">👨‍🌾 ${filledCount} Farmers</strong>
-              <div style="font-size:10px; color:#64748b;">(Within Active Window)</div>
+              <div style="line-height: 1.4;">
+                <strong style="font-size:15px; color:#b45309;">👨‍🌾 Total: ${filledCount} Farmers</strong><br>
+                <span style="font-size:11.5px; color:#16a34a; font-weight:bold;">✅ Confirmed: ${confirmedCount}</span>
+                <div style="font-size:10px; color:#64748b;">(Start se End Date ke beech)</div>
+              </div>
             </td>
             <td>
-              <button class="btn" style="padding:2px 6px; font-size:11px; background:var(--danger); min-height:auto;" onclick="deleteBatchAdmin('${b.id}')">Delete</button>
+              <button class="btn" style="padding:4px 8px; font-size:11px; background:var(--danger); min-height:auto;" onclick="deleteBatchAdmin('${b.id}')">Delete</button>
             </td>
           </tr>
         `;

@@ -74,6 +74,18 @@ function copyToClipboard(text) {
   });
 }
 
+function openOrdersModalFromProfile() {
+  const panel = document.getElementById("userProfileDropdownPanel");
+  if (panel) panel.style.display = "none";
+  openOrdersModal();
+}
+
+function openBookingsModalFromProfile() {
+  const panel = document.getElementById("userProfileDropdownPanel");
+  if (panel) panel.style.display = "none";
+  openBookingsModal();
+}
+
 function openOrdersModal() {
   document.getElementById("userOrdersModal").classList.add("active-modal");
   loadUserPanelData();
@@ -328,15 +340,35 @@ if (adminBadge && adminNameText) {
   }
 
   const { data: cloudBookings } = await _supabase.from('pgf_bookings').select('*');
-  if (cloudBookings) {
-    bookingsRegistry = cloudBookings.map(b => ({
-      bookingId: b.booking_id, type: b.type, name: b.name, phone: b.phone, email: b.email,
-      enrollment: b.enrollment, college: b.college, course: b.course, start: b.start_date,
-      end: b.end_date, date: b.session_date, userUpiId: b.user_upi_id, fee: b.fee,
-      paymentMode: b.payment_mode, txnId: b.txn_id, dateLogged: b.date_logged, status: b.status,
-      approvedDate: b.approved_date, certIssued: b.cert_issued, certIssueDate: b.cert_issue_date
-    }));
-  }
+if (cloudBookings) {
+  bookingsRegistry = cloudBookings.map(b => ({
+    bookingId: b.booking_id,
+    type: b.type,
+    name: b.name,
+    phone: b.phone,
+    email: b.email,
+    enrollment: b.enrollment,
+    college: b.college,
+    course: b.course,
+    start: b.start_date,
+    end: b.end_date,
+    date: b.session_date,
+    userUpiId: b.user_upi_id,
+    fee: Number(b.fee || b.total_fee || 0),
+    baseFee: Number(b.base_fee || 0),
+    taxLogistics: Number(b.tax_logistics || 0),
+    lateFee: Number(b.late_fee || 0),
+    totalFee: Number(b.total_fee || b.fee || 0),
+    paidFee: Number(b.paid_fee || b.fee || 0),
+    paymentMode: b.payment_mode,
+    txnId: b.txn_id,
+    dateLogged: b.date_logged,
+    status: b.status,
+    approvedDate: b.approved_date,
+    certIssued: b.cert_issued,
+    certIssueDate: b.cert_issue_date
+  }));
+}
 
   // Expense, Sell, Buy, Damage & Dry Stock Tables Fetch From Cloud Supabase:
   const { data: cloudDry } = await _supabase.from('pgf_daily_dry_stock').select('*');
@@ -2182,6 +2214,17 @@ function populateAdminDashboardTables() {
         const certIssued = b.certIssued === true;
         const bUpi = b.userUpiId || "N/A";
         const isRejectedBooking = b.status && b.status.startsWith('Rejected');
+        const feeTotal = Number(b.totalFee || b.fee || 0);
+        const feePaid = Number(b.paidFee || b.fee || 0);
+        const feeLate = Number(b.lateFee || 0);
+
+        const feeDisplayHTML = `
+          <div style="line-height: 1.4; min-width: 130px;">
+            <div><strong>Total Fee:</strong> <span style="color:#0f172a; font-weight:bold;">Rs ${feeTotal}</span></div>
+            <div><strong>Paid Fee:</strong> <span style="color:#16a34a; font-weight:bold;">Rs ${feePaid}</span></div>
+            ${feeLate > 0 ? `<div style="color:#dc2626; font-size:11px; font-weight:bold;">Late Fee: +Rs ${feeLate}</div>` : ''}
+          </div>
+        `;
 
         return `
           <tr>
@@ -2193,7 +2236,7 @@ function populateAdminDashboardTables() {
               <small class="muted">${b.email || 'N/A'}</small>
             </td>
             <td><small>${submittedDetails}</small></td>
-            <td style="font-weight:bold; color:var(--accent); font-size:14px;">Rs ${b.fee || 0}</td>
+            <td>${feeDisplayHTML}</td>
             <td>
               <span class="badge" style="background:#eef2ff; color:#3730a3; margin-bottom:3px; font-weight:bold;">${mode}</span><br>
               <small>Txn: <code>${b.txnId || 'N/A'}</code></small><br>
@@ -4218,13 +4261,17 @@ async function submitStudentVisit(e) {
     return;
   }
   const txnDisabled = document.getElementById("spayment").disabled;
-if (txnDisabled || !document.getElementById("spaymentMode").value) {
-  alert("⚠️ Kripya payment option select karke UTR ID enter karein!");
-  return;
-}
-  e.preventDefault();
+  if (txnDisabled || !document.getElementById("spaymentMode").value) {
+    alert("⚠️ Kripya payment option select karke UTR ID enter karein!");
+    return;
+  }
+
+  const baseFee = Number(activeStudentBatch?.base_fee || 0);
+  const taxLogistics = Number(activeStudentBatch?.tax_logistics || 0);
+  const lateFee = Number(activeStudentBatch?.late_fee || 0);
+  const totalPayable = baseFee + taxLogistics + lateFee;
+
   const currentTimestamp = new Date().toLocaleDateString('en-IN') + " " + new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
-  
   showPgfLoader("Submitting Student Internship Booking...");
 
   const data = {
@@ -4239,7 +4286,12 @@ if (txnDisabled || !document.getElementById("spaymentMode").value) {
     start_date: document.getElementById("sstart").value,
     end_date: document.getElementById("send").value,
     user_upi_id: document.getElementById("suserUpi").value.trim(),
-    fee: 100,
+    base_fee: baseFee,
+    tax_logistics: taxLogistics,
+    late_fee: lateFee,
+    total_fee: totalPayable,
+    paid_fee: totalPayable,
+    fee: totalPayable,
     payment_mode: document.getElementById("spaymentMode").value,
     txn_id: document.getElementById("spayment").value.trim(),
     date_logged: currentTimestamp,
@@ -4270,6 +4322,11 @@ if (txnDisabled || !document.getElementById("spaymentMode").value) {
       start: data.start_date,
       end: data.end_date,
       userUpiId: data.user_upi_id,
+      baseFee: data.base_fee,
+      taxLogistics: data.tax_logistics,
+      lateFee: data.late_fee,
+      totalFee: data.total_fee,
+      paidFee: data.paid_fee,
       fee: data.fee,
       paymentMode: data.payment_mode,
       txnId: data.txn_id,
@@ -4277,12 +4334,6 @@ if (txnDisabled || !document.getElementById("spaymentMode").value) {
       status: data.status,
       certIssued: data.cert_issued
     });
-
-    const waText = `NEW STUDENT INTERNSHIP REGISTRATION:\n----------------------------------------\nBooking Ref ID: ${data.booking_id}\nName: ${data.name}\nStudent UPI ID: ${data.user_upi_id}\nCollege: ${data.college}\nCourse: ${data.course}\nUTR Tracking Number: ${data.txn_id}\n----------------------------------------`;
-    
-    setTimeout(() => {
-      window.open(`https://wa.me/${farmWhatsapp}?text=${encodeURIComponent(waText)}`, '_blank');
-    }, 300);
 
     alert("✅ Success! Aapka Student Internship Registration cloud database me save ho gaya hai.");
     document.getElementById("studentForm").reset();
@@ -4303,13 +4354,17 @@ async function submitFarmerVisit(e) {
     return;
   }
   const txnDisabled = document.getElementById("fpayment").disabled;
-if (txnDisabled || !document.getElementById("fpaymentMode").value) {
-  alert("⚠️ Kripya payment option select karke UTR ID enter karein!");
-  return;
-}
-  e.preventDefault();
+  if (txnDisabled || !document.getElementById("fpaymentMode").value) {
+    alert("⚠️ Kripya payment option select karke UTR ID enter karein!");
+    return;
+  }
+
+  const baseFee = Number(activeFarmerBatch?.base_fee || 0);
+  const taxLogistics = Number(activeFarmerBatch?.tax_logistics || 0);
+  const lateFee = Number(activeFarmerBatch?.late_fee || 0);
+  const totalPayable = baseFee + taxLogistics + lateFee;
+
   const currentTimestamp = new Date().toLocaleDateString('en-IN') + " " + new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
-  
   showPgfLoader("Submitting Farmer Training Registration...");
 
   const data = {
@@ -4320,7 +4375,12 @@ if (txnDisabled || !document.getElementById("fpaymentMode").value) {
     email: currentUser.email,
     session_date: document.getElementById("fdate").value,
     user_upi_id: document.getElementById("fuserUpi").value.trim(),
-    fee: 699,
+    base_fee: baseFee,
+    tax_logistics: taxLogistics,
+    late_fee: lateFee,
+    total_fee: totalPayable,
+    paid_fee: totalPayable,
+    fee: totalPayable,
     payment_mode: document.getElementById("fpaymentMode").value,
     txn_id: document.getElementById("fpayment").value.trim(),
     date_logged: currentTimestamp,
@@ -4347,6 +4407,11 @@ if (txnDisabled || !document.getElementById("fpaymentMode").value) {
       email: data.email,
       date: data.session_date,
       userUpiId: data.user_upi_id,
+      baseFee: data.base_fee,
+      taxLogistics: data.tax_logistics,
+      lateFee: data.late_fee,
+      totalFee: data.total_fee,
+      paidFee: data.paid_fee,
       fee: data.fee,
       paymentMode: data.payment_mode,
       txnId: data.txn_id,
@@ -4355,12 +4420,6 @@ if (txnDisabled || !document.getElementById("fpaymentMode").value) {
       certIssued: data.cert_issued
     });
 
-    const waText = `NEW FARMER TRAINING BOOKING:\n----------------------------------------\nBooking Ref ID: ${data.booking_id}\nName: ${data.name}\nFarmer UPI ID: ${data.user_upi_id}\nTraining Date: ${data.session_date}\nUTR Tracking Number: ${data.txn_id}\n----------------------------------------`;
-    
-    setTimeout(() => {
-      window.open(`https://wa.me/${farmWhatsapp}?text=${encodeURIComponent(waText)}`, '_blank');
-    }, 300);
-    
     alert("✅ Success! Aapka Farmer Training Workshop booking cloud database me save ho gaya hai.");
     document.getElementById("farmerForm").reset();
     document.getElementById("fpayment").disabled = true;
@@ -4563,16 +4622,35 @@ async function backgroundDataSync() {
     }
 
     const { data: cloudBookings } = await _supabase.from('pgf_bookings').select('*');
-    if (cloudBookings) {
-      bookingsRegistry = cloudBookings.map(b => ({
-        bookingId: b.booking_id, type: b.type, name: b.name, phone: b.phone, email: b.email,
-        enrollment: b.enrollment, college: b.college, course: b.course, start: b.start_date,
-        end: b.end_date, date: b.session_date, userUpiId: b.user_upi_id, fee: b.fee,
-        paymentMode: b.payment_mode, txnId: b.txn_id, dateLogged: b.date_logged, status: b.status,
-        approvedDate: b.approved_date, certIssued: b.cert_issued, certIssueDate: b.cert_issue_date
-      }));
-    }
-
+if (cloudBookings) {
+  bookingsRegistry = cloudBookings.map(b => ({
+    bookingId: b.booking_id,
+    type: b.type,
+    name: b.name,
+    phone: b.phone,
+    email: b.email,
+    enrollment: b.enrollment,
+    college: b.college,
+    course: b.course,
+    start: b.start_date,
+    end: b.end_date,
+    date: b.session_date,
+    userUpiId: b.user_upi_id,
+    fee: Number(b.fee || b.total_fee || 0),
+    baseFee: Number(b.base_fee || 0),
+    taxLogistics: Number(b.tax_logistics || 0),
+    lateFee: Number(b.late_fee || 0),
+    totalFee: Number(b.total_fee || b.fee || 0),
+    paidFee: Number(b.paid_fee || b.fee || 0),
+    paymentMode: b.payment_mode,
+    txnId: b.txn_id,
+    dateLogged: b.date_logged,
+    status: b.status,
+    approvedDate: b.approved_date,
+    certIssued: b.cert_issued,
+    certIssueDate: b.cert_issue_date
+  }));
+}
     const localNotifs = JSON.parse(localStorage.getItem('pgf_notifications')) || [];
     if (Array.isArray(localNotifs)) {
       notificationsRegistry = localNotifs;
@@ -5483,30 +5561,47 @@ async function loadTrainingBatchesFromCloud() {
 // 2. Admin se naya batch create aur save karna
 async function saveNewBatchAdmin(e, batchType) {
   e.preventDefault();
-  const currentAdmin = (currentUser && currentUser.name) ? currentUser.name : "Admin";
   const now = new Date();
   const timestampStr = now.toLocaleDateString('en-IN') + " " + now.toLocaleTimeString('en-IN');
+
+  let baseFee = 0, taxLogistics = 0, lateFee = 0;
+
+  // Student aur Farmer ke alag-alag inputs ki value nikalna
+  if (batchType === 'Student') {
+    baseFee = Number(document.getElementById("admStuBaseFee").value) || 0;
+    taxLogistics = Number(document.getElementById("admStuTax").value) || 0;
+    lateFee = Number(document.getElementById("admStuLateFee").value) || 0;
+  } else {
+    baseFee = Number(document.getElementById("admFarBaseFee").value) || 0;
+    taxLogistics = Number(document.getElementById("admFarTax").value) || 0;
+    lateFee = Number(document.getElementById("admFarLateFee").value) || 0;
+  }
+
+  // Total Fee = Base + Taxes/Logistics + Late Fee
+  const totalFee = baseFee + taxLogistics + lateFee;
 
   let payload = {
     id: (batchType === 'Student' ? "STU-BATCH-" : "FAR-BATCH-") + Date.now().toString().slice(-5),
     type: batchType,
-    created_at: timestampStr
+    created_at: timestampStr,
+    base_fee: baseFee,
+    tax_logistics: taxLogistics,
+    late_fee: lateFee,
+    fee: totalFee
   };
 
   if (batchType === 'Student') {
-    payload.fee = Number(document.getElementById("admStuFee").value);
     payload.start_date = document.getElementById("admStuStartDate").value;
     payload.end_date = document.getElementById("admStuEndDate").value;
     payload.reg_open = document.getElementById("admStuRegOpen").value;
     payload.reg_close = document.getElementById("admStuRegClose").value;
   } else {
-    payload.fee = Number(document.getElementById("admFarFee").value);
     payload.session_date = document.getElementById("admFarSessionDate").value;
     payload.reg_open = document.getElementById("admFarRegOpen").value;
     payload.reg_close = document.getElementById("admFarRegClose").value;
   }
 
-  showPgfLoader("Saving new batch to Supabase...");
+  showPgfLoader("Saving new batch with fee breakdown to Supabase...");
 
   const { error } = await _supabase.from('pgf_training_batches').insert([payload]);
   hidePgfLoader();
@@ -5516,7 +5611,7 @@ async function saveNewBatchAdmin(e, batchType) {
     return;
   }
 
-  alert(`✅ New ${batchType} Batch created & synced to cloud!`);
+  alert(`✅ New ${batchType} Batch created!\nTotal: Rs ${totalFee} (Base: ${baseFee}, Tax/Logistics: ${taxLogistics}, Late Fee: ${lateFee})`);
   e.target.reset();
   await loadTrainingBatchesFromCloud();
 }
@@ -5536,7 +5631,7 @@ async function deleteBatchAdmin(batchId) {
 }
 
 // 4. 
-// Batch History Tables Render with Exact Registration Time Window Matching
+// Batch History Tables Render with Fee Breakdown (Base Fee, Tax/Logistics & Late Fee)
 function renderBatchHistoryTables() {
   const stuTbody = document.getElementById("studentBatchHistoryTableBody");
   const farTbody = document.getElementById("farmerBatchHistoryTableBody");
@@ -5546,7 +5641,6 @@ function renderBatchHistoryTables() {
 
   const nowTime = new Date().getTime();
 
-  // Helper date formatter
   const fmt = (dt) => {
     try { 
       return new Date(dt).toLocaleString('en-IN', { dateStyle: 'short', timeStyle: 'short' }); 
@@ -5555,17 +5649,13 @@ function renderBatchHistoryTables() {
     }
   };
 
-  // Helper function: Booking ke timestamp ko milliseconds me convert karna
   const parseBookingTime = (book) => {
     try {
-      // Agar booking me dateLogged (e.g. "28/10/2026, 09:30 pm") ya rawIsoDate ho
       if (book.rawIsoDate) return new Date(book.rawIsoDate).getTime();
       if (book.dateLogged) {
-        // Indian date format DD/MM/YYYY ko parse karna
         const parts = book.dateLogged.split(" ");
         if (parts[0] && parts[0].includes("/")) {
           const dParts = parts[0].split("/");
-          // DD/MM/YYYY -> YYYY-MM-DD
           const isoDateStr = `${dParts[2]}-${dParts[1]}-${dParts[0]} ${parts.slice(1).join(" ")}`;
           const parsed = new Date(isoDateStr).getTime();
           if (!isNaN(parsed)) return parsed;
@@ -5597,25 +5687,34 @@ function renderBatchHistoryTables() {
           statusBadge = `<span class="badge" style="background:#dcfce7; color:#15803d;">🟢 Active Live</span>`;
         }
 
-        // 🎯 EXACT TIME WINDOW FILTER:
-        // Batch open date-time aur close date-time ke beech me kitne students ne register kiya
         const filledCount = bookingsRegistry.filter(book => {
           if (book.type !== 'Student') return false;
-
           const bookTime = parseBookingTime(book);
-          // Agar booking time window ke andar aata ho:
           if (bookTime > 0 && !isNaN(openMs) && !isNaN(closeMs)) {
             return bookTime >= openMs && bookTime <= closeMs;
           }
-
-          // Fallback agar purane record me time parse na ho sake:
           return (book.start === b.start_date && book.end === b.end_date);
         }).length;
+
+        // 👇 Student Fee Breakdown
+        const baseFee = Number(b.base_fee !== undefined ? b.base_fee : b.fee || 0);
+        const taxFee = Number(b.tax_logistics || 0);
+        const lateFee = Number(b.late_fee || 0);
+        const grandTotal = Number(b.fee || (baseFee + taxFee + lateFee));
+
+        const studentFeeDisplay = `
+          <div style="line-height: 1.3; font-size: 12px; min-width: 140px;">
+            <strong style="color:var(--accent); font-size: 13.5px; display: block; margin-bottom: 2px;">Total: Rs ${grandTotal}</strong>
+            <div style="color: #475569;">Base Fee: Rs ${baseFee}</div>
+            <div style="color: #475569;">Tax & Cert: Rs ${taxFee}</div>
+            ${lateFee > 0 ? `<div style="color: #dc2626; font-weight: bold;">Late Fee: +Rs ${lateFee}</div>` : ''}
+          </div>
+        `;
 
         return `
           <tr>
             <td><strong>${b.id}</strong></td>
-            <td style="color:var(--accent); font-weight:bold;">Rs ${b.fee}</td>
+            <td>${studentFeeDisplay}</td>
             <td>${b.start_date} to ${b.end_date}</td>
             <td><small>${fmt(b.reg_open)}<br>to <strong>${fmt(b.reg_close)}</strong></small></td>
             <td>${statusBadge}</td>
@@ -5650,23 +5749,34 @@ function renderBatchHistoryTables() {
           statusBadge = `<span class="badge" style="background:#dcfce7; color:#15803d;">🟢 Active Live</span>`;
         }
 
-        // 🎯 EXACT TIME WINDOW FILTER:
-        // Batch open date-time aur close date-time ke beech me kitne farmers ne register kiya
         const filledCount = bookingsRegistry.filter(book => {
           if (book.type !== 'Farmer') return false;
-
           const bookTime = parseBookingTime(book);
           if (bookTime > 0 && !isNaN(openMs) && !isNaN(closeMs)) {
             return bookTime >= openMs && bookTime <= closeMs;
           }
-
           return (book.date === b.session_date);
         }).length;
+
+        // 👇 Farmer Fee Breakdown
+        const baseFee = Number(b.base_fee !== undefined ? b.base_fee : b.fee || 0);
+        const taxFee = Number(b.tax_logistics || 0);
+        const lateFee = Number(b.late_fee || 0);
+        const grandTotal = Number(b.fee || (baseFee + taxFee + lateFee));
+
+        const farmerFeeDisplay = `
+          <div style="line-height: 1.3; font-size: 12px; min-width: 140px;">
+            <strong style="color:var(--accent); font-size: 13.5px; display: block; margin-bottom: 2px;">Total: Rs ${grandTotal}</strong>
+            <div style="color: #475569;">Workshop Fee: Rs ${baseFee}</div>
+            <div style="color: #475569;">Kit & Cert: Rs ${taxFee}</div>
+            ${lateFee > 0 ? `<div style="color: #dc2626; font-weight: bold;">Late Fee: +Rs ${lateFee}</div>` : ''}
+          </div>
+        `;
 
         return `
           <tr>
             <td><strong>${b.id}</strong></td>
-            <td style="color:var(--accent); font-weight:bold;">Rs ${b.fee}</td>
+            <td>${farmerFeeDisplay}</td>
             <td>${b.session_date}</td>
             <td><small>${fmt(b.reg_open)}<br>to <strong>${fmt(b.reg_close)}</strong></small></td>
             <td>${statusBadge}</td>
@@ -5698,7 +5808,7 @@ function applyCurrentBatchToForms() {
 
   if (!currentForm) return;
 
-  // 1. Agar Admin ne is category ka batch announce nahi kiya:
+  // 1. Batch create na hua ho to block karein
   if (!currentBatch) {
     if (timerBanner) { 
       timerBanner.style.background = "#fffbeb"; 
@@ -5714,67 +5824,78 @@ function applyCurrentBatchToForms() {
     }
     if (rangeEl) rangeEl.textContent = "Admin has not launched a batch yet.";
 
-    if (isStudent) {
-      if (document.getElementById("sstart")) document.getElementById("sstart").value = "";
-      if (document.getElementById("send")) document.getElementById("send").value = "";
-      if (document.getElementById("dispStudentFee")) document.getElementById("dispStudentFee").textContent = "Rs 0";
-      if (document.getElementById("dispStudentTotalFee")) document.getElementById("dispStudentTotalFee").textContent = "Rs 0";
-    } else {
-      if (document.getElementById("fdate")) document.getElementById("fdate").value = "";
-      if (document.getElementById("dispFarmerFee")) document.getElementById("dispFarmerFee").textContent = "Rs 0";
-      if (document.getElementById("dispFarmerTotalFee")) document.getElementById("dispFarmerTotalFee").textContent = "Rs 0";
-    }
-
     disableFormRegistration(currentForm, submitBtn, "No batch available");
     return;
   }
 
-  // 2. Dates aur Fees set karein
+  // 2. Fees calculate karein
+  const baseFee = Number(currentBatch.base_fee !== undefined ? currentBatch.base_fee : currentBatch.fee || 0);
+  const taxLogistics = Number(currentBatch.tax_logistics || 0);
+  const lateFee = Number(currentBatch.late_fee || 0);
+  const grandTotal = baseFee + taxLogistics + lateFee;
+
+  // 3. Form me show karein aur Late fee ko check karein
   if (isStudent) {
     if (document.getElementById("sstart")) document.getElementById("sstart").value = currentBatch.start_date || "";
     if (document.getElementById("send")) document.getElementById("send").value = currentBatch.end_date || "";
-    if (document.getElementById("dispStudentFee")) document.getElementById("dispStudentFee").textContent = `Rs ${currentBatch.fee || 0}`;
-    if (document.getElementById("dispStudentTotalFee")) document.getElementById("dispStudentTotalFee").textContent = `Rs ${currentBatch.fee || 0}`;
+    if (document.getElementById("dispStudentFee")) document.getElementById("dispStudentFee").textContent = `Rs ${baseFee}`;
+    if (document.getElementById("dispStudentTax")) document.getElementById("dispStudentTax").textContent = `Rs ${taxLogistics}`;
+    
+    // 🛑 Conditional Late Fee Row (Agar lateFee > 0 ho tabhi show hoga)
+    const lateRow = document.getElementById("rowStudentLateFee");
+    if (lateRow) {
+      if (lateFee > 0) {
+        lateRow.style.display = "flex";
+        document.getElementById("dispStudentLateFee").textContent = `Rs ${lateFee}`;
+      } else {
+        lateRow.style.display = "none";
+      }
+    }
+    if (document.getElementById("dispStudentTotalFee")) document.getElementById("dispStudentTotalFee").textContent = `Rs ${grandTotal}`;
   } else {
     if (document.getElementById("fdate")) document.getElementById("fdate").value = currentBatch.session_date || "";
-    if (document.getElementById("dispFarmerFee")) document.getElementById("dispFarmerFee").textContent = `Rs ${currentBatch.fee || 0}`;
-    if (document.getElementById("dispFarmerTotalFee")) document.getElementById("dispFarmerTotalFee").textContent = `Rs ${currentBatch.fee || 0}`;
+    if (document.getElementById("dispFarmerFee")) document.getElementById("dispFarmerFee").textContent = `Rs ${baseFee}`;
+    if (document.getElementById("dispFarmerTax")) document.getElementById("dispFarmerTax").textContent = `Rs ${taxLogistics}`;
+
+    // 🛑 Conditional Late Fee Row (Agar lateFee > 0 ho tabhi show hoga)
+    const lateRow = document.getElementById("rowFarmerLateFee");
+    if (lateRow) {
+      if (lateFee > 0) {
+        lateRow.style.display = "flex";
+        document.getElementById("dispFarmerLateFee").textContent = `Rs ${lateFee}`;
+      } else {
+        lateRow.style.display = "none";
+      }
+    }
+    if (document.getElementById("dispFarmerTotalFee")) document.getElementById("dispFarmerTotalFee").textContent = `Rs ${grandTotal}`;
   }
 
-  // 3. Exact Time Parse Karein (Local time ke hisaab se)
+  // Window Timer Countdown
   const now = Date.now();
   const openTime = new Date(currentBatch.reg_open).getTime();
   const closeTime = new Date(currentBatch.reg_close).getTime();
 
   const fmt = (dt) => {
-    try { 
-      return new Date(dt).toLocaleString('en-IN', { dateStyle: 'short', timeStyle: 'short' }); 
-    } catch(e) { 
-      return dt; 
-    }
+    try { return new Date(dt).toLocaleString('en-IN', { dateStyle: 'short', timeStyle: 'short' }); } 
+    catch(e) { return dt; }
   };
 
   if (rangeEl) {
     rangeEl.innerHTML = `Window: <strong>${fmt(currentBatch.reg_open)}</strong> till <strong>${fmt(currentBatch.reg_close)}</strong>`;
   }
 
-  // Case A: Form abhi shuru nahi hua (Future time)
   if (now < openTime) {
     const diff = openTime - now;
     if (timerBanner) { timerBanner.style.background = "#fffbeb"; timerBanner.style.borderColor = "#fde68a"; }
     if (labelEl) { labelEl.textContent = "⏳ Registration Opens In:"; labelEl.style.color = "#b45309"; }
     if (countEl) { countEl.textContent = getDurationString(diff); countEl.style.color = "#b45309"; }
     disableFormRegistration(currentForm, submitBtn, "Registration will open soon.");
-  } 
-  // Case B: Close time nikal gaya
-  else if (now > closeTime) {
+  } else if (now > closeTime) {
     if (timerBanner) { timerBanner.style.background = "#fef2f2"; timerBanner.style.borderColor = "#fecaca"; }
     if (labelEl) { labelEl.textContent = "❌ Registration Window Closed:"; labelEl.style.color = "#dc2626"; }
     if (countEl) { countEl.textContent = "Closed for this batch"; countEl.style.color = "#dc2626"; }
     disableFormRegistration(currentForm, submitBtn, "Registration Closed");
-  } 
-  // Case C: Form active aur open hai
-  else {
+  } else {
     const diff = closeTime - now;
     if (timerBanner) { timerBanner.style.background = "#f0fdf4"; timerBanner.style.borderColor = "#bbf7d0"; }
     if (labelEl) { labelEl.textContent = "🟢 Registration Open! Closes In:"; labelEl.style.color = "#15803d"; }

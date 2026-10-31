@@ -5727,8 +5727,7 @@ async function deleteBatchAdmin(batchId) {
   await loadTrainingBatchesFromCloud();
 }
 
-// 4. // Batch History Tables Render with Fee Breakdown (Base Fee, Tax/Logistics & Late Fee)
-// Batch History Tables Render with Total Registrations in Date Range & Fee Details
+// Robust Batch History Tables Render with Bulletproof Date & Count Matching
 function renderBatchHistoryTables() {
   const stuTbody = document.getElementById("studentBatchHistoryTableBody");
   const farTbody = document.getElementById("farmerBatchHistoryTableBody");
@@ -5738,6 +5737,7 @@ function renderBatchHistoryTables() {
 
   const nowTime = new Date().getTime();
 
+  // Helper date-time format
   const fmt = (dt) => {
     try { 
       return new Date(dt).toLocaleString('en-IN', { dateStyle: 'short', timeStyle: 'short' }); 
@@ -5746,24 +5746,45 @@ function renderBatchHistoryTables() {
     }
   };
 
-  // Helper: Booking timestamp ko parse karna
-  const parseBookingTime = (book) => {
+  // 🛠️ Bulletproof Timestamp Parser (Handles DD/MM/YYYY, ISO, and AM/PM strings)
+  const parseAnyDateToMs = (dateStr) => {
+    if (!dateStr) return 0;
     try {
-      if (book.rawIsoDate) return new Date(book.rawIsoDate).getTime();
-      if (book.dateLogged) {
-        const parts = book.dateLogged.split(" ");
-        if (parts[0] && parts[0].includes("/")) {
-          const dParts = parts[0].split("/");
-          // DD/MM/YYYY -> YYYY-MM-DD
-          const isoDateStr = `${dParts[2]}-${dParts[1]}-${dParts[0]} ${parts.slice(1).join(" ")}`;
-          const parsed = new Date(isoDateStr).getTime();
-          if (!isNaN(parsed)) return parsed;
+      // 1. Direct standard date check
+      let parsed = new Date(dateStr).getTime();
+      if (!isNaN(parsed) && parsed > 0) return parsed;
+
+      // 2. Format: "DD/MM/YYYY, HH:MM:SS" or "DD/MM/YYYY HH:MM AM/PM"
+      const str = String(dateStr).replace(/,/g, '').trim();
+      const parts = str.split(' ');
+      if (parts[0] && parts[0].includes('/')) {
+        const dParts = parts[0].split('/');
+        const day = dParts[0].padStart(2, '0');
+        const month = dParts[1].padStart(2, '0');
+        let year = dParts[2];
+        if (year.length === 2) year = '20' + year;
+
+        let timePart = '00:00:00';
+        if (parts[1]) {
+          let timeSub = parts[1].split(':');
+          let hr = parseInt(timeSub[0], 10) || 0;
+          let min = parseInt(timeSub[1], 10) || 0;
+          let sec = parseInt(timeSub[2], 10) || 0;
+
+          if (parts[2]) {
+            const ampm = parts[2].toLowerCase();
+            if (ampm.includes('pm') && hr < 12) hr += 12;
+            if (ampm.includes('am') && hr === 12) hr = 0;
+          }
+          timePart = `${String(hr).padStart(2, '0')}:${String(min).padStart(2, '0')}:${String(sec).padStart(2, '0')}`;
         }
-        const fallbackParsed = new Date(book.dateLogged).getTime();
-        if (!isNaN(fallbackParsed)) return fallbackParsed;
+
+        const isoStr = `${year}-${month}-${day}T${timePart}`;
+        parsed = new Date(isoStr).getTime();
+        if (!isNaN(parsed) && parsed > 0) return parsed;
       }
-    } catch (err) {
-      console.log("Time parsing error:", err);
+    } catch (e) {
+      console.warn("Date parse error for:", dateStr, e);
     }
     return 0;
   };
@@ -5774,31 +5795,44 @@ function renderBatchHistoryTables() {
       stuTbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:15px;" class="muted">No student batches launched yet.</td></tr>`;
     } else {
       stuTbody.innerHTML = stuBatches.map(b => {
-        const openMs = new Date(b.reg_open).getTime();
-        const closeMs = new Date(b.reg_close).getTime();
-        
+        const openMs = parseAnyDateToMs(b.reg_open);
+        const closeMs = parseAnyDateToMs(b.reg_close);
+
         let statusBadge = "";
-        if (nowTime < openMs) {
+        if (openMs > 0 && nowTime < openMs) {
           statusBadge = `<span class="badge" style="background:#fef3c7; color:#b45309;">Upcoming</span>`;
-        } else if (nowTime > closeMs) {
+        } else if (closeMs > 0 && nowTime > closeMs) {
           statusBadge = `<span class="badge" style="background:#fee2e2; color:#dc2626;">Closed</span>`;
         } else {
           statusBadge = `<span class="badge" style="background:#dcfce7; color:#15803d;">🟢 Active Live</span>`;
         }
 
-        // 🎯 Start & End Date (Registration Window & Batch Dates) ke beech ke Total Registrations
+        // 🎯 Accurate Registrations Matcher
         const matchedBookings = bookingsRegistry.filter(book => {
-          if (book.type !== 'Student') return false;
+          if (!book || book.type !== 'Student') return false;
 
-          const bookTime = parseBookingTime(book);
-          // Case A: Form Registration Window (Open - Close Date Time) ke andar
-          if (bookTime > 0 && !isNaN(openMs) && !isNaN(closeMs)) {
-            if (bookTime >= openMs && bookTime <= closeMs) return true;
-          }
-
-          // Case B: Agar dates exactly match karti hon (Internship Start - End Date)
+          // Check 1: Agar booking ka start aur end date batch se exact match ho raha ho
           if (b.start_date && b.end_date && book.start === b.start_date && book.end === b.end_date) {
             return true;
+          }
+
+          // Check 2: Registration window (Open se Close date-time ke beech me)
+          const bookTime = parseAnyDateToMs(book.rawIsoDate || book.dateLogged);
+          if (bookTime > 0 && openMs > 0 && closeMs > 0) {
+            // 5 minute grace margin taaki seconds ki vajah se miss na ho
+            if (bookTime >= (openMs - 300000) && bookTime <= (closeMs + 300000)) {
+              return true;
+            }
+          }
+
+          // Check 3: Agar sirf Date (YYYY-MM-DD) match ho rahi ho
+          const bookDateStr = String(book.dateLogged || book.rawIsoDate || "");
+          if (b.reg_open && b.reg_close) {
+            const bOpenDate = String(b.reg_open).split('T')[0];
+            const bCloseDate = String(b.reg_close).split('T')[0];
+            if (bookDateStr.includes(bOpenDate) || bookDateStr.includes(bCloseDate)) {
+              return true;
+            }
           }
 
           return false;
@@ -5827,7 +5861,7 @@ function renderBatchHistoryTables() {
             <td><strong>${b.id}</strong></td>
             <td>${studentFeeDisplay}</td>
             <td>
-              <span style="font-weight: 600; color: #0f172a;">${b.start_date}</span> to <span style="font-weight: 600; color: #0f172a;">${b.end_date}</span>
+              <span style="font-weight: 600; color: #0f172a;">${b.start_date || 'N/A'}</span> to <span style="font-weight: 600; color: #0f172a;">${b.end_date || 'N/A'}</span>
             </td>
             <td><small>${fmt(b.reg_open)}<br>to <strong>${fmt(b.reg_close)}</strong></small></td>
             <td>${statusBadge}</td>
@@ -5835,7 +5869,7 @@ function renderBatchHistoryTables() {
               <div style="line-height: 1.4;">
                 <strong style="font-size:15px; color:#0284c7;">👥 Total: ${filledCount} Students</strong><br>
                 <span style="font-size:11.5px; color:#16a34a; font-weight:bold;">✅ Confirmed: ${confirmedCount}</span>
-                <div style="font-size:10px; color:#64748b;">(Start se End Date ke beech)</div>
+                <div style="font-size:10px; color:#64748b;">(Batch Window Registered)</div>
               </div>
             </td>
             <td>
@@ -5853,29 +5887,43 @@ function renderBatchHistoryTables() {
       farTbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:15px;" class="muted">No farmer batches launched yet.</td></tr>`;
     } else {
       farTbody.innerHTML = farBatches.map(b => {
-        const openMs = new Date(b.reg_open).getTime();
-        const closeMs = new Date(b.reg_close).getTime();
-        
+        const openMs = parseAnyDateToMs(b.reg_open);
+        const closeMs = parseAnyDateToMs(b.reg_close);
+
         let statusBadge = "";
-        if (nowTime < openMs) {
+        if (openMs > 0 && nowTime < openMs) {
           statusBadge = `<span class="badge" style="background:#fef3c7; color:#b45309;">Upcoming</span>`;
-        } else if (nowTime > closeMs) {
+        } else if (closeMs > 0 && nowTime > closeMs) {
           statusBadge = `<span class="badge" style="background:#fee2e2; color:#dc2626;">Closed</span>`;
         } else {
           statusBadge = `<span class="badge" style="background:#dcfce7; color:#15803d;">🟢 Active Live</span>`;
         }
 
-        // 🎯 Start & End Date (Registration Window) ke beech ke Total Farmer Registrations
+        // 🎯 Accurate Farmer Registrations Matcher
         const matchedBookings = bookingsRegistry.filter(book => {
-          if (book.type !== 'Farmer') return false;
+          if (!book || book.type !== 'Farmer') return false;
 
-          const bookTime = parseBookingTime(book);
-          if (bookTime > 0 && !isNaN(openMs) && !isNaN(closeMs)) {
-            if (bookTime >= openMs && bookTime <= closeMs) return true;
-          }
-
+          // Check 1: Session date match
           if (b.session_date && book.date === b.session_date) {
             return true;
+          }
+
+          // Check 2: Window time range match
+          const bookTime = parseAnyDateToMs(book.rawIsoDate || book.dateLogged);
+          if (bookTime > 0 && openMs > 0 && closeMs > 0) {
+            if (bookTime >= (openMs - 300000) && bookTime <= (closeMs + 300000)) {
+              return true;
+            }
+          }
+
+          // Check 3: Date string match
+          const bookDateStr = String(book.dateLogged || book.rawIsoDate || "");
+          if (b.reg_open && b.reg_close) {
+            const bOpenDate = String(b.reg_open).split('T')[0];
+            const bCloseDate = String(b.reg_close).split('T')[0];
+            if (bookDateStr.includes(bOpenDate) || bookDateStr.includes(bCloseDate)) {
+              return true;
+            }
           }
 
           return false;
@@ -5904,7 +5952,7 @@ function renderBatchHistoryTables() {
             <td><strong>${b.id}</strong></td>
             <td>${farmerFeeDisplay}</td>
             <td>
-              <span style="font-weight: 600; color: #0f172a;">${b.session_date}</span>
+              <span style="font-weight: 600; color: #0f172a;">${b.session_date || 'N/A'}</span>
             </td>
             <td><small>${fmt(b.reg_open)}<br>to <strong>${fmt(b.reg_close)}</strong></small></td>
             <td>${statusBadge}</td>
@@ -5912,7 +5960,7 @@ function renderBatchHistoryTables() {
               <div style="line-height: 1.4;">
                 <strong style="font-size:15px; color:#b45309;">👨‍🌾 Total: ${filledCount} Farmers</strong><br>
                 <span style="font-size:11.5px; color:#16a34a; font-weight:bold;">✅ Confirmed: ${confirmedCount}</span>
-                <div style="font-size:10px; color:#64748b;">(Start se End Date ke beech)</div>
+                <div style="font-size:10px; color:#64748b;">(Batch Window Registered)</div>
               </div>
             </td>
             <td>

@@ -6642,3 +6642,120 @@ document.addEventListener("DOMContentLoaded", async function() {
     }, 400);
   }
 });
+
+// =========================================================
+// DIRECT BASKET ISOLATION & EXIT HANDLERS
+// =========================================================
+
+function exitOnlyBasketMode() {
+  localStorage.removeItem('pgf_only_basket_mode');
+  
+  // Back to normal layout
+  const shopLayout = document.querySelector('.shop-layout');
+  const productsListSec = document.getElementById("productsList");
+  const cartBasket = document.getElementById("cartBasketSidebar");
+  const backBar = document.getElementById("basketOnlyBackBar");
+
+  if (backBar) backBar.remove();
+
+  if (shopLayout) {
+    shopLayout.style.display = "";
+    shopLayout.style.maxWidth = "";
+    shopLayout.style.margin = "";
+  }
+  if (productsListSec) productsListSec.style.display = "";
+  if (cartBasket) cartBasket.style.width = "";
+
+  // Saare main sections wapas show karein
+  document.querySelectorAll(".hero, .about, .gallery, .visit-section, #inquirySection, footer").forEach(sec => {
+    sec.style.display = "";
+  });
+
+  const prodHeading = document.querySelector("#products .section-row");
+  if (prodHeading) prodHeading.style.display = "";
+
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function applyOnlyBasketView() {
+  // 1. Baaki saare sections hide karein taaki sirf Basket dikhe
+  document.querySelectorAll(".hero, .about, .gallery, .visit-section, #inquirySection, footer").forEach(sec => {
+    sec.style.display = "none";
+  });
+
+  // 2. Products section ka heading aur catalog list bhi hide karein
+  const prodHeading = document.querySelector("#products .section-row");
+  if (prodHeading) prodHeading.style.display = "none";
+
+  const productsListSec = document.getElementById("productsList");
+  if (productsListSec) productsListSec.style.display = "none";
+
+  // 3. Shop layout ko center me full width basket mode banayein
+  const shopLayout = document.querySelector('.shop-layout');
+  const cartBasket = document.getElementById("cartBasketSidebar");
+
+  if (shopLayout) {
+    shopLayout.style.display = "block";
+    shopLayout.style.maxWidth = "680px";
+    shopLayout.style.margin = "20px auto 50px auto";
+  }
+
+  if (cartBasket) {
+    cartBasket.style.width = "100%";
+    cartBasket.style.position = "static";
+    cartBasket.style.boxShadow = "0 8px 30px rgba(0, 0, 0, 0.08)";
+    cartBasket.style.border = "1px solid var(--accent)";
+  }
+
+  // 4. Basket ke upar ek Exit/Back to Store button add karein
+  if (!document.getElementById("basketOnlyBackBar")) {
+    const backBar = document.createElement("div");
+    backBar.id = "basketOnlyBackBar";
+    backBar.style.cssText = "display: flex; justify-content: space-between; align-items: center; background: #f0fdf4; border: 1px solid #bbf7d0; padding: 12px 18px; border-radius: 12px; margin-bottom: 16px;";
+    backBar.innerHTML = `
+      <div>
+        <strong style="color: #166534; font-size: 15px;">🛒 Direct Checkout Mode</strong>
+        <div style="font-size: 12px; color: #15803d;">Apna item review karein aur niche order complete karein.</div>
+      </div>
+      <button type="button" class="btn" style="background: #dc2626; font-size: 13px; padding: 8px 16px;" onclick="exitOnlyBasketMode()">
+        🚪 Exit to Full Website
+      </button>
+    `;
+    if (cartBasket) {
+      cartBasket.parentNode.insertBefore(backBar, cartBasket);
+    }
+  }
+
+  // 5. Scroll direct basket par le jayein
+  setTimeout(() => {
+    if (cartBasket) {
+      cartBasket.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, 200);
+}
+
+// Page Load Event: Cart items add + Basket-only view trigger
+document.addEventListener("DOMContentLoaded", async function() {
+  if (typeof fetchProductPricingFromCloud === "function") {
+    await fetchProductPricingFromCloud();
+  }
+  
+  // 1. Pending Product Cart me dalein
+  const pendingCart = JSON.parse(localStorage.getItem('pgf_pending_cart_add') || '[]');
+  if (pendingCart.length) {
+    pendingCart.forEach(item => {
+      for (let i = 0; i < item.qty; i++) {
+        if (typeof addToCart === "function") {
+          addToCart(item.id);
+        }
+      }
+    });
+    localStorage.removeItem('pgf_pending_cart_add');
+  }
+
+  // 2. Agar "Buy on Main Store" se aaya ho toh sirf Basket show karein
+  const isOnlyBasket = localStorage.getItem('pgf_only_basket_mode');
+  if (isOnlyBasket === 'true') {
+    applyOnlyBasketView();
+  }
+});

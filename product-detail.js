@@ -172,24 +172,24 @@ function addDetailProductToBasket(prodId) {
   }, 400);
 }
 
-// Direct Buy Handler
+// Direct Buy Handler (Sirf Basket & Checkout khulega)
 function directBuyOnMainStore(prodId) {
   const qtyInput = document.getElementById("detailQtyInput");
   const qty = parseInt(qtyInput ? qtyInput.value : "1", 10) || 1;
 
-  showPgfLoader("Directing to Checkout...");
+  showPgfLoader("Directing to Selection Basket...");
   
   // Pending cart me product dalein
   const currentCart = JSON.parse(localStorage.getItem('pgf_pending_cart_add') || '[]');
   currentCart.push({ id: prodId, qty: qty });
   localStorage.setItem('pgf_pending_cart_add', JSON.stringify(currentCart));
 
-  // Direct checkout flag set karein taaki main page seedha order form par jaye
-  localStorage.setItem('pgf_direct_checkout_trigger', 'true');
+  // Only Basket mode trigger set karein
+  localStorage.setItem('pgf_only_basket_mode', 'true');
 
   setTimeout(() => {
-    window.location.href = "index.html#orderForm";
-  }, 450);
+    window.location.href = "index.html";
+  }, 400);
 }
 
 document.addEventListener("DOMContentLoaded", initProductDetailPage);

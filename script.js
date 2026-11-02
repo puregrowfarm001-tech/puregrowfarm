@@ -3983,6 +3983,28 @@ function minusCart(id) {
   updateHeaderCartCounter();
 }
 
+// Product ko cart se poori tarah remove/cancel karne ka function
+window.removeProductFromCart = function(id) {
+  // Number format me convert karein taaki Map key exact match ho
+  const prodId = Number(id);
+  
+  if (cart.has(prodId)) {
+    cart.delete(prodId);
+    renderCart();
+    updateHeaderCartCounter();
+  } else {
+    // Agar string key ho to fallback check
+    for (let key of cart.keys()) {
+      if (Number(key) === prodId) {
+        cart.delete(key);
+        renderCart();
+        updateHeaderCartCounter();
+        break;
+      }
+    }
+  }
+};
+
 function getTotals() {
   const subtotal = [...cart.values()].reduce((sum, item) => sum + (item.price * item.qty), 0);
   const delivery = subtotal > 0 ? (subtotal > 1000 ? 0 : 50) : 0;

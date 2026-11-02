@@ -4010,11 +4010,25 @@ function renderCart() {
   
   if(document.getElementById("cartItems")) {
     document.getElementById("cartItems").innerHTML = [...cart.values()].map(item => `
-      <div class="cart-item">
-        <div><strong>${item.name}</strong><br><span class="muted">Rs ${item.price} x ${item.qty}</span></div>
-        <div class="qty-actions">
-          <button type="button" onclick="minusCart(${item.id})">-</button>
-          <button type="button" onclick="addToCart(${item.id})">+</button>
+      <div class="cart-item" style="display: flex; justify-content: space-between; align-items: center; padding: 10px; border: 1px solid var(--line); border-radius: 10px; margin-bottom: 8px;">
+        <div>
+          <strong style="color: #0f172a; font-size: 14px;">${item.name}</strong><br>
+          <span class="muted" style="font-size: 12px;">Rs ${item.price} x ${item.qty} = <strong>Rs ${item.price * item.qty}</strong></span>
+        </div>
+        <div class="qty-actions" style="display: flex; align-items: center; gap: 6px;">
+          <!-- Minus Button -->
+          <button type="button" style="min-height: 28px; width: 28px; padding: 0; background: #16a34a; font-weight: bold;" onclick="minusCart(${item.id})">-</button>
+          
+          <!-- Current Qty Number -->
+          <span style="font-weight: 800; font-size: 14px; min-width: 20px; text-align: center; color: #1e293b;">${item.qty}</span>
+          
+          <!-- Plus Button -->
+          <button type="button" style="min-height: 28px; width: 28px; padding: 0; background: #16a34a; font-weight: bold;" onclick="addToCart(${item.id})">+</button>
+          
+          <!-- Cancel / Remove Item Button -->
+          <button type="button" title="Remove Product" style="min-height: 28px; padding: 2px 8px; font-size: 11px; background: #ef4444; border-radius: 6px; margin-left: 4px;" onclick="removeProductFromCart(${item.id})">
+            ❌ Cancel
+          </button>
         </div>
       </div>
     `).join("");
@@ -6678,19 +6692,19 @@ function exitOnlyBasketMode() {
 }
 
 function applyOnlyBasketView() {
-  // 1. Baaki saare sections hide karein taaki sirf Basket dikhe
-  document.querySelectorAll(".hero, .about, .gallery, .visit-section, #inquirySection, footer").forEach(sec => {
-    sec.style.display = "none";
+  // 1. Hero, About, Gallery, Visit, Inquiry aur Footer sab hide karein
+  document.querySelectorAll(".hero, .about, #gallery, .gallery, .visit-section, #inquirySection, footer").forEach(sec => {
+    if (sec) sec.style.display = "none";
   });
 
-  // 2. Products section ka heading aur catalog list bhi hide karein
+  // 2. Products section ka title, search bar aur product cards hide karein
   const prodHeading = document.querySelector("#products .section-row");
   if (prodHeading) prodHeading.style.display = "none";
 
   const productsListSec = document.getElementById("productsList");
   if (productsListSec) productsListSec.style.display = "none";
 
-  // 3. Shop layout ko center me full width basket mode banayein
+  // 3. Shop layout ko center full width basket me convert karein
   const shopLayout = document.querySelector('.shop-layout');
   const cartBasket = document.getElementById("cartBasketSidebar");
 
@@ -6704,10 +6718,10 @@ function applyOnlyBasketView() {
     cartBasket.style.width = "100%";
     cartBasket.style.position = "static";
     cartBasket.style.boxShadow = "0 8px 30px rgba(0, 0, 0, 0.08)";
-    cartBasket.style.border = "1px solid var(--accent)";
+    cartBasket.style.border = "1.5px solid var(--accent)";
   }
 
-  // 4. Basket ke upar ek Exit/Back to Store button add karein
+  // 4. Exit/Back button bar add karein
   if (!document.getElementById("basketOnlyBackBar")) {
     const backBar = document.createElement("div");
     backBar.id = "basketOnlyBackBar";
@@ -6726,7 +6740,6 @@ function applyOnlyBasketView() {
     }
   }
 
-  // 5. Scroll direct basket par le jayein
   setTimeout(() => {
     if (cartBasket) {
       cartBasket.scrollIntoView({ behavior: 'smooth', block: 'start' });

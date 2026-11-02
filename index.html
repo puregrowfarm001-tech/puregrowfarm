@@ -453,9 +453,17 @@
         <section id="products">
           <div class="section-row">
             <h2>Our Commercial Products Catalog</h2>
-            <div class="search-row">
-              <input id="productSearch" type="search" placeholder="Filter catalog...">
-            </div>
+            <div class="search-row" style="flex: 1; max-width: 450px; position: relative;">
+  <span style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); font-size: 16px; color: #64748b;">🔍</span>
+  <input 
+    id="productSearch" 
+    type="search" 
+    placeholder="Search products (Fresh, Dry, Khakhra, Powder...)" 
+    style="width: 100%; padding: 12px 16px 12px 42px; border: 2px solid #cbd5e1; border-radius: 30px; font-size: 14px; font-weight: 600; outline: none; transition: all 0.2s ease; box-shadow: 0 2px 8px rgba(0,0,0,0.04); background: #ffffff;"
+    onfocus="this.style.borderColor='var(--accent)'; this.style.boxShadow='0 0 0 3px rgba(43, 138, 62, 0.2)';"
+    onblur="this.style.borderColor='#cbd5e1'; this.style.boxShadow='0 2px 8px rgba(0,0,0,0.04)';"
+  >
+</div>
           </div>
 
           <div class="shop-layout">

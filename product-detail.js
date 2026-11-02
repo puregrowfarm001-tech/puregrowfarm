@@ -120,10 +120,13 @@ async function initProductDetailPage() {
               💬 Wholesale WhatsApp Inquiry
             </a>
           ` : `
-            <div style="display: flex; align-items: center; gap: 8px;">
-              <label style="font-size: 13px; font-weight: bold;">Qty:</label>
-              <input type="number" id="detailQtyInput" value="1" min="1" max="${product.stock || 10}" style="width: 70px; text-align: center; padding: 8px;">
-            </div>
+            // cta-row ke andar quantity selector replace karein:
+<div style="display: flex; align-items: center; gap: 6px; background: #f1f5f9; padding: 4px 8px; border-radius: 8px; border: 1px solid #cbd5e1;">
+  <span style="font-size: 13px; font-weight: bold; margin-right: 4px;">Qty:</span>
+  <button type="button" class="btn" style="min-height: 32px; width: 32px; padding: 0; font-size: 16px; background: #64748b;" onclick="decrementDetailQty()">-</button>
+  <input type="number" id="detailQtyInput" value="1" min="1" max="${product.stock || 10}" readonly style="width: 48px; text-align: center; font-weight: bold; padding: 4px; border: 1px solid #cbd5e1; background: #fff; border-radius: 6px;">
+  <button type="button" class="btn" style="min-height: 32px; width: 32px; padding: 0; font-size: 16px; background: #16a34a;" onclick="incrementDetailQty(${product.stock || 99})">+</button>
+</div>
 
             <!-- 1) Add To Basket -->
             <button type="button" class="btn" style="padding:12px 22px; font-size:14px;" onclick="addDetailProductToBasket(${product.id})">
@@ -140,6 +143,7 @@ async function initProductDetailPage() {
           <a href="index.html" class="exit-btn" style="padding:12px 20px; font-size:14px;">
             🚪 Exit to Main Website
           </a>
+
         </div>
       </div>
     </div>
@@ -193,3 +197,24 @@ function directBuyOnMainStore(prodId) {
 }
 
 document.addEventListener("DOMContentLoaded", initProductDetailPage);
+
+// Detail page par Qty badhane aur ghatane ke functions
+function incrementDetailQty(maxStock) {
+  const input = document.getElementById("detailQtyInput");
+  if (!input) return;
+  let val = parseInt(input.value, 10) || 1;
+  if (val < maxStock) {
+    input.value = val + 1;
+  } else {
+    alert("⚠️ Is product ka itna hi stock available hai!");
+  }
+}
+
+function decrementDetailQty() {
+  const input = document.getElementById("detailQtyInput");
+  if (!input) return;
+  let val = parseInt(input.value, 10) || 1;
+  if (val > 1) {
+    input.value = val - 1;
+  }
+}

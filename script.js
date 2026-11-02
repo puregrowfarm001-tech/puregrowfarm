@@ -311,6 +311,8 @@ function switchAuthBox(boxId) {
 }
 
 async function triggerAdminView() {
+  await fetchProductPricingFromCloud();
+renderAdminProductPricingCards();
   // Header me logged-in admin ka naam dikhane ke liye
   const adminBadge = document.getElementById("adminHeaderBadge");
   const adminNameText = document.getElementById("adminHeaderNameDisplay");
@@ -2147,108 +2149,138 @@ function populateAdminDashboardTables() {
       document.getElementById("adminOrdersTableBody").innerHTML = `<tr><td colspan="10" style="text-align:center; color:var(--muted); padding:24px; font-weight:bold;">No customer orders found for year ${selectedYear}.</td></tr>`;
     } else {
       document.getElementById("adminOrdersTableBody").innerHTML = validOrders.map((o) => {
-        const idx = orderRegistry.indexOf(o);
-        const grandTotal = Number(o.total || 0);
-        const mode = o.paymentMode || "Online UPI";
-        const status = o.status || "Pending Verification";
-        const isDelivered = status === 'Delivered' || o.trackingStage === 'Delivered';
-        const isApproved = status === 'Approved' || isDelivered;
-        const isCancelled = status.startsWith('Cancelled');
-        const isRejected = status.startsWith('Rejected');
-        
-        const stage = o.trackingStage || (isDelivered ? 'Delivered' : (isApproved ? 'Packed' : 'Placed'));
-        const loc = o.currentLocation || 'Farm Facility';
-        const eta = o.deliveryDays || '';
-        const courier = o.courierName || 'Ekart Logistics';
-        const refundDate = o.refundCreditedDate || getTodayIsoString();
-        const displayDateTime = o.dateLogged || new Date().toLocaleDateString('en-IN');
-        const paymentDate = o.paymentDate || displayDateTime;
-        const userUpi = o.userUpiId || "N/A";
+  const idx = orderRegistry.indexOf(o);
+  const grandTotal = Number(o.total || 0);
+  const mode = o.paymentMode || "Online UPI";
+  const status = o.status || "Pending Verification";
+  const isDelivered = status === 'Delivered' || o.trackingStage === 'Delivered';
+  const isApproved = status === 'Approved' || isDelivered;
+  const isCancelled = status.startsWith('Cancelled');
+  const isRejected = status.startsWith('Rejected');
+  
+  const stage = o.trackingStage || (isDelivered ? 'Delivered' : (isApproved ? 'Packed' : 'Placed'));
+  const loc = o.currentLocation || 'Farm Facility';
+  const eta = o.deliveryDays || '';
+  const courier = o.courierName || 'Ekart Logistics';
+  const refundDate = o.refundCreditedDate || getTodayIsoString();
+  const displayDateTime = o.dateLogged || new Date().toLocaleDateString('en-IN');
+  const paymentDate = o.paymentDate || displayDateTime;
+  const userUpi = o.userUpiId || "N/A";
 
-        return `
-          <tr>
-            <td><strong>${o.orderId}</strong></td>
-            <td style="white-space: nowrap;">
-              <span style="color:#0284c7; font-weight:bold; font-size:12px;">📅 Placed: ${displayDateTime}</span><br>
-              <span style="color:#16a34a; font-weight:bold; font-size:11px;">💳 Paid: ${paymentDate}</span>
-            </td>
-            <td>
-              <strong>${o.name}</strong><br>
-              <small>${o.phone || 'N/A'}</small><br>
-              <small class="muted">${o.email || ''}</small>
-            </td>
-            <td><small>${o.address || 'N/A'}</small></td>
-            <td>${o.products || 'N/A'}</td>
-            <td style="color:var(--accent); font-weight:bold; font-size:14px;">Rs ${grandTotal}</td>
-            <td>
-              <span class="badge" style="background:#eef2ff; color:#3730a3; margin-bottom:3px; font-weight:bold;">${mode}</span><br>
-              <small>Txn: <code>${o.txnId || 'N/A'}</code></small><br>
-              <div style="display:flex; align-items:center; gap:4px; margin-top:2px;">
-                <code style="background:#f1f5f9; padding:2px 4px; border-radius:4px; color:#0f172a; font-size:11px;">UPI: ${userUpi}</code>
-                ${userUpi !== 'N/A' ? `<button type="button" title="Copy UPI ID" style="padding:1px 5px; min-height:auto; font-size:10px; background:#0284c7;" onclick="copyToClipboard('${userUpi}')">📋</button>` : ''}
-              </div>
-            </td>
-            <td>
-              <span class="badge ${isDelivered ? 'badge-confirmed' : (isCancelled ? 'badge-pending' : (isRejected ? 'badge-pending' : (isApproved ? 'badge-confirmed' : 'badge-pending')))}" style="${isRejected ? 'background:#fee2e2; color:#991b1b;' : (isCancelled ? 'background:#ffedd5; color:#c2410c;' : (isDelivered ? 'background:#16a34a; color:#fff;' : ''))}">
-                ${status}
-              </span>
-              ${isCancelled ? `<br><small style="color:${o.refundStage === 'Refund Credited' ? '#16a34a' : '#ea580c'}; font-weight:bold;">Refund: ${o.refundStage || 'Initiated'} ${o.refundCreditedDate ? `(${o.refundCreditedDate})` : ''}</small>` : ''}
-              ${isDelivered && o.deliveredDate ? `<br><small style="color:#16a34a; font-weight:bold;">Delivered: ${o.deliveredDate}</small>` : ''}
-            </td>
-            
-            <td style="min-width: 280px;">
-              ${isApproved && !isCancelled && !isRejected ? `
-                <div style="background:#f8fafc; padding:8px; border-radius:8px; border:1px solid #e2e8f0; font-size:12px;">
-                  <div style="margin-bottom:6px; display:flex; align-items:center; gap:4px; background:#fff; padding:4px 6px; border-radius:6px; border:1px solid #cbd5e1;">
-                    <label style="font-size:11px; font-weight:bold; color:#0f172a; white-space:nowrap;">📅 Delivery Date:</label>
-                    <input type="date" value="${eta}" style="padding:2px 4px; font-size:11px; width:100%; border:1px solid #94a3b8; border-radius:4px;" onchange="updateExpectedDeliveryDate(${idx}, this.value)">
-                  </div>
+  // 👇 YAHAN SE NAYA STEP 7 KA CODE LAGANA HAI:
+  // 1) Har product ki sirf 1 unit ki rate calculate karna
+  const unitPriceDisplay = o.products ? o.products.split(",").map(itemStr => {
+    const cleanItem = itemStr.trim();
+    const matchedProd = products.find(p => cleanItem.toLowerCase().includes(p.name.toLowerCase()) || (p.type && cleanItem.toLowerCase().includes(p.type)));
+    const singleUnitPrice = matchedProd ? matchedProd.price : '-';
+    return `
+      <div style="margin-bottom: 4px;">
+        <strong>• ${cleanItem}</strong><br>
+        <span style="font-size: 11px; color: #0284c7; background: #e0f2fe; padding: 1px 6px; border-radius: 4px; font-weight: bold;">
+          1 Unit Price: ₹${singleUnitPrice}
+        </span>
+      </div>
+    `;
+  }).join("") : 'N/A';
 
-                  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px; gap:4px;">
-                    <span style="font-weight:bold; color:#0284c7; white-space:nowrap;">Courier:</span>
-                    <input type="text" value="${courier}" placeholder="Courier Name" style="padding:2px 6px; font-size:11px; font-weight:bold; color:#334155; border:1px solid #94a3b8; border-radius:4px; width:140px; text-align:right;" onchange="updateOrderCourierDirect(${idx}, this.value)">
-                  </div>
+  // 2) Delivery charge aur subtotal nikalna
+  const deliveryChargeVal = Number(o.delivery || 0);
+  const orderSubtotalVal = Number(o.subtotal || (grandTotal - deliveryChargeVal));
 
-                  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; gap:4px;">
-                    <span style="font-weight:bold; color:#0284c7; white-space:nowrap;">📍 Location (Kaha he):</span>
-                    <input type="text" value="${loc}" placeholder="Order Location (e.g. Surat Hub)" style="padding:2px 6px; font-size:11px; font-weight:bold; color:#334155; border:1px solid #94a3b8; border-radius:4px; width:130px; text-align:right;" onchange="updateOrderLocationDirect(${idx}, this.value)">
-                  </div>
+  return `
+    <tr>
+      <td><strong>${o.orderId}</strong></td>
+      <td style="white-space: nowrap;">
+        <span style="color:#0284c7; font-weight:bold; font-size:12px;">📅 Placed: ${displayDateTime}</span><br>
+        <span style="color:#16a34a; font-weight:bold; font-size:11px;">💳 Paid: ${paymentDate}</span>
+      </td>
+      <td>
+        <strong>${o.name}</strong><br>
+        <small>${o.phone || 'N/A'}</small><br>
+        <small class="muted">${o.email || ''}</small>
+      </td>
+      <td><small>${o.address || 'N/A'}</small></td>
+      
+      <!-- 👇 Products Ordered Column me 1 Unit price show hogi -->
+      <td>${unitPriceDisplay}</td>
 
-                  <div style="display:flex; gap:3px; flex-wrap:wrap;">
-                    <button type="button" class="btn" style="padding:2px 5px; font-size:10px; min-height:22px; background:${stage==='Placed'?'#2b8a3e':'#94a3b8'};" onclick="setOrderStageDirect(${idx}, 'Placed')">Placed</button>
-                    <button type="button" class="btn" style="padding:2px 5px; font-size:10px; min-height:22px; background:${stage==='Packed'?'#2b8a3e':'#94a3b8'};" onclick="setOrderStageDirect(${idx}, 'Packed')">Packed</button>
-                    <button type="button" class="btn" style="padding:2px 5px; font-size:10px; min-height:22px; background:${stage==='Shipped'?'#2b8a3e':'#94a3b8'};" onclick="setOrderStageDirect(${idx}, 'Shipped')">Shipped</button>
-                    <button type="button" class="btn" style="padding:2px 5px; font-size:10px; min-height:22px; background:${stage==='OutForDelivery'?'#2b8a3e':'#94a3b8'};" onclick="setOrderStageDirect(${idx}, 'OutForDelivery')">Out Delivery</button>
-                    <button type="button" class="btn" style="padding:2px 5px; font-size:10px; min-height:22px; background:${stage==='Delivered'?'#16a34a':'#94a3b8'};" onclick="setOrderStageDirect(${idx}, 'Delivered')">Delivered</button>
-                  </div>
-                </div>
-              ` : (isCancelled ? `
-                <div style="background:#fffaf5; padding:8px; border-radius:8px; border:1px solid #fdba74; font-size:12px;">
-                  <span style="font-weight:bold; color:#ea580c;">Refund Control Action</span>
-                  
-                  <div style="margin: 6px 0 4px 0; display:flex; align-items:center; gap:4px; background:#fff; padding:3px 6px; border-radius:4px; border:1px solid #cbd5e1;">
-                    <label style="font-size:10.5px; font-weight:bold; white-space:nowrap;">📅 Refund Date:</label>
-                    <input type="date" value="${refundDate}" id="refundDateInput_${idx}" style="padding:1px 4px; font-size:11px; width:100%; border:1px solid #94a3b8; border-radius:4px;" onchange="updateOrderRefundDate(${idx}, this.value)">
-                  </div>
+      <!-- 👇 Total Column me (1 Unit Rate ka subtotal + Delivery Charge + Grand Total) ka breakdown aayega -->
+      <td>
+        <div style="line-height: 1.4; min-width: 140px; font-size: 12px;">
+          <div>Items Subtotal: <strong>₹${orderSubtotalVal}</strong></div>
+          <div style="color: #0284c7;">Delivery Charge: <strong>₹${deliveryChargeVal}</strong></div>
+          <hr style="border: 0; border-top: 1px dashed #cbd5e1; margin: 4px 0;">
+          <div style="color: var(--accent); font-weight: 800; font-size: 14px;">
+            Grand Total: ₹${grandTotal}
+          </div>
+        </div>
+      </td>
 
-                  <div style="display:flex; gap:4px; flex-wrap:wrap; margin-top:4px;">
-                    <button type="button" class="btn" style="padding:3px 6px; font-size:11px; min-height:24px; background:${o.refundStage==='Refund Initiated'?'#ea580c':'#94a3b8'};" onclick="setRefundStageDirect(${idx}, 'Refund Initiated')">Initiated</button>
-                    <button type="button" class="btn" style="padding:3px 6px; font-size:11px; min-height:24px; background:${o.refundStage==='Refund Processing'?'#ea580c':'#94a3b8'};" onclick="setRefundStageDirect(${idx}, 'Refund Processing')">Processing</button>
-                    <button type="button" class="btn" style="padding:3px 6px; font-size:11px; min-height:24px; background:${o.refundStage==='Refund Credited'?'#16a34a':'#dc2626'}; font-weight:bold;" onclick="setRefundStageDirect(${idx}, 'Refund Credited')">💸 Credited (Deduct Cash)</button>
-                  </div>
-                </div>
-              ` : (isRejected ? `<span style="color:#dc2626; font-weight:bold; font-size:12px;">Rejected</span>` : `<span style="color:#d97706; font-weight:bold; font-size:12px;">Approve or Cancel to track</span>`))}
-            </td>
+      <td>
+        <span class="badge" style="background:#eef2ff; color:#3730a3; margin-bottom:3px; font-weight:bold;">${mode}</span><br>
+        <small>Txn: <code>${o.txnId || 'N/A'}</code></small><br>
+        <div style="display:flex; align-items:center; gap:4px; margin-top:2px;">
+          <code style="background:#f1f5f9; padding:2px 4px; border-radius:4px; color:#0f172a; font-size:11px;">UPI: ${userUpi}</code>
+          ${userUpi !== 'N/A' ? `<button type="button" title="Copy UPI ID" style="padding:1px 5px; min-height:auto; font-size:10px; background:#0284c7;" onclick="copyToClipboard('${userUpi}')">📋</button>` : ''}
+        </div>
+      </td>
+      <td>
+        <span class="badge ${isDelivered ? 'badge-confirmed' : (isCancelled ? 'badge-pending' : (isRejected ? 'badge-pending' : (isApproved ? 'badge-confirmed' : 'badge-pending')))}" style="${isRejected ? 'background:#fee2e2; color:#991b1b;' : (isCancelled ? 'background:#ffedd5; color:#c2410c;' : (isDelivered ? 'background:#16a34a; color:#fff;' : ''))}">
+          ${status}
+        </span>
+        ${isCancelled ? `<br><small style="color:${o.refundStage === 'Refund Credited' ? '#16a34a' : '#ea580c'}; font-weight:bold;">Refund: ${o.refundStage || 'Initiated'} ${o.refundCreditedDate ? `(${o.refundCreditedDate})` : ''}</small>` : ''}
+        ${isDelivered && o.deliveredDate ? `<br><small style="color:#16a34a; font-weight:bold;">Delivered: ${o.deliveredDate}</small>` : ''}
+      </td>
+      
+      <!-- Baaki Courier, Live Tracking aur WhatsApp action buttons jaise pehle the waise hi rahenge -->
+      <td style="min-width: 280px;">
+        ${isApproved && !isCancelled && !isRejected ? `
+          <div style="background:#f8fafc; padding:8px; border-radius:8px; border:1px solid #e2e8f0; font-size:12px;">
+            <div style="margin-bottom:6px; display:flex; align-items:center; gap:4px; background:#fff; padding:4px 6px; border-radius:6px; border:1px solid #cbd5e1;">
+              <label style="font-size:11px; font-weight:bold; color:#0f172a; white-space:nowrap;">📅 Delivery Date:</label>
+              <input type="date" value="${eta}" style="padding:2px 4px; font-size:11px; width:100%; border:1px solid #94a3b8; border-radius:4px;" onchange="updateExpectedDeliveryDate(${idx}, this.value)">
+            </div>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px; gap:4px;">
+              <span style="font-weight:bold; color:#0284c7; white-space:nowrap;">Courier:</span>
+              <input type="text" value="${courier}" placeholder="Courier Name" style="padding:2px 6px; font-size:11px; font-weight:bold; color:#334155; border:1px solid #94a3b8; border-radius:4px; width:140px; text-align:right;" onchange="updateOrderCourierDirect(${idx}, this.value)">
+            </div>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; gap:4px;">
+              <span style="font-weight:bold; color:#0284c7; white-space:nowrap;">📍 Location (Kaha he):</span>
+              <input type="text" value="${loc}" placeholder="Order Location (e.g. Surat Hub)" style="padding:2px 6px; font-size:11px; font-weight:bold; color:#334155; border:1px solid #94a3b8; border-radius:4px; width:130px; text-align:right;" onchange="updateOrderLocationDirect(${idx}, this.value)">
+            </div>
+            <div style="display:flex; gap:3px; flex-wrap:wrap;">
+              <button type="button" class="btn" style="padding:2px 5px; font-size:10px; min-height:22px; background:${stage==='Placed'?'#2b8a3e':'#94a3b8'};" onclick="setOrderStageDirect(${idx}, 'Placed')">Placed</button>
+              <button type="button" class="btn" style="padding:2px 5px; font-size:10px; min-height:22px; background:${stage==='Packed'?'#2b8a3e':'#94a3b8'};" onclick="setOrderStageDirect(${idx}, 'Packed')">Packed</button>
+              <button type="button" class="btn" style="padding:2px 5px; font-size:10px; min-height:22px; background:${stage==='Shipped'?'#2b8a3e':'#94a3b8'};" onclick="setOrderStageDirect(${idx}, 'Shipped')">Shipped</button>
+              <button type="button" class="btn" style="padding:2px 5px; font-size:10px; min-height:22px; background:${stage==='OutForDelivery'?'#2b8a3e':'#94a3b8'};" onclick="setOrderStageDirect(${idx}, 'OutForDelivery')">Out Delivery</button>
+              <button type="button" class="btn" style="padding:2px 5px; font-size:10px; min-height:22px; background:${stage==='Delivered'?'#16a34a':'#94a3b8'};" onclick="setOrderStageDirect(${idx}, 'Delivered')">Delivered</button>
+            </div>
+          </div>
+        ` : (isCancelled ? `
+          <div style="background:#fffaf5; padding:8px; border-radius:8px; border:1px solid #fdba74; font-size:12px;">
+            <span style="font-weight:bold; color:#ea580c;">Refund Control Action</span>
+            <div style="margin: 6px 0 4px 0; display:flex; align-items:center; gap:4px; background:#fff; padding:3px 6px; border-radius:4px; border:1px solid #cbd5e1;">
+              <label style="font-size:10.5px; font-weight:bold; white-space:nowrap;">📅 Refund Date:</label>
+              <input type="date" value="${refundDate}" id="refundDateInput_${idx}" style="padding:1px 4px; font-size:11px; width:100%; border:1px solid #94a3b8; border-radius:4px;" onchange="updateOrderRefundDate(${idx}, this.value)">
+            </div>
+            <div style="display:flex; gap:4px; flex-wrap:wrap; margin-top:4px;">
+              <button type="button" class="btn" style="padding:3px 6px; font-size:11px; min-height:24px; background:${o.refundStage==='Refund Initiated'?'#ea580c':'#94a3b8'};" onclick="setRefundStageDirect(${idx}, 'Refund Initiated')">Initiated</button>
+              <button type="button" class="btn" style="padding:3px 6px; font-size:11px; min-height:24px; background:${o.refundStage==='Refund Processing'?'#ea580c':'#94a3b8'};" onclick="setRefundStageDirect(${idx}, 'Refund Processing')">Processing</button>
+              <button type="button" class="btn" style="padding:3px 6px; font-size:11px; min-height:24px; background:${o.refundStage==='Refund Credited'?'#16a34a':'#dc2626'}; font-weight:bold;" onclick="setRefundStageDirect(${idx}, 'Refund Credited')">💸 Credited (Deduct Cash)</button>
+            </div>
+          </div>
+        ` : (isRejected ? `<span style="color:#dc2626; font-weight:bold; font-size:12px;">Rejected</span>` : `<span style="color:#d97706; font-weight:bold; font-size:12px;">Approve or Cancel to track</span>`))}
+      </td>
 
-            <td>
-              <div style="display:flex; flex-direction:column; gap:4px;">
-                <button class="btn" style="padding:5px 8px; font-size:11px; background:#0f172a; border-radius:6px;" onclick="openOrderActionsMenu(${idx})">⚙️ Manage</button>
-                <button class="btn" style="padding:5px 8px; font-size:11px; background:#25d366; border-radius:6px;" onclick="sendAdminWhatsAppMessage('order', '${o.orderId}')">💬 WhatsApp</button>
-              </div>
-            </td>
-          </tr>
-        `;
-      }).join("");
+      <td>
+        <div style="display:flex; flex-direction:column; gap:4px;">
+          <button class="btn" style="padding:5px 8px; font-size:11px; background:#0f172a; border-radius:6px;" onclick="openOrderActionsMenu(${idx})">⚙️ Manage</button>
+          <button class="btn" style="padding:5px 8px; font-size:11px; background:#25d366; border-radius:6px;" onclick="sendAdminWhatsAppMessage('order', '${o.orderId}')">💬 WhatsApp</button>
+        </div>
+      </td>
+    </tr>
+  `;
+}).join("");
     }
   }
 
@@ -3882,58 +3914,32 @@ function renderProducts(list = products) {
   const powderProd = products.find(p => p.type === "powder") || { stock: 0 };
   const khakhraProd = products.find(p => p.type === "khakhra") || { stock: 0 };
   const papadProd = products.find(p => p.type === "papad") || { stock: 0 };
-  const greenProd = products.find(p => p.type === "green") || { stock: 0 };
 
   document.getElementById("productsList").innerHTML = list.map(product => {
     let currentStock = product.stock;
-    let isAvailable = false;
-
-    if (product.type === "dry") {
-      currentStock = dryProd.stock;
-      isAvailable = currentStock >= 1;
-    } else if (product.type === "powder") {
-      currentStock = powderProd.stock * 10;
-      isAvailable = currentStock >= 1;
-    } else if (product.type === "khakhra") {
-      currentStock = khakhraProd.stock;
-      isAvailable = currentStock >= 1;
-    } else if (product.type === "papad") {
-      currentStock = papadProd.stock;
-      isAvailable = currentStock >= 1;
-    } else if (product.type === "green") {
-      isAvailable = true;
-    } else if (product.bulk) {
-      isAvailable = true;
-    }
-
-    const isGreen = product.type === "green";
-    const isSpecialInquiry = product.bulk || isGreen;
+    let isAvailable = (currentStock >= 1) || product.bulk || (product.type === "green");
 
     return `
-      <article class="product">
+      <article class="product" style="cursor: pointer;" onclick="if(!event.target.closest('button')) window.location.href='product-detail.html?id=${product.id}'">
         <img src="${product.image}" alt="${product.name}">
         <h3>${product.name}</h3>
         <p class="muted">${product.detail}</p>
         
-        <div style="margin-bottom: 8px;">
-          ${isSpecialInquiry ? 
-            `<span class="badge" style="background: #e0f2fe; color: #0369a1; font-size:11px;">🌱 Fresh Harvest & Bulk Inquiry</span>` : 
-            (isAvailable 
-              ? `<span class="badge badge-confirmed" style="font-size:11px;">🟢 Available: ${typeof currentStock === 'number' ? currentStock.toFixed(product.type === 'dry' ? 2 : 0) : currentStock} ${product.unit}</span>` 
-              : `<span class="badge" style="background:#fee2e2; color:#991b1b; font-size:11px;">🔴 Out of Stock</span>`
-            )
-          }
+        <div style="margin-bottom: 6px; display:flex; justify-content:space-between; align-items:center;">
+          <span class="badge ${isAvailable ? 'badge-confirmed' : 'badge-pending'}">
+            ${isAvailable ? '🟢 In Stock' : '🔴 Out of Stock'}
+          </span>
+          <a href="product-detail.html?id=${product.id}" style="color:var(--accent); font-size:12px; font-weight:bold; text-decoration:underline;">
+            🔍 Show More / Photos
+          </a>
         </div>
 
         <div style="margin-top:auto;">
           <div class="product-actions">
             <div class="pill">Rs ${product.price} / ${product.unit}</div>
-            ${isSpecialInquiry ? 
-              `<button type="button" style="background:#25d366; width:100%;" onclick="window.open('https://wa.me/${farmWhatsapp}?text=${encodeURIComponent("Hello Pure Grow Farm, I want to inquire about " + product.name + ". Please share details.")}')">💬 Contact WhatsApp</button>` : 
-              `<button type="button" ${isAvailable ? '' : 'disabled style="background:#9ca3af; cursor:not-allowed;"'} onclick="addToCart(${product.id})">
-                ${isAvailable ? 'Add Cart' : 'Out of Stock'}
-              </button>`
-            }
+            <button type="button" ${isAvailable ? '' : 'disabled style="background:#9ca3af;"'} onclick="event.stopPropagation(); addToCart(${product.id})">
+              ${isAvailable ? 'Add Cart' : 'Out of Stock'}
+            </button>
           </div>
         </div>
       </article>
@@ -6483,3 +6489,124 @@ function handleDirectBookingWhatsApp() {
   const farmPhone = farmWhatsapp || "919067891039";
   window.open(`https://wa.me/${farmPhone}?text=${encodeURIComponent(waText)}`, '_blank');
 }
+
+// =========================================================
+// 1. DYNAMIC PRODUCT PRICING & DELIVERY (SUPABASE CLOUD SYNC)
+// =========================================================
+
+async function fetchProductPricingFromCloud() {
+  if (!_supabase) return;
+  try {
+    const { data: cloudPrices, error } = await _supabase
+      .from('pgf_product_pricing')
+      .select('*');
+
+    if (!error && cloudPrices && cloudPrices.length) {
+      products = products.map(p => {
+        const cloudP = cloudPrices.find(cp => cp.id === p.id);
+        if (cloudP) {
+          return {
+            ...p,
+            price: Number(cloudP.price),
+            delivery: Number(cloudP.delivery !== undefined ? cloudP.delivery : (p.delivery || 0))
+          };
+        }
+        return p;
+      });
+      saveProductsToStorage();
+      renderProducts();
+    }
+  } catch (err) {
+    console.warn("Pricing cloud sync error:", err);
+  }
+}
+
+// Admin Panel me Har Product ke card render karna
+function renderAdminProductPricingCards() {
+  const container = document.getElementById("adminPricingCardsContainer");
+  if (!container) return;
+
+  container.innerHTML = products.map(p => `
+    <div style="background:#ffffff; border:1px solid #cbd5e1; border-radius:12px; padding:16px; box-shadow:0 2px 6px rgba(0,0,0,0.03);">
+      <div style="display:flex; align-items:center; gap:12px; margin-bottom:12px;">
+        <img src="${p.image}" alt="${p.name}" style="width:50px; height:50px; object-fit:cover; border-radius:8px; border:1px solid #e2e8f0;">
+        <div>
+          <strong style="font-size:14px; color:#0f172a;">${p.name}</strong><br>
+          <small class="muted">Unit: <strong>${p.unit}</strong> | Type: ${p.type || 'standard'}</small>
+        </div>
+      </div>
+
+      <form onsubmit="handleSaveProductPrice(event, ${p.id})" style="display:grid; gap:8px;">
+        <label style="font-size:12px; font-weight:bold; color:#334155;">
+          Product Unit Price (₹) [Old: ₹${p.price}]:
+          <input type="number" id="admPriceInput_${p.id}" value="${p.price}" min="0" required style="padding:6px; font-weight:bold;">
+        </label>
+
+        <label style="font-size:12px; font-weight:bold; color:#334155;">
+          Delivery Charge (₹) [0 for Free Delivery]:
+          <input type="number" id="admDeliveryInput_${p.id}" value="${p.delivery || 0}" min="0" required style="padding:6px; font-weight:bold;">
+        </label>
+
+        <button type="submit" style="background:#15803d; font-size:12px; padding:8px; margin-top:4px;">
+          💾 Save & Overwrite Price
+        </button>
+      </form>
+    </div>
+  `).join("");
+}
+
+// Price & Delivery Change (Old Data Delete / Overwrite to Supabase)
+async function handleSaveProductPrice(e, prodId) {
+  e.preventDefault();
+  const priceVal = parseFloat(document.getElementById(`admPriceInput_${prodId}`).value);
+  const deliveryVal = parseFloat(document.getElementById(`admDeliveryInput_${prodId}`).value) || 0;
+
+  const targetProd = products.find(p => p.id === prodId);
+  if (!targetProd) return;
+
+  showPgfLoader("Overwriting product price in database...");
+
+  // Supabase me Upsert (Delete old price by ID & store new values)
+  const payload = {
+    id: prodId,
+    name: targetProd.name,
+    type: targetProd.type || "",
+    price: priceVal,
+    delivery: deliveryVal,
+    unit: targetProd.unit,
+    updated_at: new Date().toISOString()
+  };
+
+  const { error } = await _supabase
+    .from('pgf_product_pricing')
+    .upsert([payload], { onConflict: 'id' });
+
+  hidePgfLoader();
+
+  if (error) {
+    alert("❌ Error updating price: " + error.message);
+    return;
+  }
+
+  targetProd.price = priceVal;
+  targetProd.delivery = deliveryVal;
+  saveProductsToStorage();
+  renderProducts();
+  renderAdminProductPricingCards();
+
+  alert(`✅ Success: ${targetProd.name} ki nayi price ₹${priceVal} aur delivery charge ₹${deliveryVal} save ho chuki hai! Purana price delete/overwrite ho gaya.`);
+}
+
+// Detail page se direct add cart hook
+document.addEventListener("DOMContentLoaded", function() {
+  fetchProductPricingFromCloud();
+  const pendingCart = JSON.parse(localStorage.getItem('pgf_pending_cart_add') || '[]');
+  if (pendingCart.length) {
+    pendingCart.forEach(item => {
+      for (let i = 0; i < item.qty; i++) {
+        addToCart(item.id);
+      }
+    });
+    localStorage.removeItem('pgf_pending_cart_add');
+  }
+});

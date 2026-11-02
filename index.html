@@ -729,6 +729,7 @@
         <button class="btn" id="tabNavAdminManager" onclick="switchErpTab('erpAdminManagerTab', 'tabNavAdminManager')">Admin Manager Page</button>
         <button class="btn" id="tabNavUsers" onclick="switchErpTab('erpUsersTab', 'tabNavUsers')">Registered Accounts Ledger</button>
         <button class="btn" id="tabNavBookingConfig" onclick="switchErpTab('erpBookingConfigTab', 'tabNavBookingConfig')">⚙️ Booking Window & Fee Config</button>
+        <button class="btn" id="tabNavProductPricing" onclick="switchErpTab('erpProductPricingTab', 'tabNavProductPricing')">🏷️ Product Price & Delivery Config</button>
         <button class="btn" id="tabNavOverviewSummary" onclick="switchErpTab('erpOverviewSummaryTab', 'tabNavOverviewSummary')">Overview & Live Summary Ledger</button>
       </div>
 
@@ -1475,6 +1476,18 @@
   </div>
 
 </div>
+       <!-- ERP Segment: Product Pricing & Delivery Logistics Manager -->
+<div id="erpProductPricingTab" class="erp-section">
+  <h3>🏷️ Product Price & Delivery Charge Master (Supabase Cloud Synced)</h3>
+  <p class="muted" style="font-size:13px; margin-bottom:16px;">
+    Yahan se aap kisi bhi product ki Unit Price aur Delivery Charge badal sakte hain. Jab aap "Update Price & Delivery" par click karenge, toh purana price delete/overwrite ho jayega aur live user store me instant reflect hoga.
+  </p>
+
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; margin-bottom: 24px;" id="adminPricingCardsContainer">
+    <!-- script.js se dynamically populate hoga -->
+  </div>
+</div>
+
 
       <!-- ERP Segment 4: Overview & Live Summary Ledger -->
       <div id="erpOverviewSummaryTab" class="erp-section">

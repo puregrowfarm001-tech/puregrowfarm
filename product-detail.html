@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Product Details - Pure Grow Farm</title>
+  <link rel="icon" type="image/png" href="mushroom/pgf logo.png">
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="product-detail.js" defer></script>
+  <style>
+    .flipkart-detail-wrapper {
+      display: grid;
+      grid-template-columns: 460px 1fr;
+      gap: 36px;
+      background: #ffffff;
+      padding: 28px;
+      border-radius: 16px;
+      border: 1px solid var(--line);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+      margin-top: 20px;
+    }
+    .gallery-column {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .big-img-frame {
+      width: 100%;
+      height: 380px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      background: #f8fafc;
+    }
+    .big-img-frame img {
+      max-width: 90%;
+      max-height: 90%;
+      object-fit: contain;
+      transition: transform 0.25s ease;
+    }
+    .big-img-frame img:hover {
+      transform: scale(1.08);
+    }
+    .thumbnails-row {
+      display: flex;
+      gap: 10px;
+      overflow-x: auto;
+      padding-bottom: 6px;
+    }
+    .thumb-btn {
+      width: 72px;
+      height: 72px;
+      border: 2px solid var(--line);
+      border-radius: 8px;
+      padding: 4px;
+      background: #fff;
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: border-color 0.2s ease, transform 0.15s ease;
+    }
+    .thumb-btn.active {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px rgba(43, 138, 62, 0.2);
+    }
+    .thumb-btn img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 4px;
+    }
+    .info-column {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .price-box {
+      display: flex;
+      align-items: baseline;
+      gap: 12px;
+      padding: 12px 16px;
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      border-radius: 10px;
+      width: fit-content;
+    }
+    .price-main {
+      font-size: 30px;
+      font-weight: 900;
+      color: #15803d;
+    }
+    .delivery-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #0369a1;
+      background: #e0f2fe;
+      padding: 4px 10px;
+      border-radius: 6px;
+      width: fit-content;
+    }
+    .cta-row {
+      display: flex;
+      gap: 12px;
+      margin-top: 14px;
+      flex-wrap: wrap;
+    }
+    @media (max-width: 900px) {
+      .flipkart-detail-wrapper {
+        grid-template-columns: 1fr;
+      }
+      .big-img-frame {
+        height: 280px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="brand">
+        <a href="index.html" style="display: flex; align-items: center; gap: 10px;">
+          <img src="mushroom/pgf logo.png" alt="Pure Grow Farm" class="logo-img">
+          <div>
+            <div class="brand-text">Pure Grow Farm</div>
+            <div class="brand-subtitle">Oyster Mushrooms Store</div>
+          </div>
+        </a>
+      </div>
+      <div class="nav-wrapper">
+        <a href="index.html#products" class="btn" style="background: #475569;">← Back to Catalog</a>
+        <a href="index.html#cartBasketSidebar" class="btn">🛒 View Basket</a>
+      </div>
+    </header>
+
+    <main id="productDetailContainer">
+      <div style="text-align: center; padding: 60px;" class="muted">Loading product details...</div>
+    </main>
+  </div>
+</body>
+</html>

@@ -6610,3 +6610,35 @@ document.addEventListener("DOMContentLoaded", function() {
     localStorage.removeItem('pgf_pending_cart_add');
   }
 });
+
+document.addEventListener("DOMContentLoaded", async function() {
+  if (typeof fetchProductPricingFromCloud === "function") {
+    await fetchProductPricingFromCloud();
+  }
+  
+  const pendingCart = JSON.parse(localStorage.getItem('pgf_pending_cart_add') || '[]');
+  if (pendingCart.length) {
+    pendingCart.forEach(item => {
+      for (let i = 0; i < item.qty; i++) {
+        if (typeof addToCart === "function") {
+          addToCart(item.id);
+        }
+      }
+    });
+    localStorage.removeItem('pgf_pending_cart_add');
+  }
+
+  // Direct buy hone par order form par scroll karein
+  const isDirectCheckout = localStorage.getItem('pgf_direct_checkout_trigger');
+  if (isDirectCheckout === 'true') {
+    localStorage.removeItem('pgf_direct_checkout_trigger');
+    setTimeout(() => {
+      const target = document.getElementById("orderForm") || document.getElementById("cartBasketSidebar");
+      if (target) {
+        target.scrollIntoView({ behavior: 'smooth' });
+        target.style.boxShadow = "0 0 20px rgba(2, 132, 199, 0.6)";
+        setTimeout(() => { target.style.boxShadow = ""; }, 2000);
+      }
+    }, 400);
+  }
+});

@@ -22,7 +22,26 @@ const BASE_PRODUCTS = [
   { id: 6, name: "Bulk and Wholesale Supply", price: 0, delivery: 0, unit: "Custom", bulk: true, image: "mushroom/bulk.png", detail: "Wholesale supply contracts for restaurants, hotels, distributors and local markets.", stock: 99999 }
 ];
 
+// PGF Loader Helpers
+function showPgfLoader(message = "Processing, please wait...") {
+  const loader = document.getElementById("globalPageLoader");
+  const msgEl = document.getElementById("globalLoaderText");
+  if (loader) {
+    if (msgEl) msgEl.textContent = message;
+    loader.classList.add("active-loader");
+  }
+}
+
+function hidePgfLoader() {
+  const loader = document.getElementById("globalPageLoader");
+  if (loader) {
+    loader.classList.remove("active-loader");
+  }
+}
+
 async function initProductDetailPage() {
+  showPgfLoader("Loading product details...");
+
   const params = new URLSearchParams(window.location.search);
   const prodId = parseInt(params.get("id"), 10) || 1;
 
@@ -49,7 +68,10 @@ async function initProductDetailPage() {
   const gallery = PRODUCT_GALLERY_IMAGES[product.id] || [product.image];
 
   const container = document.getElementById("productDetailContainer");
-  if (!container) return;
+  if (!container) {
+    hidePgfLoader();
+    return;
+  }
 
   container.innerHTML = `
     <div class="flipkart-detail-wrapper">
@@ -102,17 +124,31 @@ async function initProductDetailPage() {
               <label style="font-size: 13px; font-weight: bold;">Qty:</label>
               <input type="number" id="detailQtyInput" value="1" min="1" max="${product.stock || 10}" style="width: 70px; text-align: center; padding: 8px;">
             </div>
-            <button type="button" class="btn" style="padding:12px 24px; font-size:15px;" onclick="addDetailProductToBasket(${product.id})">
+
+            <!-- 1) Add To Basket -->
+            <button type="button" class="btn" style="padding:12px 22px; font-size:14px;" onclick="addDetailProductToBasket(${product.id})">
               🛒 Add to Selection Basket
             </button>
-            <a href="index.html#products" class="btn" style="background:#0284c7; padding:12px 20px;">
-              ⚡ Buy on Main Store
-            </a>
+
+            <!-- 2) Direct Buy on Main Store (Basket me jayega + Checkout Open hoga) -->
+            <button type="button" class="btn" style="background:#0284c7; padding:12px 22px; font-size:14px; font-weight:800;" onclick="directBuyOnMainStore(${product.id})">
+              ⚡ Buy on Main Store (Direct Checkout)
+            </button>
           `}
+
+          <!-- Exit Button inside Action Row -->
+          <a href="index.html" class="exit-btn" style="padding:12px 20px; font-size:14px;">
+            🚪 Exit to Main Website
+          </a>
         </div>
       </div>
     </div>
   `;
+
+  // Content load hone par loader band
+  setTimeout(() => {
+    hidePgfLoader();
+  }, 350);
 }
 
 function switchDetailPhoto(src, btn) {
@@ -126,12 +162,34 @@ function addDetailProductToBasket(prodId) {
   const qtyInput = document.getElementById("detailQtyInput");
   const qty = parseInt(qtyInput ? qtyInput.value : "1", 10) || 1;
 
+  showPgfLoader("Adding to basket...");
   const currentCart = JSON.parse(localStorage.getItem('pgf_pending_cart_add') || '[]');
   currentCart.push({ id: prodId, qty: qty });
   localStorage.setItem('pgf_pending_cart_add', JSON.stringify(currentCart));
 
-  alert(`✅ Added ${qty} unit(s) to basket! Redirecting to cart...`);
-  window.location.href = "index.html#cartBasketSidebar";
+  setTimeout(() => {
+    window.location.href = "index.html#cartBasketSidebar";
+  }, 400);
+}
+
+// Direct Buy Handler
+function directBuyOnMainStore(prodId) {
+  const qtyInput = document.getElementById("detailQtyInput");
+  const qty = parseInt(qtyInput ? qtyInput.value : "1", 10) || 1;
+
+  showPgfLoader("Directing to Checkout...");
+  
+  // Pending cart me product dalein
+  const currentCart = JSON.parse(localStorage.getItem('pgf_pending_cart_add') || '[]');
+  currentCart.push({ id: prodId, qty: qty });
+  localStorage.setItem('pgf_pending_cart_add', JSON.stringify(currentCart));
+
+  // Direct checkout flag set karein taaki main page seedha order form par jaye
+  localStorage.setItem('pgf_direct_checkout_trigger', 'true');
+
+  setTimeout(() => {
+    window.location.href = "index.html#orderForm";
+  }, 450);
 }
 
 document.addEventListener("DOMContentLoaded", initProductDetailPage);

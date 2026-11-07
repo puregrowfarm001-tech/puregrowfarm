@@ -73,6 +73,10 @@ async function initProductDetailPage() {
     return;
   }
 
+  const isBulk = product.bulk || product.id === 6;
+  const isFresh = product.id === 1 || product.type === 'green';
+  const isDirectWhatsApp = isBulk || isFresh;
+
   container.innerHTML = `
     <div class="flipkart-detail-wrapper">
       <div class="gallery-column">
@@ -93,21 +97,35 @@ async function initProductDetailPage() {
         <h1 style="margin: 0; font-size: 28px; color: #0f172a;">${product.name}</h1>
         <p class="muted" style="margin: 0; font-size: 14px;">Packaging Unit: <strong>${product.unit}</strong></p>
 
-        <div class="price-box">
-          <span class="price-main">₹${product.price}</span>
-          <span class="muted" style="font-size: 13px;">per ${product.unit}</span>
-        </div>
+        <!-- Fresh mushroom me price box hide rahega -->
+        ${isFresh ? `
+          <div style="background:#f0fdf4; border:1px solid #bbf7d0; padding:10px 14px; border-radius:10px; color:#15803d; font-size:14px; font-weight:bold; width:fit-content;">
+            🌱 Fresh Daily Harvest (Price on WhatsApp Inquiry)
+          </div>
+        ` : (isBulk ? `
+          <div style="background:#f0fdf4; border:1px solid #bbf7d0; padding:10px 14px; border-radius:10px; color:#15803d; font-size:14px; font-weight:bold; width:fit-content;">
+            📦 Wholesale Custom Quotation
+          </div>
+        ` : `
+          <div class="price-box">
+            <span class="price-main">₹${product.price}</span>
+            <span class="muted" style="font-size: 13px;">per ${product.unit}</span>
+          </div>
 
-        <div class="delivery-pill">
-          🚚 Delivery Charge: ${product.delivery > 0 ? `₹${product.delivery}` : 'FREE Delivery'}
-        </div>
+          <div class="delivery-pill">
+            🚚 Delivery Charge: ${product.delivery > 0 ? `₹${product.delivery}` : 'FREE Delivery'}
+          </div>
+        `)}
 
-        <div style="margin: 6px 0; font-size: 13px;">
-          <strong>Live Farm Stock:</strong> 
-          <span style="color: ${product.stock > 0 ? '#15803d' : '#dc2626'}; font-weight: bold;">
-            ${product.stock > 0 ? `🟢 In Stock (${product.stock} available)` : '🔴 Out of Stock'}
-          </span>
-        </div>
+        <!-- Fresh aur Bulk dono me Stock Status hide rahega -->
+        ${!isDirectWhatsApp ? `
+          <div style="margin: 6px 0; font-size: 13px;">
+            <strong>Live Farm Stock:</strong> 
+            <span style="color: ${product.stock > 0 ? '#15803d' : '#dc2626'}; font-weight: bold;">
+              ${product.stock > 0 ? `🟢 In Stock (${product.stock} available)` : '🔴 Out of Stock'}
+            </span>
+          </div>
+        ` : ''}
 
         <div style="border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); padding: 14px 0;">
           <h4 style="margin: 0 0 6px 0;">Description & Nutrients:</h4>
@@ -115,21 +133,14 @@ async function initProductDetailPage() {
         </div>
 
         <div class="cta-row">
-          ${(product.bulk || product.id === 6 || product.id === 1 || product.type === 'green') ? `
+          ${isDirectWhatsApp ? `
             <a href="https://wa.me/919067891039?text=${encodeURIComponent(
-              product.bulk || product.id === 6
+              isBulk
                 ? 'Hello Pure Grow Farm, I want to inquire about Bulk & Wholesale Supply.'
-                : 'Hello Pure Grow Farm, I want to order Fresh Green Oyster Mushroom directly via WhatsApp.'
+                : 'Hello Pure Grow Farm, I want to order Fresh Green Oyster Mushroom. Please let me know the current price and delivery options.'
             )}" target="_blank" class="btn" style="background:#25d366; font-size:15px; padding:12px 24px; text-decoration:none;">
               💬 Direct WhatsApp Order / Inquiry
             </a>
-            
-            ${product.id === 1 ? `
-              <!-- Fresh Mushroom ke liye agar koi basket me bhi add karna chahe -->
-              <button type="button" class="btn" style="padding:12px 22px; font-size:14px; background:#475569;" onclick="addDetailProductToBasket(${product.id})">
-                🛒 Add to Basket
-              </button>
-            ` : ''}
           ` : `
             <div style="display: flex; align-items: center; gap: 6px; background: #f1f5f9; padding: 4px 8px; border-radius: 8px; border: 1px solid #cbd5e1;">
               <span style="font-size: 13px; font-weight: bold; margin-right: 4px;">Qty:</span>
@@ -138,18 +149,15 @@ async function initProductDetailPage() {
               <button type="button" class="btn" style="min-height: 32px; width: 32px; padding: 0; font-size: 16px; background: #16a34a;" onclick="incrementDetailQty(${product.stock || 99})">+</button>
             </div>
 
-            <!-- 1) Add To Basket -->
             <button type="button" class="btn" style="padding:12px 22px; font-size:14px;" onclick="addDetailProductToBasket(${product.id})">
               🛒 Add to Selection Basket
             </button>
 
-            <!-- 2) Direct Buy on Main Store -->
             <button type="button" class="btn" style="background:#0284c7; padding:12px 22px; font-size:14px; font-weight:800;" onclick="directBuyOnMainStore(${product.id})">
               ⚡ Buy on Main Store (Direct Checkout)
             </button>
           `}
 
-          <!-- Exit Button inside Action Row -->
           <a href="index.html" class="exit-btn" style="padding:12px 20px; font-size:14px;">
             🚪 Exit to Main Website
           </a>
@@ -157,7 +165,6 @@ async function initProductDetailPage() {
       </div>
     </div>
   `;
-
   // Content load hone par loader band
   setTimeout(() => {
     hidePgfLoader();

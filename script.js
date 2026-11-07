@@ -3914,13 +3914,15 @@ function renderProducts(list = products) {
     let currentStock = product.stock;
     let isAvailable = (currentStock >= 1) || product.bulk || (product.type === "green");
 
-    // WhatsApp Direct Action logic
-    const isDirectWhatsApp = product.bulk || product.id === 6 || product.id === 1 || product.type === "green";
+    // Bulk & Fresh Mushroom conditions
+    const isBulk = product.bulk || product.id === 6;
+    const isFresh = product.id === 1 || product.type === "green";
+    const isDirectWhatsApp = isBulk || isFresh;
     const waNumber = farmWhatsapp || "919067891039";
     
-    const waMessage = product.bulk || product.id === 6
+    const waMessage = isBulk
       ? encodeURIComponent("Hello Pure Grow Farm, I want to inquire about Bulk and Wholesale Supply.")
-      : encodeURIComponent(`Hello Pure Grow Farm, I want to order Fresh Green Oyster Mushroom (${product.unit}). Please let me know the availability.`);
+      : encodeURIComponent("Hello Pure Grow Farm, I want to order Fresh Green Oyster Mushroom. Please let me know the current daily price and availability.");
 
     return `
       <article class="product" style="cursor: pointer;" onclick="if(!event.target.closest('button') && !event.target.closest('a')) window.location.href='product-detail.html?id=${product.id}'">
@@ -3929,9 +3931,12 @@ function renderProducts(list = products) {
         <p class="muted">${product.detail}</p>
         
         <div style="margin-bottom: 6px; display:flex; justify-content:space-between; align-items:center;">
-          <span class="badge ${isAvailable ? 'badge-confirmed' : 'badge-pending'}">
-            ${isAvailable ? '🟢 In Stock' : '🔴 Out of Stock'}
-          </span>
+          <!-- Fresh aur Bulk me stock badge nahi dikhega -->
+          ${isDirectWhatsApp ? `<span></span>` : `
+            <span class="badge ${isAvailable ? 'badge-confirmed' : 'badge-pending'}">
+              ${isAvailable ? '🟢 In Stock' : '🔴 Out of Stock'}
+            </span>
+          `}
           <a href="product-detail.html?id=${product.id}" style="color:var(--accent); font-size:12px; font-weight:bold; text-decoration:underline;">
             🔍 Show More / Photos
           </a>
@@ -3939,15 +3944,22 @@ function renderProducts(list = products) {
 
         <div style="margin-top:auto;">
           <div class="product-actions">
-            <div class="pill">Rs ${product.price} / ${product.unit}</div>
+            <!-- Fresh mushroom me price nahi dikhegi, sirf packaging unit ya Direct Order dikhega -->
+            ${isFresh ? `
+              <div class="pill">${product.unit}</div>
+            ` : (isBulk ? `
+              <div class="pill">Custom Supply</div>
+            ` : `
+              <div class="pill">Rs ${product.price} / ${product.unit}</div>
+            `)}
             
             ${isDirectWhatsApp ? `
-              <!-- Direct WhatsApp Button for Bulk and Fresh Mushroom -->
+              <!-- Direct WhatsApp Button -->
               <a href="https://wa.me/${waNumber}?text=${waMessage}" target="_blank" class="btn" style="background:#25d366; font-size:12px; padding:8px 12px; text-decoration:none;" onclick="event.stopPropagation();">
                 💬 WhatsApp Order
               </a>
             ` : `
-              <!-- Regular Add to Cart for standard products -->
+              <!-- Normal Cart Button for Dry, Powder, Khakhra, Papad -->
               <button type="button" ${isAvailable ? '' : 'disabled style="background:#9ca3af;"'} onclick="event.stopPropagation(); addToCart(${product.id})">
                 ${isAvailable ? 'Add Cart' : 'Out of Stock'}
               </button>

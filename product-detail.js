@@ -134,13 +134,15 @@ async function initProductDetailPage() {
 
         <div class="cta-row">
           ${isDirectWhatsApp ? `
-            <a href="https://wa.me/919067891039?text=${encodeURIComponent(
-              isBulk
-                ? 'Hello Pure Grow Farm, I want to inquire about Bulk & Wholesale Supply.'
-                : 'Hello Pure Grow Farm, I want to order Fresh Green Oyster Mushroom. Please let me know the current price and delivery options.'
-            )}" target="_blank" class="btn" style="background:#25d366; font-size:15px; padding:12px 24px; text-decoration:none;">
+            <!-- WhatsApp Order button with Loader -->
+            <button type="button" class="btn" style="background:#25d366; font-size:15px; padding:12px 24px;" 
+              onclick="handleWhatsAppOrderClick('https://wa.me/919067891039?text=${encodeURIComponent(
+                isBulk
+                  ? 'Hello Pure Grow Farm, I want to inquire about Bulk & Wholesale Supply.'
+                  : 'Hello Pure Grow Farm, I want to order Fresh Green Oyster Mushroom. Please let me know the current price and availability.'
+              )}')">
               💬 Direct WhatsApp Order / Inquiry
-            </a>
+            </button>
           ` : `
             <div style="display: flex; align-items: center; gap: 6px; background: #f1f5f9; padding: 4px 8px; border-radius: 8px; border: 1px solid #cbd5e1;">
               <span style="font-size: 13px; font-weight: bold; margin-right: 4px;">Qty:</span>
@@ -149,18 +151,21 @@ async function initProductDetailPage() {
               <button type="button" class="btn" style="min-height: 32px; width: 32px; padding: 0; font-size: 16px; background: #16a34a;" onclick="incrementDetailQty(${product.stock || 99})">+</button>
             </div>
 
+            <!-- 1) Add To Basket Button -->
             <button type="button" class="btn" style="padding:12px 22px; font-size:14px;" onclick="addDetailProductToBasket(${product.id})">
               🛒 Add to Selection Basket
             </button>
 
+            <!-- 2) Direct Buy Button -->
             <button type="button" class="btn" style="background:#0284c7; padding:12px 22px; font-size:14px; font-weight:800;" onclick="directBuyOnMainStore(${product.id})">
               ⚡ Buy on Main Store (Direct Checkout)
             </button>
           `}
 
-          <a href="index.html" class="exit-btn" style="padding:12px 20px; font-size:14px;">
+          <!-- 3) Exit Button with Loader -->
+          <button type="button" class="exit-btn" style="padding:12px 20px; font-size:14px; border:none; cursor:pointer;" onclick="exitToMainWebsite()">
             🚪 Exit to Main Website
-          </a>
+          </button>
         </div>
       </div>
     </div>
@@ -178,18 +183,57 @@ function switchDetailPhoto(src, btn) {
   if (btn) btn.classList.add("active");
 }
 
+// 1) Add to Selection Basket Button Handler
 function addDetailProductToBasket(prodId) {
   const qtyInput = document.getElementById("detailQtyInput");
   const qty = parseInt(qtyInput ? qtyInput.value : "1", 10) || 1;
 
-  showPgfLoader("Adding to basket...");
+  // PGF Global Loader Active karein
+  showPgfLoader("Adding product to your basket...");
+
   const currentCart = JSON.parse(localStorage.getItem('pgf_pending_cart_add') || '[]');
   currentCart.push({ id: prodId, qty: qty });
   localStorage.setItem('pgf_pending_cart_add', JSON.stringify(currentCart));
 
+  // 600ms ka smooth delay taaki customer ko loader ring aur blur clearly dikhe
   setTimeout(() => {
     window.location.href = "index.html#cartBasketSidebar";
-  }, 400);
+  }, 600);
+}
+
+// 2) Buy on Main Store (Direct Checkout) Handler
+function directBuyOnMainStore(prodId) {
+  const qtyInput = document.getElementById("detailQtyInput");
+  const qty = parseInt(qtyInput ? qtyInput.value : "1", 10) || 1;
+
+  // PGF Global Loader Active karein
+  showPgfLoader("Redirecting to Direct Checkout...");
+
+  const currentCart = JSON.parse(localStorage.getItem('pgf_pending_cart_add') || '[]');
+  currentCart.push({ id: prodId, qty: qty });
+  localStorage.setItem('pgf_pending_cart_add', JSON.stringify(currentCart));
+  localStorage.setItem('pgf_only_basket_mode', 'true');
+
+  setTimeout(() => {
+    window.location.href = "index.html";
+  }, 600);
+}
+
+// 3) Exit to Main Website Button Handler
+function exitToMainWebsite() {
+  showPgfLoader("Returning to Pure Grow Farm...");
+  setTimeout(() => {
+    window.location.href = "index.html";
+  }, 500);
+}
+
+// 4) Direct WhatsApp Button Handler (Fresh Mushroom & Bulk)
+function handleWhatsAppOrderClick(url) {
+  showPgfLoader("Connecting to WhatsApp...");
+  setTimeout(() => {
+    hidePgfLoader();
+    window.open(url, '_blank');
+  }, 500);
 }
 
 // Direct Buy Handler (Sirf Basket & Checkout khulega)

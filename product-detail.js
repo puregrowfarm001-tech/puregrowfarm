@@ -5,12 +5,12 @@ const { createClient } = supabase;
 const _supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 const PRODUCT_GALLERY_IMAGES = {
-  1: ["mushroom/Screenshot 2025-10-24 154001.png", "mushroom/g mushroom.png", "mushroom/7.jpg"],
-  2: ["mushroom/oyst dry.webp", "mushroom/8.jpg", "mushroom/9.jpg"],
-  3: ["mushroom/oyster powder.png", "mushroom/intership1.png", "mushroom/g mushroom.png"],
-  4: ["mushroom/methikhakhra2.png", "mushroom/intership4.jpg", "mushroom/7.jpg"],
-  5: ["mushroom/adadpapad2.png", "mushroom/intership3.jpg", "mushroom/8.jpg"],
-  6: ["mushroom/bulk.png", "mushroom/g mushroom.png", "mushroom/9.jpg"]
+  1: ["mushroom/Screenshot 2025-10-24 154001.png", "mushroom/fresh2.jpg", "mushroom/fresh3.jpg"],
+  2: ["mushroom/oyst dry.webp", "mushroom/dry2.jpg", "mushroom/dry3.png"],
+  3: ["mushroom/oyster powder.png", "mushroom/powder2.jpg", "mushroom/powder3.jpg"],
+  4: ["mushroom/methikhakhra2.png"],
+  5: ["mushroom/adadpapad2.png"],
+  6: ["mushroom/bulk.png"]
 };
 
 const BASE_PRODUCTS = [

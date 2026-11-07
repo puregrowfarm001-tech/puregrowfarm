@@ -220,10 +220,11 @@ function directBuyOnMainStore(prodId) {
 }
 
 // 3) Exit to Main Website Button Handler
+// Exit Button Handler - Products Section me scroll karega
 function exitToMainWebsite() {
-  showPgfLoader("Returning to Pure Grow Farm...");
+  showPgfLoader("Returning to Products Catalog...");
   setTimeout(() => {
-    window.location.href = "index.html";
+    window.location.href = "index.html#products";
   }, 500);
 }
 

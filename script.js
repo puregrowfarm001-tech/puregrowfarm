@@ -6826,3 +6826,15 @@ document.addEventListener("DOMContentLoaded", async function() {
     applyOnlyBasketView();
   }
 });
+
+// Product section par smooth scroll karne ke liye
+window.addEventListener("DOMContentLoaded", () => {
+  if (window.location.hash === "#products") {
+    const prodSec = document.getElementById("products");
+    if (prodSec) {
+      setTimeout(() => {
+        prodSec.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 300);
+    }
+  }
+});

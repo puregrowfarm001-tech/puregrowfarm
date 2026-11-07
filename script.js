@@ -3908,19 +3908,22 @@ Pure Grow Farm, Makhiyala, Gujarat
 }
 
 function renderProducts(list = products) {
-  if(!document.getElementById("productsList")) return;
+  if (!document.getElementById("productsList")) return;
   
-  const dryProd = products.find(p => p.type === "dry") || { stock: 0 };
-  const powderProd = products.find(p => p.type === "powder") || { stock: 0 };
-  const khakhraProd = products.find(p => p.type === "khakhra") || { stock: 0 };
-  const papadProd = products.find(p => p.type === "papad") || { stock: 0 };
-
   document.getElementById("productsList").innerHTML = list.map(product => {
     let currentStock = product.stock;
     let isAvailable = (currentStock >= 1) || product.bulk || (product.type === "green");
 
+    // WhatsApp Direct Action logic
+    const isDirectWhatsApp = product.bulk || product.id === 6 || product.id === 1 || product.type === "green";
+    const waNumber = farmWhatsapp || "919067891039";
+    
+    const waMessage = product.bulk || product.id === 6
+      ? encodeURIComponent("Hello Pure Grow Farm, I want to inquire about Bulk and Wholesale Supply.")
+      : encodeURIComponent(`Hello Pure Grow Farm, I want to order Fresh Green Oyster Mushroom (${product.unit}). Please let me know the availability.`);
+
     return `
-      <article class="product" style="cursor: pointer;" onclick="if(!event.target.closest('button')) window.location.href='product-detail.html?id=${product.id}'">
+      <article class="product" style="cursor: pointer;" onclick="if(!event.target.closest('button') && !event.target.closest('a')) window.location.href='product-detail.html?id=${product.id}'">
         <img src="${product.image}" alt="${product.name}">
         <h3>${product.name}</h3>
         <p class="muted">${product.detail}</p>
@@ -3937,9 +3940,18 @@ function renderProducts(list = products) {
         <div style="margin-top:auto;">
           <div class="product-actions">
             <div class="pill">Rs ${product.price} / ${product.unit}</div>
-            <button type="button" ${isAvailable ? '' : 'disabled style="background:#9ca3af;"'} onclick="event.stopPropagation(); addToCart(${product.id})">
-              ${isAvailable ? 'Add Cart' : 'Out of Stock'}
-            </button>
+            
+            ${isDirectWhatsApp ? `
+              <!-- Direct WhatsApp Button for Bulk and Fresh Mushroom -->
+              <a href="https://wa.me/${waNumber}?text=${waMessage}" target="_blank" class="btn" style="background:#25d366; font-size:12px; padding:8px 12px; text-decoration:none;" onclick="event.stopPropagation();">
+                💬 WhatsApp Order
+              </a>
+            ` : `
+              <!-- Regular Add to Cart for standard products -->
+              <button type="button" ${isAvailable ? '' : 'disabled style="background:#9ca3af;"'} onclick="event.stopPropagation(); addToCart(${product.id})">
+                ${isAvailable ? 'Add Cart' : 'Out of Stock'}
+              </button>
+            `}
           </div>
         </div>
       </article>

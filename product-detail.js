@@ -115,25 +115,35 @@ async function initProductDetailPage() {
         </div>
 
         <div class="cta-row">
-          ${product.bulk ? `
-            <a href="https://wa.me/919067891039?text=${encodeURIComponent('Hello Pure Grow Farm, I want to inquire about Bulk Supply for ' + product.name)}" target="_blank" class="btn" style="background:#25d366; font-size:15px; padding:12px 24px;">
-              💬 Wholesale WhatsApp Inquiry
+          ${(product.bulk || product.id === 6 || product.id === 1 || product.type === 'green') ? `
+            <a href="https://wa.me/919067891039?text=${encodeURIComponent(
+              product.bulk || product.id === 6
+                ? 'Hello Pure Grow Farm, I want to inquire about Bulk & Wholesale Supply.'
+                : 'Hello Pure Grow Farm, I want to order Fresh Green Oyster Mushroom directly via WhatsApp.'
+            )}" target="_blank" class="btn" style="background:#25d366; font-size:15px; padding:12px 24px; text-decoration:none;">
+              💬 Direct WhatsApp Order / Inquiry
             </a>
+            
+            ${product.id === 1 ? `
+              <!-- Fresh Mushroom ke liye agar koi basket me bhi add karna chahe -->
+              <button type="button" class="btn" style="padding:12px 22px; font-size:14px; background:#475569;" onclick="addDetailProductToBasket(${product.id})">
+                🛒 Add to Basket
+              </button>
+            ` : ''}
           ` : `
-            // cta-row ke andar quantity selector replace karein:
-<div style="display: flex; align-items: center; gap: 6px; background: #f1f5f9; padding: 4px 8px; border-radius: 8px; border: 1px solid #cbd5e1;">
-  <span style="font-size: 13px; font-weight: bold; margin-right: 4px;">Qty:</span>
-  <button type="button" class="btn" style="min-height: 32px; width: 32px; padding: 0; font-size: 16px; background: #64748b;" onclick="decrementDetailQty()">-</button>
-  <input type="number" id="detailQtyInput" value="1" min="1" max="${product.stock || 10}" readonly style="width: 48px; text-align: center; font-weight: bold; padding: 4px; border: 1px solid #cbd5e1; background: #fff; border-radius: 6px;">
-  <button type="button" class="btn" style="min-height: 32px; width: 32px; padding: 0; font-size: 16px; background: #16a34a;" onclick="incrementDetailQty(${product.stock || 99})">+</button>
-</div>
+            <div style="display: flex; align-items: center; gap: 6px; background: #f1f5f9; padding: 4px 8px; border-radius: 8px; border: 1px solid #cbd5e1;">
+              <span style="font-size: 13px; font-weight: bold; margin-right: 4px;">Qty:</span>
+              <button type="button" class="btn" style="min-height: 32px; width: 32px; padding: 0; font-size: 16px; background: #64748b;" onclick="decrementDetailQty()">-</button>
+              <input type="number" id="detailQtyInput" value="1" min="1" max="${product.stock || 10}" readonly style="width: 48px; text-align: center; font-weight: bold; padding: 4px; border: 1px solid #cbd5e1; background: #fff; border-radius: 6px;">
+              <button type="button" class="btn" style="min-height: 32px; width: 32px; padding: 0; font-size: 16px; background: #16a34a;" onclick="incrementDetailQty(${product.stock || 99})">+</button>
+            </div>
 
             <!-- 1) Add To Basket -->
             <button type="button" class="btn" style="padding:12px 22px; font-size:14px;" onclick="addDetailProductToBasket(${product.id})">
               🛒 Add to Selection Basket
             </button>
 
-            <!-- 2) Direct Buy on Main Store (Basket me jayega + Checkout Open hoga) -->
+            <!-- 2) Direct Buy on Main Store -->
             <button type="button" class="btn" style="background:#0284c7; padding:12px 22px; font-size:14px; font-weight:800;" onclick="directBuyOnMainStore(${product.id})">
               ⚡ Buy on Main Store (Direct Checkout)
             </button>
@@ -143,7 +153,6 @@ async function initProductDetailPage() {
           <a href="index.html" class="exit-btn" style="padding:12px 20px; font-size:14px;">
             🚪 Exit to Main Website
           </a>
-
         </div>
       </div>
     </div>

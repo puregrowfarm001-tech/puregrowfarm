@@ -234,3 +234,50 @@ function decrementDetailQty() {
     input.value = val - 1;
   }
 }
+
+// Auto-slide timer variable
+let galleryInterval = null;
+let currentImageIndex = 0;
+let activeGalleryImages = [];
+
+function startGalleryAutoSlide(images) {
+  // Purana timer chal raha ho to clear karein
+  if (galleryInterval) clearInterval(galleryInterval);
+  activeGalleryImages = images;
+  
+  // Agar product ke pass 1 se zyada photos hain tabhi 3 sec me change hoga
+  if (!images || images.length <= 1) return;
+
+  galleryInterval = setInterval(() => {
+    currentImageIndex = (currentImageIndex + 1) % activeGalleryImages.length;
+    const nextSrc = activeGalleryImages[currentImageIndex];
+    
+    const thumbs = document.querySelectorAll(".thumb-btn");
+    const targetThumb = thumbs[currentImageIndex];
+    
+    switchDetailPhoto(nextSrc, targetThumb, false);
+  }, 3000); // 3000ms = 3 Seconds
+}
+
+function switchDetailPhoto(src, btn, userClicked = true) {
+  const bigImg = document.getElementById("flipBigImg");
+  if (bigImg) {
+    bigImg.style.opacity = "0.2";
+    setTimeout(() => {
+      bigImg.src = src;
+      bigImg.style.opacity = "1";
+    }, 150);
+  }
+
+  document.querySelectorAll(".thumb-btn").forEach(b => b.classList.remove("active"));
+  if (btn) btn.classList.add("active");
+
+  // Agar user ne manually thumbnail par click kiya ho, to index update karein
+  if (userClicked && activeGalleryImages.length) {
+    const idx = activeGalleryImages.indexOf(src);
+    if (idx !== -1) currentImageIndex = idx;
+    
+    // User click ke baad timer reset karein taaki turant change na ho
+    startGalleryAutoSlide(activeGalleryImages);
+  }
+}

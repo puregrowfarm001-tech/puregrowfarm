@@ -37,11 +37,11 @@
       background: #f8fafc;
     }
     .big-img-frame img {
-      max-width: 90%;
-      max-height: 90%;
-      object-fit: contain;
-      transition: transform 0.25s ease;
-    }
+  max-width: 90%;
+  max-height: 90%;
+  object-fit: contain;
+  transition: opacity 0.25s ease, transform 0.25s ease; /* Smooth fade effect */
+}
     .big-img-frame img:hover {
       transform: scale(1.08);
     }

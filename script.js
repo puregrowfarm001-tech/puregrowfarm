@@ -7255,7 +7255,7 @@ function printDirectPdfLetter() {
         }
         .pdf-signatures-overlay {
           position: absolute !important;
-          bottom: 45mm !important; /* Print sheet me line ke theek upar clear space */
+          bottom: 45mm !important;
           left: 0 !important;
           width: 210mm !important;
           display: flex !important;
@@ -7293,8 +7293,6 @@ function printDirectPdfLetter() {
   `);
   printWindow.document.close();
 }
-
-
 
 document.addEventListener("DOMContentLoaded", () => {
   initPdfLetterpad();

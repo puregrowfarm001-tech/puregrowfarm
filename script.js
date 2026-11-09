@@ -7052,7 +7052,7 @@ window.addEventListener("DOMContentLoaded", () => {
 });
 
 // =========================================================
-// OFFICIAL LETTER PAD FUNCTIONS (PREVIEW, PRINT & WHATSAPP)
+// OFFICIAL LETTER PAD LOGIC (LIVE PREVIEW, PDF PRINT & WHATSAPP)
 // =========================================================
 
 function initLetterPadDefaults() {
@@ -7095,7 +7095,7 @@ function printOfficialLetterPad() {
 
   const frameClone = document.getElementById("officialLetterPadPrintFrame").cloneNode(true);
 
-  // Convert image URLs to absolute for printing
+  // Absolute image paths ensuring images display in new print window
   const imgs = frameClone.querySelectorAll("img");
   imgs.forEach(img => {
     if (img.src.includes("pgf logo.png")) img.src = logoUrl;
@@ -7113,14 +7113,39 @@ function printOfficialLetterPad() {
       <style>
         @page { size: A4 portrait; margin: 8mm; }
         * { box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-        body { font-family: Arial, sans-serif; margin: 0; padding: 0; background: #fff; color: #111; }
-        #officialLetterPadPrintFrame {
+        body { font-family: Arial, Helvetica, sans-serif; margin: 0; padding: 0; background: #fff; color: #111; }
+        .pgf-letterpad-frame {
           width: 100% !important;
           min-height: auto !important;
           border: none !important;
           box-shadow: none !important;
-          padding: 5mm !important;
+          padding: 4mm 6mm !important;
         }
+        .lp-header-row {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          border-bottom: 2.5px solid #165b26;
+          padding-bottom: 12px;
+        }
+        .lp-header-logo img { width: 110px; height: 110px; object-fit: contain; }
+        .lp-header-details { text-align: right; line-height: 1.34; }
+        .lp-brand-heading { font-size: 26px; font-weight: 900; color: #165b26; letter-spacing: 0.5px; }
+        .lp-brand-tagline { font-size: 13px; font-weight: 700; color: #1e7e34; letter-spacing: 1.2px; margin: 1px 0 4px 0; }
+        .lp-contact-lines { font-size: 11.5px; color: #222; }
+        .lp-meta-bar { display: flex; justify-content: space-between; margin-top: 18px; margin-bottom: 18px; font-size: 13.5px; font-weight: 700; border-bottom: 1px dashed #cbd5e1; padding-bottom: 8px; }
+        .lp-subject-bar { margin-bottom: 20px; font-size: 15px; font-weight: 800; text-decoration: underline; text-underline-offset: 4px; }
+        .lp-body-content { font-size: 14.5px; line-height: 1.8; text-align: justify; white-space: pre-wrap; min-height: 480px; }
+        .lp-footer-row { margin-top: 35px; padding-top: 15px; border-top: 1.5px solid #e2e8f0; }
+        .lp-signatures-container { display: flex; justify-content: space-between; align-items: flex-end; padding: 0 10px; }
+        .lp-sign-column { width: 250px; text-align: center; }
+        .lp-sign-img-wrapper { height: 55px; display: flex; align-items: flex-end; justify-content: center; }
+        .lp-sign-img-wrapper img { max-width: 140px; max-height: 52px; object-fit: contain; }
+        .lp-sign-divider { border-top: 1.5px solid #111; width: 175px; margin: 0 auto 5px auto; }
+        .lp-signer-name { font-size: 15px; font-weight: 800; color: #0f172a; }
+        .lp-signer-role { font-size: 12px; color: #475569; font-weight: 600; line-height: 1.35; }
+        .lp-center-seal img { width: 58px; height: 58px; opacity: 0.82; }
+        .lp-center-seal-text { font-size: 9px; font-weight: 800; color: #165b26; letter-spacing: 0.5px; margin-top: 2px; }
       </style>
     </head>
     <body>

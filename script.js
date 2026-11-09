@@ -7195,27 +7195,28 @@ function printDirectPdfLetter() {
         }
         .pdf-signatures-overlay {
           position: absolute !important;
-          bottom: 29mm !important;
+          bottom: 37mm !important; /* Pehle 29mm tha, ab perfectly line ke upar shift ho gaya */
           left: 0 !important;
           width: 210mm !important;
           display: flex !important;
           justify-content: space-between !important;
-          padding: 0 15mm !important;
+          padding: 0 14mm !important;
           box-sizing: border-box !important;
           z-index: 3 !important;
         }
         .pdf-sign-box-left, .pdf-sign-box-right {
-          width: 60mm !important;
-          height: 16mm !important;
+          width: 62mm !important;
+          height: 18mm !important;
           display: flex !important;
           align-items: flex-end !important;
           justify-content: center !important;
         }
         .pdf-sign-box-left img, .pdf-sign-box-right img {
-          max-width: 42mm !important;
-          max-height: 15mm !important;
+          max-width: 48mm !important;
+          max-height: 17mm !important;
           object-fit: contain !important;
           mix-blend-mode: multiply !important;
+          margin-bottom: 2mm !important;
         }
       </style>
     </head>

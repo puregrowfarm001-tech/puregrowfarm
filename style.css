@@ -860,15 +860,15 @@ th { background: #f8faf8; font-weight: 700; }
   word-wrap: break-word;
 }
 
-/* --- Fixed Signatures Over the Lines --- */
+/* --- Fixed Signatures Over the Lines (Shifted Upwards) --- */
 .pdf-signatures-overlay {
   position: absolute;
-  bottom: 112px; /* Line ke theek upar */
+  bottom: 142px; /* Pehle 112px tha, ab upar shift kiya gaya hai */
   left: 0;
   width: 794px;
   display: flex;
   justify-content: space-between;
-  padding: 0 55px;
+  padding: 0 52px;
   box-sizing: border-box;
   z-index: 3;
   pointer-events: none;
@@ -876,7 +876,7 @@ th { background: #f8faf8; font-weight: 700; }
 
 .pdf-sign-box-left {
   width: 230px;
-  height: 60px;
+  height: 65px;
   display: flex;
   align-items: flex-end;
   justify-content: center;
@@ -884,7 +884,7 @@ th { background: #f8faf8; font-weight: 700; }
 
 .pdf-sign-box-right {
   width: 230px;
-  height: 60px;
+  height: 65px;
   display: flex;
   align-items: flex-end;
   justify-content: center;
@@ -892,8 +892,9 @@ th { background: #f8faf8; font-weight: 700; }
 
 .pdf-sign-box-left img,
 .pdf-sign-box-right img {
-  max-width: 140px;
-  max-height: 55px;
+  max-width: 155px; /* Size thoda bada kiya gaya hai */
+  max-height: 62px;
   object-fit: contain;
-  mix-blend-mode: multiply; /* White background remove karne ke liye */
+  mix-blend-mode: multiply; /* Background transparent look */
+  margin-bottom: 6px; /* Line ke theek upar space */
 }

@@ -18,12 +18,12 @@ const ADMIN_USERS = [
 ];
 
 const BASE_PRODUCTS = [
-  { id: 1, name: "Fresh Green Oyster Mushroom", price: 180, unit: "1kg", image: "mushroom/Screenshot 2025-10-24 154001.png", detail: "Picked fresh, chilled and delivered within 24-48 hours.", type: "green", stock: 0 },
-  { id: 2, name: "Dried Oyster Mushroom", price: 800, unit: "1kg pack", image: "mushroom/oyst dry.webp", detail: "Slow-dried to preserve flavor and nutrients.", type: "dry", stock: 0 },
-  { id: 3, name: "Oyster Mushroom Powder", price: 130, unit: "100gm pack", image: "mushroom/oyster powder.png", detail: "Mushroom powder for soup, 1kg pack curry, health mix and snacks.", type: "powder", stock: 0 },
-  { id: 4, name: "Methi Mushroom Khakhra", price: 70, unit: "200gm pack", image: "mushroom/methikhakhra2.png", detail: "Crispy khakhra prepared with oyster mushroom powder.", type: "khakhra", stock: 0 },
-  { id: 5, name: "Adad Mushroom Papad", price: 120, unit: "1 pack", image: "mushroom/adadpapad2.png", detail: "Papad enriched with mushroom nutrition.", type: "papad", stock: 0 },
-  { id: 6, name: "Bulk and Wholesale Supply", price: 0, unit: "Custom", bulk: true, image: "mushroom/bulk.png", detail: "Supply for restaurants, retailers and local markets.", stock: 99999 }
+  { id: 1, name: "Fresh Green Oyster Mushroom", price: 180, delivery: 50, unit: "1kg", image: "mushroom/Screenshot 2025-10-24 154001.png", detail: "Picked fresh, chilled and delivered within 24-48 hours.", type: "green", stock: 0 },
+  { id: 2, name: "Dried Oyster Mushroom", price: 800, delivery: 40, unit: "1kg pack", image: "mushroom/oyst dry.webp", detail: "Slow-dried to preserve flavor and nutrients.", type: "dry", stock: 0 },
+  { id: 3, name: "Oyster Mushroom Powder", price: 130, delivery: 30, unit: "100gm pack", image: "mushroom/oyster powder.png", detail: "Mushroom powder for soup, 1kg pack curry, health mix and snacks.", type: "powder", stock: 0 },
+  { id: 4, name: "Methi Mushroom Khakhra", price: 70, delivery: 20, unit: "200gm pack", image: "mushroom/methikhakhra2.png", detail: "Crispy khakhra prepared with oyster mushroom powder.", type: "khakhra", stock: 0 },
+  { id: 5, name: "Adad Mushroom Papad", price: 120, delivery: 25, unit: "1 pack", image: "mushroom/adadpapad2.png", detail: "Papad enriched with mushroom nutrition.", type: "papad", stock: 0 },
+  { id: 6, name: "Bulk and Wholesale Supply", price: 0, delivery: 0, unit: "Custom", bulk: true, image: "mushroom/bulk.png", detail: "Supply for restaurants, retailers and local markets.", stock: 99999 }
 ];
 
 let products = JSON.parse(localStorage.getItem('pgf_live_products')) || BASE_PRODUCTS;
@@ -4014,7 +4014,14 @@ function addToCart(id) {
     return;
   }
 
-  cart.set(id, { ...product, qty: currentQty + 1 });
+  // Yahan item.delivery save hona zaroori hai
+  cart.set(id, { 
+    ...product, 
+    price: Number(product.price),
+    delivery: Number(product.delivery || 0),
+    qty: currentQty + 1 
+  });
+  
   renderCart();
   updateHeaderCartCounter();
 }
@@ -4050,9 +4057,17 @@ window.removeProductFromCart = function(id) {
   }
 };
 
+// Dynamic Delivery Logic: Cart me mojood sabhi products me se Highest (Max) Delivery Charge lagega
 function getTotals() {
   const subtotal = [...cart.values()].reduce((sum, item) => sum + (item.price * item.qty), 0);
-  const delivery = subtotal > 0 ? (subtotal > 1000 ? 0 : 50) : 0;
+  
+  let delivery = 0;
+  if (cart.size > 0) {
+    // Cart me jitne products hain unke dynamic delivery charges ka maximum nikalna
+    const deliveryCharges = [...cart.values()].map(item => Number(item.delivery || 0));
+    delivery = Math.max(...deliveryCharges, 0);
+  }
+
   return { subtotal, delivery, total: subtotal + delivery };
 }
 
@@ -6808,6 +6823,9 @@ async function fetchProductPricingFromCloud() {
       });
       saveProductsToStorage();
       renderProducts();
+      if (typeof renderCart === "function") {
+        renderCart();
+      }
     }
   } catch (err) {
     console.warn("Pricing cloud sync error:", err);
@@ -6815,11 +6833,15 @@ async function fetchProductPricingFromCloud() {
 }
 
 // Admin Panel me Har Product ke card render karna
+// Admin Panel me Har Product ke card render karna (Green & Bulk excluded)
 function renderAdminProductPricingCards() {
   const container = document.getElementById("adminPricingCardsContainer");
   if (!container) return;
 
-  container.innerHTML = products.map(p => `
+  // 🛑 Fresh Green (id: 1) aur Bulk (id: 6 ya bulk: true) ko filter karke hata diya gaya hai
+  const editableProducts = products.filter(p => p.id !== 1 && p.id !== 6 && !p.bulk && p.type !== 'green');
+
+  container.innerHTML = editableProducts.map(p => `
     <div style="background:#ffffff; border:1px solid #cbd5e1; border-radius:12px; padding:16px; box-shadow:0 2px 6px rgba(0,0,0,0.03);">
       <div style="display:flex; align-items:center; gap:12px; margin-bottom:12px;">
         <img src="${p.image}" alt="${p.name}" style="width:50px; height:50px; object-fit:cover; border-radius:8px; border:1px solid #e2e8f0;">

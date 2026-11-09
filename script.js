@@ -7052,13 +7052,16 @@ window.addEventListener("DOMContentLoaded", () => {
 });
 
 // =========================================================
-// OFFICIAL LETTER PAD: LIVE PREVIEW, PRINT & WHATSAPP
+// OFFICIAL LETTER PAD FUNCTIONS (PREVIEW, PRINT & WHATSAPP)
 // =========================================================
 
 function initLetterPadDefaults() {
   const dateInput = document.getElementById("lpInputDate");
   if (dateInput && !dateInput.value) {
-    dateInput.value = getTodayIsoString();
+    const today = new Date();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    dateInput.value = `${today.getFullYear()}-${month}-${day}`;
   }
   updateLetterPadPreview();
 }
@@ -7092,7 +7095,7 @@ function printOfficialLetterPad() {
 
   const frameClone = document.getElementById("officialLetterPadPrintFrame").cloneNode(true);
 
-  // Update relative image paths to absolute so print window shows them reliably
+  // Convert image URLs to absolute for printing
   const imgs = frameClone.querySelectorAll("img");
   imgs.forEach(img => {
     if (img.src.includes("pgf logo.png")) img.src = logoUrl;
@@ -7108,15 +7111,15 @@ function printOfficialLetterPad() {
       <meta charset="utf-8">
       <title>Pure Grow Farm - Official Letter</title>
       <style>
-        @page { size: A4 portrait; margin: 10mm; }
+        @page { size: A4 portrait; margin: 8mm; }
         * { box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-        body { font-family: 'Times New Roman', Times, serif; margin: 0; padding: 0; background: #fff; color: #111; }
+        body { font-family: Arial, sans-serif; margin: 0; padding: 0; background: #fff; color: #111; }
         #officialLetterPadPrintFrame {
           width: 100% !important;
           min-height: auto !important;
           border: none !important;
           box-shadow: none !important;
-          padding: 10px 15px !important;
+          padding: 5mm !important;
         }
       </style>
     </head>
@@ -7155,7 +7158,7 @@ function sendLetterPadWhatsApp() {
   if (cleanPhone.length === 10) cleanPhone = "91" + cleanPhone;
 
   const waMessage = 
-`*PURE GROW FARM - OFFICIAL LETTER PAD*
+`*PURE GROW FARM - OFFICIAL LETTERHEAD*
 ----------------------------------------
 📄 *Ref No:* ${refVal}
 📅 *Date:* ${dateVal}
@@ -7170,13 +7173,13 @@ ${bodyVal}
 ✍️ *Jeet Gajera* (Co-Founder & Director - Agriculture & Production)
 
 *Pure Grow Farm*
-📍 Majevadi Road, Makhiyala, Junagadh, Gujarat - 362011
-📞 +91 9067891039 | +91 8200145732`;
+📍 Majevadi Road, Khodiyar Plot, Makhiyala, Junagadh - 362011, Gujarat
+📞 Contact: 9067891039 | 8200145732
+✉️ puregrowfarm001@gmail.com | 🌐 puregrowfarm.vercel.app`;
 
   window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(waMessage)}`, '_blank');
 }
 
-// Admin Panel open hone par Letter Pad defaults initialize karein
 document.addEventListener("DOMContentLoaded", () => {
   initLetterPadDefaults();
 });

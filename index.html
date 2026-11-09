@@ -1498,12 +1498,12 @@
   </div>
 </div>
        
-      <!-- ERP Segment: Official Letter Pad Generator -->
+      <!-- ERP Segment: Official Letter Pad Generator (Pixel-Perfect to PDF) -->
       <div id="erpLetterPadTab" class="erp-section">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
           <div>
             <h3 style="margin: 0; color: #1e4620;">📝 Pure Grow Farm - Official Letter Pad Console</h3>
-            <p class="muted" style="margin: 4px 0 0 0; font-size: 13px;">Yahan content type karein, preview live update hoga aur aap direct PDF download ya WhatsApp par send kar sakte hain.</p>
+            <p class="muted" style="margin: 4px 0 0 0; font-size: 13px;">Letter content type karein, live preview dekhein aur direct PDF download ya WhatsApp send karein.</p>
           </div>
           <div style="display: flex; gap: 8px; flex-wrap: wrap;">
             <button type="button" class="btn" style="background: #2b8a3e;" onclick="printOfficialLetterPad()">📥 Download / Print PDF</button>
@@ -1511,116 +1511,121 @@
           </div>
         </div>
 
-        <!-- Editor Form Card -->
+        <!-- 1. Editor Control Box -->
         <div style="background: #f8fafc; border: 1px solid var(--line); border-radius: 12px; padding: 18px; margin-bottom: 24px;">
-          <h4 style="margin: 0 0 12px 0; color: #0f172a;">✍️ Letter Pad Editor Form</h4>
+          <h4 style="margin: 0 0 12px 0; color: #0f172a;">✍️ Letter Content Editor</h4>
           <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px;">
             <div>
-              <label style="font-size: 12px; font-weight: bold; color: #334155; display: block; margin-bottom: 4px;">Reference No:</label>
-              <input type="text" id="lpInputRef" placeholder="e.g. PGF/GEN/2026/01" value="PGF/OFFICIAL/2026" oninput="updateLetterPadPreview()">
+              <label style="font-size: 12px; font-weight: bold; color: #334155; display: block; margin-bottom: 4px;">Reference Number:</label>
+              <input type="text" id="lpInputRef" placeholder="e.g. PGF/2026/01" value="PGF/OFFICIAL/2026" oninput="updateLetterPadPreview()">
             </div>
             <div>
               <label style="font-size: 12px; font-weight: bold; color: #334155; display: block; margin-bottom: 4px;">Letter Date:</label>
               <input type="date" id="lpInputDate" onchange="updateLetterPadPreview()">
             </div>
             <div>
-              <label style="font-size: 12px; font-weight: bold; color: #334155; display: block; margin-bottom: 4px;">Send WhatsApp To (10-Digit Mobile):</label>
+              <label style="font-size: 12px; font-weight: bold; color: #334155; display: block; margin-bottom: 4px;">Recipient WhatsApp Mobile (10-Digit):</label>
               <input type="tel" id="lpInputWpPhone" placeholder="Mobile Number for WhatsApp" maxlength="10" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10);">
             </div>
           </div>
 
           <div style="margin-top: 10px;">
-            <label style="font-size: 12px; font-weight: bold; color: #334155; display: block; margin-bottom: 4px;">Subject / Letter Title:</label>
-            <input type="text" id="lpInputSubject" placeholder="e.g. Official Authorization Letter / Bulk Supply Quotation" value="Official Communication & Notification" oninput="updateLetterPadPreview()">
+            <label style="font-size: 12px; font-weight: bold; color: #334155; display: block; margin-bottom: 4px;">Subject / Letter Heading:</label>
+            <input type="text" id="lpInputSubject" placeholder="e.g. Official Notification / Authorization" value="Official Communication & Notification" oninput="updateLetterPadPreview()">
           </div>
 
           <div style="margin-top: 10px;">
-            <label style="font-size: 12px; font-weight: bold; color: #334155; display: block; margin-bottom: 4px;">Letter Body Content (Enter paragraph or instructions):</label>
-            <textarea id="lpInputBody" rows="7" style="width: 100%; padding: 10px; border: 1px solid var(--line); border-radius: 8px; font-family: inherit; font-size: 14px;" oninput="updateLetterPadPreview()" placeholder="Yahan apna patra / letter text likhein..."></textarea>
+            <label style="font-size: 12px; font-weight: bold; color: #334155; display: block; margin-bottom: 4px;">Letter Body / Content Text:</label>
+            <textarea id="lpInputBody" rows="8" style="width: 100%; padding: 10px; border: 1px solid var(--line); border-radius: 8px; font-family: inherit; font-size: 14px;" oninput="updateLetterPadPreview()" placeholder="Yahan apna letter content likhein..."></textarea>
           </div>
         </div>
 
-        <!-- Live Letter Pad Printable Preview Box -->
-        <h4 style="margin: 0 0 10px 0; color: #0f172a;">👁️ Live Letter Pad Print Preview</h4>
-        <div style="overflow-x: auto; padding-bottom: 15px;">
-          <div id="officialLetterPadPrintFrame" style="width: 820px; min-height: 1100px; margin: 0 auto; background: #ffffff; border: 2px solid #cbd5e1; border-radius: 8px; padding: 40px 48px; box-shadow: 0 8px 30px rgba(0,0,0,0.06); display: flex; flex-direction: column; justify-content: space-between; font-family: 'Times New Roman', Times, serif; color: #111; box-sizing: border-box;">
+        <!-- 2. Live Letterhead Preview (Exact Replica of PDF Design) -->
+        <h4 style="margin: 0 0 10px 0; color: #0f172a;">👁️ Live Letter Pad Print Preview (A4 Dimensions)</h4>
+        <div style="overflow-x: auto; padding-bottom: 20px; background: #e2e8f0; border-radius: 12px; padding: 20px;">
+          <div id="officialLetterPadPrintFrame" style="width: 794px; min-height: 1123px; margin: 0 auto; background: #ffffff; padding: 45px 50px; box-shadow: 0 10px 30px rgba(0,0,0,0.12); display: flex; flex-direction: column; justify-content: space-between; box-sizing: border-box; font-family: Arial, sans-serif; color: #111;">
             
-            <!-- Top Header Matching PDF -->
+            <!-- Header Section Matching PDF Design -->
             <div>
-              <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 3px double #1e4620; padding-bottom: 14px; margin-bottom: 20px;">
-                <div style="display: flex; align-items: center; gap: 14px;">
-                  <img src="mushroom/pgf logo.png" alt="Pure Grow Farm Logo" style="width: 95px; height: 95px; object-fit: contain;">
+              <div style="display: flex; align-items: center; justify-content: space-between; gap: 20px; border-bottom: 2.5px solid #165b26; padding-bottom: 14px;">
+                <!-- Logo Left Side -->
+                <div style="flex-shrink: 0;">
+                  <img src="mushroom/pgf logo.png" alt="Pure Grow Farm Logo" style="width: 110px; height: 110px; object-fit: contain;">
                 </div>
-                <div style="text-align: right; line-height: 1.35; font-family: Arial, sans-serif;">
-                  <div style="font-size: 26px; font-weight: 900; color: #1e4620; letter-spacing: 0.5px; margin-bottom: 2px;">PURE GROW FARM</div>
-                  <div style="font-size: 12px; font-weight: 700; color: #15803d; letter-spacing: 0.5px;">ORGANIC OYSTER MUSHROOM CULTIVATION</div>
-                  <div style="font-size: 11px; color: #334155; margin-top: 4px;">
-                    ✉️ puregrowfarm001@gmail.com | 🌐 puregrowfarm.vercel.app<br>
-                    📞 Helpline: +91 9067891039 | +91 8200145732<br>
-                    📍 Majevadi Road, Khodiyar Plot, Makhiyala, Junagadh - 362011, Gujarat
+
+                <!-- Text Right Side -->
+                <div style="text-align: right; line-height: 1.35;">
+                  <div style="font-size: 26px; font-weight: 900; color: #165b26; letter-spacing: 0.5px;">PURE GROW FARM</div>
+                  <div style="font-size: 13px; font-weight: 700; color: #1e7e34; letter-spacing: 1px; margin-top: 1px;">MUSHROOM CULTIVATION</div>
+                  <div style="font-size: 11.5px; color: #222; margin-top: 5px; font-weight: 500;">
+                    puregrowfarm001@gmail.com<br>
+                    puregrowfarm.vercel.app<br>
+                    Contact: 9067891039 | 8200145732<br>
+                    Pure Grow Mushroom Farm,<br>
+                    majevadi road, khodiyar plot,<br>
+                    makhiyala, junagadh, 362011
                   </div>
                 </div>
               </div>
 
-              <!-- Ref No & Date Row -->
-              <div style="display: flex; justify-content: space-between; align-items: center; font-family: Arial, sans-serif; font-size: 13px; font-weight: bold; margin-bottom: 22px; color: #1e293b; border-bottom: 1px dashed #cbd5e1; padding-bottom: 8px;">
-                <div>Ref No: <span id="lpPreviewRef" style="color: #0284c7;">PGF/OFFICIAL/2026</span></div>
-                <div>Date: <span id="lpPreviewDate" style="color: #0f172a;">--/--/----</span></div>
+              <!-- Ref & Date Row -->
+              <div style="display: flex; justify-content: space-between; align-items: center; font-size: 13px; font-weight: bold; margin-top: 22px; margin-bottom: 20px; color: #334155;">
+                <div>Ref. No: <span id="lpPreviewRef" style="color: #0f172a; font-weight: 700;">PGF/OFFICIAL/2026</span></div>
+                <div>Date: <span id="lpPreviewDate" style="color: #0f172a; font-weight: 700;">--/--/----</span></div>
               </div>
 
               <!-- Subject Line -->
-              <div style="margin-bottom: 20px;">
-                <div style="font-size: 15px; font-weight: bold; color: #0f172a; text-decoration: underline; text-underline-offset: 3px;">
+              <div style="margin-bottom: 22px;">
+                <div style="font-size: 15px; font-weight: 800; color: #0f172a; text-decoration: underline; text-underline-offset: 4px;">
                   Subject: <span id="lpPreviewSubject">Official Communication & Notification</span>
                 </div>
               </div>
 
-              <!-- Main Body Text -->
-              <div id="lpPreviewBody" style="font-size: 15px; line-height: 1.7; text-align: justify; color: #1e293b; white-space: pre-wrap; min-height: 520px;">
+              <!-- Dynamic Letter Content -->
+              <div id="lpPreviewBody" style="font-size: 14.5px; line-height: 1.75; text-align: justify; color: #1e293b; white-space: pre-wrap; min-height: 500px;">
 To Whom It May Concern,
 
-This is an official document from Pure Grow Farm, Makhiyala, Junagadh. Pure Grow Farm specializes in sustainable, chemical-free Oyster Mushroom farming, spawn production, and agricultural training programs.
+This is an official correspondence from Pure Grow Farm, Makhiyala, Junagadh. Pure Grow Farm specializes in scientific and sustainable cultivation of organic Oyster Mushrooms, spawn distribution, and agricultural training workshops.
 
-All stated information, terms, or certifications within this letter are verified and approved under the technical and administrative direction of the management.
+All details, declarations, and authorization statements mentioned within this letter are verified and approved by the founding directors.
 
 Thank you.
               </div>
             </div>
 
-            <!-- Footer Dual Signature (Matching Certificate & PDF layout) -->
-            <div style="margin-top: 40px; border-top: 2px solid #e2e8f0; padding-top: 15px; font-family: Arial, sans-serif;">
-              <div style="display: flex; justify-content: space-between; align-items: flex-end; padding: 0 20px;">
+            <!-- Footer Signatures Matching PDF Design -->
+            <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #e2e8f0;">
+              <div style="display: flex; justify-content: space-between; align-items: flex-end; padding: 0 10px;">
                 
                 <!-- Left Signature: Soham Gajera -->
-                <div style="text-align: center; width: 230px;">
+                <div style="text-align: center; width: 250px;">
                   <div style="height: 55px; display: flex; align-items: flex-end; justify-content: center; margin-bottom: 2px;">
-                    <img src="mushroom/soham sign.png" alt="Soham Gajera Signature" style="max-width: 140px; max-height: 50px; object-fit: contain; mix-blend-mode: multiply;">
+                    <img src="mushroom/soham sign.png" alt="Soham Gajera Signature" style="max-width: 140px; max-height: 52px; object-fit: contain; mix-blend-mode: multiply;">
                   </div>
-                  <div style="border-top: 1.5px solid #0f172a; width: 170px; margin: 0 auto 4px auto;"></div>
-                  <div style="font-size: 14px; font-weight: bold; color: #1e4620;">Soham Gajera</div>
-                  <div style="font-size: 11px; color: #475569; font-weight: 600;">Co-Founder & Managing Director</div>
+                  <div style="border-top: 1.5px solid #111; width: 180px; margin: 0 auto 5px auto;"></div>
+                  <div style="font-size: 15px; font-weight: 800; color: #0f172a;">Soham Gajera</div>
+                  <div style="font-size: 12px; color: #475569; font-weight: 600; line-height: 1.3;">Co-Founder & Managing Director</div>
                 </div>
 
-                <!-- Center Stamp / Brand Logo -->
+                <!-- Center Official Seal -->
                 <div style="text-align: center;">
-                  <img src="mushroom/pgf logo.png" alt="Pure Grow Farm Stamp" style="width: 55px; height: 55px; opacity: 0.85; mix-blend-mode: multiply;">
-                  <div style="font-size: 9px; font-weight: 800; color: #1e4620; letter-spacing: 0.5px; margin-top: 2px;">SEAL OF AUTHENTICITY</div>
+                  <img src="mushroom/pgf logo.png" alt="Pure Grow Farm Seal" style="width: 58px; height: 58px; opacity: 0.8; mix-blend-mode: multiply;">
+                  <div style="font-size: 9px; font-weight: 800; color: #165b26; letter-spacing: 0.5px; margin-top: 2px;">PURE GROW FARM</div>
                 </div>
 
                 <!-- Right Signature: Jeet Gajera -->
-                <div style="text-align: center; width: 230px;">
+                <div style="text-align: center; width: 250px;">
                   <div style="height: 55px; display: flex; align-items: flex-end; justify-content: center; margin-bottom: 2px;">
-                    <img src="mushroom/jeet sign.png" alt="Jeet Gajera Signature" style="max-width: 140px; max-height: 50px; object-fit: contain; mix-blend-mode: multiply;">
+                    <img src="mushroom/jeet sign.png" alt="Jeet Gajera Signature" style="max-width: 140px; max-height: 52px; object-fit: contain; mix-blend-mode: multiply;">
                   </div>
-                  <div style="border-top: 1.5px solid #0f172a; width: 170px; margin: 0 auto 4px auto;"></div>
-                  <div style="font-size: 14px; font-weight: bold; color: #1e4620;">Jeet Gajera</div>
-                  <div style="font-size: 11px; color: #475569; font-weight: 600;">Co-Founder & Director<br>(Agriculture & Production)</div>
+                  <div style="border-top: 1.5px solid #111; width: 180px; margin: 0 auto 5px auto;"></div>
+                  <div style="font-size: 15px; font-weight: 800; color: #0f172a;">Jeet Gajera</div>
+                  <div style="font-size: 12px; color: #475569; font-weight: 600; line-height: 1.3;">
+                    Co-Founder & Director<br>
+                    Agriculture & Production
+                  </div>
                 </div>
 
-              </div>
-
-              <div style="text-align: center; font-size: 10.5px; color: #64748b; margin-top: 15px; border-top: 1px dashed #cbd5e1; padding-top: 6px;">
-                Pure Grow Farm Hub • Village Makhiyala, Junagadh, Gujarat - 362011 • Official Correspondence Document
               </div>
             </div>
 

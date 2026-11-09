@@ -5488,6 +5488,8 @@ async function saveBuyerAdmin(e) {
 
 function renderAdminFarmerBookingTable() {
   const tbody = document.getElementById("adminFarmerBookingTableBody");
+  const countBadge = document.getElementById("totalFarmerCountBadge");
+  if (countBadge) countBadge.textContent = `Total Farmers: ${adminFarmerBookingsRegistry.length}`;
   if (!tbody) return;
 
   if (!adminFarmerBookingsRegistry.length) {
@@ -5589,6 +5591,8 @@ async function saveFarmConnectorAdmin(e) {
 
 function renderAdminConnectorTable() {
   const tbody = document.getElementById("adminConnectorTableBody");
+  const countBadge = document.getElementById("totalConnectorCountBadge");
+  if (countBadge) countBadge.textContent = `Total Connectors: ${adminFarmConnectorsRegistry.length}`;
   if (!tbody) return;
 
   if (!adminFarmConnectorsRegistry.length) {
@@ -5724,6 +5728,8 @@ async function deleteAdminConnector(idx) {
 // 3) Render Automatic Account Table with WhatsApp Button
 function renderAdminAccountTable() {
   const tbody = document.getElementById("adminAccountTableBody");
+  const countBadge = document.getElementById("totalAccountCountBadge");
+  if (countBadge) countBadge.textContent = `Total Accounts: ${usersDatabase.length}`;
   if (!tbody) return;
 
   if (!usersDatabase.length) {
@@ -5813,6 +5819,8 @@ async function saveBuyerAdmin(e) {
 // Render Buyer Table for Admin View
 function renderAdminBuyerTable() {
   const tbody = document.getElementById("adminBuyerTableBody");
+  const countBadge = document.getElementById("totalBuyerCountBadge");
+  if (countBadge) countBadge.textContent = `Total Buyers: ${adminBuyersRegistry.length}`;
   if (!tbody) return;
 
   if (!adminBuyersRegistry.length) {

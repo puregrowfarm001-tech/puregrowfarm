@@ -1515,13 +1515,13 @@
           </div>
 
           <div>
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-              <label style="font-size: 12px; font-weight: bold; color: #334155;">✍️ Letter Content (A4 Capacity):</label>
-              <span id="a4CapacityBadge" style="font-size: 12px; font-weight: bold; color: #16a34a; background: #f0fdf4; padding: 2px 8px; border-radius: 6px; border: 1px solid #bbf7d0;">
-                Capacity: 0 / 1700 Characters
-              </span>
-            </div>
-            <textarea id="pdfInputContent" rows="8" maxlength="1700" style="width: 100%; padding: 12px; border: 1px solid var(--line); border-radius: 8px; font-family: Arial, sans-serif; font-size: 14px;" oninput="syncPdfText()" placeholder="Yahan apna text likhein..."></textarea>
+           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+  <label style="font-size: 12px; font-weight: bold; color: #334155;">✍️ Letter Content (Maximum 24 Lines Allowed):</label>
+  <span id="a4CapacityBadge" style="font-size: 12px; font-weight: bold; color: #16a34a; background: #f0fdf4; padding: 2px 8px; border-radius: 6px; border: 1px solid #bbf7d0;">
+    Lines: 0 / 24 Lines
+  </span>
+</div>
+<textarea id="pdfInputContent" rows="10" style="width: 100%; padding: 12px; border: 1px solid var(--line); border-radius: 8px; font-family: Arial, sans-serif; font-size: 14px; line-height: 1.6;" oninput="syncPdfText()" placeholder="Yahan apna text type karein (Max 24 lines)..."></textarea>
           </div>
         </div>
 

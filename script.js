@@ -7068,6 +7068,7 @@ function initPdfLetterpad() {
   syncPdfText();
 }
 
+// Exact 24 Lines Calculation & Enforcement
 function syncPdfText() {
   const dateVal = document.getElementById("pdfInputDate")?.value;
   const contentInput = document.getElementById("pdfInputContent");
@@ -7077,10 +7078,45 @@ function syncPdfText() {
   const dispBody = document.getElementById("pdfLiveBody");
   const badge = document.getElementById("a4CapacityBadge");
 
-  const curLen = contentVal.length;
+  if (dispDate) {
+    dispDate.textContent = dateVal ? `Date: ${new Date(dateVal).toLocaleDateString('en-IN')}` : "";
+  }
+
+  // Calculate actual lines (considering Enters and auto-wrapped long sentences)
+  function calculateTotalLines(text) {
+    if (!text) return 0;
+    const rawParagraphs = text.split("\n");
+    let totalLines = 0;
+    const charsPerLine = 75; // Average characters in 1 printed A4 line
+    
+    rawParagraphs.forEach(p => {
+      if (p.length === 0) {
+        totalLines += 1; // Empty newline count
+      } else {
+        totalLines += Math.ceil(p.length / charsPerLine);
+      }
+    });
+    return totalLines;
+  }
+
+  let totalLines = calculateTotalLines(contentVal);
+
+  // If user exceeds 24 lines, prevent additional typing
+  if (totalLines > 24) {
+    alert("⚠️ Letter pad ma fakt 24 lines sudhi j lakhay chhe! 24 thi vadhare lines allow nathi.");
+    
+    // Trim text back until lines are <= 24
+    while (calculateTotalLines(contentVal) > 24 && contentVal.length > 0) {
+      contentVal = contentVal.slice(0, -1);
+    }
+    contentInput.value = contentVal;
+    totalLines = calculateTotalLines(contentVal);
+  }
+
+  // Update capacity badge display
   if (badge) {
-    badge.textContent = `A4 Sheet: ${curLen} / ${MAX_A4_CHARS} Characters`;
-    if (curLen >= MAX_A4_CHARS - 100) {
+    badge.textContent = `Lines: ${totalLines} / 24 Lines`;
+    if (totalLines >= 22) {
       badge.style.color = "#dc2626";
       badge.style.background = "#fef2f2";
       badge.style.borderColor = "#fca5a5";
@@ -7091,19 +7127,8 @@ function syncPdfText() {
     }
   }
 
-  if (dispDate) {
-    dispDate.textContent = dateVal ? `Date: ${new Date(dateVal).toLocaleDateString('en-IN')}` : "";
-  }
-
   if (dispBody) {
     dispBody.textContent = contentVal.trim() !== "" ? contentVal : "Yahan apna text likhein...";
-
-    // Height limit protection so text does not cross signatures
-    if (dispBody.scrollHeight > 680) {
-      alert("⚠️ A4 Sheet limit full! Is se aage ka text signature line ke upar overlap hone se rok diya gaya hai.");
-      contentInput.value = contentVal.substring(0, contentVal.length - 15);
-      dispBody.textContent = contentInput.value;
-    }
   }
 }
 

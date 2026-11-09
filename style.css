@@ -831,7 +831,7 @@ th { background: #f8faf8; font-weight: 700; }
   z-index: 2;
   width: 794px;
   height: 1123px;
-  padding: 200px 58px 185px 58px;
+  padding: 200px 58px 230px 58px; /* Signature thi upar safe margin */
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
@@ -851,11 +851,11 @@ th { background: #f8faf8; font-weight: 700; }
 .pdf-canvas-text {
   font-family: Arial, Helvetica, sans-serif;
   font-size: 14.5px;
-  line-height: 1.75;
+  line-height: 25px; /* Fixed 25px per line */
+  max-height: 600px; /* 24 lines x 25px = 600px exact height */
   color: #0f172a;
   white-space: pre-wrap;
   text-align: justify;
-  max-height: 680px; /* Line aur signature se pehle stop ho jayega */
   overflow: hidden;
   word-wrap: break-word;
 }

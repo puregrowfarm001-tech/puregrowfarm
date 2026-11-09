@@ -1503,35 +1503,28 @@
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
           <div>
             <h3 style="margin: 0; color: #165b26;">📝 Pure Grow Farm - A4 Letter Pad</h3>
-            <p class="muted" style="margin: 4px 0 0 0; font-size: 13px;">Text likhein, date chunein, direct PDF download karein ya WhatsApp send karein.</p>
+            <p class="muted" style="margin: 4px 0 0 0; font-size: 13px;">Text likhein, date chunein aur direct PDF download karein.</p>
           </div>
           <div style="display: flex; gap: 8px; flex-wrap: wrap;">
             <button type="button" class="btn" style="background: #165b26;" onclick="printDirectPdfLetter()">📥 Download / Save PDF</button>
-            <button type="button" class="btn" style="background: #25d366;" onclick="sendDirectPdfWhatsApp()">💬 Send via WhatsApp</button>
           </div>
         </div>
 
         <!-- Editor Control Form -->
         <div class="pdf-editor-panel">
-          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; margin-bottom: 12px;">
-            <div>
-              <label style="font-size: 12px; font-weight: bold; color: #334155; display: block; margin-bottom: 4px;">📅 Date:</label>
-              <input type="date" id="pdfInputDate" onchange="syncPdfText()">
-            </div>
-            <div>
-              <label style="font-size: 12px; font-weight: bold; color: #334155; display: block; margin-bottom: 4px;">📱 Recipient WhatsApp Number (10 digits):</label>
-              <input type="tel" id="pdfInputPhone" placeholder="Mobile Number" maxlength="10" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10);">
-            </div>
+          <div style="margin-bottom: 12px; max-width: 260px;">
+            <label style="font-size: 12px; font-weight: bold; color: #334155; display: block; margin-bottom: 4px;">📅 Date:</label>
+            <input type="date" id="pdfInputDate" onchange="syncPdfText()">
           </div>
 
           <div>
-           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-  <label style="font-size: 12px; font-weight: bold; color: #334155;">✍️ Letter Content (Maximum 24 Lines Allowed):</label>
-  <span id="a4CapacityBadge" style="font-size: 12px; font-weight: bold; color: #16a34a; background: #f0fdf4; padding: 2px 8px; border-radius: 6px; border: 1px solid #bbf7d0;">
-    Lines: 0 / 24 Lines
-  </span>
-</div>
-<textarea id="pdfInputContent" rows="10" style="width: 100%; padding: 12px; border: 1px solid var(--line); border-radius: 8px; font-family: Arial, sans-serif; font-size: 14px; line-height: 1.6;" oninput="syncPdfText()" placeholder="Yahan apna text type karein (Max 24 lines)..."></textarea>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+              <label style="font-size: 12px; font-weight: bold; color: #334155;">✍️ Letter Content (Maximum 24 Lines Allowed):</label>
+              <span id="a4CapacityBadge" style="font-size: 12px; font-weight: bold; color: #16a34a; background: #f0fdf4; padding: 2px 8px; border-radius: 6px; border: 1px solid #bbf7d0;">
+                Lines: 0 / 24 Lines
+              </span>
+            </div>
+            <textarea id="pdfInputContent" rows="10" style="width: 100%; padding: 12px; border: 1px solid var(--line); border-radius: 8px; font-family: Arial, sans-serif; font-size: 14px; line-height: 1.6;" oninput="syncPdfText()" placeholder="Yahan apna text type karein (Max 24 lines)..."></textarea>
           </div>
         </div>
 
@@ -1563,6 +1556,7 @@
         </div>
       </div>
 
+      
       <!-- ERP Segment 4: Overview & Live Summary Ledger -->
       <div id="erpOverviewSummaryTab" class="erp-section">
         <h3>Farm Core Financial & Stock Overview Summary Ledger</h3>

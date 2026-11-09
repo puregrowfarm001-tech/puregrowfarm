@@ -7294,44 +7294,7 @@ function printDirectPdfLetter() {
   printWindow.document.close();
 }
 
-function sendDirectPdfWhatsApp() {
-  const dateVal = document.getElementById("pdfInputDate")?.value ? new Date(document.getElementById("pdfInputDate").value).toLocaleDateString('en-IN') : new Date().toLocaleDateString('en-IN');
-  const contentVal = document.getElementById("pdfInputContent")?.value.trim() || "";
-  const phoneInput = document.getElementById("pdfInputPhone")?.value.trim() || "";
 
-  if (!contentVal) {
-    alert("⚠️ Kripya letter me content type karein!");
-    return;
-  }
-
-  let cleanPhone = phoneInput.replace(/[^0-9]/g, '');
-  if (!cleanPhone || cleanPhone.length < 10) {
-    const promptPhone = prompt("Kripya 10-digit WhatsApp number enter karein:", "");
-    if (!promptPhone) return;
-    cleanPhone = promptPhone.replace(/[^0-9]/g, '');
-  }
-
-  if (cleanPhone.length === 10) cleanPhone = "91" + cleanPhone;
-
-  const waMessage = 
-`*PURE GROW FARM - OFFICIAL LETTERHEAD*
-----------------------------------------
-📅 *Date:* ${dateVal}
-
-${contentVal}
-
-----------------------------------------
-*Signed By Management:*
-✍️ *Soham Gajera* (Co-Founder & Managing Director)[cite: 9]
-✍️ *Jeet Gajera* (Co-Founder & Director - Agriculture & Production)[cite: 9]
-
-*Pure Grow Farm*[cite: 9]
-📍 Majevadi Road, Khodiyar Plot, Makhiyala, Junagadh - 362011[cite: 9]
-📞 Contact: 9067891039 | 8200145732[cite: 9]
-✉️ puregrowfarm001@gmail.com | 🌐 puregrowfarm.vercel.app[cite: 9]`;
-
-  window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(waMessage)}`, '_blank');
-}
 
 document.addEventListener("DOMContentLoaded", () => {
   initPdfLetterpad();

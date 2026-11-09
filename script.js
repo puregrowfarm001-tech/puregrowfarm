@@ -5188,22 +5188,23 @@ function switchAdminSubTab(subTabId, btnId) {
 
 let adminFarmerBookingsRegistry = getCleanData('pgf_admin_farmer_bookings');
 let adminFarmConnectorsRegistry = getCleanData('pgf_admin_farm_connectors');
-
 let adminBuyersRegistry = getCleanData('pgf_admin_buyers');
 
-// Farm Booking & Farm Connector Data Supabase se fetch karne ke liye
+// Cloud Fetch for Manager Data
 async function fetchAdminManagerDataFromCloud() {
   if (!_supabase) return;
 
+  // 1) Fetch Farmer Bookings
   const { data: cloudFarmers } = await _supabase.from('pgf_admin_farmer_bookings').select('*');
   if (cloudFarmers) {
     adminFarmerBookingsRegistry = cloudFarmers.map(f => ({
-      id: f.id, name: f.name, phone: f.phone, address: f.address, date_logged: f.date_logged
+      id: f.id, name: f.name, phone: f.phone, address: f.address, notes: f.notes || '', date_logged: f.date_logged
     }));
     localStorage.setItem('pgf_admin_farmer_bookings', JSON.stringify(adminFarmerBookingsRegistry));
   }
   renderAdminFarmerBookingTable();
 
+  // 2) Fetch Farm Connectors
   const { data: cloudConnectors } = await _supabase.from('pgf_admin_farm_connectors').select('*');
   if (cloudConnectors) {
     adminFarmConnectorsRegistry = cloudConnectors.map(c => ({
@@ -5212,8 +5213,17 @@ async function fetchAdminManagerDataFromCloud() {
     localStorage.setItem('pgf_admin_farm_connectors', JSON.stringify(adminFarmConnectorsRegistry));
   }
   renderAdminConnectorTable();
-}
 
+  // 4) Fetch Buyers
+  const { data: cloudBuyers } = await _supabase.from('pgf_admin_buyers').select('*');
+  if (cloudBuyers) {
+    adminBuyersRegistry = cloudBuyers.map(b => ({
+      id: b.id, name: b.name, company: b.company, phone: b.phone, address: b.address, notes: b.notes || '', date_logged: b.date_logged
+    }));
+    localStorage.setItem('pgf_admin_buyers', JSON.stringify(adminBuyersRegistry));
+  }
+  renderAdminBuyerTable();
+}
 // =========================================================
 // DUPLICATE PHONE NUMBER CHECK & LIVE VALIDATION
 // =========================================================
@@ -5230,19 +5240,18 @@ function checkDuplicateFarmerPhone(phoneInput) {
     }
   }
 }
-
 async function saveFarmerBookingAdmin(e) {
   e.preventDefault();
   const name = document.getElementById("adminFarmerName").value.trim();
   const phone = document.getElementById("adminFarmerPhone").value.trim().replace(/[^0-9]/g, '');
   const address = document.getElementById("adminFarmerAddress").value.trim();
+  const notes = document.getElementById("adminFarmerNotes") ? document.getElementById("adminFarmerNotes").value.trim() : "";
 
   if (phone.length !== 10) {
     alert("⚠️ Kripya valid 10-digit mobile number dalein!");
     return;
   }
 
-  // Duplicate Check in Local Registry & Cloud
   const isDuplicate = adminFarmerBookingsRegistry.some(f => f.phone && f.phone.replace(/[^0-9]/g, '').slice(-10) === phone);
   if (isDuplicate) {
     alert("⚠️ Yeh Phone Number pehle se Farmer Booking me registered hai! Duplicate number nahi dal sakte.");
@@ -5254,10 +5263,14 @@ async function saveFarmerBookingAdmin(e) {
     name: name,
     phone: phone,
     address: address,
+    notes: notes,
     date_logged: new Date().toLocaleDateString('en-IN')
   };
 
+  showPgfLoader("Saving Farmer Booking to Supabase...");
   const { error } = await _supabase.from('pgf_admin_farmer_bookings').insert([payload]);
+  hidePgfLoader();
+
   if (error) {
     alert("❌ Supabase Error: " + error.message);
     return;
@@ -5268,7 +5281,7 @@ async function saveFarmerBookingAdmin(e) {
 
   e.target.reset();
   renderAdminFarmerBookingTable();
-  alert("✅ Farmer Booking saved successfully!");
+  alert("✅ Farmer Booking & Note saved successfully to Supabase!");
 }
 
 // 2) Farm Connector - Duplicate Check & Save
@@ -5342,6 +5355,7 @@ async function saveBuyerAdmin(e) {
   const company = document.getElementById("adminBuyerCompany").value.trim();
   const phone = document.getElementById("adminBuyerPhone").value.trim().replace(/[^0-9]/g, '');
   const address = document.getElementById("adminBuyerAddress").value.trim();
+  const notes = document.getElementById("adminBuyerNotes") ? document.getElementById("adminBuyerNotes").value.trim() : "";
 
   if (phone.length !== 10) {
     alert("⚠️ Kripya valid 10-digit mobile number dalein!");
@@ -5360,10 +5374,14 @@ async function saveBuyerAdmin(e) {
     company: company,
     phone: phone,
     address: address,
+    notes: notes,
     date_logged: new Date().toLocaleDateString('en-IN')
   };
 
+  showPgfLoader("Saving Buyer to Supabase...");
   const { error } = await _supabase.from('pgf_admin_buyers').insert([payload]);
+  hidePgfLoader();
+
   if (error) {
     alert("❌ Supabase Error: " + error.message);
     return;
@@ -5374,7 +5392,7 @@ async function saveBuyerAdmin(e) {
 
   e.target.reset();
   renderAdminBuyerTable();
-  alert("✅ Buyer & Company saved successfully to Supabase!");
+  alert("✅ Buyer, Company & Note saved successfully to Supabase!");
 }
 
 function renderAdminFarmerBookingTable() {
@@ -5382,7 +5400,7 @@ function renderAdminFarmerBookingTable() {
   if (!tbody) return;
 
   if (!adminFarmerBookingsRegistry.length) {
-    tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:var(--muted); padding:15px;">No farmer bookings added yet.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:var(--muted); padding:15px;">No farmer bookings added yet.</td></tr>`;
     return;
   }
 
@@ -5395,9 +5413,13 @@ function renderAdminFarmerBookingTable() {
           <button type="button" class="btn" style="padding:4px 10px; font-size:11px; min-height:auto; background:#25d366; border-radius:999px; font-weight:bold; box-shadow:0 2px 4px rgba(0,0,0,0.1);" onclick="sendSingleWhatsApp('${item.phone}', 'farmerCommonMsg')">💬 WhatsApp</button>
         </div>
       </td>
-      <td><small>${item.address}</small></td>
+      <td><small>${item.address || 'N/A'}</small></td>
+      <td><small style="color:#0f172a; font-weight:600;">${item.notes || '-'}</small></td>
       <td>
-        <button type="button" class="btn" style="padding:4px 8px; font-size:11px; background:var(--danger);" onclick="deleteAdminFarmerBooking(${idx})">🗑️ Delete</button>
+        <div style="display:flex; gap:4px;">
+          <button type="button" class="btn" style="padding:4px 8px; font-size:11px; background:#0284c7;" onclick="editAdminFarmerBooking(${idx})">✏️ Edit</button>
+          <button type="button" class="btn" style="padding:4px 8px; font-size:11px; background:var(--danger);" onclick="deleteAdminFarmerBooking(${idx})">🗑️ Delete</button>
+        </div>
       </td>
     </tr>
   `).join("");
@@ -5406,20 +5428,48 @@ function renderAdminFarmerBookingTable() {
 async function deleteAdminFarmerBooking(idx) {
   const item = adminFarmerBookingsRegistry[idx];
   if (!item) return;
-  if (confirm("Delete this entry?")) {
+  if (confirm(`Kya aap "${item.name}" ki booking delete karna chahte hain?`)) {
+    showPgfLoader("Deleting from Supabase...");
     await _supabase.from('pgf_admin_farmer_bookings').delete().eq('id', item.id);
+    hidePgfLoader();
     adminFarmerBookingsRegistry.splice(idx, 1);
     localStorage.setItem('pgf_admin_farmer_bookings', JSON.stringify(adminFarmerBookingsRegistry));
     renderAdminFarmerBookingTable();
+    alert("✅ Farmer booking deleted successfully!");
   }
 }
 
-// 2) Save Farm Connector to Supabase
+// =========================================================
+// 2) FARM CONNECTOR: DUPLICATE CHECK, SAVE, EDIT & DELETE
+// =========================================================
+function checkDuplicateConnectorPhone(phoneInput) {
+  const clean = phoneInput.value.replace(/[^0-9]/g, '');
+  if (clean.length === 10) {
+    const exists = adminFarmConnectorsRegistry.some(c => c.phone && c.phone.replace(/[^0-9]/g, '').slice(-10) === clean);
+    if (exists) {
+      alert("⚠️ Yeh Phone Number pehle se Farm Connector me registered hai! Duplicate number allow nahi hai.");
+      phoneInput.value = "";
+      phoneInput.focus();
+    }
+  }
+}
+
 async function saveFarmConnectorAdmin(e) {
   e.preventDefault();
   const name = document.getElementById("adminConnectorName").value.trim();
-  const phone = document.getElementById("adminConnectorPhone").value.trim();
+  const phone = document.getElementById("adminConnectorPhone").value.trim().replace(/[^0-9]/g, '');
   const address = document.getElementById("adminConnectorAddress").value.trim();
+
+  if (phone.length !== 10) {
+    alert("⚠️ Kripya valid 10-digit mobile number dalein!");
+    return;
+  }
+
+  const isDuplicate = adminFarmConnectorsRegistry.some(c => c.phone && c.phone.replace(/[^0-9]/g, '').slice(-10) === phone);
+  if (isDuplicate) {
+    alert("⚠️ Yeh Phone Number pehle se Farm Connector me registered hai! Duplicate number nahi dal sakte.");
+    return;
+  }
 
   const payload = {
     id: "FC-" + Date.now().toString().slice(-4),
@@ -5429,7 +5479,10 @@ async function saveFarmConnectorAdmin(e) {
     date_logged: new Date().toLocaleDateString('en-IN')
   };
 
+  showPgfLoader("Saving Farm Connector to Supabase...");
   const { error } = await _supabase.from('pgf_admin_farm_connectors').insert([payload]);
+  hidePgfLoader();
+
   if (error) {
     alert("❌ Supabase Error: " + error.message);
     return;
@@ -5461,22 +5514,119 @@ function renderAdminConnectorTable() {
           <button type="button" class="btn" style="padding:4px 10px; font-size:11px; min-height:auto; background:#25d366; border-radius:999px; font-weight:bold; box-shadow:0 2px 4px rgba(0,0,0,0.1);" onclick="sendSingleWhatsApp('${item.phone}', 'connectorCommonMsg')">💬 WhatsApp</button>
         </div>
       </td>
-      <td><small>${item.address}</small></td>
+      <td><small>${item.address || 'N/A'}</small></td>
       <td>
-        <button type="button" class="btn" style="padding:4px 8px; font-size:11px; background:var(--danger);" onclick="deleteAdminConnector(${idx})">🗑️ Delete</button>
+        <div style="display:flex; gap:4px;">
+          <button type="button" class="btn" style="padding:4px 8px; font-size:11px; background:#0284c7;" onclick="editAdminConnector(${idx})">✏️ Edit</button>
+          <button type="button" class="btn" style="padding:4px 8px; font-size:11px; background:var(--danger);" onclick="deleteAdminConnector(${idx})">🗑️ Delete</button>
+        </div>
       </td>
     </tr>
   `).join("");
 }
 
+async function editAdminFarmerBooking(idx) {
+  const item = adminFarmerBookingsRegistry[idx];
+  if (!item) return;
+
+  const newName = prompt("1. Farmer Name edit karein:", item.name);
+  if (newName === null) return;
+
+  const newPhone = prompt("2. 10-Digit Mobile Number:", item.phone);
+  if (newPhone === null) return;
+  const cleanPhone = newPhone.replace(/[^0-9]/g, '').slice(-10);
+  if (cleanPhone.length !== 10) {
+    alert("⚠️ Mobile number 10 digits ka hona chahiye!");
+    return;
+  }
+
+  const newAddress = prompt("3. Address edit karein:", item.address || "");
+  if (newAddress === null) return;
+
+  const newNotes = prompt("4. Note edit karein:", item.notes || "");
+  if (newNotes === null) return;
+
+  showPgfLoader("Updating Farmer Booking in Supabase...");
+  const { error } = await _supabase
+    .from('pgf_admin_farmer_bookings')
+    .update({
+      name: newName.trim(),
+      phone: cleanPhone,
+      address: newAddress.trim(),
+      notes: newNotes.trim()
+    })
+    .eq('id', item.id);
+  hidePgfLoader();
+
+  if (error) {
+    alert("❌ Error: " + error.message);
+    return;
+  }
+
+  item.name = newName.trim();
+  item.phone = cleanPhone;
+  item.address = newAddress.trim();
+  item.notes = newNotes.trim();
+
+  localStorage.setItem('pgf_admin_farmer_bookings', JSON.stringify(adminFarmerBookingsRegistry));
+  renderAdminFarmerBookingTable();
+  alert("✅ Farmer Booking updated successfully!");
+}
+
+async function editAdminConnector(idx) {
+  const item = adminFarmConnectorsRegistry[idx];
+  if (!item) return;
+
+  const newName = prompt("1. Connector Name edit karein:", item.name);
+  if (newName === null) return;
+
+  const newPhone = prompt("2. 10-Digit Mobile Number:", item.phone);
+  if (newPhone === null) return;
+  const cleanPhone = newPhone.replace(/[^0-9]/g, '').slice(-10);
+  if (cleanPhone.length !== 10) {
+    alert("⚠️ Mobile number 10 digits ka hona chahiye!");
+    return;
+  }
+
+  const newAddress = prompt("3. Address edit karein:", item.address || "");
+  if (newAddress === null) return;
+
+  showPgfLoader("Updating Connector in Supabase...");
+  const { error } = await _supabase
+    .from('pgf_admin_farm_connectors')
+    .update({
+      name: newName.trim(),
+      phone: cleanPhone,
+      address: newAddress.trim()
+    })
+    .eq('id', item.id);
+  hidePgfLoader();
+
+  if (error) {
+    alert("❌ Error: " + error.message);
+    return;
+  }
+
+  item.name = newName.trim();
+  item.phone = cleanPhone;
+  item.address = newAddress.trim();
+
+  localStorage.setItem('pgf_admin_farm_connectors', JSON.stringify(adminFarmConnectorsRegistry));
+  renderAdminConnectorTable();
+  alert("✅ Farm Connector updated successfully!");
+}
+
 async function deleteAdminConnector(idx) {
   const item = adminFarmConnectorsRegistry[idx];
   if (!item) return;
-  if (confirm("Delete this entry?")) {
+  if (confirm(`Kya aap "${item.name}" ko delete karna chahte hain?`)) {
+    showPgfLoader("Deleting from Supabase...");
     await _supabase.from('pgf_admin_farm_connectors').delete().eq('id', item.id);
+    hidePgfLoader();
     adminFarmConnectorsRegistry.splice(idx, 1);
     localStorage.setItem('pgf_admin_farm_connectors', JSON.stringify(adminFarmConnectorsRegistry));
     renderAdminConnectorTable();
+    alert("✅ Farm Connector deleted successfully!");
   }
 }
 
@@ -5570,7 +5720,7 @@ function renderAdminBuyerTable() {
   if (!tbody) return;
 
   if (!adminBuyersRegistry.length) {
-    tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:var(--muted); padding:15px;">No buyers added yet.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:var(--muted); padding:15px;">No buyers added yet.</td></tr>`;
     return;
   }
 
@@ -5586,24 +5736,86 @@ function renderAdminBuyerTable() {
           <button type="button" class="btn" style="padding:4px 10px; font-size:11px; min-height:auto; background:#25d366; border-radius:999px; font-weight:bold; box-shadow:0 2px 4px rgba(0,0,0,0.1);" onclick="sendSingleWhatsApp('${item.phone}', 'buyerCommonMsg')">💬 WhatsApp</button>
         </div>
       </td>
-      <td><small>${item.address}</small></td>
+      <td><small>${item.address || 'N/A'}</small></td>
+      <td><small style="color:#0f172a; font-weight:600;">${item.notes || '-'}</small></td>
       <td>
-        <button type="button" class="btn" style="padding:4px 8px; font-size:11px; background:var(--danger);" onclick="deleteAdminBuyer(${idx})">🗑️ Delete</button>
+        <div style="display:flex; gap:4px;">
+          <button type="button" class="btn" style="padding:4px 8px; font-size:11px; background:#0284c7;" onclick="editAdminBuyer(${idx})">✏️ Edit</button>
+          <button type="button" class="btn" style="padding:4px 8px; font-size:11px; background:var(--danger);" onclick="deleteAdminBuyer(${idx})">🗑️ Delete</button>
+        </div>
       </td>
     </tr>
   `).join("");
 }
 
+
+async function editAdminBuyer(idx) {
+  const item = adminBuyersRegistry[idx];
+  if (!item) return;
+
+  const newName = prompt("1. Buyer Name edit karein:", item.name);
+  if (newName === null) return;
+
+  const newCompany = prompt("2. Company Name edit karein:", item.company || "");
+  if (newCompany === null) return;
+
+  const newPhone = prompt("3. 10-Digit Mobile Number:", item.phone);
+  if (newPhone === null) return;
+  const cleanPhone = newPhone.replace(/[^0-9]/g, '').slice(-10);
+  if (cleanPhone.length !== 10) {
+    alert("⚠️ Mobile number 10 digits ka hona chahiye!");
+    return;
+  }
+
+  const newAddress = prompt("4. Address edit karein:", item.address || "");
+  if (newAddress === null) return;
+
+  const newNotes = prompt("5. Note edit karein:", item.notes || "");
+  if (newNotes === null) return;
+
+  showPgfLoader("Updating Buyer in Supabase...");
+  const { error } = await _supabase
+    .from('pgf_admin_buyers')
+    .update({
+      name: newName.trim(),
+      company: newCompany.trim(),
+      phone: cleanPhone,
+      address: newAddress.trim(),
+      notes: newNotes.trim()
+    })
+    .eq('id', item.id);
+  hidePgfLoader();
+
+  if (error) {
+    alert("❌ Error: " + error.message);
+    return;
+  }
+
+  item.name = newName.trim();
+  item.company = newCompany.trim();
+  item.phone = cleanPhone;
+  item.address = newAddress.trim();
+  item.notes = newNotes.trim();
+
+  localStorage.setItem('pgf_admin_buyers', JSON.stringify(adminBuyersRegistry));
+  renderAdminBuyerTable();
+  alert("✅ Buyer record updated successfully!");
+}
+
 async function deleteAdminBuyer(idx) {
   const item = adminBuyersRegistry[idx];
   if (!item) return;
-  if (confirm("Delete this buyer record?")) {
+  if (confirm(`Kya aap "${item.name} (${item.company || ''})" ko delete karna chahte hain?`)) {
+    showPgfLoader("Deleting from Supabase...");
     await _supabase.from('pgf_admin_buyers').delete().eq('id', item.id);
+    hidePgfLoader();
     adminBuyersRegistry.splice(idx, 1);
     localStorage.setItem('pgf_admin_buyers', JSON.stringify(adminBuyersRegistry));
     renderAdminBuyerTable();
+    alert("✅ Buyer record deleted successfully!");
   }
 }
+
 
 
 function showPgfLoader(message = "Processing, please wait...") {

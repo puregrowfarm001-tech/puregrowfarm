@@ -1410,9 +1410,22 @@ function toggleBookingDetailsView(bookingId) {
 
 function switchErpTab(tabId, buttonId) {
   document.querySelectorAll('.erp-section').forEach(s => s.classList.remove('active'));
-  document.getElementById(tabId).classList.add('active');
+  const targetTab = document.getElementById(tabId);
+  if (targetTab) targetTab.classList.add('active');
+  
   document.querySelectorAll('#erpNavbarBlock button').forEach(btn => btn.classList.remove('active-tab'));
-  document.getElementById(buttonId).classList.add('active-tab');
+  const activeBtn = document.getElementById(buttonId);
+  if (activeBtn) activeBtn.classList.add('active-tab');
+
+  // Agar user Product Price & Delivery tab par click kare to cards re-render ho jayein
+  if (tabId === 'erpProductPricingTab') {
+    if (typeof fetchProductPricingFromCloud === "function") {
+      fetchProductPricingFromCloud();
+    }
+    if (typeof renderAdminProductPricingCards === "function") {
+      renderAdminProductPricingCards();
+    }
+  }
 }
 
 function switchSubAccountingTab(subTabId) {

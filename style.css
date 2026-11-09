@@ -861,40 +861,34 @@ th { background: #f8faf8; font-weight: 700; }
 }
 
 /* --- Fixed Signatures Over the Lines (Shifted Upwards) --- */
+/* --- Signatures Lifted Completely Above Line and Names --- */
 .pdf-signatures-overlay {
   position: absolute;
-  bottom: 142px; /* Pehle 112px tha, ab upar shift kiya gaya hai */
+  bottom: 172px !important; /* Signature ko line ke kafi upar lift kiya gaya hai */
   left: 0;
   width: 794px;
   display: flex;
   justify-content: space-between;
-  padding: 0 52px;
+  padding: 0 50px;
   box-sizing: border-box;
   z-index: 3;
   pointer-events: none;
 }
 
-.pdf-sign-box-left {
-  width: 230px;
-  height: 65px;
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-}
-
+.pdf-sign-box-left,
 .pdf-sign-box-right {
-  width: 230px;
-  height: 65px;
+  width: 235px;
+  height: 75px;
   display: flex;
-  align-items: flex-end;
+  align-items: center; /* Signature center me float hogi */
   justify-content: center;
 }
 
 .pdf-sign-box-left img,
 .pdf-sign-box-right img {
-  max-width: 155px; /* Size thoda bada kiya gaya hai */
-  max-height: 62px;
+  max-width: 165px; /* Signature clear aur badi dikhegi */
+  max-height: 70px;
   object-fit: contain;
-  mix-blend-mode: multiply; /* Background transparent look */
-  margin-bottom: 6px; /* Line ke theek upar space */
+  mix-blend-mode: multiply;
+  display: block;
 }

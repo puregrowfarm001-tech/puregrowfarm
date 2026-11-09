@@ -730,17 +730,59 @@
         </div>
       </div>
 
-      <div class="erp-nav" id="erpNavbarBlock">
-        <button class="btn active-tab" id="tabNavOrders" onclick="switchErpTab('erpOrdersTab', 'tabNavOrders')">Orders Manager Page</button>
-        <button class="btn" id="tabNavBookings" onclick="switchErpTab('erpBookingsTab', 'tabNavBookings')">Farm Bookings Page</button>
-        <button class="btn" id="tabNavAccounting" onclick="switchErpTab('erpAccountingTab', 'tabNavAccounting')">Financial & Stock Page</button>
-        <button class="btn" id="tabNavAdminManager" onclick="switchErpTab('erpAdminManagerTab', 'tabNavAdminManager')">Admin Manager Page</button>
+      <!-- Modern 3-Dots Admin Navigation Bar -->
+      <div class="admin-menu-bar" style="display: flex; justify-content: space-between; align-items: center; background: #ffffff; padding: 10px 16px; border-radius: 12px; border: 1px solid var(--line); margin-bottom: 20px; position: relative;">
         
-        <button class="btn" id="tabNavBookingConfig" onclick="switchErpTab('erpBookingConfigTab', 'tabNavBookingConfig')">⚙️ Booking Window & Fee Config</button>
-        <button class="btn" id="tabNavProductPricing" onclick="switchErpTab('erpProductPricingTab', 'tabNavProductPricing')">🏷️ Product Price & Delivery Config</button>
-        <button class="btn" id="tabNavLetterPad" onclick="switchErpTab('erpLetterPadTab', 'tabNavLetterPad')">📝 Official Letter Pad</button>
-        <button class="btn" id="tabNavUsers" onclick="switchErpTab('erpUsersTab', 'tabNavUsers')">Registered Accounts</button>
-        <button class="btn" id="tabNavOverviewSummary" onclick="switchErpTab('erpOverviewSummaryTab', 'tabNavOverviewSummary')">Overview & Live Summary Ledger</button>
+        <!-- Active Tab Title Indicator -->
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="font-size: 13px; font-weight: bold; color: var(--muted);">Active Page:</span>
+          <span id="activeErpPageTitle" style="font-size: 15px; font-weight: 800; color: var(--accent); background: #f0fdf4; padding: 4px 12px; border-radius: 8px; border: 1px solid #bbf7d0;">
+            Orders Manager Page
+          </span>
+        </div>
+
+        <!-- 3-Dots Menu Button & Dropdown Container -->
+        <div class="admin-dots-wrapper" style="position: relative;">
+          <button type="button" class="btn" id="btnAdmin3Dots" onclick="toggleAdminNavDropdown(event)" style="background: #0f1720; color: #ffffff; border-radius: 8px; padding: 8px 14px; font-size: 18px; font-weight: 900; line-height: 1; letter-spacing: 2px;">
+            ⋮ <span style="font-size: 13px; letter-spacing: normal; font-weight: bold; margin-left: 4px;">Menu</span>
+          </button>
+
+          <!-- 3-Dots Dropdown Panel -->
+          <div id="adminNavDropdownPanel" style="display: none; position: absolute; right: 0; top: 48px; width: 300px; max-width: 90vw; background: #ffffff; border: 1px solid var(--line); border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.18); z-index: 100000; padding: 10px; display: flex; flex-direction: column; gap: 6px;">
+            <div style="font-size: 11px; font-weight: bold; color: #64748b; padding: 4px 8px; border-bottom: 1px solid var(--line); margin-bottom: 4px; text-transform: uppercase;">
+              Select ERP Console Page:
+            </div>
+            
+            <button type="button" class="admin-menu-item active-menu-item" id="tabNavOrders" onclick="selectErpMenuTab('erpOrdersTab', 'tabNavOrders', 'Orders Manager Page')">
+              📦 Orders Manager Page
+            </button>
+            <button type="button" class="admin-menu-item" id="tabNavBookings" onclick="selectErpMenuTab('erpBookingsTab', 'tabNavBookings', 'Farm Bookings Page')">
+              🎓 Farm Bookings Page
+            </button>
+            <button type="button" class="admin-menu-item" id="tabNavAccounting" onclick="selectErpMenuTab('erpAccountingTab', 'tabNavAccounting', 'Financial & Stock Page')">
+              📊 Financial & Stock Page
+            </button>
+            <button type="button" class="admin-menu-item" id="tabNavAdminManager" onclick="selectErpMenuTab('erpAdminManagerTab', 'tabNavAdminManager', 'Admin Manager Page')">
+              🛠️ Admin Manager Page
+            </button>
+            <button type="button" class="admin-menu-item" id="tabNavBookingConfig" onclick="selectErpMenuTab('erpBookingConfigTab', 'tabNavBookingConfig', '⚙️ Booking Window & Fee Config')">
+              ⚙️ Booking Window & Fee Config
+            </button>
+            <button type="button" class="admin-menu-item" id="tabNavProductPricing" onclick="selectErpMenuTab('erpProductPricingTab', 'tabNavProductPricing', '🏷️ Product Price & Delivery Config')">
+              🏷️ Product Price & Delivery Config
+            </button>
+            <button type="button" class="admin-menu-item" id="tabNavLetterPad" onclick="selectErpMenuTab('erpLetterPadTab', 'tabNavLetterPad', '📝 Official Letter Pad')">
+              📝 Official Letter Pad
+            </button>
+            <button type="button" class="admin-menu-item" id="tabNavUsers" onclick="selectErpMenuTab('erpUsersTab', 'tabNavUsers', 'Registered Accounts')">
+              👥 Registered Accounts
+            </button>
+            <button type="button" class="admin-menu-item" id="tabNavOverviewSummary" onclick="selectErpMenuTab('erpOverviewSummaryTab', 'tabNavOverviewSummary', 'Overview & Live Summary Ledger')">
+              📈 Overview & Live Summary Ledger
+            </button>
+          </div>
+        </div>
+
       </div>
 
       <!-- ERP Segment 1: Orders -->
@@ -1556,7 +1598,7 @@
         </div>
       </div>
 
-      
+
       <!-- ERP Segment 4: Overview & Live Summary Ledger -->
       <div id="erpOverviewSummaryTab" class="erp-section">
         <h3>Farm Core Financial & Stock Overview Summary Ledger</h3>

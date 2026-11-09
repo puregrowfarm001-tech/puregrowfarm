@@ -1420,14 +1420,49 @@ function toggleBookingDetailsView(bookingId) {
   }
 }
 
+// =========================================================
+// 3-DOTS MENU TOGGLE & SELECTION LOGIC
+// =========================================================
+
+// 3-Dot Dropdown Open/Close Toggle
+function toggleAdminNavDropdown(e) {
+  if (e) e.stopPropagation();
+  const panel = document.getElementById("adminNavDropdownPanel");
+  if (!panel) return;
+  panel.style.display = (panel.style.display === "flex") ? "none" : "flex";
+}
+
+// Menu item select hone par tab switch + title update + auto-close
+function selectErpMenuTab(tabId, buttonId, pageTitle) {
+  switchErpTab(tabId, buttonId);
+
+  // Active Page Title Label update
+  const titleEl = document.getElementById("activeErpPageTitle");
+  if (titleEl && pageTitle) {
+    titleEl.textContent = pageTitle;
+  }
+
+  // Active Menu Highlight update
+  document.querySelectorAll(".admin-menu-item").forEach(item => {
+    item.classList.remove("active-menu-item");
+  });
+  const selectedBtn = document.getElementById(buttonId);
+  if (selectedBtn) {
+    selectedBtn.classList.add("active-menu-item");
+  }
+
+  // Dropdown close karein
+  const panel = document.getElementById("adminNavDropdownPanel");
+  if (panel) {
+    panel.style.display = "none";
+  }
+}
+
+// Updated Tab Switcher
 function switchErpTab(tabId, buttonId) {
   document.querySelectorAll('.erp-section').forEach(s => s.classList.remove('active'));
   const targetTab = document.getElementById(tabId);
   if (targetTab) targetTab.classList.add('active');
-  
-  document.querySelectorAll('#erpNavbarBlock button').forEach(btn => btn.classList.remove('active-tab'));
-  const activeBtn = document.getElementById(buttonId);
-  if (activeBtn) activeBtn.classList.add('active-tab');
 
   // Agar user Product Price & Delivery tab par click kare to cards re-render ho jayein
   if (tabId === 'erpProductPricingTab') {
@@ -1439,6 +1474,15 @@ function switchErpTab(tabId, buttonId) {
     }
   }
 }
+
+// Outside click hone par 3-Dot dropdown automatically close ho jaye
+document.addEventListener("click", function(e) {
+  const panel = document.getElementById("adminNavDropdownPanel");
+  const btn = document.getElementById("btnAdmin3Dots");
+  if (panel && btn && !btn.contains(e.target) && !panel.contains(e.target)) {
+    panel.style.display = "none";
+  }
+});
 
 function switchSubAccountingTab(subTabId) {
   document.querySelectorAll('.sub-accounting-section').forEach(section => section.style.display = 'none');

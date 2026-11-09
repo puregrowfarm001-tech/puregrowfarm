@@ -1848,7 +1848,7 @@ function printActiveAdminReport() {
     return (o.rawIsoDate || o.dateLogged || "").includes(selectedYear);
   });
   
-  // 📅 Print ke liye Calendar Date wise sorting (1, 2, 3...)
+  // 📅 Print ke liye Calendar Date wise sorting
   filteredOrders.sort((a, b) => {
     let tA = new Date(a.rawIsoDate || a.dateLogged || 0).getTime();
     let tB = new Date(b.rawIsoDate || b.dateLogged || 0).getTime();
@@ -1862,9 +1862,8 @@ function printActiveAdminReport() {
     return (b.date || b.dateLogged || "").includes(selectedYear);
   });
 
-  // 📅 Print ke liye Calendar Date wise sorting (1, 2, 3...)
   filteredBookings.sort((a, b) => {
-    let tA = new Date(b.dateLogged || b.date || 0).getTime(); // agar ulta lage toh tA - tB karein
+    let tA = new Date(b.dateLogged || b.date || 0).getTime();
     let tB = new Date(b.dateLogged || b.date || 0).getTime();
     return tA - tB;
   });
@@ -1932,16 +1931,19 @@ function printActiveAdminReport() {
   const farmAvailableBalance = (orderTotal + farmBookingTotal + sellTotal + farmDmgTotal) - farmExpTotal;
   const netProfit = (orderTotal + farmBookingTotal + sellTotal) - buyTotal - expenseTotal;
 
-  const allSections = document.querySelectorAll('.erp-section');
+  // 🛑 STRICT ALLOWLIST: Sirf yahi 3 financial/operational sections print me aayenge!
+  // Baaki sabhi (Batch Scheduler, Pricing, Letter Pad, Users, Manager Tab) exclude ho jayenge
+  const allowedPrintSectionIds = ['erpOrdersTab', 'erpBookingsTab', 'erpAccountingTab'];
   let combinedHTML = '';
   
-  allSections.forEach((section, index) => {
-    // 🛑 Yahan check kiya: Users, Admin Manager Panel, ya Live Stock Summary ko print me skip kar do!
-    if (section.id === 'erpUsersTab' || section.id === 'erpAdminManagerTab' || section.querySelector('#adminLiveStockCardsContainer')) return;
+  allowedPrintSectionIds.forEach((secId) => {
+    const section = document.getElementById(secId);
+    if (!section) return;
 
     const sectionClone = section.cloneNode(true);
-    const sectionTitle = sectionClone.querySelector('h3')?.textContent || `ERP Section ${index + 1}`;
+    const sectionTitle = sectionClone.querySelector('h3')?.textContent || 'Statement Section';
     
+    // Unnecessary buttons, forms, search boxes aur filter cards remove karein
     const filterCards = sectionClone.querySelectorAll('div[onclick*="openAdminFilterModal"]');
     filterCards.forEach(card => card.remove());
 
@@ -1955,6 +1957,7 @@ function printActiveAdminReport() {
     const inputs = sectionClone.querySelectorAll('form, input, select, button, input[type="search"]');
     inputs.forEach(el => el.remove());
 
+    // Action columns remove karein
     const tables = sectionClone.querySelectorAll('table');
     tables.forEach(table => {
       const headers = table.querySelectorAll('th');
@@ -1999,29 +2002,30 @@ function printActiveAdminReport() {
     <head>
       <title>Pure Grow Farm - Financial & ERP Report (${selectedYear})</title>
       <style>
-        body { font-family: Arial, sans-serif; padding: 25px; color: #111; background: #fff; }
-        h2 { color: #2b8a3e; margin-bottom: 4px; font-size: 22px; text-align: center; }
-        .meta { font-size: 13px; color: #555; margin-bottom: 20px; text-align: center; }
-        .summary-container { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 25px; }
-        .card { border: 1px solid #cbd5e1; padding: 12px; border-radius: 8px; background: #f8fafc; }
-        .card h4 { margin: 0 0 6px 0; color: #0f172a; font-size: 13px; }
-        .amount { font-weight: bold; color: #0284c7; font-size: 16px; }
-        .sub-text { font-size: 11px; color: #475569; margin-top: 4px; display: block; }
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; margin-bottom: 20px; font-size: 11px; page-break-inside: avoid; }
-        th, td { border: 1px solid #94a3b8; padding: 6px 8px; text-align: left; }
+        @page { size: A4 portrait; margin: 10mm; }
+        body { font-family: Arial, sans-serif; padding: 15px; color: #111; background: #fff; }
+        h2 { color: #2b8a3e; margin-bottom: 4px; font-size: 20px; text-align: center; }
+        .meta { font-size: 12px; color: #555; margin-bottom: 16px; text-align: center; }
+        .summary-container { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 20px; }
+        .card { border: 1px solid #cbd5e1; padding: 10px; border-radius: 8px; background: #f8fafc; }
+        .card h4 { margin: 0 0 4px 0; color: #0f172a; font-size: 12px; }
+        .amount { font-weight: bold; color: #0284c7; font-size: 15px; }
+        .sub-text { font-size: 10.5px; color: #475569; margin-top: 3px; display: block; }
+        table { width: 100%; border-collapse: collapse; margin-top: 8px; margin-bottom: 16px; font-size: 11px; page-break-inside: avoid; }
+        th, td { border: 1px solid #94a3b8; padding: 5px 7px; text-align: left; }
         th { background: #2b8a3e !important; color: white !important; -webkit-print-color-adjust: exact; font-weight: bold; }
         tr:nth-child(even) { background-color: #f8fafc; }
         .print-section-wrapper { page-break-before: always; }
-        .exp-cat-section { display: block !important; visibility: visible !important; margin-bottom: 20px; }
+        .exp-cat-section { display: block !important; visibility: visible !important; margin-bottom: 15px; }
         .sub-accounting-section { display: block !important; visibility: visible !important; }
       </style>
     </head>
     <body>
       <h2>Pure Grow Farm - Official Financial & Operational Ledger Report</h2>
       <div class="meta"><strong>Selected Year Filter:</strong> ${selectedYear} | <strong>Generated On:</strong> ${new Date().toLocaleString()}</div>
-      <hr style="border:0; border-top:1px solid #cbd5e1; margin-bottom: 20px;">
+      <hr style="border:0; border-top:1px solid #cbd5e1; margin-bottom: 15px;">
       
-      <h3 style="color: #1e293b; border-bottom: 2px solid #2b8a3e; padding-bottom: 5px;">Farm Core Financial & Stock Overview Summary Ledger</h3>
+      <h3 style="color: #1e293b; border-bottom: 2px solid #2b8a3e; padding-bottom: 4px; font-size: 14px;">Farm Core Financial & Stock Overview Summary Ledger</h3>
       <div class="summary-container">
         <div class="card">
           <h4>1) Order Total (Online Sales)</h4>
@@ -2075,7 +2079,7 @@ function printActiveAdminReport() {
       
       <script>
         window.onload = function() {
-          setTimeout(function() { window.print(); }, 600);
+          setTimeout(function() { window.print(); }, 500);
         };
       <\/script>
     </body>

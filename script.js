@@ -5753,13 +5753,28 @@ function renderAdminAccountTable() {
 }
 
 // Search Filter Function
-function filterAdminManagerTable(inputId, tbodyId) {
+function filterAdminManagerTable(inputId, tbodyId, badgeId) {
   const query = (document.getElementById(inputId)?.value || "").toLowerCase().trim();
   const rows = document.querySelectorAll(`#${tbodyId} tr`);
+  let visibleCount = 0;
+
   rows.forEach(row => {
+    // Empty placeholder rows ko count na karein
+    if (row.cells.length === 1 && row.cells[0].getAttribute("colspan")) return;
+    
     const text = row.textContent.toLowerCase();
-    row.style.display = text.includes(query) ? "" : "none";
+    const isVisible = text.includes(query);
+    row.style.display = isVisible ? "" : "none";
+    if (isVisible) visibleCount++;
   });
+
+  const badge = document.getElementById(badgeId);
+  if (badge) {
+    const label = badgeId.includes("Farmer") ? "Farmers" :
+                  badgeId.includes("Connector") ? "Connectors" :
+                  badgeId.includes("Account") ? "Accounts" : "Buyers";
+    badge.textContent = `Total ${label}: ${visibleCount}`;
+  }
 }
 
 // Direct WhatsApp Sender using Common Box text only

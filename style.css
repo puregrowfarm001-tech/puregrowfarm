@@ -788,7 +788,7 @@ th { background: #f8faf8; font-weight: 700; }
 }
 
 /* =========================================================
-   STRICT A4 LOCKED LETTERPAD & TYPING LIMIT
+   STRICT A4 LETTERPAD WITH OVERLAY SIGNATURES
    ========================================================= */
 .pdf-viewport-wrapper {
   overflow-x: auto;
@@ -799,9 +799,9 @@ th { background: #f8faf8; font-weight: 700; }
   border-radius: 12px;
 }
 
-/* Strict Standard A4 Sheet: 794px x 1123px (210mm x 297mm at 96 DPI) */
+/* Strict A4 standard: 794px x 1123px (210mm x 297mm @ 96 DPI) */
 .interactive-pdf-page {
-  position: relative;
+  position: relative !important;
   width: 794px !important;
   height: 1123px !important;
   max-width: 794px !important;
@@ -809,10 +809,11 @@ th { background: #f8faf8; font-weight: 700; }
   background-color: #ffffff;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
   margin: 0 auto;
-  overflow: hidden !important; /* A4 size se bahar nahi jayega */
+  overflow: hidden !important;
   box-sizing: border-box;
 }
 
+/* Background image (Aapka Letter Pad Image) */
 .pdf-bg-sheet {
   position: absolute;
   top: 0;
@@ -824,13 +825,13 @@ th { background: #f8faf8; font-weight: 700; }
   z-index: 1;
 }
 
-/* Typed text boundaries strictly between header and signatures */
+/* Dynamic Writing Area (Header ke niche se signature line ke upar tak) */
 .pdf-write-canvas {
   position: relative;
   z-index: 2;
   width: 794px;
   height: 1123px;
-  padding: 215px 70px 165px 70px;
+  padding: 200px 58px 185px 58px;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
@@ -843,7 +844,7 @@ th { background: #f8faf8; font-weight: 700; }
   font-size: 13.5px;
   font-weight: bold;
   color: #111111;
-  margin-bottom: 15px;
+  margin-bottom: 12px;
   flex-shrink: 0;
 }
 
@@ -854,7 +855,45 @@ th { background: #f8faf8; font-weight: 700; }
   color: #0f172a;
   white-space: pre-wrap;
   text-align: justify;
-  max-height: 720px; /* Signatures ke upar exact stop */
+  max-height: 680px; /* Line aur signature se pehle stop ho jayega */
   overflow: hidden;
   word-wrap: break-word;
+}
+
+/* --- Fixed Signatures Over the Lines --- */
+.pdf-signatures-overlay {
+  position: absolute;
+  bottom: 112px; /* Line ke theek upar */
+  left: 0;
+  width: 794px;
+  display: flex;
+  justify-content: space-between;
+  padding: 0 55px;
+  box-sizing: border-box;
+  z-index: 3;
+  pointer-events: none;
+}
+
+.pdf-sign-box-left {
+  width: 230px;
+  height: 60px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.pdf-sign-box-right {
+  width: 230px;
+  height: 60px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.pdf-sign-box-left img,
+.pdf-sign-box-right img {
+  max-width: 140px;
+  max-height: 55px;
+  object-fit: contain;
+  mix-blend-mode: multiply; /* White background remove karne ke liye */
 }

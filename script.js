@@ -7052,10 +7052,10 @@ window.addEventListener("DOMContentLoaded", () => {
 });
 
 // =========================================================
-// STRICT A4 LETTERPAD OVERFLOW & PRINT ENGINE
+// STRICT A4 LETTERPAD & SIGNATURE PLACEMENT LOGIC
 // =========================================================
 
-const MAX_A4_CHARS = 1800; // 1 standard A4 letter space limit
+const MAX_A4_CHARS = 1700;
 
 function initPdfLetterpad() {
   const dateInput = document.getElementById("pdfInputDate");
@@ -7077,7 +7077,6 @@ function syncPdfText() {
   const dispBody = document.getElementById("pdfLiveBody");
   const badge = document.getElementById("a4CapacityBadge");
 
-  // Character Counter & Limit
   const curLen = contentVal.length;
   if (badge) {
     badge.textContent = `A4 Sheet: ${curLen} / ${MAX_A4_CHARS} Characters`;
@@ -7099,10 +7098,10 @@ function syncPdfText() {
   if (dispBody) {
     dispBody.textContent = contentVal.trim() !== "" ? contentVal : "Yahan apna text likhein...";
 
-    // Live Height Overflow Guard: Agar user ne enter/lines zyada press kar di ho
-    if (dispBody.scrollHeight > 720) {
-      alert("⚠️ A4 Page Full ho chuka hai! Is se zyada likhne par content signature par overlap ho jayega.");
-      contentInput.value = contentVal.substring(0, contentVal.length - 20);
+    // Height limit protection so text does not cross signatures
+    if (dispBody.scrollHeight > 680) {
+      alert("⚠️ A4 Sheet limit full! Is se aage ka text signature line ke upar overlap hone se rok diya gaya hai.");
+      contentInput.value = contentVal.substring(0, contentVal.length - 15);
       dispBody.textContent = contentInput.value;
     }
   }
@@ -7114,10 +7113,16 @@ function printDirectPdfLetter() {
   if (!pdfFrame) return;
 
   const clone = pdfFrame.cloneNode(true);
+  
+  // Set absolute URLs for printing
   const bgImg = clone.querySelector("#letterpadBgImg");
-  if (bgImg) {
-    bgImg.src = basePath + "mushroom/PGF latter pad.png";
-  }
+  if (bgImg) bgImg.src = basePath + "mushroom/PGF latter pad.jpg";
+
+  const sohamImg = clone.querySelector("#sohamSignImg");
+  if (sohamImg) sohamImg.src = basePath + "mushroom/soham sign.png";
+
+  const jeetImg = clone.querySelector("#jeetSignImg");
+  if (jeetImg) jeetImg.src = basePath + "mushroom/jeet sign.png";
 
   const printWindow = window.open('', '_blank');
   printWindow.document.write(`
@@ -7125,7 +7130,7 @@ function printDirectPdfLetter() {
     <html>
     <head>
       <meta charset="utf-8">
-      <title>Pure Grow Farm - Letter</title>
+      <title>Pure Grow Farm - Official Letter</title>
       <style>
         @page { 
           size: A4 portrait; 
@@ -7165,7 +7170,7 @@ function printDirectPdfLetter() {
           z-index: 2 !important;
           width: 210mm !important;
           height: 297mm !important;
-          padding: 55mm 18mm 45mm 18mm !important;
+          padding: 52mm 16mm 48mm 16mm !important;
           box-sizing: border-box !important;
           display: flex !important;
           flex-direction: column !important;
@@ -7187,6 +7192,30 @@ function printDirectPdfLetter() {
           white-space: pre-wrap !important;
           text-align: justify !important;
           overflow: hidden !important;
+        }
+        .pdf-signatures-overlay {
+          position: absolute !important;
+          bottom: 29mm !important;
+          left: 0 !important;
+          width: 210mm !important;
+          display: flex !important;
+          justify-content: space-between !important;
+          padding: 0 15mm !important;
+          box-sizing: border-box !important;
+          z-index: 3 !important;
+        }
+        .pdf-sign-box-left, .pdf-sign-box-right {
+          width: 60mm !important;
+          height: 16mm !important;
+          display: flex !important;
+          align-items: flex-end !important;
+          justify-content: center !important;
+        }
+        .pdf-sign-box-left img, .pdf-sign-box-right img {
+          max-width: 42mm !important;
+          max-height: 15mm !important;
+          object-fit: contain !important;
+          mix-blend-mode: multiply !important;
         }
       </style>
     </head>
@@ -7233,13 +7262,13 @@ ${contentVal}
 
 ----------------------------------------
 *Signed By Management:*
-✍️ *Soham Gajera* (Co-Founder & Managing Director)[cite: 8]
-✍️ *Jeet Gajera* (Co-Founder & Director - Agriculture & Production)[cite: 8]
+✍️ *Soham Gajera* (Co-Founder & Managing Director)[cite: 9]
+✍️ *Jeet Gajera* (Co-Founder & Director - Agriculture & Production)[cite: 9]
 
-*Pure Grow Farm*[cite: 8]
-📍 Majevadi Road, Khodiyar Plot, Makhiyala, Junagadh - 362011[cite: 8]
-📞 Contact: 9067891039 | 8200145732[cite: 8]
-✉️ puregrowfarm001@gmail.com | 🌐 puregrowfarm.vercel.app[cite: 8]`;
+*Pure Grow Farm*[cite: 9]
+📍 Majevadi Road, Khodiyar Plot, Makhiyala, Junagadh - 362011[cite: 9]
+📞 Contact: 9067891039 | 8200145732[cite: 9]
+✉️ puregrowfarm001@gmail.com | 🌐 puregrowfarm.vercel.app[cite: 9]`;
 
   window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(waMessage)}`, '_blank');
 }

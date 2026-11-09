@@ -1488,12 +1488,12 @@
 </div>
        
 
-      <!-- ERP Segment: Strict A4 Letter Pad -->
+      <!-- ERP Segment: Strict A4 Letter Pad with Exact Signatures -->
       <div id="erpLetterPadTab" class="erp-section">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
           <div>
-            <h3 style="margin: 0; color: #165b26;">📝 Pure Grow Farm - A4 Locked Letterhead</h3>
-            <p class="muted" style="margin: 4px 0 0 0; font-size: 13px;">Ye letter pad exact A4 size me lock hai. Isme utna hi text aayega jo 1 A4 page par fit hota hai[cite: 8].</p>
+            <h3 style="margin: 0; color: #165b26;">📝 Pure Grow Farm - A4 Letter Pad</h3>
+            <p class="muted" style="margin: 4px 0 0 0; font-size: 13px;">Text likhein, date chunein, direct PDF download karein ya WhatsApp send karein.</p>
           </div>
           <div style="display: flex; gap: 8px; flex-wrap: wrap;">
             <button type="button" class="btn" style="background: #165b26;" onclick="printDirectPdfLetter()">📥 Download / Save PDF</button>
@@ -1501,7 +1501,7 @@
           </div>
         </div>
 
-        <!-- Editor with A4 Capacity Indicator -->
+        <!-- Editor Control Form -->
         <div class="pdf-editor-panel">
           <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; margin-bottom: 12px;">
             <div>
@@ -1516,27 +1516,37 @@
 
           <div>
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-              <label style="font-size: 12px; font-weight: bold; color: #334155;">✍️ Letter Content (Strict A4 Capacity):</label>
+              <label style="font-size: 12px; font-weight: bold; color: #334155;">✍️ Letter Content (A4 Capacity):</label>
               <span id="a4CapacityBadge" style="font-size: 12px; font-weight: bold; color: #16a34a; background: #f0fdf4; padding: 2px 8px; border-radius: 6px; border: 1px solid #bbf7d0;">
-                Capacity: 0 / 1800 Characters
+                Capacity: 0 / 1700 Characters
               </span>
             </div>
-            <textarea id="pdfInputContent" rows="8" maxlength="1800" style="width: 100%; padding: 12px; border: 1px solid var(--line); border-radius: 8px; font-family: Arial, sans-serif; font-size: 14px;" oninput="syncPdfText()" placeholder="Yahan apna text likhein (A4 page limit ke hisab se)..."></textarea>
+            <textarea id="pdfInputContent" rows="8" maxlength="1700" style="width: 100%; padding: 12px; border: 1px solid var(--line); border-radius: 8px; font-family: Arial, sans-serif; font-size: 14px;" oninput="syncPdfText()" placeholder="Yahan apna text likhein..."></textarea>
           </div>
         </div>
 
-        <!-- Exact A4 Preview Sheet -->
-        <h4 style="margin: 0 0 10px 0; color: #0f172a;">👁️ Exact A4 Print Preview (210mm × 297mm)</h4>
+        <!-- Live Exact A4 Frame -->
+        <h4 style="margin: 0 0 10px 0; color: #0f172a;">👁️ Live A4 Preview</h4>
         <div class="pdf-viewport-wrapper">
           <div id="printablePdfDocument" class="interactive-pdf-page">
             
-            <!-- Aapki PDF Image as Exact A4 Background -->
-            <img src="mushroom/PGF latter pad.jpg" alt="Pure Grow Farm Letterpad PDF" class="pdf-bg-sheet" id="letterpadBgImg">
+            <!-- Letterpad Template Image -->
+            <img src="mushroom/PGF latter pad.jpg" alt="Pure Grow Farm Letterpad" class="pdf-bg-sheet" id="letterpadBgImg">
 
-            <!-- Writing Canvas Locked Between Header & Signature -->
+            <!-- Writing Area -->
             <div class="pdf-write-canvas">
               <div id="pdfLiveDate" class="pdf-canvas-date"></div>
               <div id="pdfLiveBody" class="pdf-canvas-text">Yahan apna text likhein...</div>
+            </div>
+
+            <!-- Both Signatures Positioned Accurately Above Their Respective Names -->
+            <div class="pdf-signatures-overlay">
+              <div class="pdf-sign-box-left">
+                <img src="mushroom/soham sign.png" alt="Soham Gajera Signature" id="sohamSignImg">
+              </div>
+              <div class="pdf-sign-box-right">
+                <img src="mushroom/jeet sign.png" alt="Jeet Gajera Signature" id="jeetSignImg">
+              </div>
             </div>
 
           </div>

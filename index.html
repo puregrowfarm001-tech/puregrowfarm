@@ -715,17 +715,13 @@
       <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid var(--accent); padding-bottom:12px; margin-bottom:15px; flex-wrap:wrap; gap:10px;">
         <h2>Pure Grow Farm - Operational Core ERP Console Hub</h2>
         
+        <!-- Right side: Logged in badge Exit button ke theek aage aayega -->
         <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-          <div style="background:#fff; padding:4px 10px; border-radius:8px; border:1px solid var(--line); display:flex; align-items:center; gap:6px;">
-            <label style="font-size:12px; font-weight:bold; color:#334155;">📅 Year Filter:</label>
-            <select id="adminYearFilterSelect" style="padding:4px 8px; font-size:13px; border:1px solid #cbd5e1; border-radius:6px; font-weight:bold; color:var(--accent);" onchange="handleAdminYearFilterChange()">
-              <option value="ALL">All Years (Cumulative)</option>
-              <option value="2026">2026</option>
-              <option value="2025">2025</option>
-            </select>
+          <div id="adminHeaderBadge" style="display:inline-flex; align-items:center; gap:6px; background:#f0fdf4; border:1px solid #bbf7d0; padding:6px 14px; border-radius:999px; font-size:13px; font-weight:700; color:#15803d;">
+            <span>👤 Logged in as:</span>
+            <span id="adminHeaderNameDisplay" style="color:#166534; text-decoration:underline;">Admin</span>
           </div>
-          
-          <button class="btn" style="background:#0284c7;" onclick="printActiveAdminReport()">🖨️ Print / Export Report</button>
+
           <button class="btn" style="background:var(--danger);" onclick="exitAdminPanel()">Exit Admin Console</button>
         </div>
       </div>
@@ -743,12 +739,12 @@
 
         <!-- 3-Dots Menu Button & Dropdown Container -->
         <div class="admin-dots-wrapper" style="position: relative;">
-          <button type="button" class="btn" id="btnAdmin3Dots" onclick="toggleAdminNavDropdown(event)" style="background: #0f1720; color: #ffffff; border-radius: 8px; padding: 8px 14px; font-size: 18px; font-weight: 900; line-height: 1; letter-spacing: 2px;">
+          <button type="button" class="btn" id="btnAdmin3Dots" onclick="toggleAdminNavDropdown(event)" style="background: #0f172a; color: #ffffff; border-radius: 8px; padding: 8px 14px; font-size: 18px; font-weight: 900; line-height: 1; letter-spacing: 2px;">
             ⋮ <span style="font-size: 13px; letter-spacing: normal; font-weight: bold; margin-left: 4px;">Menu</span>
           </button>
 
           <!-- 3-Dots Dropdown Panel -->
-          <div id="adminNavDropdownPanel" style="display: none; position: absolute; right: 0; top: 48px; width: 300px; max-width: 90vw; background: #ffffff; border: 1px solid var(--line); border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.18); z-index: 100000; padding: 10px; display: flex; flex-direction: column; gap: 6px;">
+          <div id="adminNavDropdownPanel" style="display: none; position: absolute; right: 0; top: 48px; width: 310px; max-width: 90vw; background: #ffffff; border: 1px solid var(--line); border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.18); z-index: 100000; padding: 10px; display: flex; flex-direction: column; gap: 6px;">
             <div style="font-size: 11px; font-weight: bold; color: #64748b; padding: 4px 8px; border-bottom: 1px solid var(--line); margin-bottom: 4px; text-transform: uppercase;">
               Select ERP Console Page:
             </div>
@@ -779,6 +775,10 @@
             </button>
             <button type="button" class="admin-menu-item" id="tabNavOverviewSummary" onclick="selectErpMenuTab('erpOverviewSummaryTab', 'tabNavOverviewSummary', 'Overview & Live Summary Ledger')">
               📈 Overview & Live Summary Ledger
+            </button>
+            <!-- 👈 3-Dots Menu me sabse aakhri (Last) option -->
+            <button type="button" class="admin-menu-item" id="tabNavPrintReport" onclick="selectErpMenuTab('erpPrintReportTab', 'tabNavPrintReport', '🖨️ Print / Export Report & Year Filter')" style="border-top: 1px dashed var(--line); margin-top: 4px; color: #0284c7;">
+              🖨️ Print / Export Report & Year Filter
             </button>
           </div>
         </div>
@@ -1695,6 +1695,40 @@
             </thead>
             <tbody id="adminUsersTableBody"></tbody>
           </table>
+        </div>
+      </div>
+
+      <!-- ERP Segment: Dedicated Print / Export Report Page with Year Filter -->
+      <div id="erpPrintReportTab" class="erp-section">
+        <div style="border-bottom: 2px solid #0284c7; padding-bottom: 12px; margin-bottom: 20px;">
+          <h3 style="margin: 0; color: #0284c7;">🖨️ Official Financial & Operational Report Generation Console</h3>
+          <p class="muted" style="margin: 4px 0 0 0; font-size: 13px;">Yahan se aap kisi bhi year ka filter select karke poora consolidated ledger preview dekh sakte hain aur official PDF print kar sakte hain.</p>
+        </div>
+
+        <!-- Year Filter & Print Controls Card -->
+        <div style="background: #f8fafc; border: 1px solid var(--line); border-radius: 14px; padding: 20px; margin-bottom: 24px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
+          <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+            <label style="font-size: 14px; font-weight: bold; color: #334155;">📅 Select Fiscal Year Filter:</label>
+            <select id="adminYearFilterSelect" style="padding: 8px 16px; font-size: 14px; border: 2px solid #0284c7; border-radius: 8px; font-weight: bold; color: #0284c7; background: #fff; cursor: pointer;" onchange="handleAdminYearFilterChange()">
+              <option value="ALL">All Years (Cumulative)</option>
+              <option value="2026">2026</option>
+              <option value="2025">2025</option>
+            </select>
+          </div>
+
+          <button type="button" class="btn" style="background: #0284c7; font-size: 14px; padding: 10px 22px; font-weight: 800; box-shadow: 0 4px 12px rgba(2,132,199,0.25);" onclick="printActiveAdminReport()">
+            🖨️ Generate & Print Official Report
+          </button>
+        </div>
+
+        <!-- Quick Summary Box for Selected Year -->
+        <div style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 12px; padding: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.03);">
+          <h4 style="margin: 0 0 14px 0; color: #0f172a;">📊 Report Overview Checklist:</h4>
+          <ul style="margin: 0; padding-left: 20px; line-height: 1.8; font-size: 13.5px; color: #334155;">
+            <li>Select kiye gaye year ke hisab se <strong>Orders, Bookings, Offline Sales, Purchases, Expenses, aur Damages</strong> calculate honge[cite: 20].</li>
+            <li>Export hone wale document me <strong>Soham aur Jeet ke individual accounts</strong> ka net reconciliation auto-calculated aayega[cite: 20].</li>
+            <li>Report bilkul standard A4 format me bina extra buttons ya action controls ke clean print hogi[cite: 20].</li>
+          </ul>
         </div>
       </div>
     </section>

@@ -13,8 +13,18 @@ const farmUpiId = "sohamgajera01@okhdfcbank";
 const farmName = "Pure Grow Farm";
 
 const ADMIN_USERS = [
-  { user: "soham_gajera", pass: "Soham@2026pgf", name: "Soham N Gajera (Co-Founder & Managing Director)" },
-  { user: "jeet_gajera", pass: "Jeet@2026pgf", name: "Jeet A Gajera (Co-Founder & Director – Agriculture & Production)" }
+  { 
+    user: "soham_gajera", 
+    pass: "Soham@2026pgf", 
+    name: "Soham N Gajera (Co-Founder & Managing Director)",
+    phone: "919067891039"
+  },
+  { 
+    user: "jeet_gajera", 
+    pass: "Jeet@2026pgf", 
+    name: "Jeet A Gajera (Co-Founder & Director – Agriculture & Production)",
+    phone: "918200145732"
+  }
 ];
 
 const BASE_PRODUCTS = [
@@ -682,12 +692,14 @@ async function handleLogin(e) {
     const passInput = document.getElementById("loginPassword").value;
 
     // Check for Multiple Admin Logins
+// Check for Multiple Admin Logins
 const matchedAdmin = ADMIN_USERS.find(adm => adm.user.toLowerCase() === userInput.toLowerCase() && adm.pass === passInput);
 
 if (matchedAdmin) {
   currentUser = { 
     name: matchedAdmin.name, 
     email: `${matchedAdmin.user}@puregrowfarm.internal`, 
+    phone: matchedAdmin.phone, // 👈 Admin ka phone number session me save hoga
     isAdmin: true 
   };
   localStorage.setItem('pgf_session', JSON.stringify(currentUser));
@@ -2033,6 +2045,9 @@ function sendAdminWhatsAppMessage(type, refIdOrIndex) {
   let customerName = "";
   let messageText = "";
 
+  // Check karein kaunsa admin logged in hai (Soham ya Jeet)
+  const activeAdminName = currentUser && currentUser.isAdmin ? currentUser.name : "Pure Grow Farm Admin";
+
   if (type === 'order') {
     const o = orderRegistry[refIdOrIndex] || orderRegistry.find(item => item && item.orderId === refIdOrIndex);
     if (!o) return;
@@ -2049,20 +2064,20 @@ function sendAdminWhatsAppMessage(type, refIdOrIndex) {
 
     if (status.startsWith('Rejected')) {
       const reason = status.replace('Rejected (Reason: ', '').replace(')', '');
-      messageText = `Hello *${customerName}*,\n\n❌ *Order Rejected Update*\nAapka Order Ref (*#${o.orderId}*) reject kar diya gaya hai.\n🔍 *Reason:* ${reason}\n\nAapko koi sahayata chahiye toh sampark karein: +91 9067891039.`;
+      messageText = `Hello *${customerName}*,\n\n❌ *Order Rejected Update*\nAapka Order Ref (*#${o.orderId}*) reject kar diya gaya hai.\n🔍 *Reason:* ${reason}\n\nRegards,\n*${activeAdminName}*\nPure Grow Farm`;
     } 
     else if (status.startsWith('Cancelled')) {
       const reason = status.replace('Cancelled (Reason: ', '').replace(')', '');
-      messageText = `Hello *${customerName}*,\n\n⚠️ *Order Cancelled & Refund Update*\nAapka Order (*#${o.orderId}*) cancel ho gaya hai.\n🔍 *Reason:* ${reason}\n💰 *Refund Status:* ${refundSt} (Date: ${refundDt})\nAapke UPI ID par payment process ki ja rahi hai.`;
+      messageText = `Hello *${customerName}*,\n\n⚠️ *Order Cancelled & Refund Update*\nAapka Order (*#${o.orderId}*) cancel ho gaya hai.\n🔍 *Reason:* ${reason}\n💰 *Refund Status:* ${refundSt} (Date: ${refundDt})\nAapke UPI ID par payment process ki ja rahi hai.\n\nRegards,\n*${activeAdminName}*\nPure Grow Farm`;
     } 
     else if (refundSt === 'Refund Credited') {
-      messageText = `Hello *${customerName}*,\n\n💸 *Refund Successfully Credited!*\nAapke Order (*#${o.orderId}*) ka poora refund amount date *${refundDt}* ko aapke UPI ID (${o.userUpiId || 'Linked Bank'}) par safely transfer kar diya gaya hai. ✅`;
+      messageText = `Hello *${customerName}*,\n\n💸 *Refund Successfully Credited!*\nAapke Order (*#${o.orderId}*) ka poora refund amount date *${refundDt}* ko aapke UPI ID (${o.userUpiId || 'Linked Bank'}) par safely transfer kar diya gaya hai. ✅\n\nRegards,\n*${activeAdminName}*\nPure Grow Farm`;
     }
     else if (stage === 'Delivered' || status === 'Delivered') {
-      messageText = `Hello *${customerName}*,\n\n🎉 *Order Delivered Successfully!*\nAapka Pure Grow Farm order (*#${o.orderId}*) successfully deliver ho chuka hai via *${courier}*.\n\nUmeed hai aapko hamare organic oyster mushroom products pasand aaye honge! ⭐`;
+      messageText = `Hello *${customerName}*,\n\n🎉 *Order Delivered Successfully!*\nAapka Pure Grow Farm order (*#${o.orderId}*) successfully deliver ho chuka hai via *${courier}*.\n\nUmeed hai aapko hamare organic oyster mushroom products pasand aaye honge! ⭐\n\nRegards,\n*${activeAdminName}*\nPure Grow Farm`;
     }
     else {
-      messageText = `Hello *${customerName}*,\n\n📦 *Pure Grow Farm - Live Order Update* (*#${o.orderId}*)\n\n📍 *Current Status / Stage:* ${stage}\n🚚 *Courier Partner:* ${courier}\n📍 *Current Location:* ${loc}\n📅 *Expected Delivery Date:* ${eta}\n\nThank you for choosing Pure Grow Farm! 🌱`;
+      messageText = `Hello *${customerName}*,\n\n📦 *Pure Grow Farm - Live Order Update* (*#${o.orderId}*)\n\n📍 *Current Status / Stage:* ${stage}\n🚚 *Courier Partner:* ${courier}\n📍 *Current Location:* ${loc}\n📅 *Expected Delivery Date:* ${eta}\n\nThank you for choosing Pure Grow Farm! 🌱\n\nRegards,\n*${activeAdminName}*`;
     }
 
   } else if (type === 'booking') {
@@ -2076,16 +2091,16 @@ function sendAdminWhatsAppMessage(type, refIdOrIndex) {
 
     if (bStatus.startsWith('Rejected')) {
       const reason = bStatus.replace('Rejected (Reason: ', '').replace(')', '');
-      messageText = `Hello *${customerName}*,\n\n❌ *Farm Booking / Certificate Rejected*\nAapka ${b.type} application (*#${b.bookingId}*) reject kar diya gaya hai.\n🔍 *Reason:* ${reason}`;
+      messageText = `Hello *${customerName}*,\n\n❌ *Farm Booking / Certificate Rejected*\nAapka ${b.type} application (*#${b.bookingId}*) reject kar diya gaya hai.\n🔍 *Reason:* ${reason}\n\nRegards,\n*${activeAdminName}*\nPure Grow Farm`;
     }
     else if (isCertIssued) {
-      messageText = `Hello *${customerName}*,\n\n📜 *Certificate Approved & Ready!* 🎉\nBadhai ho! Aapka *Pure Grow Farm ${b.type} Training Certificate* (*#${b.bookingId}*) approve kar liya gaya hai.\nAap apni profile me login karke PDF download kar sakte hain!`;
+      messageText = `Hello *${customerName}*,\n\n📜 *Certificate Approved & Ready!* 🎉\nBadhai ho! Aapka *Pure Grow Farm ${b.type} Training Certificate* (*#${b.bookingId}*) approve kar liya gaya hai.\nAap apni profile me login karke PDF download kar sakte hain!\n\nRegards,\n*${activeAdminName}*\nPure Grow Farm`;
     }
     else if (bStatus === 'Confirmed' || bStatus === 'Approved') {
-      messageText = `Hello *${customerName}*,\n\n✅ *Farm Booking Confirmed!*\nAapka ${b.type} session/internship booking (*#${b.bookingId}*) confirm kar liya gaya hai. Makhiyala farm training hub me aapka swagat hai! 🎓`;
+      messageText = `Hello *${customerName}*,\n\n✅ *Farm Booking Confirmed!*\nAapka ${b.type} session/internship booking (*#${b.bookingId}*) confirm kar liya gaya hai. Makhiyala farm training hub me aapka swagat hai! 🎓\n\nRegards,\n*${activeAdminName}*\nPure Grow Farm`;
     }
     else {
-      messageText = `Hello *${customerName}*,\n\n⏳ *Farm Booking Update*\nAapka ${b.type} booking (*#${b.bookingId}*) abhi *${bStatus}* state me hai. Verification ke baad update mil jayega.`;
+      messageText = `Hello *${customerName}*,\n\n⏳ *Farm Booking Update*\nAapka ${b.type} booking (*#${b.bookingId}*) abhi *${bStatus}* state me hai. Verification ke baad update mil jayega.\n\nRegards,\n*${activeAdminName}*`;
     }
 
   } else if (type === 'user') {
@@ -2093,7 +2108,7 @@ function sendAdminWhatsAppMessage(type, refIdOrIndex) {
     if (!u) return;
     targetPhone = u.phone;
     customerName = u.name;
-    messageText = `Hello *${customerName}*,\n\nWelcome to *Pure Grow Farm* official portal! 🌱\nAapka account successfully registered ho gaya hai. Aap hamare store se Oyster mushrooms product aur training sessions access kar sakte hain.`;
+    messageText = `Hello *${customerName}*,\n\nWelcome to *Pure Grow Farm* official portal! 🌱\nAapka account successfully registered ho gaya hai. Aap hamare store se Oyster mushrooms product aur training sessions access kar sakte hain.\n\nRegards,\n*${activeAdminName}*\nPure Grow Farm`;
   }
 
   if (!targetPhone) {
@@ -5694,6 +5709,7 @@ function filterAdminManagerTable(inputId, tbodyId) {
 }
 
 // Direct WhatsApp Sender using Common Box text only
+// Direct WhatsApp Sender using Common Box text only (with Logged-in Admin Identity)
 function sendSingleWhatsApp(phone, msgId) {
   if (!phone) {
     alert("⚠️ Valid phone number not available!");
@@ -5703,7 +5719,11 @@ function sendSingleWhatsApp(phone, msgId) {
   let cleanPhone = phone.replace(/[^0-9]/g, '');
   if (cleanPhone.length === 10) cleanPhone = "91" + cleanPhone;
 
-  const messageText = document.getElementById(msgId)?.value.trim() || "Hello from Pure Grow Farm!";
+  const baseText = document.getElementById(msgId)?.value.trim() || "Hello from Pure Grow Farm!";
+  const activeAdminName = currentUser && currentUser.isAdmin ? currentUser.name : "Pure Grow Farm Admin";
+
+  const messageText = `${baseText}\n\n---\n*Sent by:* ${activeAdminName}\n*Pure Grow Farm*`;
+
   window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(messageText)}`, '_blank');
 }
 

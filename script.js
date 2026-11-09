@@ -7050,3 +7050,133 @@ window.addEventListener("DOMContentLoaded", () => {
     }
   }
 });
+
+// =========================================================
+// OFFICIAL LETTER PAD: LIVE PREVIEW, PRINT & WHATSAPP
+// =========================================================
+
+function initLetterPadDefaults() {
+  const dateInput = document.getElementById("lpInputDate");
+  if (dateInput && !dateInput.value) {
+    dateInput.value = getTodayIsoString();
+  }
+  updateLetterPadPreview();
+}
+
+function updateLetterPadPreview() {
+  const refVal = document.getElementById("lpInputRef")?.value.trim() || "PGF/OFFICIAL/2026";
+  const dateVal = document.getElementById("lpInputDate")?.value;
+  const subVal = document.getElementById("lpInputSubject")?.value.trim() || "Official Notification";
+  const bodyVal = document.getElementById("lpInputBody")?.value || "";
+
+  const dispRef = document.getElementById("lpPreviewRef");
+  const dispDate = document.getElementById("lpPreviewDate");
+  const dispSub = document.getElementById("lpPreviewSubject");
+  const dispBody = document.getElementById("lpPreviewBody");
+
+  if (dispRef) dispRef.textContent = refVal;
+  if (dispDate) {
+    dispDate.textContent = dateVal ? new Date(dateVal).toLocaleDateString('en-IN') : new Date().toLocaleDateString('en-IN');
+  }
+  if (dispSub) dispSub.textContent = subVal;
+  if (dispBody) {
+    dispBody.textContent = bodyVal.trim() !== "" ? bodyVal : "Please type your content in the editor form above to view live preview...";
+  }
+}
+
+function printOfficialLetterPad() {
+  const basePath = window.location.origin + window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/') + 1);
+  const logoUrl = basePath + "mushroom/pgf logo.png";
+  const sohamSign = basePath + "mushroom/soham sign.png";
+  const jeetSign = basePath + "mushroom/jeet sign.png";
+
+  const frameClone = document.getElementById("officialLetterPadPrintFrame").cloneNode(true);
+
+  // Update relative image paths to absolute so print window shows them reliably
+  const imgs = frameClone.querySelectorAll("img");
+  imgs.forEach(img => {
+    if (img.src.includes("pgf logo.png")) img.src = logoUrl;
+    if (img.src.includes("soham sign.png")) img.src = sohamSign;
+    if (img.src.includes("jeet sign.png")) img.src = jeetSign;
+  });
+
+  const printWindow = window.open('', '_blank');
+  printWindow.document.write(`
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <title>Pure Grow Farm - Official Letter</title>
+      <style>
+        @page { size: A4 portrait; margin: 10mm; }
+        * { box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        body { font-family: 'Times New Roman', Times, serif; margin: 0; padding: 0; background: #fff; color: #111; }
+        #officialLetterPadPrintFrame {
+          width: 100% !important;
+          min-height: auto !important;
+          border: none !important;
+          box-shadow: none !important;
+          padding: 10px 15px !important;
+        }
+      </style>
+    </head>
+    <body>
+      ${frameClone.outerHTML}
+      <script>
+        window.onload = function() {
+          setTimeout(function() { window.print(); }, 400);
+        };
+      <\/script>
+    </body>
+    </html>
+  `);
+  printWindow.document.close();
+}
+
+function sendLetterPadWhatsApp() {
+  const refVal = document.getElementById("lpInputRef")?.value.trim() || "PGF/OFFICIAL/2026";
+  const dateVal = document.getElementById("lpInputDate")?.value ? new Date(document.getElementById("lpInputDate").value).toLocaleDateString('en-IN') : new Date().toLocaleDateString('en-IN');
+  const subVal = document.getElementById("lpInputSubject")?.value.trim() || "Official Notification";
+  const bodyVal = document.getElementById("lpInputBody")?.value.trim() || "";
+  const phoneInput = document.getElementById("lpInputWpPhone")?.value.trim() || "";
+
+  if (!bodyVal) {
+    alert("⚠️ Kripya letter pad me content type karein!");
+    return;
+  }
+
+  let cleanPhone = phoneInput.replace(/[^0-9]/g, '');
+  if (!cleanPhone || cleanPhone.length < 10) {
+    const promptPhone = prompt("Kripya WhatsApp number enter karein (10 digits):", "");
+    if (!promptPhone) return;
+    cleanPhone = promptPhone.replace(/[^0-9]/g, '');
+  }
+
+  if (cleanPhone.length === 10) cleanPhone = "91" + cleanPhone;
+
+  const waMessage = 
+`*PURE GROW FARM - OFFICIAL LETTER PAD*
+----------------------------------------
+📄 *Ref No:* ${refVal}
+📅 *Date:* ${dateVal}
+📋 *Subject:* ${subVal}
+----------------------------------------
+
+${bodyVal}
+
+----------------------------------------
+*Signed By Management:*
+✍️ *Soham Gajera* (Co-Founder & Managing Director)
+✍️ *Jeet Gajera* (Co-Founder & Director - Agriculture & Production)
+
+*Pure Grow Farm*
+📍 Majevadi Road, Makhiyala, Junagadh, Gujarat - 362011
+📞 +91 9067891039 | +91 8200145732`;
+
+  window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(waMessage)}`, '_blank');
+}
+
+// Admin Panel open hone par Letter Pad defaults initialize karein
+document.addEventListener("DOMContentLoaded", () => {
+  initLetterPadDefaults();
+});

@@ -7052,8 +7052,10 @@ window.addEventListener("DOMContentLoaded", () => {
 });
 
 // =========================================================
-// DIRECT PDF LETTERPAD WRITER & EXPORT LOGIC
+// STRICT A4 LETTERPAD OVERFLOW & PRINT ENGINE
 // =========================================================
+
+const MAX_A4_CHARS = 1800; // 1 standard A4 letter space limit
 
 function initPdfLetterpad() {
   const dateInput = document.getElementById("pdfInputDate");
@@ -7068,16 +7070,41 @@ function initPdfLetterpad() {
 
 function syncPdfText() {
   const dateVal = document.getElementById("pdfInputDate")?.value;
-  const contentVal = document.getElementById("pdfInputContent")?.value || "";
+  const contentInput = document.getElementById("pdfInputContent");
+  let contentVal = contentInput ? contentInput.value : "";
 
   const dispDate = document.getElementById("pdfLiveDate");
   const dispBody = document.getElementById("pdfLiveBody");
+  const badge = document.getElementById("a4CapacityBadge");
+
+  // Character Counter & Limit
+  const curLen = contentVal.length;
+  if (badge) {
+    badge.textContent = `A4 Sheet: ${curLen} / ${MAX_A4_CHARS} Characters`;
+    if (curLen >= MAX_A4_CHARS - 100) {
+      badge.style.color = "#dc2626";
+      badge.style.background = "#fef2f2";
+      badge.style.borderColor = "#fca5a5";
+    } else {
+      badge.style.color = "#16a34a";
+      badge.style.background = "#f0fdf4";
+      badge.style.borderColor = "#bbf7d0";
+    }
+  }
 
   if (dispDate) {
     dispDate.textContent = dateVal ? `Date: ${new Date(dateVal).toLocaleDateString('en-IN')}` : "";
   }
+
   if (dispBody) {
     dispBody.textContent = contentVal.trim() !== "" ? contentVal : "Yahan apna text likhein...";
+
+    // Live Height Overflow Guard: Agar user ne enter/lines zyada press kar di ho
+    if (dispBody.scrollHeight > 720) {
+      alert("⚠️ A4 Page Full ho chuka hai! Is se zyada likhne par content signature par overlap ho jayega.");
+      contentInput.value = contentVal.substring(0, contentVal.length - 20);
+      dispBody.textContent = contentInput.value;
+    }
   }
 }
 
@@ -7100,51 +7127,66 @@ function printDirectPdfLetter() {
       <meta charset="utf-8">
       <title>Pure Grow Farm - Letter</title>
       <style>
-        @page { size: A4 portrait; margin: 0; }
-        * { box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-        body { margin: 0; padding: 0; background: #fff; }
+        @page { 
+          size: A4 portrait; 
+          margin: 0; 
+        }
+        html, body {
+          width: 210mm;
+          height: 297mm;
+          margin: 0 !important;
+          padding: 0 !important;
+          overflow: hidden !important;
+          background: #fff;
+          -webkit-print-color-adjust: exact;
+          print-color-adjust: exact;
+        }
         .interactive-pdf-page {
-          position: relative;
-          width: 100vw !important;
-          height: 100vh !important;
-          min-height: 100vh !important;
+          position: relative !important;
+          width: 210mm !important;
+          height: 297mm !important;
+          max-width: 210mm !important;
+          max-height: 297mm !important;
+          overflow: hidden !important;
           box-shadow: none !important;
           margin: 0 !important;
         }
         .pdf-bg-sheet {
-          position: absolute;
-          top: 0;
-          left: 0;
-          width: 100% !important;
-          height: 100% !important;
+          position: absolute !important;
+          top: 0 !important;
+          left: 0 !important;
+          width: 210mm !important;
+          height: 297mm !important;
           object-fit: fill !important;
-          z-index: 1;
+          z-index: 1 !important;
         }
         .pdf-write-canvas {
-          position: relative;
-          z-index: 2;
-          width: 100%;
-          height: 100%;
-          padding: 210px 65px 170px 65px;
-          box-sizing: border-box;
-          display: flex;
-          flex-direction: column;
+          position: relative !important;
+          z-index: 2 !important;
+          width: 210mm !important;
+          height: 297mm !important;
+          padding: 55mm 18mm 45mm 18mm !important;
+          box-sizing: border-box !important;
+          display: flex !important;
+          flex-direction: column !important;
+          overflow: hidden !important;
         }
         .pdf-canvas-date {
-          text-align: right;
-          font-family: Arial, sans-serif;
-          font-size: 14px;
-          font-weight: bold;
-          color: #111;
-          margin-bottom: 20px;
+          text-align: right !important;
+          font-family: Arial, sans-serif !important;
+          font-size: 13.5px !important;
+          font-weight: bold !important;
+          color: #111 !important;
+          margin-bottom: 12px !important;
         }
         .pdf-canvas-text {
-          font-family: Arial, Helvetica, sans-serif;
-          font-size: 15px;
-          line-height: 1.85;
-          color: #0f172a;
-          white-space: pre-wrap;
-          text-align: justify;
+          font-family: Arial, Helvetica, sans-serif !important;
+          font-size: 14.5px !important;
+          line-height: 1.75 !important;
+          color: #0f172a !important;
+          white-space: pre-wrap !important;
+          text-align: justify !important;
+          overflow: hidden !important;
         }
       </style>
     </head>
@@ -7152,7 +7194,9 @@ function printDirectPdfLetter() {
       ${clone.outerHTML}
       <script>
         window.onload = function() {
-          setTimeout(function() { window.print(); }, 400);
+          setTimeout(function() { 
+            window.print(); 
+          }, 350);
         };
       <\/script>
     </body>
@@ -7167,7 +7211,7 @@ function sendDirectPdfWhatsApp() {
   const phoneInput = document.getElementById("pdfInputPhone")?.value.trim() || "";
 
   if (!contentVal) {
-    alert("⚠️ Kripya letter me likhne ke liye pehle content enter karein!");
+    alert("⚠️ Kripya letter me content type karein!");
     return;
   }
 
@@ -7189,11 +7233,11 @@ ${contentVal}
 
 ----------------------------------------
 *Signed By Management:*
-✍️ *Soham Gajera* (Co-Founder & Managing Director)
-✍️ *Jeet Gajera* (Co-Founder & Director - Agriculture & Production)
+✍️ *Soham Gajera* (Co-Founder & Managing Director)[cite: 8]
+✍️ *Jeet Gajera* (Co-Founder & Director - Agriculture & Production)[cite: 8]
 
-*Pure Grow Farm*
-📍 Majevadi Road, Khodiyar Plot, Makhiyala, Junagadh - 362011
+*Pure Grow Farm*[cite: 8]
+📍 Majevadi Road, Khodiyar Plot, Makhiyala, Junagadh - 362011[cite: 8]
 📞 Contact: 9067891039 | 8200145732[cite: 8]
 ✉️ puregrowfarm001@gmail.com | 🌐 puregrowfarm.vercel.app[cite: 8]`;
 

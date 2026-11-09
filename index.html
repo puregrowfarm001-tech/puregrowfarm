@@ -1486,24 +1486,14 @@
   </div>
 
 </div>
-       <!-- ERP Segment: Product Pricing & Delivery Logistics Manager -->
-<div id="erpProductPricingTab" class="erp-section">
-  <h3>🏷️ Product Price & Delivery Charge Master (Supabase Cloud Synced)</h3>
-  <p class="muted" style="font-size:13px; margin-bottom:16px;">
-    Yahan se aap kisi bhi product ki Unit Price aur Delivery Charge badal sakte hain. Jab aap "Update Price & Delivery" par click karenge, toh purana price delete/overwrite ho jayega aur live user store me instant reflect hoga.
-  </p>
-
-  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; margin-bottom: 24px;" id="adminPricingCardsContainer">
-    <!-- script.js se dynamically populate hoga -->
-  </div>
-</div>
        
-      <!-- ERP Segment: Direct PDF Editable Letter Pad -->
+
+      <!-- ERP Segment: Strict A4 Letter Pad -->
       <div id="erpLetterPadTab" class="erp-section">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
           <div>
-            <h3 style="margin: 0; color: #165b26;">📝 Pure Grow Farm - PDF Letterhead Writer</h3>
-            <p class="muted" style="margin: 4px 0 0 0; font-size: 13px;">Aap is PDF template ke andar seedha text likh sakte hain, download kar sakte hain aur WhatsApp par bhej sakte hain.</p>
+            <h3 style="margin: 0; color: #165b26;">📝 Pure Grow Farm - A4 Locked Letterhead</h3>
+            <p class="muted" style="margin: 4px 0 0 0; font-size: 13px;">Ye letter pad exact A4 size me lock hai. Isme utna hi text aayega jo 1 A4 page par fit hota hai[cite: 8].</p>
           </div>
           <div style="display: flex; gap: 8px; flex-wrap: wrap;">
             <button type="button" class="btn" style="background: #165b26;" onclick="printDirectPdfLetter()">📥 Download / Save PDF</button>
@@ -1511,7 +1501,7 @@
           </div>
         </div>
 
-        <!-- Inputs Bar -->
+        <!-- Editor with A4 Capacity Indicator -->
         <div class="pdf-editor-panel">
           <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; margin-bottom: 12px;">
             <div>
@@ -1525,20 +1515,25 @@
           </div>
 
           <div>
-            <label style="font-size: 12px; font-weight: bold; color: #334155; display: block; margin-bottom: 4px;">✍️ Letter Content (Type or Paste your letter here):</label>
-            <textarea id="pdfInputContent" rows="7" style="width: 100%; padding: 12px; border: 1px solid var(--line); border-radius: 8px; font-family: Arial, sans-serif; font-size: 14px;" oninput="syncPdfText()" placeholder="Yahan apna patra / letter text type karein..."></textarea>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+              <label style="font-size: 12px; font-weight: bold; color: #334155;">✍️ Letter Content (Strict A4 Capacity):</label>
+              <span id="a4CapacityBadge" style="font-size: 12px; font-weight: bold; color: #16a34a; background: #f0fdf4; padding: 2px 8px; border-radius: 6px; border: 1px solid #bbf7d0;">
+                Capacity: 0 / 1800 Characters
+              </span>
+            </div>
+            <textarea id="pdfInputContent" rows="8" maxlength="1800" style="width: 100%; padding: 12px; border: 1px solid var(--line); border-radius: 8px; font-family: Arial, sans-serif; font-size: 14px;" oninput="syncPdfText()" placeholder="Yahan apna text likhein (A4 page limit ke hisab se)..."></textarea>
           </div>
         </div>
 
-        <!-- Exact Interactive PDF Page Preview -->
-        <h4 style="margin: 0 0 10px 0; color: #0f172a;">👁️ Live PDF Template Sheet View</h4>
+        <!-- Exact A4 Preview Sheet -->
+        <h4 style="margin: 0 0 10px 0; color: #0f172a;">👁️ Exact A4 Print Preview (210mm × 297mm)</h4>
         <div class="pdf-viewport-wrapper">
           <div id="printablePdfDocument" class="interactive-pdf-page">
             
-            <!-- Aapki PDF Image as Background -->
-            <img src="mushroom/PGF latter pad_page-0001.jpg" alt="Pure Grow Farm Letterpad PDF" class="pdf-bg-sheet" id="letterpadBgImg">
+            <!-- Aapki PDF Image as Exact A4 Background -->
+            <img src="mushroom/PGF latter pad.jpg" alt="Pure Grow Farm Letterpad PDF" class="pdf-bg-sheet" id="letterpadBgImg">
 
-            <!-- Writing Area directly over the PDF -->
+            <!-- Writing Canvas Locked Between Header & Signature -->
             <div class="pdf-write-canvas">
               <div id="pdfLiveDate" class="pdf-canvas-date"></div>
               <div id="pdfLiveBody" class="pdf-canvas-text">Yahan apna text likhein...</div>

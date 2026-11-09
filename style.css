@@ -786,3 +786,75 @@ th { background: #f8faf8; font-weight: 700; }
   min-height: 520px;
   outline: none;
 }
+
+/* =========================================================
+   STRICT A4 LOCKED LETTERPAD & TYPING LIMIT
+   ========================================================= */
+.pdf-viewport-wrapper {
+  overflow-x: auto;
+  padding: 25px 0;
+  display: flex;
+  justify-content: center;
+  background: #cbd5e1;
+  border-radius: 12px;
+}
+
+/* Strict Standard A4 Sheet: 794px x 1123px (210mm x 297mm at 96 DPI) */
+.interactive-pdf-page {
+  position: relative;
+  width: 794px !important;
+  height: 1123px !important;
+  max-width: 794px !important;
+  max-height: 1123px !important;
+  background-color: #ffffff;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  margin: 0 auto;
+  overflow: hidden !important; /* A4 size se bahar nahi jayega */
+  box-sizing: border-box;
+}
+
+.pdf-bg-sheet {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 794px;
+  height: 1123px;
+  object-fit: fill;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Typed text boundaries strictly between header and signatures */
+.pdf-write-canvas {
+  position: relative;
+  z-index: 2;
+  width: 794px;
+  height: 1123px;
+  padding: 215px 70px 165px 70px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.pdf-canvas-date {
+  text-align: right;
+  font-family: Arial, sans-serif;
+  font-size: 13.5px;
+  font-weight: bold;
+  color: #111111;
+  margin-bottom: 15px;
+  flex-shrink: 0;
+}
+
+.pdf-canvas-text {
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 14.5px;
+  line-height: 1.75;
+  color: #0f172a;
+  white-space: pre-wrap;
+  text-align: justify;
+  max-height: 720px; /* Signatures ke upar exact stop */
+  overflow: hidden;
+  word-wrap: break-word;
+}

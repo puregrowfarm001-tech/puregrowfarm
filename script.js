@@ -7052,56 +7052,45 @@ window.addEventListener("DOMContentLoaded", () => {
 });
 
 // =========================================================
-// OFFICIAL LETTER PAD LOGIC (LIVE PREVIEW, PDF PRINT & WHATSAPP)
+// DIRECT PDF LETTERPAD WRITER & EXPORT LOGIC
 // =========================================================
 
-function initLetterPadDefaults() {
-  const dateInput = document.getElementById("lpInputDate");
+function initPdfLetterpad() {
+  const dateInput = document.getElementById("pdfInputDate");
   if (dateInput && !dateInput.value) {
     const today = new Date();
     const month = String(today.getMonth() + 1).padStart(2, '0');
     const day = String(today.getDate()).padStart(2, '0');
     dateInput.value = `${today.getFullYear()}-${month}-${day}`;
   }
-  updateLetterPadPreview();
+  syncPdfText();
 }
 
-function updateLetterPadPreview() {
-  const refVal = document.getElementById("lpInputRef")?.value.trim() || "PGF/OFFICIAL/2026";
-  const dateVal = document.getElementById("lpInputDate")?.value;
-  const subVal = document.getElementById("lpInputSubject")?.value.trim() || "Official Notification";
-  const bodyVal = document.getElementById("lpInputBody")?.value || "";
+function syncPdfText() {
+  const dateVal = document.getElementById("pdfInputDate")?.value;
+  const contentVal = document.getElementById("pdfInputContent")?.value || "";
 
-  const dispRef = document.getElementById("lpPreviewRef");
-  const dispDate = document.getElementById("lpPreviewDate");
-  const dispSub = document.getElementById("lpPreviewSubject");
-  const dispBody = document.getElementById("lpPreviewBody");
+  const dispDate = document.getElementById("pdfLiveDate");
+  const dispBody = document.getElementById("pdfLiveBody");
 
-  if (dispRef) dispRef.textContent = refVal;
   if (dispDate) {
-    dispDate.textContent = dateVal ? new Date(dateVal).toLocaleDateString('en-IN') : new Date().toLocaleDateString('en-IN');
+    dispDate.textContent = dateVal ? `Date: ${new Date(dateVal).toLocaleDateString('en-IN')}` : "";
   }
-  if (dispSub) dispSub.textContent = subVal;
   if (dispBody) {
-    dispBody.textContent = bodyVal.trim() !== "" ? bodyVal : "Please type your content in the editor form above to view live preview...";
+    dispBody.textContent = contentVal.trim() !== "" ? contentVal : "Yahan apna text likhein...";
   }
 }
 
-function printOfficialLetterPad() {
+function printDirectPdfLetter() {
   const basePath = window.location.origin + window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/') + 1);
-  const logoUrl = basePath + "mushroom/pgf logo.png";
-  const sohamSign = basePath + "mushroom/soham sign.png";
-  const jeetSign = basePath + "mushroom/jeet sign.png";
+  const pdfFrame = document.getElementById("printablePdfDocument");
+  if (!pdfFrame) return;
 
-  const frameClone = document.getElementById("officialLetterPadPrintFrame").cloneNode(true);
-
-  // Absolute image paths ensuring images display in new print window
-  const imgs = frameClone.querySelectorAll("img");
-  imgs.forEach(img => {
-    if (img.src.includes("pgf logo.png")) img.src = logoUrl;
-    if (img.src.includes("soham sign.png")) img.src = sohamSign;
-    if (img.src.includes("jeet sign.png")) img.src = jeetSign;
-  });
+  const clone = pdfFrame.cloneNode(true);
+  const bgImg = clone.querySelector("#letterpadBgImg");
+  if (bgImg) {
+    bgImg.src = basePath + "mushroom/PGF latter pad.png";
+  }
 
   const printWindow = window.open('', '_blank');
   printWindow.document.write(`
@@ -7109,47 +7098,58 @@ function printOfficialLetterPad() {
     <html>
     <head>
       <meta charset="utf-8">
-      <title>Pure Grow Farm - Official Letter</title>
+      <title>Pure Grow Farm - Letter</title>
       <style>
-        @page { size: A4 portrait; margin: 8mm; }
+        @page { size: A4 portrait; margin: 0; }
         * { box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-        body { font-family: Arial, Helvetica, sans-serif; margin: 0; padding: 0; background: #fff; color: #111; }
-        .pgf-letterpad-frame {
-          width: 100% !important;
-          min-height: auto !important;
-          border: none !important;
+        body { margin: 0; padding: 0; background: #fff; }
+        .interactive-pdf-page {
+          position: relative;
+          width: 100vw !important;
+          height: 100vh !important;
+          min-height: 100vh !important;
           box-shadow: none !important;
-          padding: 4mm 6mm !important;
+          margin: 0 !important;
         }
-        .lp-header-row {
+        .pdf-bg-sheet {
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100% !important;
+          height: 100% !important;
+          object-fit: fill !important;
+          z-index: 1;
+        }
+        .pdf-write-canvas {
+          position: relative;
+          z-index: 2;
+          width: 100%;
+          height: 100%;
+          padding: 210px 65px 170px 65px;
+          box-sizing: border-box;
           display: flex;
-          justify-content: space-between;
-          align-items: center;
-          border-bottom: 2.5px solid #165b26;
-          padding-bottom: 12px;
+          flex-direction: column;
         }
-        .lp-header-logo img { width: 110px; height: 110px; object-fit: contain; }
-        .lp-header-details { text-align: right; line-height: 1.34; }
-        .lp-brand-heading { font-size: 26px; font-weight: 900; color: #165b26; letter-spacing: 0.5px; }
-        .lp-brand-tagline { font-size: 13px; font-weight: 700; color: #1e7e34; letter-spacing: 1.2px; margin: 1px 0 4px 0; }
-        .lp-contact-lines { font-size: 11.5px; color: #222; }
-        .lp-meta-bar { display: flex; justify-content: space-between; margin-top: 18px; margin-bottom: 18px; font-size: 13.5px; font-weight: 700; border-bottom: 1px dashed #cbd5e1; padding-bottom: 8px; }
-        .lp-subject-bar { margin-bottom: 20px; font-size: 15px; font-weight: 800; text-decoration: underline; text-underline-offset: 4px; }
-        .lp-body-content { font-size: 14.5px; line-height: 1.8; text-align: justify; white-space: pre-wrap; min-height: 480px; }
-        .lp-footer-row { margin-top: 35px; padding-top: 15px; border-top: 1.5px solid #e2e8f0; }
-        .lp-signatures-container { display: flex; justify-content: space-between; align-items: flex-end; padding: 0 10px; }
-        .lp-sign-column { width: 250px; text-align: center; }
-        .lp-sign-img-wrapper { height: 55px; display: flex; align-items: flex-end; justify-content: center; }
-        .lp-sign-img-wrapper img { max-width: 140px; max-height: 52px; object-fit: contain; }
-        .lp-sign-divider { border-top: 1.5px solid #111; width: 175px; margin: 0 auto 5px auto; }
-        .lp-signer-name { font-size: 15px; font-weight: 800; color: #0f172a; }
-        .lp-signer-role { font-size: 12px; color: #475569; font-weight: 600; line-height: 1.35; }
-        .lp-center-seal img { width: 58px; height: 58px; opacity: 0.82; }
-        .lp-center-seal-text { font-size: 9px; font-weight: 800; color: #165b26; letter-spacing: 0.5px; margin-top: 2px; }
+        .pdf-canvas-date {
+          text-align: right;
+          font-family: Arial, sans-serif;
+          font-size: 14px;
+          font-weight: bold;
+          color: #111;
+          margin-bottom: 20px;
+        }
+        .pdf-canvas-text {
+          font-family: Arial, Helvetica, sans-serif;
+          font-size: 15px;
+          line-height: 1.85;
+          color: #0f172a;
+          white-space: pre-wrap;
+          text-align: justify;
+        }
       </style>
     </head>
     <body>
-      ${frameClone.outerHTML}
+      ${clone.outerHTML}
       <script>
         window.onload = function() {
           setTimeout(function() { window.print(); }, 400);
@@ -7161,21 +7161,19 @@ function printOfficialLetterPad() {
   printWindow.document.close();
 }
 
-function sendLetterPadWhatsApp() {
-  const refVal = document.getElementById("lpInputRef")?.value.trim() || "PGF/OFFICIAL/2026";
-  const dateVal = document.getElementById("lpInputDate")?.value ? new Date(document.getElementById("lpInputDate").value).toLocaleDateString('en-IN') : new Date().toLocaleDateString('en-IN');
-  const subVal = document.getElementById("lpInputSubject")?.value.trim() || "Official Notification";
-  const bodyVal = document.getElementById("lpInputBody")?.value.trim() || "";
-  const phoneInput = document.getElementById("lpInputWpPhone")?.value.trim() || "";
+function sendDirectPdfWhatsApp() {
+  const dateVal = document.getElementById("pdfInputDate")?.value ? new Date(document.getElementById("pdfInputDate").value).toLocaleDateString('en-IN') : new Date().toLocaleDateString('en-IN');
+  const contentVal = document.getElementById("pdfInputContent")?.value.trim() || "";
+  const phoneInput = document.getElementById("pdfInputPhone")?.value.trim() || "";
 
-  if (!bodyVal) {
-    alert("⚠️ Kripya letter pad me content type karein!");
+  if (!contentVal) {
+    alert("⚠️ Kripya letter me likhne ke liye pehle content enter karein!");
     return;
   }
 
   let cleanPhone = phoneInput.replace(/[^0-9]/g, '');
   if (!cleanPhone || cleanPhone.length < 10) {
-    const promptPhone = prompt("Kripya WhatsApp number enter karein (10 digits):", "");
+    const promptPhone = prompt("Kripya 10-digit WhatsApp number enter karein:", "");
     if (!promptPhone) return;
     cleanPhone = promptPhone.replace(/[^0-9]/g, '');
   }
@@ -7185,12 +7183,9 @@ function sendLetterPadWhatsApp() {
   const waMessage = 
 `*PURE GROW FARM - OFFICIAL LETTERHEAD*
 ----------------------------------------
-📄 *Ref No:* ${refVal}
 📅 *Date:* ${dateVal}
-📋 *Subject:* ${subVal}
-----------------------------------------
 
-${bodyVal}
+${contentVal}
 
 ----------------------------------------
 *Signed By Management:*
@@ -7198,13 +7193,13 @@ ${bodyVal}
 ✍️ *Jeet Gajera* (Co-Founder & Director - Agriculture & Production)
 
 *Pure Grow Farm*
-📍 Majevadi Road, Khodiyar Plot, Makhiyala, Junagadh - 362011, Gujarat
-📞 Contact: 9067891039 | 8200145732
-✉️ puregrowfarm001@gmail.com | 🌐 puregrowfarm.vercel.app`;
+📍 Majevadi Road, Khodiyar Plot, Makhiyala, Junagadh - 362011
+📞 Contact: 9067891039 | 8200145732[cite: 8]
+✉️ puregrowfarm001@gmail.com | 🌐 puregrowfarm.vercel.app[cite: 8]`;
 
   window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(waMessage)}`, '_blank');
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-  initLetterPadDefaults();
+  initPdfLetterpad();
 });

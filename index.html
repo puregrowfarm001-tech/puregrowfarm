@@ -1498,133 +1498,50 @@
   </div>
 </div>
        
-      <!-- ERP Segment: Official Letter Pad Generator -->
+      <!-- ERP Segment: Direct PDF Editable Letter Pad -->
       <div id="erpLetterPadTab" class="erp-section">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
           <div>
-            <h3 style="margin: 0; color: #165b26;">📝 Pure Grow Farm - Official Letter Pad Console</h3>
-            <p class="muted" style="margin: 4px 0 0 0; font-size: 13px;">Letter content type karein, live preview dekhein aur direct PDF download ya WhatsApp send karein.</p>
+            <h3 style="margin: 0; color: #165b26;">📝 Pure Grow Farm - PDF Letterhead Writer</h3>
+            <p class="muted" style="margin: 4px 0 0 0; font-size: 13px;">Aap is PDF template ke andar seedha text likh sakte hain, download kar sakte hain aur WhatsApp par bhej sakte hain.</p>
           </div>
           <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-            <button type="button" class="btn" style="background: #2b8a3e;" onclick="printOfficialLetterPad()">📥 Download / Print PDF</button>
-            <button type="button" class="btn" style="background: #25d366;" onclick="sendLetterPadWhatsApp()">💬 Send via WhatsApp</button>
+            <button type="button" class="btn" style="background: #165b26;" onclick="printDirectPdfLetter()">📥 Download / Save PDF</button>
+            <button type="button" class="btn" style="background: #25d366;" onclick="sendDirectPdfWhatsApp()">💬 Send via WhatsApp</button>
           </div>
         </div>
 
-        <!-- 1. Live Input / Editor Section -->
-        <div class="lp-editor-card">
-          <h4 style="margin: 0 0 12px 0; color: #0f172a;">✍️ Letter Content Editor</h4>
-          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px;">
+        <!-- Inputs Bar -->
+        <div class="pdf-editor-panel">
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; margin-bottom: 12px;">
             <div>
-              <label style="font-size: 12px; font-weight: bold; color: #334155; display: block; margin-bottom: 4px;">Reference Number:</label>
-              <input type="text" id="lpInputRef" placeholder="e.g. PGF/2026/01" value="PGF/OFFICIAL/2026" oninput="updateLetterPadPreview()">
+              <label style="font-size: 12px; font-weight: bold; color: #334155; display: block; margin-bottom: 4px;">📅 Date:</label>
+              <input type="date" id="pdfInputDate" onchange="syncPdfText()">
             </div>
             <div>
-              <label style="font-size: 12px; font-weight: bold; color: #334155; display: block; margin-bottom: 4px;">Letter Date:</label>
-              <input type="date" id="lpInputDate" onchange="updateLetterPadPreview()">
-            </div>
-            <div>
-              <label style="font-size: 12px; font-weight: bold; color: #334155; display: block; margin-bottom: 4px;">Recipient WhatsApp Mobile (10-Digit):</label>
-              <input type="tel" id="lpInputWpPhone" placeholder="Mobile Number for WhatsApp" maxlength="10" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10);">
+              <label style="font-size: 12px; font-weight: bold; color: #334155; display: block; margin-bottom: 4px;">📱 Recipient WhatsApp Number (10 digits):</label>
+              <input type="tel" id="pdfInputPhone" placeholder="Mobile Number" maxlength="10" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10);">
             </div>
           </div>
 
-          <div style="margin-top: 12px;">
-            <label style="font-size: 12px; font-weight: bold; color: #334155; display: block; margin-bottom: 4px;">Subject / Letter Heading:</label>
-            <input type="text" id="lpInputSubject" placeholder="e.g. Official Notification / Authorization" value="Official Communication & Notification" oninput="updateLetterPadPreview()">
-          </div>
-
-          <div style="margin-top: 12px;">
-            <label style="font-size: 12px; font-weight: bold; color: #334155; display: block; margin-bottom: 4px;">Letter Body / Content Text:</label>
-            <textarea id="lpInputBody" rows="8" style="width: 100%; padding: 10px; border: 1px solid var(--line); border-radius: 8px; font-family: inherit; font-size: 14px;" oninput="updateLetterPadPreview()" placeholder="Yahan apna letter content likhein..."></textarea>
+          <div>
+            <label style="font-size: 12px; font-weight: bold; color: #334155; display: block; margin-bottom: 4px;">✍️ Letter Content (Type or Paste your letter here):</label>
+            <textarea id="pdfInputContent" rows="7" style="width: 100%; padding: 12px; border: 1px solid var(--line); border-radius: 8px; font-family: Arial, sans-serif; font-size: 14px;" oninput="syncPdfText()" placeholder="Yahan apna patra / letter text type karein..."></textarea>
           </div>
         </div>
 
-        <!-- 2. Live Preview Frame (Exact PDF Graphic & Text Alignment) -->
-        <h4 style="margin: 0 0 10px 0; color: #0f172a;">👁️ Live Letter Pad Print Preview (A4 Dimensions)</h4>
-        <div class="lp-preview-viewport">
-          <div id="officialLetterPadPrintFrame" class="pgf-letterpad-frame">
+        <!-- Exact Interactive PDF Page Preview -->
+        <h4 style="margin: 0 0 10px 0; color: #0f172a;">👁️ Live PDF Template Sheet View</h4>
+        <div class="pdf-viewport-wrapper">
+          <div id="printablePdfDocument" class="interactive-pdf-page">
             
-            <!-- Header Section (Matching PDF) -->
-            <div>
-              <div class="lp-header-row">
-                <!-- Round Logo Left -->
-                <div class="lp-header-logo">
-                  <img src="mushroom/pgf logo.png" alt="Pure Grow Farm Logo">
-                </div>
+            <!-- Aapki PDF Image as Background -->
+            <img src="mushroom/PGF latter pad.png" alt="Pure Grow Farm Letterpad PDF" class="pdf-bg-sheet" id="letterpadBgImg">
 
-                <!-- Right Aligned Contact Block -->
-                <div class="lp-header-details">
-                  <div class="lp-brand-heading">PURE GROW FARM</div>
-                  <div class="lp-brand-tagline">MUSHROOM CULTIVATION</div>
-                  <div class="lp-contact-lines">
-                    puregrowfarm001@gmail.com<br>
-                    puregrowfarm.vercel.app<br>
-                    Contact: 9067891039 | 8200145732<br>
-                    Pure Grow Mushroom Farm,<br>
-                    majevadi road, khodiyar plot,<br>
-                    makhiyala, junagadh, 362011
-                  </div>
-                </div>
-              </div>
-
-              <!-- Ref No & Date -->
-              <div class="lp-meta-bar">
-                <div>Ref. No: <span id="lpPreviewRef" style="color: #0f172a; font-weight: 700;">PGF/OFFICIAL/2026</span></div>
-                <div>Date: <span id="lpPreviewDate" style="color: #0f172a; font-weight: 700;">--/--/----</span></div>
-              </div>
-
-              <!-- Subject Line -->
-              <div class="lp-subject-bar">
-                Subject: <span id="lpPreviewSubject">Official Communication & Notification</span>
-              </div>
-
-              <!-- Letter Body Content -->
-              <div id="lpPreviewBody" class="lp-body-content">
-To Whom It May Concern,
-
-This is an official communication from Pure Grow Farm, Makhiyala, Junagadh. Pure Grow Farm specializes in sustainable, scientific cultivation of organic Oyster Mushrooms, spawn distribution, and practical agricultural training.
-
-All statements, conditions, and declarations contained within this correspondence are verified and approved under executive authorization.
-
-Thank you.
-              </div>
-            </div>
-
-            <!-- Footer Signatures (Matching PDF Left & Right Roles) -->
-            <div class="lp-footer-row">
-              <div class="lp-signatures-container">
-                
-                <!-- Left: Soham Gajera -->
-                <div class="lp-sign-column">
-                  <div class="lp-sign-img-wrapper">
-                    <img src="mushroom/soham sign.png" alt="Soham Gajera Signature">
-                  </div>
-                  <div class="lp-sign-divider"></div>
-                  <div class="lp-signer-name">Soham Gajera</div>
-                  <div class="lp-signer-role">Co-Founder & Managing Director</div>
-                </div>
-
-                <!-- Center: Official Seal -->
-                <div class="lp-center-seal" style="text-align: center;">
-                  <img src="mushroom/pgf logo.png" alt="Pure Grow Farm Seal">
-                  <div class="lp-center-seal-text">PURE GROW FARM</div>
-                </div>
-
-                <!-- Right: Jeet Gajera -->
-                <div class="lp-sign-column">
-                  <div class="lp-sign-img-wrapper">
-                    <img src="mushroom/jeet sign.png" alt="Jeet Gajera Signature">
-                  </div>
-                  <div class="lp-sign-divider"></div>
-                  <div class="lp-signer-name">Jeet Gajera</div>
-                  <div class="lp-signer-role">
-                    Co-Founder & Director<br>
-                    Agriculture & Production
-                  </div>
-                </div>
-
-              </div>
+            <!-- Writing Area directly over the PDF -->
+            <div class="pdf-write-canvas">
+              <div id="pdfLiveDate" class="pdf-canvas-date"></div>
+              <div id="pdfLiveBody" class="pdf-canvas-text">Yahan apna text likhein...</div>
             </div>
 
           </div>

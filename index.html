@@ -194,7 +194,7 @@
         <img src="mushroom/pgf logo.png" alt="Pure Grow Farm logo" class="logo-img">
         <div>
           <div class="brand-text">Pure Grow Farm</div>
-          <div class="brand-subtitle">Oyster Mushrooms - Green, Dry, Powder and Food Essentials</div>
+          <div id="brandSubtitleText" class="brand-subtitle">Oyster Mushrooms - Green, Dry, Powder and Food Essentials</div>
         </div>
       </div>
 
@@ -206,41 +206,50 @@
           <a href="#visit" class="muted">Farm Booking</a>
         </nav>
 
-        <!-- Admin Logged-In User Badge (Bell ke Left Side) -->
-<div id="adminHeaderBadge" style="display:none; align-items:center; gap:6px; background:#f0fdf4; border:1px solid #bbf7d0; padding:6px 14px; border-radius:999px; font-size:13px; font-weight:700; color:#15803d;">
-  <span>👤 Logged in as:</span>
-  <span id="adminHeaderNameDisplay" style="color:#166534; text-decoration:underline;">Admin</span>
-</div>
+        <!-- Admin Header Controls (Sirf Admin Login par dikhega: Name + Notification + Exit) -->
+        <div id="adminHeaderControls" style="display: none; align-items: center; gap: 10px; flex-wrap: wrap;">
+          <div style="display:inline-flex; align-items:center; gap:6px; background:#f0fdf4; border:1px solid #bbf7d0; padding:6px 14px; border-radius:999px; font-size:13px; font-weight:700; color:#15803d;">
+            <span>👤</span>
+            <span id="adminTopHeaderName" style="color:#166534;">Admin</span>
+          </div>
 
-<!-- Notification Bell & Dropdown Panel -->
-<div id="notificationBellWrapper" class="notification-bell-container" style="position: relative; display: inline-block;">
+          <!-- Admin Notification Bell -->
+          <div id="adminNotifWrapper" class="notification-bell-container" style="position: relative; display: inline-block;">
+            <button type="button" class="btn" style="background:#f1f5f9; color:#1e293b; border:1px solid var(--line); padding:6px 12px; min-height:36px; border-radius:999px; position:relative;" onclick="toggleNotificationDropdown()">
+              🔔 <span id="adminNotifCountBadge" style="display:none; position:absolute; top:-4px; right:-4px; background:#ef4444; color:#fff; font-size:10px; font-weight:bold; border-radius:50%; width:18px; height:18px; line-height:18px; text-align:center;">0</span>
+            </button>
+          </div>
 
-        <!-- Notification Bell & Dropdown Panel -->
+          <button type="button" class="btn" style="background:var(--danger); padding:6px 14px; min-height:36px; font-size:13px;" onclick="exitAdminPanel()">🚪 Exit Admin Console</button>
+        </div>
+
+        <!-- User Notification Bell (User ke liye upar rahega, Admin me hide ho jayega) -->
         <div id="notificationBellWrapper" class="notification-bell-container" style="position: relative; display: inline-block;">
           <button type="button" class="btn" style="background:#f1f5f9; color:#1e293b; border:1px solid var(--line); padding:6px 12px; min-height:36px; border-radius:999px; position:relative;" onclick="toggleNotificationDropdown()">
             🔔 <span id="notificationCountBadge" style="display:none; position:absolute; top:-4px; right:-4px; background:#ef4444; color:#fff; font-size:10px; font-weight:bold; border-radius:50%; width:18px; height:18px; line-height:18px; text-align:center;">0</span>
           </button>
+        </div>
 
-          <div id="notificationDropdownPanel" style="display:none; position:absolute; right:-10px; top:45px; width:310px; max-width:92vw; background:#fff; border:1px solid var(--line); border-radius:12px; box-shadow:0 10px 25px rgba(0,0,0,0.18); z-index:100000; padding:12px;">
-            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--line); padding-bottom:8px; margin-bottom:8px;">
-              <strong style="font-size:14px; color:#0f1720;">Notifications Alert</strong>
-              <button type="button" style="background:none; border:none; color:var(--accent); font-size:11px; font-weight:bold; cursor:pointer; padding:0;" onclick="clearAllNotifications()">Clear All</button>
-            </div>
-            <div id="notificationListBody" style="max-height:280px; overflow-y:auto; display:flex; flex-direction:column; gap:8px;">
-              <span class="muted" style="font-size:12px; text-align:center; padding:10px;">No new alerts.</span>
-            </div>
+        <!-- Shared Notification Dropdown Panel -->
+        <div id="notificationDropdownPanel" style="display:none; position:absolute; right:20px; top:68px; width:310px; max-width:92vw; background:#fff; border:1px solid var(--line); border-radius:12px; box-shadow:0 10px 25px rgba(0,0,0,0.18); z-index:100000; padding:12px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--line); padding-bottom:8px; margin-bottom:8px;">
+            <strong style="font-size:14px; color:#0f1720;">Notifications Alert</strong>
+            <button type="button" style="background:none; border:none; color:var(--accent); font-size:11px; font-weight:bold; cursor:pointer; padding:0;" onclick="clearAllNotifications()">Clear All</button>
+          </div>
+          <div id="notificationListBody" style="max-height:280px; overflow-y:auto; display:flex; flex-direction:column; gap:8px;">
+            <span class="muted" style="font-size:12px; text-align:center; padding:10px;">No new alerts.</span>
           </div>
         </div>
 
         <a class="btn" href="#authSection" id="authNavBtn">Login / Register</a>
-        <!-- User Profile Dropdown Menu (Login ke baad dikhega) -->
+        
+        <!-- User Profile Dropdown Menu -->
         <div id="userProfileMenuWrapper" class="notification-bell-container" style="position: relative; display: none;">
           <button type="button" class="btn" style="background:var(--accent); color:#fff; border-radius:999px; padding:6px 14px; font-weight:bold;" onclick="toggleProfileDropdown()">
             👤 <span id="headerUserNameDisplay">Profile</span> ▼
           </button>
 
           <div id="userProfileDropdownPanel" style="display:none; position:absolute; right:0; top:45px; width:280px; background:#fff; border:1px solid var(--line); border-radius:12px; box-shadow:0 10px 25px rgba(0,0,0,0.18); z-index:1000000; padding:14px; text-align:left;">
-            <!-- Close Button for Profile Menu -->
             <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--line); padding-bottom:6px; margin-bottom:8px;">
               <strong style="font-size:13px; color:var(--accent);">👤 User Profile</strong>
               <button type="button" style="background:#ef4444; color:#fff; border:none; border-radius:4px; padding:2px 8px; font-size:11px; cursor:pointer; font-weight:bold;" onclick="toggleProfileDropdown()">Close (X)</button>
@@ -712,19 +721,11 @@
 
     <!-- Core Dynamic Advanced ERP Module Console Workspace -->
     <section id="adminErpView" class="erp-wrapper">
-      <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid var(--accent); padding-bottom:12px; margin-bottom:15px; flex-wrap:wrap; gap:10px;">
-        <h2>Pure Grow Farm - Operational Core ERP Console Hub</h2>
-        
-        <!-- Right side: Logged in badge Exit button ke theek aage aayega -->
-        <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-          <div id="adminHeaderBadge" style="display:inline-flex; align-items:center; gap:6px; background:#f0fdf4; border:1px solid #bbf7d0; padding:6px 14px; border-radius:999px; font-size:13px; font-weight:700; color:#15803d;">
-            <span>👤 Logged in as:</span>
-            <span id="adminHeaderNameDisplay" style="color:#166534; text-decoration:underline;">Admin</span>
-          </div>
+      
 
           <button class="btn" style="background:var(--danger);" onclick="exitAdminPanel()">Exit Admin Console</button>
-        </div>
-      </div>
+        
+      
 
       <!-- Modern 3-Dots Admin Navigation Bar -->
       <div class="admin-menu-bar" style="display: flex; justify-content: space-between; align-items: center; background: #ffffff; padding: 10px 16px; border-radius: 12px; border: 1px solid var(--line); margin-bottom: 20px; position: relative;">

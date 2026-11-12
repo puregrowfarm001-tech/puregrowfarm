@@ -217,11 +217,13 @@ function handleNotificationClick(notifId) {
 
 function renderNotificationBadge() {
   const badge = document.getElementById("notificationCountBadge");
+  const adminBadge = document.getElementById("adminNotifCountBadge");
   const listBody = document.getElementById("notificationListBody");
-  if (!badge || !listBody) return;
+  if (!listBody) return;
 
   if (!currentUser) {
-    badge.style.display = "none";
+    if (badge) badge.style.display = "none";
+    if (adminBadge) adminBadge.style.display = "none";
     listBody.innerHTML = `<span class="muted" style="font-size:12px; text-align:center; padding:10px;">Please login to view notifications.</span>`;
     return;
   }
@@ -239,12 +241,16 @@ function renderNotificationBadge() {
 
   const unreadCount = myNotifs.filter(n => !n.isRead).length;
 
-  if (unreadCount > 0) {
-    badge.textContent = unreadCount;
-    badge.style.display = "inline-block";
-  } else {
-    badge.style.display = "none";
-  }
+  // Admin aur User dono ke badges update karein
+  [badge, adminBadge].forEach(b => {
+    if (!b) return;
+    if (unreadCount > 0) {
+      b.textContent = unreadCount;
+      b.style.display = "inline-block";
+    } else {
+      b.style.display = "none";
+    }
+  });
 
   if (myNotifs.length === 0) {
     listBody.innerHTML = `<span class="muted" style="font-size:12px; text-align:center; padding:10px;">No new alerts.</span>`;
@@ -283,9 +289,14 @@ function clearAllNotifications() {
 }
 
 document.addEventListener('click', function(e) {
-  const wrapper = document.getElementById("notificationBellWrapper");
+  const userBellWrapper = document.getElementById("notificationBellWrapper");
+  const adminBellWrapper = document.getElementById("adminNotifWrapper");
   const panel = document.getElementById("notificationDropdownPanel");
-  if (wrapper && panel && !wrapper.contains(e.target)) {
+  
+  const clickedInsideBell = (userBellWrapper && userBellWrapper.contains(e.target)) || 
+                            (adminBellWrapper && adminBellWrapper.contains(e.target));
+
+  if (panel && !clickedInsideBell && !panel.contains(e.target)) {
     if (panel.style.display === "block") {
       markAllNotificationsAsRead();
     }
@@ -325,6 +336,18 @@ function switchAuthBox(boxId) {
 async function triggerAdminView() {
   await fetchProductPricingFromCloud();
 renderAdminProductPricingCards();
+// 1. Subtitle hide karein (Sirf Logo + Pure Grow Farm dikhega)
+  const brandSub = document.getElementById("brandSubtitleText");
+  if (brandSub) brandSub.style.display = "none";
+
+  // 2. Upar wali user bell hide karein aur Admin Header Controls (Name + Bell + Exit) show karein
+  const userBell = document.getElementById("notificationBellWrapper");
+  if (userBell) userBell.style.display = "none";
+
+  const adminControls = document.getElementById("adminHeaderControls");
+  const adminNameDisplay = document.getElementById("adminTopHeaderName");
+  if (adminControls) adminControls.style.display = "flex";
+  if (adminNameDisplay) adminNameDisplay.textContent = currentUser ? currentUser.name : "Admin";
   // Header me logged-in admin ka naam dikhane ke liye
   const adminBadge = document.getElementById("adminHeaderBadge");
   const adminNameText = document.getElementById("adminHeaderNameDisplay");
@@ -450,7 +473,18 @@ renderAdminProductPricingCards();
 function exitAdminPanel() { handleLogout(); }
 
 async function checkUserSession() {
+  // Normal state restore karein
+  const brandSub = document.getElementById("brandSubtitleText");
+  if (brandSub) brandSub.style.display = "block";
+
+  const userBell = document.getElementById("notificationBellWrapper");
+  if (userBell) userBell.style.display = "inline-block";
+
+  const adminControls = document.getElementById("adminHeaderControls");
+  if (adminControls) adminControls.style.display = "none";
+
   renderNotificationBadge();
+
 
   if (!currentUser) {
     const savedSession = localStorage.getItem('pgf_session');

@@ -2156,6 +2156,24 @@ function printActiveAdminReport() {
   printWindow.document.close();
 }
 
+window.toggleCustomPrintDropdown = function(menuId) {
+  const targetMenu = document.getElementById(menuId);
+  if (!targetMenu) return;
+
+  const isOpen = targetMenu.style.display === "flex" || targetMenu.classList.contains("open-menu");
+
+  // Pehle sabhi custom dropdown menus band karein
+  document.querySelectorAll(".pgf-dropdown-menu").forEach(m => {
+    m.style.display = "none";
+    m.classList.remove("open-menu");
+  });
+
+  if (!isOpen) {
+    targetMenu.style.display = "flex";
+    targetMenu.classList.add("open-menu");
+  }
+};
+
 function sendAdminWhatsAppMessage(type, refIdOrIndex) {
   let targetPhone = "";
   let customerName = "";

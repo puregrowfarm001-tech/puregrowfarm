@@ -73,7 +73,7 @@ Key Nutrients: Carbohydrates, Protein, Dietary Fibre, Iron and Calcium.`,
     delivery: 25, 
     unit: "1 pack", 
     image: "mushroom/adadpapad2.png", 
-    detail: `Adad Mushroom Papad is prepared using traditional urad dal (adad) and oyster mushroom powder. It offers a delicious taste with a crispy texture when roasted or fried. Urad dal provides plant-based protein and dietary fibre. It also contains carbohydrates, iron, and other essential minerals.</br>
+    detail: `Adad Mushroom Papad is prepared using traditional urad dal (adad) and oyster mushroom powder. It offers a delicious taste with a crispy texture when roasted or fried. Urad dal provides plant-based protein and dietary fibre. It also contains carbohydrates, iron, and other essential minerals.<br>
 
 Key Nutrients: Plant-Based Protein, Carbohydrates, Dietary Fibre, Iron, Potassium and Phosphorus.`, 
     type: "papad", 
@@ -87,7 +87,7 @@ Key Nutrients: Plant-Based Protein, Carbohydrates, Dietary Fibre, Iron, Potassiu
     unit: "Custom", 
     bulk: true, 
     image: "mushroom/bulk.png", 
-    detail: `PURE GROW FARM provides quality mushroom products for restaurants, retailers, wholesalers, and food businesses. Our product range includes fresh oyster mushrooms, dried mushrooms, and mushroom powder. Each product offers different nutritional properties depending on its form. Bulk quantities and customised supply options are available.</br>
+    detail: `PURE GROW FARM provides quality mushroom products for restaurants, retailers, wholesalers, and food businesses. Our product range includes fresh oyster mushrooms, dried mushrooms, and mushroom powder. Each product offers different nutritional properties depending on its form. Bulk quantities and customised supply options are available.<br><BR>
 
 <strong>Key Nutrients: </strong>Protein, Dietary Fibre, B-complex Vitamins, Potassium, Phosphorus and Iron (depending on product).`, 
     stock: 99999 

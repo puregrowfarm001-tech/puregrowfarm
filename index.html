@@ -1710,36 +1710,61 @@
         </div>
       </div>
 
-      <!-- ERP Segment: Dedicated Print / Export Report Page with Year Filter -->
+      <!-- ERP Segment: Dedicated Print / Export Report Page with Year & Custom Date Filter -->
       <div id="erpPrintReportTab" class="erp-section">
         <div style="border-bottom: 2px solid #0284c7; padding-bottom: 12px; margin-bottom: 20px;">
           <h3 style="margin: 0; color: #0284c7;">🖨️ Official Financial & Operational Report Generation Console</h3>
-          <p class="muted" style="margin: 4px 0 0 0; font-size: 13px;">Yahan se aap kisi bhi year ka filter select karke poora consolidated ledger preview dekh sakte hain aur official PDF print kar sakte hain.</p>
+          <p class="muted" style="margin: 4px 0 0 0; font-size: 13px;">Yahan se aap Fiscal Year ya 2 Custom Dates (From - To) ke beech ka consolidated ledger preview dekh sakte hain aur official PDF print kar sakte hain.</p>
         </div>
 
-        <!-- Year Filter & Print Controls Card -->
-        <div style="background: #f8fafc; border: 1px solid var(--line); border-radius: 14px; padding: 20px; margin-bottom: 24px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
-          <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
-            <label style="font-size: 14px; font-weight: bold; color: #334155;">📅 Select Fiscal Year Filter:</label>
-            <select id="adminYearFilterSelect" style="padding: 8px 16px; font-size: 14px; border: 2px solid #0284c7; border-radius: 8px; font-weight: bold; color: #0284c7; background: #fff; cursor: pointer;" onchange="handleAdminYearFilterChange()">
-              <option value="ALL">All Years (Cumulative)</option>
-              <option value="2026">2026</option>
-              <option value="2025">2025</option>
-            </select>
+        <!-- Year Filter, Date Range & Print Controls Card -->
+        <div style="background: #f8fafc; border: 1px solid var(--line); border-radius: 14px; padding: 20px; margin-bottom: 24px; display: flex; flex-direction: column; gap: 18px;">
+          
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; align-items: end;">
+            <!-- Option 1: Fiscal Year Filter (Larger Readable Text) -->
+            <div>
+              <label style="font-size: 14px; font-weight: bold; color: #334155; display: block; margin-bottom: 6px;">📅 Option 1: Select Fiscal Year Filter:</label>
+              <select id="adminYearFilterSelect" style="width: 100%; padding: 10px 14px; font-size: 16px; border: 2px solid #0284c7; border-radius: 8px; font-weight: 800; color: #0284c7; background: #fff; cursor: pointer;" onchange="handleAdminYearFilterChange()">
+                <option value="ALL" style="font-size: 16px; font-weight: bold; padding: 8px;">All Years (Cumulative)</option>
+                <option value="2026" style="font-size: 16px; font-weight: bold; padding: 8px;">Year 2027</option>
+                <option value="2026" style="font-size: 16px; font-weight: bold; padding: 8px;">Year 2026</option>
+                <option value="2025" style="font-size: 16px; font-weight: bold; padding: 8px;">Year 2025</option>
+              </select>
+            </div>
+
+            <!-- Option 2: Custom 2-Date Range Filter -->
+            <div style="background: #ffffff; padding: 12px 14px; border-radius: 10px; border: 1px solid #cbd5e1;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                <label style="font-size: 13.5px; font-weight: bold; color: #15803d;">📆 Option 2: Custom Date Range (From - To):</label>
+                <button type="button" style="background: #ef4444; color: #fff; border: none; border-radius: 4px; padding: 2px 8px; font-size: 11px; min-height: auto; cursor: pointer;" onclick="clearPrintDateRange()">Clear Dates</button>
+              </div>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                <div>
+                  <span style="font-size: 11px; font-weight: bold; color: #64748b;">Start Date:</span>
+                  <input type="date" id="printStartDate" style="padding: 6px 8px; font-size: 13px; border: 1.5px solid #16a34a; border-radius: 6px;">
+                </div>
+                <div>
+                  <span style="font-size: 11px; font-weight: bold; color: #64748b;">End Date:</span>
+                  <input type="date" id="printEndDate" style="padding: 6px 8px; font-size: 13px; border: 1.5px solid #16a34a; border-radius: 6px;">
+                </div>
+              </div>
+            </div>
           </div>
 
-          <button type="button" class="btn" style="background: #0284c7; font-size: 14px; padding: 10px 22px; font-weight: 800; box-shadow: 0 4px 12px rgba(2,132,199,0.25);" onclick="printActiveAdminReport()">
-            🖨️ Generate & Print Official Report
-          </button>
+          <div style="display: flex; justify-content: flex-end; border-top: 1px dashed #cbd5e1; padding-top: 14px;">
+            <button type="button" class="btn" style="background: #0284c7; font-size: 15px; padding: 12px 24px; font-weight: 800; box-shadow: 0 4px 12px rgba(2,132,199,0.25);" onclick="printActiveAdminReport()">
+              🖨️ Generate & Print Official Report
+            </button>
+          </div>
         </div>
 
-        <!-- Quick Summary Box for Selected Year -->
+        <!-- Quick Summary Box for Selected Filter -->
         <div style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 12px; padding: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.03);">
           <h4 style="margin: 0 0 14px 0; color: #0f172a;">📊 Report Overview Checklist:</h4>
           <ul style="margin: 0; padding-left: 20px; line-height: 1.8; font-size: 13.5px; color: #334155;">
-            <li>Select kiye gaye year ke hisab se <strong>Orders, Bookings, Offline Sales, Purchases, Expenses, aur Damages</strong> calculate honge[cite: 20].</li>
-            <li>Export hone wale document me <strong>Soham aur Jeet ke individual accounts</strong> ka net reconciliation auto-calculated aayega[cite: 20].</li>
-            <li>Report bilkul standard A4 format me bina extra buttons ya action controls ke clean print hogi[cite: 20].</li>
+            <li>Agar aapne <strong>Custom Date Range (Start Date - End Date)</strong> daali hai, toh sirf unhi do dates ke beech ka data print hoga.</li>
+            <li>Agar dates khali hain, toh select kiye gaye <strong>Fiscal Year</strong> ke hisab se Orders, Bookings, Sales, Purchases, Expenses, aur Damages calculate honge.</li>
+            <li>Export hone wale document me <strong>Soham aur Jeet ke individual accounts</strong> ka net reconciliation auto-calculated aayega.</li>
           </ul>
         </div>
       </div>

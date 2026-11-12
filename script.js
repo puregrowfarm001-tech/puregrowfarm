@@ -1394,6 +1394,7 @@ function loadUserPanelData() {
           <div onclick="toggleBookingDetailsView('${b.bookingId}')" style="padding: 12px 14px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; background: #fff;">
             <div>
               <strong>${b.type || 'Program'} Training Booking</strong><br>
+              ${b.letterpadIssued ? `<span class="badge" style="background:#ede9fe; color:#6d28d9; margin-left:6px; font-size:10px;">📝 Letterpad Ready</span>` : ''}
               <small class="muted">Ref ID: ${b.bookingId} | Date: ${b.dateLogged || ''}</small>
             </div>
             <div style="text-align: right;">
@@ -1416,6 +1417,8 @@ function loadUserPanelData() {
               <div><strong>👨‍🌾 Training Session Date:</strong> ${b.date || 'N/A'}</div>
             `}
             ${certActionSection}
+            ${letterpadActionSection}
+            ${pendingNoteSection}
           </div>
         </div>
       `;
@@ -5263,7 +5266,9 @@ async function backgroundDataSync() {
         status: b.status,
         approvedDate: b.approved_date,
         certIssued: b.cert_issued,
-        certIssueDate: b.cert_issue_date
+        certIssueDate: b.cert_issue_date,
+        letterpadIssued: b.letterpad_issued || false,
+        letterpadIssueDate: b.letterpad_issue_date || ""
       }));
     }
 

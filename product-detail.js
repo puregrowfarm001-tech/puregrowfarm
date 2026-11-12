@@ -142,7 +142,15 @@ async function initProductDetailPage() {
     console.warn("Pricing cloud sync error:", err);
   }
 
-  const product = localProducts.find(p => p.id === prodId) || localProducts[0];
+  const baseProd = BASE_PRODUCTS.find(p => p.id === prodId) || BASE_PRODUCTS[0];
+  const cachedProd = localProducts.find(p => p.id === prodId) || {};
+
+  // Price, delivery aur stock cloud/cache se aayega, lekin detail hamesha naye BASE_PRODUCTS se aayegi
+  const product = {
+    ...baseProd,
+    ...cachedProd,
+    detail: baseProd.detail
+  };
   const gallery = PRODUCT_GALLERY_IMAGES[product.id] || [product.image];
 
   const container = document.getElementById("productDetailContainer");

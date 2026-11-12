@@ -2174,6 +2174,72 @@ window.toggleCustomPrintDropdown = function(menuId) {
   }
 };
 
+// =========================================================
+// CUSTOM LARGE DROPDOWN CONTROLLERS (GLOBAL WINDOW SCOPE)
+// =========================================================
+
+window.toggleCustomPrintDropdown = function(menuId) {
+  const targetMenu = document.getElementById(menuId);
+  if (!targetMenu) return;
+
+  const isOpen = targetMenu.style.display === "flex" || targetMenu.classList.contains("open-menu");
+
+  document.querySelectorAll(".pgf-dropdown-menu").forEach(m => {
+    m.style.display = "none";
+    m.classList.remove("open-menu");
+  });
+
+  if (!isOpen) {
+    targetMenu.style.display = "flex";
+    targetMenu.classList.add("open-menu");
+  }
+};
+
+window.selectCustomYearOption = function(val, labelText, el) {
+  const hiddenInput = document.getElementById("adminYearFilterSelect");
+  const labelDisplay = document.getElementById("yearDropdownSelectedLabel");
+  const menu = document.getElementById("yearDropdownMenu");
+
+  if (hiddenInput) hiddenInput.value = val;
+  if (labelDisplay) labelDisplay.textContent = labelText;
+
+  if (menu) {
+    menu.querySelectorAll(".pgf-dropdown-item").forEach(item => item.classList.remove("active-item"));
+    if (el) el.classList.add("active-item");
+    menu.style.display = "none";
+    menu.classList.remove("open-menu");
+  }
+
+  if (typeof handleAdminYearFilterChange === "function") {
+    handleAdminYearFilterChange();
+  }
+};
+
+window.selectCustomSectionOption = function(val, labelText, el) {
+  const hiddenInput = document.getElementById("printSectionFilterSelect");
+  const labelDisplay = document.getElementById("sectionDropdownSelectedLabel");
+  const menu = document.getElementById("sectionDropdownMenu");
+
+  if (hiddenInput) hiddenInput.value = val;
+  if (labelDisplay) labelDisplay.textContent = labelText;
+
+  if (menu) {
+    menu.querySelectorAll(".pgf-dropdown-item").forEach(item => item.classList.remove("active-item"));
+    if (el) el.classList.add("active-item");
+    menu.style.display = "none";
+    menu.classList.remove("open-menu");
+  }
+};
+
+document.addEventListener("click", function (e) {
+  if (!e.target.closest(".pgf-custom-dropdown")) {
+    document.querySelectorAll(".pgf-dropdown-menu").forEach(m => {
+      m.style.display = "none";
+      m.classList.remove("open-menu");
+    });
+  }
+});
+
 function sendAdminWhatsAppMessage(type, refIdOrIndex) {
   let targetPhone = "";
   let customerName = "";

@@ -721,32 +721,31 @@
 
     <!-- Core Dynamic Advanced ERP Module Console Workspace -->
     <section id="adminErpView" class="erp-wrapper">
-    
+
       <!-- Modern 3-Dots Admin Navigation Bar -->
-      <div class="admin-menu-bar" style="display: flex; justify-content: space-between; align-items: center; background: #ffffff; padding: 10px 16px; border-radius: 12px; border: 1px solid var(--line); margin-bottom: 20px; position: relative;">
+      <div class="admin-menu-bar" style="display: flex; justify-content: space-between; align-items: center; background: #ffffff; padding: 10px 16px; border-radius: 12px; border: 1px solid var(--line); margin-bottom: 20px; position: relative; flex-wrap: wrap; gap: 10px;">
         
-        <!-- Active Tab Title Indicator -->
-        <div style="display: flex; align-items: center; gap: 8px;">
+        <!-- Left Side: Active Tab Title + Live Date & Time -->
+        <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
           <span style="font-size: 13px; font-weight: bold; color: var(--muted);">Active Page:</span>
           <span id="activeErpPageTitle" style="font-size: 15px; font-weight: 800; color: var(--accent); background: #f0fdf4; padding: 4px 12px; border-radius: 8px; border: 1px solid #bbf7d0;">
             Orders Manager Page
           </span>
 
+          <!-- Live Date & Time Display -->
           <span id="adminLiveDateTimeDisplay" style="font-size: 13px; font-weight: 700; color: #0284c7; background: #f0f9ff; padding: 5px 12px; border-radius: 8px; border: 1px solid #bae6fd; white-space: nowrap;">
             📅 Loading...
           </span>
         </div>
 
-      
-
-        <!-- 3-Dots Menu Button & Dropdown Container -->
-        <div class="admin-dots-wrapper" style="position: relative;">
+        <!-- Right Side: 3-Dots Menu Button & Dropdown Container -->
+        <div class="admin-dots-wrapper" style="position: relative; margin-left: auto;">
           <button type="button" class="btn" id="btnAdmin3Dots" onclick="toggleAdminNavDropdown(event)" style="background: #0f172a; color: #ffffff; border-radius: 8px; padding: 8px 14px; font-size: 18px; font-weight: 900; line-height: 1; letter-spacing: 2px;">
             ⋮ <span style="font-size: 13px; letter-spacing: normal; font-weight: bold; margin-left: 4px;">Menu</span>
           </button>
 
           <!-- 3-Dots Dropdown Panel -->
-          <div id="adminNavDropdownPanel" style="display: none; position: absolute; right: 0; top: 48px; width: 310px; max-width: 90vw; background: #ffffff; border: 1px solid var(--line); border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.18); z-index: 100000; padding: 10px; display: none; flex-direction: column; gap: 6px;">
+          <div id="adminNavDropdownPanel" style="display: none; position: absolute; right: 0; top: 48px; width: 310px; max-width: 90vw; background: #ffffff; border: 1px solid var(--line); border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.18); z-index: 100000; padding: 10px; flex-direction: column; gap: 6px;">
             <div style="font-size: 11px; font-weight: bold; color: #64748b; padding: 4px 8px; border-bottom: 1px solid var(--line); margin-bottom: 4px; text-transform: uppercase;">
               Select ERP Console Page:
             </div>
@@ -778,7 +777,6 @@
             <button type="button" class="admin-menu-item" id="tabNavOverviewSummary" onclick="selectErpMenuTab('erpOverviewSummaryTab', 'tabNavOverviewSummary', 'Overview & Live Summary Ledger')">
               📈 Overview & Live Summary Ledger
             </button>
-            <!-- 👈 3-Dots Menu me sabse aakhri (Last) option -->
             <button type="button" class="admin-menu-item" id="tabNavPrintReport" onclick="selectErpMenuTab('erpPrintReportTab', 'tabNavPrintReport', '🖨️ Print / Export Report & Year Filter')" style="border-top: 1px dashed var(--line); margin-top: 4px; color: #0284c7;">
               🖨️ Print / Export Report & Year Filter
             </button>
@@ -788,8 +786,7 @@
       </div>
 
       <!-- ERP Segment 1: Orders -->
-      <div id="erpOrdersTab" class="erp-section active">
-        <h3>E-Commerce Customer Orders Grid Ledger & Shipment Management</h3>
+      <div id="erpOrdersTab" class="erp-section active">    <h3>E-Commerce Customer Orders Grid Ledger & Shipment Management</h3>
         
         <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 15px; flex-wrap: wrap;">
           <input type="search" id="adminOrdersSearchInput" placeholder="🔍 Search Orders by Name, Phone, ID..." style="max-width: 340px;" oninput="filterAdminOrdersTable()">

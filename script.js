@@ -104,10 +104,12 @@ function closeOrdersModal() {
   document.getElementById("userOrdersModal").classList.remove("active-modal");
 }
 
-function openBookingsModal() {
+async function openBookingsModal() {
   document.getElementById("userBookingsModal").classList.add("active-modal");
+  await loadUserPanelDataFromCloud();
   loadUserPanelData();
 }
+
 function closeBookingsModal() {
   document.getElementById("userBookingsModal").classList.remove("active-modal");
 }

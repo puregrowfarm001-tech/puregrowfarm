@@ -1393,10 +1393,13 @@ function loadUserPanelData() {
         : '';
       return `
         <div style="border: 1px solid #cbd5e1; border-radius: 10px; margin-bottom: 12px; background:#fff; overflow:hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
-          <div onclick="toggleBookingDetailsView('${b.bookingId}')" style="padding: 12px 14px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; background: #fff;">
+         <div onclick="toggleBookingDetailsView('${b.bookingId}')" style="padding: 12px 14px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; background: #fff;">
             <div>
               <strong>${b.type || 'Program'} Training Booking</strong><br>
-              ${b.letterpadIssued ? `<span class="badge" style="background:#ede9fe; color:#6d28d9; margin-left:6px; font-size:10px;">📝 Letterpad Ready</span>` : ''}
+              <div style="display:flex; gap:6px; flex-wrap:wrap; margin: 4px 0;">
+                ${b.certIssued ? `<span class="badge" style="background:#dcfce7; color:#15803d; font-size:10px;">📜 Certificate Ready</span>` : ''}
+                ${b.letterpadIssued ? `<span class="badge" style="background:#ede9fe; color:#6d28d9; font-size:10px;">📝 Letterpad Ready</span>` : ''}
+              </div>
               <small class="muted">Ref ID: ${b.bookingId} | Date: ${b.dateLogged || ''}</small>
             </div>
             <div style="text-align: right;">

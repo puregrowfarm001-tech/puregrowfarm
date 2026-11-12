@@ -21,10 +21,9 @@ const BASE_PRODUCTS = [
     delivery: 50, 
     unit: "1kg", 
     image: "mushroom/Screenshot 2025-10-24 154001.png", 
-    detail: `1. Freshly harvested organic green oyster mushrooms from our Makhiyala farm.
-2. Rich in plant-based protein, dietary fibre, vitamins (B2, B3), and essential minerals.
-3. Soft texture and mild flavour, ideal for curries, soups, stir-fry, and snacks.
-4. Storage: Keep refrigerated at 2–5°C and consume within 3–5 days.`, 
+    detail: `Fresh Green Oyster Mushrooms are naturally nutritious and delicious. They are a good source of plant-based protein and dietary fibre. They contain B-complex vitamins and essential minerals like potassium, phosphorus, and iron. Naturally low in fat and calories, they are ideal for healthy meals and daily cooking.
+
+Key Nutrients: Protein, Dietary Fibre, Vitamin B2, Vitamin B3, Potassium, Phosphorus and Iron.`, 
     type: "green", 
     stock: 100 
   },
@@ -35,10 +34,9 @@ const BASE_PRODUCTS = [
     delivery: 40, 
     unit: "1kg pack", 
     image: "mushroom/oyst dry.webp", 
-    detail: `1. Hygienically dehydrated oyster mushrooms with long shelf life (up to 12 months).
-2. Retains natural aroma, protein, and essential nutrients without any preservatives.
-3. Simply soak in warm water for 10–15 minutes before cooking gravies or soups.
-4. Storage: Keep in an airtight container in a cool, dry place.`, 
+    detail: `Dried Oyster Mushrooms are carefully processed from fresh mushrooms to reduce moisture and improve storage life. They provide concentrated mushroom flavour and nutrients. They contain plant-based protein, dietary fibre, B-complex vitamins, and essential minerals. Ideal for soups, curries, noodles, and other recipes.
+
+Key Nutrients: Protein, Dietary Fibre, Vitamin B-complex, Potassium, Phosphorus and Iron.`, 
     type: "dry", 
     stock: 50 
   },
@@ -49,10 +47,9 @@ const BASE_PRODUCTS = [
     delivery: 30, 
     unit: "100gm pack", 
     image: "mushroom/oyster powder.png", 
-    detail: `1. 100% pure, finely ground oyster mushroom powder with zero additives.
-2. Natural immunity booster packed with protein, iron, and antioxidants.
-3. Easy to mix in daily dal, sabzi, soup, roti atta, or health drinks.
-4. Storage: Store in a cool, dry place away from direct sunlight.`, 
+    detail: `Oyster Mushroom Powder is prepared from dried oyster mushrooms and finely ground for easy use. It adds natural mushroom flavour to everyday food preparations. It contains protein, dietary fibre, vitamins, and minerals. Perfect for soups, curries, sauces, snacks, and healthy recipes.
+
+Key Nutrients: Protein, Dietary Fibre, B-complex Vitamins, Potassium, Phosphorus and Iron.`, 
     type: "powder", 
     stock: 80 
   },
@@ -63,10 +60,9 @@ const BASE_PRODUCTS = [
     delivery: 20, 
     unit: "200gm pack", 
     image: "mushroom/methikhakhra2.png", 
-    detail: `1. Crispy roasted Gujarati khakhra enriched with nutritious oyster mushroom powder and kasuri methi.
-2. High in fibre and protein, making it a healthy, guilt-free tea-time snack.
-3. Prepared hygienically with quality whole wheat flour and mild spices.
-4. Vacuum-packed to keep every khakhra fresh and crunchy.`, 
+    detail: `Methi Mushroom Khakhra is a crispy and flavourful snack combining traditional fenugreek with oyster mushroom powder. It provides carbohydrates for energy along with dietary fibre and plant-based protein. It also contains nutrients from fenugreek and mushrooms. Enjoy it as a tasty snack with tea or meals.
+
+Key Nutrients: Carbohydrates, Protein, Dietary Fibre, Iron and Calcium.`, 
     type: "khakhra", 
     stock: 120 
   },
@@ -77,10 +73,9 @@ const BASE_PRODUCTS = [
     delivery: 25, 
     unit: "1 pack", 
     image: "mushroom/adadpapad2.png", 
-    detail: `1. Traditional urad dal papad blended with high-protein oyster mushroom powder.
-2. Crunchy, delicious, and nutritious accompaniment for daily meals.
-3. Can be roasted directly on flame or fried as per your preference.
-4. Hygienically sun-dried and packed for long-lasting freshness.`, 
+    detail: `Adad Mushroom Papad is prepared using traditional urad dal (adad) and oyster mushroom powder. It offers a delicious taste with a crispy texture when roasted or fried. Urad dal provides plant-based protein and dietary fibre. It also contains carbohydrates, iron, and other essential minerals.
+
+Key Nutrients: Plant-Based Protein, Carbohydrates, Dietary Fibre, Iron, Potassium and Phosphorus.`, 
     type: "papad", 
     stock: 90 
   },
@@ -92,10 +87,9 @@ const BASE_PRODUCTS = [
     unit: "Custom", 
     bulk: true, 
     image: "mushroom/bulk.png", 
-    detail: `1. Direct farm-to-business wholesale supply for hotels, restaurants, and retailers.
-2. Consistent quality and bulk availability of fresh, dry, and powder mushrooms.
-3. Custom packaging and competitive wholesale pricing available.
-4. Contact us directly on WhatsApp for bulk orders and distribution inquiries.`, 
+    detail: `PURE GROW FARM provides quality mushroom products for restaurants, retailers, wholesalers, and food businesses. Our product range includes fresh oyster mushrooms, dried mushrooms, and mushroom powder. Each product offers different nutritional properties depending on its form. Bulk quantities and customised supply options are available.
+
+Key Nutrients: Protein, Dietary Fibre, B-complex Vitamins, Potassium, Phosphorus and Iron (depending on product).`, 
     stock: 99999 
   }
 ];

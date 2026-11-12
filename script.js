@@ -28,12 +28,12 @@ const ADMIN_USERS = [
 ];
 
 const BASE_PRODUCTS = [
-  { id: 1, name: "Fresh Green Oyster Mushroom", price: 180, delivery: 50, unit: "1kg", image: "mushroom/Screenshot 2025-10-24 154001.png", detail: "Picked fresh, chilled and delivered within 24-48 hours.", type: "green", stock: 0 },
-  { id: 2, name: "Dried Oyster Mushroom", price: 800, delivery: 40, unit: "1kg pack", image: "mushroom/oyst dry.webp", detail: "Slow-dried to preserve flavor and nutrients.", type: "dry", stock: 0 },
-  { id: 3, name: "Oyster Mushroom Powder", price: 130, delivery: 30, unit: "100gm pack", image: "mushroom/oyster powder.png", detail: "Mushroom powder for soup, 1kg pack curry, health mix and snacks.", type: "powder", stock: 0 },
-  { id: 4, name: "Methi Mushroom Khakhra", price: 70, delivery: 20, unit: "200gm pack", image: "mushroom/methikhakhra2.png", detail: "Crispy khakhra prepared with oyster mushroom powder.", type: "khakhra", stock: 0 },
-  { id: 5, name: "Adad Mushroom Papad", price: 120, delivery: 25, unit: "1 pack", image: "mushroom/adadpapad2.png", detail: "Papad enriched with mushroom nutrition.", type: "papad", stock: 0 },
-  { id: 6, name: "Bulk and Wholesale Supply", price: 0, delivery: 0, unit: "Custom", bulk: true, image: "mushroom/bulk.png", detail: "Supply for restaurants, retailers and local markets.", stock: 99999 }
+  { id: 1, name: "Fresh Green Oyster Mushroom", price: 180, delivery: 50, unit: "1kg", image: "mushroom/Screenshot 2025-10-24 154001.png", detail: "Freshly harvested oyster mushrooms, carefully packed to deliver freshness and quality.", type: "green", stock: 0 },
+  { id: 2, name: "Dried Oyster Mushroom", price: 800, delivery: 40, unit: "1kg pack", image: "mushroom/oyst dry.webp", detail: "Carefully dried oyster mushrooms to preserve their natural flavour and quality.", type: "dry", stock: 0 },
+  { id: 3, name: "Oyster Mushroom Powder", price: 130, delivery: 30, unit: "100gm pack", image: "mushroom/oyster powder.png", detail: "Finely processed oyster mushroom powder for soups, curries, and healthy recipes.", type: "powder", stock: 0 },
+  { id: 4, name: "Methi Mushroom Khakhra", price: 70, delivery: 20, unit: "200gm pack", image: "mushroom/methikhakhra2.png", detail: "Crispy and flavourful methi khakhra enriched with oyster mushroom powder.", type: "khakhra", stock: 0 },
+  { id: 5, name: "Adad Mushroom Papad", price: 120, delivery: 25, unit: "1 pack", image: "mushroom/adadpapad2.png", detail: "Traditional adad papad enriched with mushroom powder for a unique flavour.", type: "papad", stock: 0 },
+  { id: 6, name: "Bulk and Wholesale Supply", price: 0, delivery: 0, unit: "Custom", bulk: true, image: "mushroom/bulk.png", detail: "Reliable mushroom supply for restaurants, retailers, wholesalers, and businesses.", stock: 99999 }
 ];
 
 let products = JSON.parse(localStorage.getItem('pgf_live_products')) || BASE_PRODUCTS;

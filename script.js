@@ -7862,3 +7862,30 @@ function printDirectPdfLetter() {
 document.addEventListener("DOMContentLoaded", () => {
   initPdfLetterpad();
 });
+
+// Live Date & Time Clock for Admin Navigation Bar
+function updateAdminLiveClock() {
+  const clockEl = document.getElementById("adminLiveDateTimeDisplay");
+  if (!clockEl) return;
+
+  const now = new Date();
+  const dateStr = now.toLocaleDateString('en-IN', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric'
+  });
+  const timeStr = now.toLocaleTimeString('en-IN', {
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: true
+  }).toUpperCase();
+
+  clockEl.textContent = `📅 ${dateStr} | ⏰ ${timeStr}`;
+}
+
+// Page load hote hi clock start karein aur har 1 second me update karein
+document.addEventListener("DOMContentLoaded", () => {
+  updateAdminLiveClock();
+  setInterval(updateAdminLiveClock, 1000);
+});

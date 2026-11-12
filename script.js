@@ -379,7 +379,9 @@ renderAdminProductPricingCards();
       status: b.status,
       approvedDate: b.approved_date,
       certIssued: b.cert_issued,
-      certIssueDate: b.cert_issue_date
+      certIssueDate: b.cert_issue_date,
+      letterpadIssued: b.letterpad_issued || false,
+      letterpadIssueDate: b.letterpad_issue_date || ""
     }));
   }
 
@@ -1362,17 +1364,31 @@ function loadUserPanelData() {
       
       let statusText = isConfirmed ? 'Booking Confirmed' : (b.status || 'Pending Verification');
       
-      // Certificate Approved hone par download button yhi par dikhega!
+      // Certificate Approved hone par show hoga
       const certActionSection = b.certIssued ? `
-        <div style="margin-top: 10px; background: #f0fdf4; padding: 10px; border-radius: 8px; border: 1px solid #bbf7d0; display: flex; justify-content: space-between; align-items: center;">
+        <div style="margin-top: 10px; background: #f0fdf4; padding: 10px 12px; border-radius: 8px; border: 1px solid #bbf7d0; display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap;">
           <div>
-            <span style="color: var(--accent); font-weight: bold; font-size: 13px;">📜 Certificate Approved & Ready!</span><br>
-            <small class="muted">Aapka training certificate approve ho gaya hai.</small>
+            <span style="color: var(--accent); font-weight: bold; font-size: 13px;">📜 Training Certificate Approved & Ready!</span><br>
+            <small class="muted">Approved Date: ${b.certIssueDate || 'Issued'}</small>
           </div>
-          <button type="button" class="btn" style="padding: 6px 14px; font-size: 12px; min-height: 32px; background: var(--accent);" onclick="downloadCertificatePDF('${b.bookingId}')">📥 Download PDF</button>
+          <button type="button" class="btn" style="padding: 6px 14px; font-size: 12px; min-height: 32px; background: var(--accent);" onclick="downloadCertificatePDF('${b.bookingId}')">📥 Download Certificate PDF</button>
         </div>
-      ` : (isConfirmed ? `<div style="margin-top:6px; color:#d97706; font-size:12px;">⏳ Step 1: Booking Confirmed. Certificate training ke baad approve hoga.</div>` : '');
-      
+      ` : '';
+
+      // Letterpad Approved hone par show hoga
+      const letterpadActionSection = b.letterpadIssued ? `
+        <div style="margin-top: 10px; background: #f5f3ff; padding: 10px 12px; border-radius: 8px; border: 1px solid #ddd6fe; display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap;">
+          <div>
+            <span style="color: #6d28d9; font-weight: bold; font-size: 13px;">📝 Official Letterpad Approved & Ready!</span><br>
+            <small class="muted">Approved Date: ${b.letterpadIssueDate || 'Issued'}</small>
+          </div>
+          <button type="button" class="btn" style="padding: 6px 14px; font-size: 12px; min-height: 32px; background: #7c3aed;" onclick="downloadLetterpadPDF('${b.bookingId}')">📥 Download Letterpad PDF</button>
+        </div>
+      ` : '';
+
+      const pendingNoteSection = (isConfirmed && !b.certIssued && !b.letterpadIssued)
+        ? `<div style="margin-top:8px; color:#d97706; font-size:12px;">⏳ Step 1: Booking Confirmed. Certificate / Letterpad approval pending hai.</div>`
+        : '';
       return `
         <div style="border: 1px solid #cbd5e1; border-radius: 10px; margin-bottom: 12px; background:#fff; overflow:hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
           <div onclick="toggleBookingDetailsView('${b.bookingId}')" style="padding: 12px 14px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; background: #fff;">
@@ -1406,6 +1422,166 @@ function loadUserPanelData() {
     }).join("") : "No course training applications logged.";
   }
 }
+
+// =========================================================
+// APPROVE & DOWNLOAD OFFICIAL LETTERPAD FOR USER
+// =========================================================
+
+window.issueUserLetterpad = async function(idx) {
+  const target = bookingsRegistry[idx];
+  if (!target) return;
+
+  if (confirm(`Kya aap ${target.name} ke liye Official Letterpad approve karna chahte hain?`)) {
+    const todayDate = getTodayIsoString();
+    showPgfLoader("Approving Official Letterpad...");
+
+    const { error } = await _supabase
+      .from('pgf_bookings')
+      .update({
+        letterpad_issued: true,
+        letterpad_issue_date: todayDate
+      })
+      .eq('booking_id', target.bookingId);
+
+    hidePgfLoader();
+
+    if (error) {
+      alert("❌ Error approving letterpad: " + error.message);
+      return;
+    }
+
+    target.letterpadIssued = true;
+    target.letterpadIssueDate = todayDate;
+
+    pushNotification(
+      target.email,
+      '📝 Official Letterpad Approved!',
+      `Your Pure Grow Farm Official Letterpad (#${target.bookingId}) is approved and ready to download.`,
+      'certificate'
+    );
+
+    alert(`✅ Official Letterpad Approved on ${todayDate} & Saved to Supabase!`);
+    populateAdminDashboardTables();
+  }
+};
+
+window.downloadLetterpadPDF = function(bookingId) {
+  const targetBooking = bookingsRegistry.find(b => b && b.bookingId === bookingId);
+  if (!targetBooking) return alert("Record not found.");
+  if (!targetBooking.letterpadIssued) return alert("Letterpad has not been approved yet by Farm Admin.");
+
+  const basePath = window.location.origin + window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/') + 1);
+  const bgImgUrl = basePath + "mushroom/PGF latter pad.jpg";
+  const sohamSignUrl = basePath + "mushroom/soham sign.png";
+  const jeetSignUrl = basePath + "mushroom/jeet sign.png";
+
+  const issueDate = targetBooking.letterpadIssueDate || getTodayIsoString();
+  const isStudent = targetBooking.type === "Student";
+
+  const letterBodyText = isStudent
+    ? `TO WHOMSOEVER IT MAY CONCERN\n\nThis is to certify that Mr./Ms. ${targetBooking.name.toUpperCase()} (Enrollment / Roll No: ${targetBooking.enrollment || 'N/A'}), a student of ${targetBooking.college || 'N/A'} (${targetBooking.course || 'N/A'}), has been officially approved and enrolled for the Oyster Mushroom Cultivation & Production Internship Program at Pure Grow Farm, Makhiyala, Junagadh, Gujarat.\n\nInternship Duration: ${targetBooking.start || 'N/A'} to ${targetBooking.end || 'N/A'}\nBooking Reference ID: ${targetBooking.bookingId}\n\nDuring this program, the candidate is authorized to participate in practical training covering spawn preparation, substrate pasteurization, bag filling, incubation, harvesting, and value-added mushroom processing under farm supervision.\n\nWe wish them great success in their academic and professional endeavors.`
+    : `TO WHOMSOEVER IT MAY CONCERN\n\nThis is to confirm that Mr./Ms. ${targetBooking.name.toUpperCase()} has officially registered and completed the Practical Farmer Training Workshop on Organic Oyster Mushroom Cultivation at Pure Grow Farm, Makhiyala, Junagadh, Gujarat.\n\nTraining Session Date: ${targetBooking.date || 'N/A'}\nBooking Reference ID: ${targetBooking.bookingId}\n\nThe participant has received hands-on guidance in scientific cultivation practices, climate management, and post-harvest handling.\n\nWe extend our best wishes for their agricultural venture.`;
+
+  const letterHTML = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Pure Grow Farm - Official Letterpad (${targetBooking.name})</title>
+  <style>
+    @page { size: A4 portrait; margin: 0; }
+    html, body {
+      width: 210mm;
+      height: 297mm;
+      margin: 0 !important;
+      padding: 0 !important;
+      background: #fff;
+      font-family: Arial, Helvetica, sans-serif;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+    .page-sheet {
+      position: relative;
+      width: 210mm;
+      height: 297mm;
+      overflow: hidden;
+    }
+    .bg-template {
+      position: absolute;
+      top: 0; left: 0;
+      width: 210mm;
+      height: 297mm;
+      object-fit: fill;
+      z-index: 1;
+    }
+    .content-layer {
+      position: relative;
+      z-index: 2;
+      padding: 54mm 18mm 50mm 18mm;
+      box-sizing: border-box;
+    }
+    .date-line {
+      text-align: right;
+      font-size: 13.5px;
+      font-weight: bold;
+      color: #111;
+      margin-bottom: 16px;
+    }
+    .body-text {
+      font-size: 14px;
+      line-height: 1.75;
+      color: #0f172a;
+      white-space: pre-wrap;
+      text-align: justify;
+    }
+    .signatures-row {
+      position: absolute;
+      bottom: 45mm;
+      left: 0;
+      width: 210mm;
+      display: flex;
+      justify-content: space-between;
+      padding: 0 14mm;
+      box-sizing: border-box;
+      z-index: 3;
+    }
+    .sign-slot {
+      width: 62mm;
+      height: 20mm;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .sign-slot img {
+      max-width: 52mm;
+      max-height: 20mm;
+      object-fit: contain;
+      mix-blend-mode: multiply;
+    }
+  </style>
+</head>
+<body>
+  <div class="page-sheet">
+    <img src="${bgImgUrl}" class="bg-template" alt="Pure Grow Farm Letterpad">
+    <div class="content-layer">
+      <div class="date-line">Date: ${issueDate}</div>
+      <div class="body-text">${letterBodyText}</div>
+    </div>
+    <div class="signatures-row">
+      <div class="sign-slot"><img src="${sohamSignUrl}" alt="Soham N Gajera"></div>
+      <div class="sign-slot"><img src="${jeetSignUrl}" alt="Jeet A Gajera"></div>
+    </div>
+  </div>
+  <script>
+    window.onload = function() { setTimeout(function() { window.print(); }, 450); };
+  <\/script>
+</body>
+</html>`;
+
+  const blob = new Blob([letterHTML], { type: 'text/html;charset=utf-8' });
+  const blobUrl = URL.createObjectURL(blob);
+  const win = window.open(blobUrl, '_blank');
+  if (!win) window.location.href = blobUrl;
+};
 
 function toggleBookingDetailsView(bookingId) {
   const panel = document.getElementById(`booking-details-${bookingId}`);
@@ -2571,6 +2747,7 @@ function populateAdminDashboardTables() {
         const mode = b.paymentMode || "UPI Gateway";
         const isConfirmed = b.status === "Confirmed" || b.status === "Approved";
         const certIssued = b.certIssued === true;
+        const letterpadIssued = b.letterpadIssued === true;
         const bUpi = b.userUpiId || "N/A";
         const isRejectedBooking = b.status && b.status.startsWith('Rejected');
         const feeTotal = Number(b.totalFee || b.fee || 0);
@@ -2606,30 +2783,52 @@ function populateAdminDashboardTables() {
             </td>
             <td><small style="color:#0284c7; font-weight:bold;">${b.dateLogged || 'N/A'}</small></td>
             <td>
-              <span class="badge ${isConfirmed ? 'badge-confirmed' : (isRejectedBooking ? 'badge-pending' : 'badge-pending')}" style="${isRejectedBooking ? 'background:#fee2e2; color:#991b1b;' : ''}">
+              <span class="badge ${isConfirmed ? 'badge-confirmed' : 'badge-pending'}" style="${isRejectedBooking ? 'background:#fee2e2; color:#991b1b;' : ''}">
                 ${isConfirmed ? '1. Confirmed' : (b.status || 'Pending Verification')}
               </span>
               ${b.approvedDate ? `<br><small style="color:#16a34a;">Approved: ${b.approvedDate}</small>` : ''}
             </td>
             <td>
-              <span class="badge ${certIssued ? 'badge-confirmed' : 'badge-pending'}">${certIssued ? '2. Approved' : 'Pending Approval'}</span>
-              ${b.certIssueDate ? `<br><small style="color:#0284c7;">Issued: ${b.certIssueDate}</small>` : ''}
+              <div style="display:flex; flex-direction:column; gap:4px;">
+                <span class="badge ${certIssued ? 'badge-confirmed' : 'badge-pending'}">
+                  📜 Cert: ${certIssued ? 'Approved' : 'Pending'}
+                </span>
+                ${b.certIssueDate ? `<small style="color:#0284c7; font-size:10.5px;">Cert Date: ${b.certIssueDate}</small>` : ''}
+
+                <span class="badge ${letterpadIssued ? 'badge-confirmed' : 'badge-pending'}" style="${letterpadIssued ? 'background:#dcfce7; color:#15803d;' : ''}">
+                  📝 Letterpad: ${letterpadIssued ? 'Approved' : 'Pending'}
+                </span>
+                ${b.letterpadIssueDate ? `<small style="color:#7c3aed; font-size:10.5px;">Pad Date: ${b.letterpadIssueDate}</small>` : ''}
+              </div>
             </td>
             <td>
-              <div style="display:flex; flex-direction:column; gap:4px;">
+              <div style="display:flex; flex-direction:column; gap:5px; min-width:155px;">
                 ${!isConfirmed && !isRejectedBooking ? `
-                  <button class="btn" style="padding:4px 8px; min-height:auto; font-size:11px; background:var(--accent);" onclick="confirmBookingSlot(${idx})">1. Approve Farm Book</button>
-                  <button class="btn" style="padding:4px 8px; min-height:auto; font-size:11px; background:var(--danger);" onclick="rejectTrainingBooking(${idx})">Reject Booking</button>
+                  <button class="btn" style="padding:5px 8px; min-height:auto; font-size:11px; background:var(--accent);" onclick="confirmBookingSlot(${idx})">1. Approve Farm Book</button>
+                  <button class="btn" style="padding:5px 8px; min-height:auto; font-size:11px; background:var(--danger);" onclick="rejectTrainingBooking(${idx})">Reject Booking</button>
                 ` : (isConfirmed ? `
+                  <!-- Certificate Action -->
                   ${!certIssued ? `
-                    <button class="btn" style="padding:4px 8px; min-height:auto; font-size:11px; background:#0284c7;" onclick="issueUserCertificate(${idx})">2. Approve Certificate</button>
-                    <button class="btn" style="padding:4px 8px; min-height:auto; font-size:11px; background:var(--danger);" onclick="rejectTrainingBooking(${idx})">Reject Certificate</button>
+                    <button class="btn" style="padding:5px 8px; min-height:auto; font-size:11px; background:#0284c7;" onclick="issueUserCertificate(${idx})">📜 Approve Certificate</button>
                   ` : `
-                    <button type="button" class="btn" style="padding:3px 6px; min-height:auto; font-size:11px; background:var(--accent);" onclick="downloadCertificatePDF('${b.bookingId}')">📜 Download PDF</button>
+                    <button type="button" class="btn" style="padding:4px 8px; min-height:auto; font-size:11px; background:var(--accent);" onclick="downloadCertificatePDF('${b.bookingId}')">📥 Download Certificate</button>
                   `}
-                  <button type="button" class="btn" style="padding:3px 6px; min-height:auto; font-size:11px; background:#4b5563;" onclick="adminEditCertificateData(${idx})">✏️ Edit Certificate</button>
+
+                  <!-- Letterpad Action -->
+                  ${!letterpadIssued ? `
+                    <button class="btn" style="padding:5px 8px; min-height:auto; font-size:11px; background:#7c3aed;" onclick="issueUserLetterpad(${idx})">📝 Approve Letterpad</button>
+                  ` : `
+                    <button type="button" class="btn" style="padding:4px 8px; min-height:auto; font-size:11px; background:#6d28d9;" onclick="downloadLetterpadPDF('${b.bookingId}')">📥 Download Letterpad</button>
+                  `}
+
+                  ${(!certIssued || !letterpadIssued) ? `
+                    <button class="btn" style="padding:4px 8px; min-height:auto; font-size:11px; background:var(--danger);" onclick="rejectTrainingBooking(${idx})">Reject</button>
+                  ` : ''}
+                  
+                  <button type="button" class="btn" style="padding:4px 8px; min-height:auto; font-size:11px; background:#4b5563;" onclick="adminEditCertificateData(${idx})">✏️ Edit Details</button>
                 ` : `<span style="color:#dc2626; font-weight:bold; font-size:12px;">Rejected</span>`)}
-                <button type="button" class="btn" style="padding:4px 8px; font-size:11px; background:#25d366;" onclick="sendAdminWhatsAppMessage('booking', '${b.bookingId}')">💬 WhatsApp</button>
+                
+                <button type="button" class="btn" style="padding:5px 8px; font-size:11px; background:#25d366;" onclick="sendAdminWhatsAppMessage('booking', '${b.bookingId}')">💬 WhatsApp</button>
               </div>
             </td>
           </tr>
@@ -5121,7 +5320,9 @@ async function loadUserPanelDataFromCloud() {
         enrollment: b.enrollment, college: b.college, course: b.course, start: b.start_date,
         end: b.end_date, date: b.session_date, userUpiId: b.user_upi_id, fee: b.fee,
         paymentMode: b.payment_mode, txnId: b.txn_id, dateLogged: b.date_logged, status: b.status,
-        approvedDate: b.approved_date, certIssued: b.cert_issued, certIssueDate: b.cert_issue_date
+        approvedDate: b.approved_date, certIssued: b.cert_issued, certIssueDate: b.cert_issue_date,
+        letterpadIssued: b.letterpad_issued || false,
+      letterpadIssueDate: b.letterpad_issue_date || ""
       }));
       bookingsRegistry.push(...mappedBookings);
     }

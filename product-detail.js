@@ -87,7 +87,7 @@ Key Nutrients: Plant-Based Protein, Carbohydrates, Dietary Fibre, Iron, Potassiu
     unit: "Custom", 
     bulk: true, 
     image: "mushroom/bulk.png", 
-    detail: `PURE GROW FARM provides quality mushroom products for restaurants, retailers, wholesalers, and food businesses. Our product range includes fresh oyster mushrooms, dried mushrooms, and mushroom powder. Each product offers different nutritional properties depending on its form. Bulk quantities and customised supply options are available.
+    detail: `PURE GROW FARM provides quality mushroom products for restaurants, retailers, wholesalers, and food businesses. Our product range includes fresh oyster mushrooms, dried mushrooms, and mushroom powder. Each product offers different nutritional properties depending on its form. Bulk quantities and customised supply options are available.</br>
 
 Key Nutrients: Protein, Dietary Fibre, B-complex Vitamins, Potassium, Phosphorus and Iron (depending on product).`, 
     stock: 99999 

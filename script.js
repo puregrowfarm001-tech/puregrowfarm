@@ -1486,15 +1486,85 @@ window.downloadLetterpadPDF = function(bookingId) {
   const issueDate = targetBooking.letterpadIssueDate || getTodayIsoString();
   const isStudent = targetBooking.type === "Student";
 
-  const letterBodyText = isStudent
-    ? `TO WHOMSOEVER IT MAY CONCERN\n\nThis is to certify that Mr./Ms. ${targetBooking.name.toUpperCase()} (Enrollment / Roll No: ${targetBooking.enrollment || 'N/A'}), a student of ${targetBooking.college || 'N/A'} (${targetBooking.course || 'N/A'}), has been officially approved and enrolled for the Oyster Mushroom Cultivation & Production Internship Program at Pure Grow Farm, Makhiyala, Junagadh, Gujarat.\n\nInternship Duration: ${targetBooking.start || 'N/A'} to ${targetBooking.end || 'N/A'}\nBooking Reference ID: ${targetBooking.bookingId}\n\nDuring this program, the candidate is authorized to participate in practical training covering spawn preparation, substrate pasteurization, bag filling, incubation, harvesting, and value-added mushroom processing under farm supervision.\n\nWe wish them great success in their academic and professional endeavors.`
-    : `TO WHOMSOEVER IT MAY CONCERN\n\nThis is to confirm that Mr./Ms. ${targetBooking.name.toUpperCase()} has officially registered and completed the Practical Farmer Training Workshop on Organic Oyster Mushroom Cultivation at Pure Grow Farm, Makhiyala, Junagadh, Gujarat.\n\nTraining Session Date: ${targetBooking.date || 'N/A'}\nBooking Reference ID: ${targetBooking.bookingId}\n\nThe participant has received hands-on guidance in scientific cultivation practices, climate management, and post-harvest handling.\n\nWe extend our best wishes for their agricultural venture.`;
+  const certHeading = isStudent 
+    ? "INTERNSHIP COMPLETION CERTIFICATE" 
+    : "ONE-DAY FARMER TRAINING CERTIFICATE";
+
+  const letterBodyHTML = isStudent
+    ? `
+      <div style="text-align:center; font-size:17px; font-weight:800; text-decoration:underline; color:#1e4620; margin-bottom:10px; letter-spacing:0.5px;">
+        ${certHeading}
+      </div>
+      <div style="text-align:center; font-size:13.5px; font-weight:700; color:#0f172a; margin-bottom:14px;">
+        TO WHOMSOEVER IT MAY CONCERN
+      </div>
+      <p style="margin:0 0 10px 0;">
+        This is to certify that Mr./Ms. <strong>${targetBooking.name.toUpperCase()}</strong>, a student of <strong>${targetBooking.college || 'N/A'}</strong>, has successfully completed a One-Month Internship at <strong>PURE GROW FARM</strong>.
+      </p>
+      <p style="margin:0 0 10px 0;">
+        The internship was conducted from <strong>${targetBooking.start || 'N/A'}</strong> to <strong>${targetBooking.end || 'N/A'}</strong> in the field of Mushroom Cultivation and Farming.
+      </p>
+      <p style="margin:0 0 6px 0;">
+        During the internship, the student received practical and theoretical knowledge of:
+      </p>
+      <div style="padding-left:18px; margin:0 0 10px 0; line-height:1.55;">
+        1. Introduction to Mushroom Cultivation.<br>
+        2. Raw Material and Substrate Preparation.<br>
+        3. Mushroom Spawn and Spawning Techniques.<br>
+        4. Bag Filling and Incubation Process.<br>
+        5. Fruiting, Temperature and Humidity Management.<br>
+        6. Mushroom Harvesting and Post-Harvest Management.<br>
+        7. Mushroom Drying, Powder Processing and Packaging.<br>
+        8. Basic Mushroom Farming and Business Management.
+      </div>
+      <p style="margin:0 0 8px 0;">
+        During the internship period, the student's performance, discipline and participation were found to be satisfactory.
+      </p>
+      <p style="margin:0 0 12px 0;">
+        We wish the student every success in their future academic and professional career.
+      </p>
+      <div style="font-weight:bold; color:#1e4620; margin-top:8px;">
+        For PURE GROW FARM
+      </div>
+    `
+    : `
+      <div style="text-align:center; font-size:17px; font-weight:800; text-decoration:underline; color:#1e4620; margin-bottom:10px; letter-spacing:0.5px;">
+        ${certHeading}
+      </div>
+      <div style="text-align:center; font-size:13.5px; font-weight:700; color:#0f172a; margin-bottom:14px;">
+        TO WHOMSOEVER IT MAY CONCERN
+      </div>
+      <p style="margin:0 0 10px 0;">
+        This is to certify that Mr./Ms. <strong>${targetBooking.name.toUpperCase()}</strong>, has successfully participated in a One-Day Mushroom Cultivation Training Program organized by <strong>PURE GROW FARM</strong> on <strong>${targetBooking.date || 'N/A'}</strong>.
+      </p>
+      <p style="margin:0 0 6px 0;">
+        During the training program, the participant received theoretical and practical knowledge of:
+      </p>
+      <div style="padding-left:18px; margin:0 0 10px 0; line-height:1.6;">
+        1. Introduction to Oyster Mushroom Cultivation.<br>
+        2. Raw Material and Substrate Preparation.<br>
+        3. Mushroom Spawn and Spawning Techniques.<br>
+        4. Bag Filling and Incubation Process.<br>
+        5. Fruiting and Environmental Management.<br>
+        6. Mushroom Harvesting and Post-Harvest Management.<br>
+        7. Mushroom Drying and Processing.
+      </div>
+      <p style="margin:0 0 8px 0;">
+        The participant actively participated in the training and gained basic practical knowledge of mushroom cultivation.
+      </p>
+      <p style="margin:0 0 12px 0;">
+        We appreciate their interest in modern agricultural practices and wish them success in their future farming activities.
+      </p>
+      <div style="font-weight:bold; color:#1e4620; margin-top:8px;">
+        For PURE GROW FARM
+      </div>
+    `;
 
   const letterHTML = `<!DOCTYPE html>
 <html>
 <head>
   <meta charset="utf-8">
-  <title>Pure Grow Farm - Official Letterpad (${targetBooking.name})</title>
+  <title>Pure Grow Farm - ${certHeading} (${targetBooking.name})</title>
   <style>
     @page { size: A4 portrait; margin: 0; }
     html, body {
@@ -1524,21 +1594,20 @@ window.downloadLetterpadPDF = function(bookingId) {
     .content-layer {
       position: relative;
       z-index: 2;
-      padding: 54mm 18mm 50mm 18mm;
+      padding: 50mm 18mm 58mm 18mm;
       box-sizing: border-box;
     }
     .date-line {
       text-align: right;
-      font-size: 13.5px;
+      font-size: 13px;
       font-weight: bold;
       color: #111;
-      margin-bottom: 16px;
+      margin-bottom: 10px;
     }
     .body-text {
-      font-size: 14px;
-      line-height: 1.75;
+      font-size: 13.5px;
+      line-height: 1.55;
       color: #0f172a;
-      white-space: pre-wrap;
       text-align: justify;
     }
     .signatures-row {
@@ -1572,7 +1641,7 @@ window.downloadLetterpadPDF = function(bookingId) {
     <img src="${bgImgUrl}" class="bg-template" alt="Pure Grow Farm Letterpad">
     <div class="content-layer">
       <div class="date-line">Date: ${issueDate}</div>
-      <div class="body-text">${letterBodyText}</div>
+      <div class="body-text">${letterBodyHTML}</div>
     </div>
     <div class="signatures-row">
       <div class="sign-slot"><img src="${sohamSignUrl}" alt="Soham N Gajera"></div>

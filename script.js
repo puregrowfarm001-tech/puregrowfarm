@@ -361,6 +361,7 @@ renderAdminProductPricingCards();
   document.getElementById("dashboardWorkspace").style.display = "none";
   document.getElementById("publicContent").style.display = "none";
   document.getElementById("adminErpView").classList.add("active");
+  document.body.classList.add("admin-mode-active");
   const mainFooter = document.getElementById("mainWebsiteFooter");
   if (mainFooter) mainFooter.style.display = "none";
 
@@ -477,6 +478,7 @@ renderAdminProductPricingCards();
 function exitAdminPanel() { handleLogout(); }
 
 async function checkUserSession() {
+  document.body.classList.remove("admin-mode-active");
   const mainFooter = document.getElementById("mainWebsiteFooter");
   if (mainFooter) mainFooter.style.display = "block";
   // Normal state restore karein

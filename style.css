@@ -1018,3 +1018,29 @@ th { background: #f8faf8; font-weight: 700; }
   background: #0284c7;
   color: #ffffff;
 }
+
+/* Admin Panel mein neeche ki khali jagah hatane aur exact screen fit karne ke liye */
+body.admin-mode-active {
+  min-height: 100vh;
+  background: #f4f7f5 !important;
+  overflow-x: hidden;
+}
+
+body.admin-mode-active .container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  padding-bottom: 16px;
+}
+
+body.admin-mode-active .erp-wrapper.active {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 0 !important;
+}
+
+body.admin-mode-active .erp-section.active {
+  flex: 1;
+  margin-bottom: 0 !important;
+}

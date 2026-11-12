@@ -1487,8 +1487,8 @@ window.downloadLetterpadPDF = function(bookingId) {
   const isStudent = targetBooking.type === "Student";
 
   const certHeading = isStudent 
-    ? "INTERNSHIP COMPLETION CERTIFICATE" 
-    : "ONE-DAY FARMER TRAINING CERTIFICATE";
+    ? "INTERNSHIP COMPLETION LETTER" 
+    : "FARMER TRAINING COMPLETION LETTER";
 
   const letterBodyHTML = isStudent
     ? `
@@ -1658,7 +1658,7 @@ window.downloadLetterpadPDF = function(bookingId) {
   const blobUrl = URL.createObjectURL(blob);
   const win = window.open(blobUrl, '_blank');
   if (!win) window.location.href = blobUrl;
-};
+}; 
 
 function toggleBookingDetailsView(bookingId) {
   const panel = document.getElementById(`booking-details-${bookingId}`);

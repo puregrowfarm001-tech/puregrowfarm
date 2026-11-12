@@ -7864,11 +7864,15 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 // Live Date & Time Clock for Admin Navigation Bar
+// Live Day, Date & Time Clock for Admin Navigation Bar
 function updateAdminLiveClock() {
   const clockEl = document.getElementById("adminLiveDateTimeDisplay");
   if (!clockEl) return;
 
   const now = new Date();
+  const dayStr = now.toLocaleDateString('en-IN', {
+    weekday: 'long' // Agar short me (e.g. Thu) chahiye toh 'short' likhein
+  });
   const dateStr = now.toLocaleDateString('en-IN', {
     day: '2-digit',
     month: 'short',
@@ -7881,7 +7885,7 @@ function updateAdminLiveClock() {
     hour12: true
   }).toUpperCase();
 
-  clockEl.textContent = `📅 ${dateStr} | ⏰ ${timeStr}`;
+  clockEl.textContent = `📅 ${dayStr}, ${dateStr} | ⏰ ${timeStr}`;
 }
 
 // Page load hote hi clock start karein aur har 1 second me update karein

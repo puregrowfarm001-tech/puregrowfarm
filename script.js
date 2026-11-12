@@ -97,26 +97,41 @@ function openBookingsModalFromProfile() {
 }
 
 function openOrdersModal() {
-  document.getElementById("userOrdersModal").classList.add("active-modal");
+  const modal = document.getElementById("userOrdersModal");
+  if (!modal) return;
+  // Direct body me move karein taaki kabhi bhi parent div ki wajah se neeche na khisake
+  document.body.appendChild(modal);
+  modal.classList.add("active-modal");
+  document.body.style.overflow = "hidden"; // Background scroll band
   loadUserPanelData();
 }
+
 function closeOrdersModal() {
-  document.getElementById("userOrdersModal").classList.remove("active-modal");
+  const modal = document.getElementById("userOrdersModal");
+  if (modal) modal.classList.remove("active-modal");
+  document.body.style.overflow = ""; // Background scroll wapas chalu
 }
 
 async function openBookingsModal() {
-  document.getElementById("userBookingsModal").classList.add("active-modal");
+  const modal = document.getElementById("userBookingsModal");
+  if (!modal) return;
+  document.body.appendChild(modal);
+  modal.classList.add("active-modal");
+  document.body.style.overflow = "hidden";
   await loadUserPanelDataFromCloud();
   loadUserPanelData();
 }
 
 function closeBookingsModal() {
-  document.getElementById("userBookingsModal").classList.remove("active-modal");
+  const modal = document.getElementById("userBookingsModal");
+  if (modal) modal.classList.remove("active-modal");
+  document.body.style.overflow = "";
 }
 
 function closeModalOutside(e, modalId) {
   if (e.target.id === modalId) {
     document.getElementById(modalId).classList.remove("active-modal");
+    document.body.style.overflow = "";
   }
 }
 

@@ -376,28 +376,28 @@
       </div>
     </section>
 
-    <!-- Modal 1: Personal Orders History -->
-    <div id="userOrdersModal" class="data-popup-modal" onclick="closeModalOutside(event, 'userOrdersModal')">
-      <div class="popup-content-box" style="max-width: 780px;">
-        <button type="button" class="close-popup-btn" onclick="closeOrdersModal()">Close (X)</button>
-        <h2>📦 Your Order History & Live Tracking</h2>
-        <div id="userOrdersList" class="muted" style="margin-top:15px;">No orders submitted yet.</div>
-      </div>
+  <!-- Modal 1: Personal Orders History (Ab direct body ke andar hai) -->
+  <div id="userOrdersModal" class="data-popup-modal" onclick="closeModalOutside(event, 'userOrdersModal')">
+    <div class="popup-content-box" style="max-width: 780px;">
+      <button type="button" class="close-popup-btn" onclick="closeOrdersModal()">Close (X)</button>
+      <h2>📦 Your Order History & Live Tracking</h2>
+      <div id="userOrdersList" class="muted" style="margin-top:15px;">No orders submitted yet.</div>
     </div>
+  </div>
 
-    <!-- Modal 2: Personal Farm Training & Certificate History -->
-    <div id="userBookingsModal" class="data-popup-modal" onclick="closeModalOutside(event, 'userBookingsModal')">
-      <div class="popup-content-box" style="max-width: 780px;">
-        <button type="button" class="close-popup-btn" onclick="closeBookingsModal()">Close (X)</button>
-        <h2>🎓 Your Farm Training & Internships</h2>
-        <div id="userBookingsList" class="muted" style="margin-top:15px;">No program bookings registered.</div>
-        
-        <div id="historyCertificateWrapper" style="margin-top: 20px; border-top: 1px dashed var(--line); padding-top: 15px; display: none;">
-          <h4 style="color: var(--accent); margin-bottom: 10px;">📜 Issued Certificates</h4>
-          <div id="historyCertificatesContainer"></div>
-        </div>
+  <!-- Modal 2: Personal Farm Training & Certificate History -->
+  <div id="userBookingsModal" class="data-popup-modal" onclick="closeModalOutside(event, 'userBookingsModal')">
+    <div class="popup-content-box" style="max-width: 780px;">
+      <button type="button" class="close-popup-btn" onclick="closeBookingsModal()">Close (X)</button>
+      <h2>🎓 Your Farm Training & Internships</h2>
+      <div id="userBookingsList" class="muted" style="margin-top:15px;">No program bookings registered.</div>
+      
+      <div id="historyCertificateWrapper" style="margin-top: 20px; border-top: 1px dashed var(--line); padding-top: 15px; display: none;">
+        <h4 style="color: var(--accent); margin-bottom: 10px;">📜 Issued Certificates</h4>
+        <div id="historyCertificatesContainer"></div>
       </div>
     </div>
+  </div>
 
     <!-- Public Store Content -->
     <div id="publicContent">

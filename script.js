@@ -361,6 +361,10 @@ renderAdminProductPricingCards();
   document.getElementById("dashboardWorkspace").style.display = "none";
   document.getElementById("publicContent").style.display = "none";
   document.getElementById("adminErpView").classList.add("active");
+  const mainFooter = document.getElementById("mainWebsiteFooter");
+  if (mainFooter) mainFooter.style.display = "none";
+
+  document.getElementById("adminErpView").classList.add("active");
   
   // 1. Orders Fetch
   const { data: cloudOrders } = await _supabase.from('pgf_orders').select('*');
@@ -473,6 +477,8 @@ renderAdminProductPricingCards();
 function exitAdminPanel() { handleLogout(); }
 
 async function checkUserSession() {
+  const mainFooter = document.getElementById("mainWebsiteFooter");
+  if (mainFooter) mainFooter.style.display = "block";
   // Normal state restore karein
   const brandSub = document.getElementById("brandSubtitleText");
   if (brandSub) brandSub.style.display = "block";

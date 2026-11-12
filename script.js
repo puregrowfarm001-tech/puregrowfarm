@@ -1499,7 +1499,7 @@ window.downloadLetterpadPDF = function(bookingId) {
         TO WHOMSOEVER IT MAY CONCERN
       </div>
       <p style="margin:0 0 10px 0;">
-        This is to certify that Mr./Ms. <strong>${targetBooking.name.toUpperCase()}</strong> (Enrollment No.: <strong>${targetBooking.enrollment || 'N/A'}</strong>), a student of <strong>${targetBooking.college || 'N/A'}</strong>, has successfully completed a One-Month Internship at <strong>PURE GROW FARM</strong>.
+        This is to certify that Mr./Ms. <strong>${targetBooking.name.toUpperCase()}</strong> (Enrollment No.: <strong>${targetBooking.enrollment || 'N/A'}</strong>), a student of <strong>${targetBooking.college || 'N/A'}</strong>, has successfully completed an Internship Program at <strong>PURE GROW FARM</strong>.
       </p>
       <p style="margin:0 0 10px 0;">
         The internship was conducted from <strong>${targetBooking.start || 'N/A'}</strong> to <strong>${targetBooking.end || 'N/A'}</strong> in the field of Mushroom Cultivation and Farming.

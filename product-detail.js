@@ -14,12 +14,90 @@ const PRODUCT_GALLERY_IMAGES = {
 };
 
 const BASE_PRODUCTS = [
-  { id: 1, name: "Fresh Green Oyster Mushroom", price: 180, delivery: 50, unit: "1kg", image: "mushroom/Screenshot 2025-10-24 154001.png", detail: "Picked fresh, chilled and delivered within 24-48 hours directly from our Makhiyala climate-controlled mushroom farm.", type: "green", stock: 100 },
-  { id: 2, name: "Dried Oyster Mushroom", price: 800, delivery: 40, unit: "1kg pack", image: "mushroom/oyst dry.webp", detail: "Slow-dried to preserve flavor and nutrients. Rehydrates within 10 minutes for soups, curries and gravies.", type: "dry", stock: 50 },
-  { id: 3, name: "Oyster Mushroom Powder", price: 130, delivery: 30, unit: "100gm pack", image: "mushroom/oyster powder.png", detail: "Fine mushroom powder for immunity tea, dal mix, soup, health drinks and snacks.", type: "powder", stock: 80 },
-  { id: 4, name: "Methi Mushroom Khakhra", price: 70, delivery: 20, unit: "200gm pack", image: "mushroom/methikhakhra2.png", detail: "Crispy roasted Gujarati khakhra enriched with oyster mushroom powder and methi.", type: "khakhra", stock: 120 },
-  { id: 5, name: "Adad Mushroom Papad", price: 120, delivery: 25, unit: "1 pack", image: "mushroom/adadpapad2.png", detail: "Traditional urad dal papad enriched with high-protein mushroom nutrition.", type: "papad", stock: 90 },
-  { id: 6, name: "Bulk and Wholesale Supply", price: 0, delivery: 0, unit: "Custom", bulk: true, image: "mushroom/bulk.png", detail: "Wholesale supply contracts for restaurants, hotels, distributors and local markets.", stock: 99999 }
+  { 
+    id: 1, 
+    name: "Fresh Green Oyster Mushroom", 
+    price: 180, 
+    delivery: 50, 
+    unit: "1kg", 
+    image: "mushroom/Screenshot 2025-10-24 154001.png", 
+    detail: `1. Freshly harvested organic green oyster mushrooms from our Makhiyala farm.
+2. Rich in plant-based protein, dietary fibre, vitamins (B2, B3), and essential minerals.
+3. Soft texture and mild flavour, ideal for curries, soups, stir-fry, and snacks.
+4. Storage: Keep refrigerated at 2–5°C and consume within 3–5 days.`, 
+    type: "green", 
+    stock: 100 
+  },
+  { 
+    id: 2, 
+    name: "Dried Oyster Mushroom", 
+    price: 800, 
+    delivery: 40, 
+    unit: "1kg pack", 
+    image: "mushroom/oyst dry.webp", 
+    detail: `1. Hygienically dehydrated oyster mushrooms with long shelf life (up to 12 months).
+2. Retains natural aroma, protein, and essential nutrients without any preservatives.
+3. Simply soak in warm water for 10–15 minutes before cooking gravies or soups.
+4. Storage: Keep in an airtight container in a cool, dry place.`, 
+    type: "dry", 
+    stock: 50 
+  },
+  { 
+    id: 3, 
+    name: "Oyster Mushroom Powder", 
+    price: 130, 
+    delivery: 30, 
+    unit: "100gm pack", 
+    image: "mushroom/oyster powder.png", 
+    detail: `1. 100% pure, finely ground oyster mushroom powder with zero additives.
+2. Natural immunity booster packed with protein, iron, and antioxidants.
+3. Easy to mix in daily dal, sabzi, soup, roti atta, or health drinks.
+4. Storage: Store in a cool, dry place away from direct sunlight.`, 
+    type: "powder", 
+    stock: 80 
+  },
+  { 
+    id: 4, 
+    name: "Methi Mushroom Khakhra", 
+    price: 70, 
+    delivery: 20, 
+    unit: "200gm pack", 
+    image: "mushroom/methikhakhra2.png", 
+    detail: `1. Crispy roasted Gujarati khakhra enriched with nutritious oyster mushroom powder and kasuri methi.
+2. High in fibre and protein, making it a healthy, guilt-free tea-time snack.
+3. Prepared hygienically with quality whole wheat flour and mild spices.
+4. Vacuum-packed to keep every khakhra fresh and crunchy.`, 
+    type: "khakhra", 
+    stock: 120 
+  },
+  { 
+    id: 5, 
+    name: "Adad Mushroom Papad", 
+    price: 120, 
+    delivery: 25, 
+    unit: "1 pack", 
+    image: "mushroom/adadpapad2.png", 
+    detail: `1. Traditional urad dal papad blended with high-protein oyster mushroom powder.
+2. Crunchy, delicious, and nutritious accompaniment for daily meals.
+3. Can be roasted directly on flame or fried as per your preference.
+4. Hygienically sun-dried and packed for long-lasting freshness.`, 
+    type: "papad", 
+    stock: 90 
+  },
+  { 
+    id: 6, 
+    name: "Bulk and Wholesale Supply", 
+    price: 0, 
+    delivery: 0, 
+    unit: "Custom", 
+    bulk: true, 
+    image: "mushroom/bulk.png", 
+    detail: `1. Direct farm-to-business wholesale supply for hotels, restaurants, and retailers.
+2. Consistent quality and bulk availability of fresh, dry, and powder mushrooms.
+3. Custom packaging and competitive wholesale pricing available.
+4. Contact us directly on WhatsApp for bulk orders and distribution inquiries.`, 
+    stock: 99999 
+  }
 ];
 
 // PGF Loader Helpers

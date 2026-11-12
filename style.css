@@ -1044,3 +1044,27 @@ body.admin-mode-active .erp-section.active {
   flex: 1;
   margin-bottom: 0 !important;
 }
+
+/* Order History & Bookings Modals ko screen ke bilkul center me lane ke liye */
+.data-popup-modal.active-modal {
+  display: flex !important;
+  position: fixed !important;
+  inset: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  background: rgba(15, 23, 32, 0.65) !important;
+  backdrop-filter: blur(3px);
+  z-index: 9999999 !important;
+  justify-content: center !important;
+  align-items: center !important;
+  padding: 16px !important;
+  margin: 0 !important;
+}
+
+.data-popup-modal .popup-content-box {
+  position: relative !important;
+  margin: auto !important;
+  max-height: 85vh !important;
+  overflow-y: auto !important;
+  width: 100% !important;
+}

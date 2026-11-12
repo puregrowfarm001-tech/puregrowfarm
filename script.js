@@ -1846,16 +1846,23 @@ function clearPrintDateRange() {
 }
 
 // Helper: Kisi bhi date string (DD/MM/YYYY ya YYYY-MM-DD) ko midnight timestamp me badalne ke liye
+function clearPrintDateRange() {
+  const s = document.getElementById("printStartDate");
+  const e = document.getElementById("printEndDate");
+  if (s) s.value = "";
+  if (e) e.value = "";
+}
+
 function parseRecordDateToMs(dateStr) {
   if (!dateStr) return 0;
   const clean = String(dateStr).split(" ")[0].replace(/,/g, "").trim();
-  
+
   // Format: YYYY-MM-DD
   if (/^\d{4}-\d{2}-\d{2}$/.test(clean)) {
     const [y, m, d] = clean.split("-").map(Number);
     return new Date(y, m - 1, d).getTime();
   }
-  
+
   // Format: DD/MM/YYYY or D/M/YYYY
   if (clean.includes("/")) {
     const parts = clean.split("/").map(Number);
@@ -1865,13 +1872,14 @@ function parseRecordDateToMs(dateStr) {
       return new Date(y, m - 1, d).getTime();
     }
   }
-  
+
   const fallback = new Date(dateStr).getTime();
   return isNaN(fallback) ? 0 : new Date(new Date(fallback).setHours(0, 0, 0, 0)).getTime();
 }
 
 function printActiveAdminReport() {
   const selectedYear = document.getElementById("adminYearFilterSelect")?.value || "ALL";
+  const selectedSection = document.getElementById("printSectionFilterSelect")?.value || "ALL";
   const startDateVal = document.getElementById("printStartDate")?.value || "";
   const endDateVal = document.getElementById("printEndDate")?.value || "";
 
@@ -1893,7 +1901,7 @@ function printActiveAdminReport() {
     isCustomRange = true;
   }
 
-  // Common Date Matcher Function
+  // Filter Matcher: Custom Date Range OR Selected Year
   const matchesFilter = (dateString) => {
     if (isCustomRange) {
       const recMs = parseRecordDateToMs(dateString);
@@ -1903,11 +1911,19 @@ function printActiveAdminReport() {
     return String(dateString || "").includes(selectedYear);
   };
 
-  const filterBadgeText = isCustomRange 
-    ? `Custom Date Range: ${new Date(startMs).toLocaleDateString('en-IN')} to ${new Date(endMs).toLocaleDateString('en-IN')}` 
-    : `Fiscal Year: ${selectedYear}`;
+  const sectionLabels = {
+    ALL: "All Sections (Complete Report)",
+    OVERVIEW: "Overview & Live Summary Ledger",
+    ORDERS: "Orders Manager Page",
+    BOOKINGS: "Farm Bookings Page",
+    ACCOUNTING: "Financial & Stock Page"
+  };
 
-  // 1. Orders Filter
+  const filterBadgeText = isCustomRange
+    ? `Date Range: ${new Date(startMs).toLocaleDateString('en-IN')} to ${new Date(endMs).toLocaleDateString('en-IN')}`
+    : (selectedYear === "ALL" ? "All Years (Cumulative)" : `Fiscal Year: ${selectedYear}`);
+
+  // 1. Orders Calculation
   const filteredOrders = orderRegistry.filter(o => {
     if (!o || !(o.status === 'Approved' || o.status === 'Delivered')) return false;
     return matchesFilter(o.rawIsoDate || o.dateLogged);
@@ -1915,7 +1931,7 @@ function printActiveAdminReport() {
   filteredOrders.sort((a, b) => parseRecordDateToMs(a.rawIsoDate || a.dateLogged) - parseRecordDateToMs(b.rawIsoDate || b.dateLogged));
   const orderTotal = filteredOrders.reduce((sum, o) => sum + Number(o.total || 0), 0);
 
-  // 2. Bookings Filter
+  // 2. Bookings Calculation
   const filteredBookings = bookingsRegistry.filter(b => {
     if (!b || !b.name || !(b.status === "Confirmed" || b.status === "Approved")) return false;
     return matchesFilter(b.dateLogged || b.date);
@@ -1923,15 +1939,15 @@ function printActiveAdminReport() {
   filteredBookings.sort((a, b) => parseRecordDateToMs(a.dateLogged || a.date) - parseRecordDateToMs(b.dateLogged || b.date));
   const farmBookingTotal = filteredBookings.reduce((sum, b) => sum + Number(b.fee || 0), 0);
 
-  // 3. Sales Filter
+  // 3. Sales Calculation
   const filteredSales = salesRegistry.filter(s => s && matchesFilter(s.date));
   const sellTotal = filteredSales.reduce((sum, s) => sum + Number(s.paidAmount !== undefined ? s.paidAmount : s.total || 0), 0);
 
-  // 4. Purchases Filter
+  // 4. Purchases Calculation
   const filteredPurchases = purchasesRegistry.filter(p => p && matchesFilter(p.date));
   const buyTotal = filteredPurchases.reduce((sum, p) => sum + Number(p.paidAmount !== undefined ? p.paidAmount : p.total || 0), 0);
 
-  // 5. Expenses Filter
+  // 5. Expenses Calculation
   const filteredExpenses = expensesRegistry.filter(e => e && e.category !== "Damage Received" && matchesFilter(e.date));
   const expenseTotal = filteredExpenses.reduce((sum, e) => sum + Number(e.amount || 0), 0);
 
@@ -1955,7 +1971,7 @@ function printActiveAdminReport() {
   let jeetExpTotal = jeetExpOnly + jeetBuyTotal;
   let farmExpTotal = farmExpOnly + farmBuyTotal;
 
-  // 6. Damages Filter
+  // 6. Damages Calculation
   const filteredDamages = expensesRegistry.filter(e => e && e.category === "Damage Received" && matchesFilter(e.date));
   const damageTotal = filteredDamages.reduce((sum, d) => sum + Number(d.amount || 0), 0);
 
@@ -1973,11 +1989,58 @@ function printActiveAdminReport() {
   const farmAvailableBalance = (orderTotal + farmBookingTotal + sellTotal + farmDmgTotal) - farmExpTotal;
   const netProfit = (orderTotal + farmBookingTotal + sellTotal) - buyTotal - expenseTotal;
 
-  // Tables Cloning & Date Filtering
-  const allowedPrintSectionIds = ['erpOrdersTab', 'erpBookingsTab', 'erpAccountingTab'];
+  // Overview Summary HTML (Sirf tab dikhega jab ALL ya OVERVIEW select ho)
+  let overviewHTML = "";
+  if (selectedSection === "ALL" || selectedSection === "OVERVIEW") {
+    overviewHTML = `
+      <h3 style="color: #1e293b; border-bottom: 2px solid #2b8a3e; padding-bottom: 4px; font-size: 15px;">📈 Farm Core Financial & Stock Overview Summary Ledger</h3>
+      <div class="summary-container">
+        <div class="card"><h4>1) Order Total (Online Sales)</h4><div class="amount">Rs ${orderTotal.toFixed(2)}</div></div>
+        <div class="card"><h4>2) Farm Booking Total</h4><div class="amount">Rs ${farmBookingTotal.toFixed(2)}</div></div>
+        <div class="card"><h4>3) Sell Total (Offline Wholesale)</h4><div class="amount">Rs ${sellTotal.toFixed(2)}</div></div>
+        <div class="card">
+          <h4>4) Buy Total (Purchases)</h4><div class="amount">Rs ${buyTotal.toFixed(2)}</div>
+          <span class="sub-text">Soham: Rs ${sohamBuyTotal.toFixed(2)} | Jeet: Rs ${jeetBuyTotal.toFixed(2)} | Farm: Rs ${farmBuyTotal.toFixed(2)}</span>
+        </div>
+        <div class="card">
+          <h4>5) Expense Total</h4><div class="amount">Rs ${expenseTotal.toFixed(2)}</div>
+          <span class="sub-text">Soham: Rs ${sohamExpOnly.toFixed(2)} | Jeet: Rs ${jeetExpOnly.toFixed(2)} | Farm: Rs ${farmExpOnly.toFixed(2)}</span>
+        </div>
+        <div class="card">
+          <h4>6) Partner & Farm Total (Buy + Expense)</h4>
+          <span class="sub-text">👤 Soham Total: Rs ${sohamExpTotal.toFixed(2)}</span>
+          <span class="sub-text">👤 Jeet Total: Rs ${jeetExpTotal.toFixed(2)}</span>
+          <span class="sub-text">🏢 Farm Total: Rs ${farmExpTotal.toFixed(2)}</span>
+        </div>
+        <div class="card"><h4>7) Farm Available Balance (Net Vault)</h4><div class="amount" style="color: ${farmAvailableBalance >= 0 ? '#16a34a' : '#dc2626'};">Rs ${farmAvailableBalance.toFixed(2)}</div></div>
+        <div class="card"><h4>8) Unified Net Profit (P&L)</h4><div class="amount" style="color: ${netProfit >= 0 ? '#16a34a' : '#dc2626'};">Rs ${netProfit.toFixed(2)}</div></div>
+        <div class="card">
+          <h4>9) Total Damage Losses</h4><div class="amount">Rs ${damageTotal.toFixed(2)}</div>
+          <span class="sub-text">Soham: Rs ${sohamDmgTotal.toFixed(2)} | Jeet: Rs ${jeetDmgTotal.toFixed(2)} | Farm: Rs ${farmDmgTotal.toFixed(2)}</span>
+        </div>
+        <div class="card">
+          <h4>10) Soham & Jeet Net Expenses (6 - 9)</h4>
+          <span class="sub-text">👤 Soham Net: Rs ${sohamNetExp.toFixed(2)}</span>
+          <span class="sub-text">👤 Jeet Net: Rs ${jeetNetExp.toFixed(2)}</span>
+        </div>
+      </div>
+    `;
+  }
+
+  // Option 3 ke hisab se kaunse table sections print karne hain
+  let targetSectionIds = [];
+  if (selectedSection === "ALL") {
+    targetSectionIds = ['erpOrdersTab', 'erpBookingsTab', 'erpAccountingTab'];
+  } else if (selectedSection === "ORDERS") {
+    targetSectionIds = ['erpOrdersTab'];
+  } else if (selectedSection === "BOOKINGS") {
+    targetSectionIds = ['erpBookingsTab'];
+  } else if (selectedSection === "ACCOUNTING") {
+    targetSectionIds = ['erpAccountingTab'];
+  }
+
   let combinedHTML = '';
-  
-  allowedPrintSectionIds.forEach((secId) => {
+  targetSectionIds.forEach((secId, index) => {
     const section = document.getElementById(secId);
     if (!section) return;
 
@@ -2013,8 +2076,7 @@ function printActiveAdminReport() {
 
       rows.forEach(row => {
         const cols = row.querySelectorAll('td');
-        // Agar Custom Date Range lagi hai, to table rows ko bhi unhi dates ke beech filter karein
-        if (isCustomRange && dateColIndex !== -1 && cols[dateColIndex]) {
+        if (cols.length > 1 && dateColIndex !== -1 && cols[dateColIndex]) {
           const cellText = cols[dateColIndex].textContent;
           const dateMatch = cellText.match(/(\d{1,2}\/\d{1,2}\/\d{2,4}|\d{4}-\d{2}-\d{2})/);
           if (dateMatch && !matchesFilter(dateMatch[0])) {
@@ -2040,8 +2102,11 @@ function printActiveAdminReport() {
       sub.style.visibility = 'visible';
     });
 
+    // Agar sirf 1 section select hai toh pehle page par hi start hoga (extra blank page nahi banega)
+    const pageBreakRule = (selectedSection === "ALL") ? "page-break-before: always;" : (index > 0 ? "page-break-before: always;" : "");
+
     combinedHTML += `
-      <div class="print-section-wrapper" style="page-break-before: always; margin-top: 25px;">
+      <div class="print-section-wrapper" style="${pageBreakRule} margin-top: 20px;">
         <h3 style="background: #eef7ee; color: #2b8a3e; padding: 10px 14px; border-left: 5px solid #2b8a3e; font-size: 16px; margin-bottom: 15px; border-radius: 4px;">${sectionTitle}</h3>
         ${sectionClone.innerHTML}
       </div>
@@ -2053,62 +2118,35 @@ function printActiveAdminReport() {
     <!DOCTYPE html>
     <html>
     <head>
-      <title>Pure Grow Farm - Financial & ERP Report</title>
+      <title>Pure Grow Farm - Official Report (${filterBadgeText})</title>
       <style>
         @page { size: A4 portrait; margin: 10mm; }
         body { font-family: Arial, sans-serif; padding: 15px; color: #111; background: #fff; }
         h2 { color: #2b8a3e; margin-bottom: 4px; font-size: 20px; text-align: center; }
-        .meta { font-size: 12.5px; color: #334155; margin-bottom: 16px; text-align: center; background: #f1f5f9; padding: 6px; border-radius: 6px; }
+        .meta { font-size: 12.5px; color: #1e293b; margin-bottom: 16px; text-align: center; background: #f1f5f9; padding: 8px; border-radius: 6px; border: 1px solid #cbd5e1; }
         .summary-container { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 20px; }
         .card { border: 1px solid #cbd5e1; padding: 10px; border-radius: 8px; background: #f8fafc; }
         .card h4 { margin: 0 0 4px 0; color: #0f172a; font-size: 12px; }
         .amount { font-weight: bold; color: #0284c7; font-size: 15px; }
         .sub-text { font-size: 10.5px; color: #475569; margin-top: 3px; display: block; }
-        table { width: 100%; border-collapse: collapse; margin-top: 8px; margin-bottom: 16px; font-size: 11px; page-break-inside: avoid; }
+        table { width: 100%; border-collapse: collapse; margin-top: 8px; margin-bottom: 16px; font-size: 11px; }
         th, td { border: 1px solid #94a3b8; padding: 5px 7px; text-align: left; }
         th { background: #2b8a3e !important; color: white !important; -webkit-print-color-adjust: exact; font-weight: bold; }
         tr:nth-child(even) { background-color: #f8fafc; }
-        .print-section-wrapper { page-break-before: always; }
         .exp-cat-section, .sub-accounting-section { display: block !important; visibility: visible !important; margin-bottom: 15px; }
       </style>
     </head>
     <body>
       <h2>Pure Grow Farm - Official Financial & Operational Ledger Report</h2>
-      <div class="meta"><strong>Filter Applied:</strong> ${filterBadgeText} | <strong>Generated On:</strong> ${new Date().toLocaleString('en-IN')}</div>
-      
-      <h3 style="color: #1e293b; border-bottom: 2px solid #2b8a3e; padding-bottom: 4px; font-size: 14px;">Farm Core Financial & Stock Overview Summary Ledger</h3>
-      <div class="summary-container">
-        <div class="card"><h4>1) Order Total (Online Sales)</h4><div class="amount">Rs ${orderTotal.toFixed(2)}</div></div>
-        <div class="card"><h4>2) Farm Booking Total</h4><div class="amount">Rs ${farmBookingTotal.toFixed(2)}</div></div>
-        <div class="card"><h4>3) Sell Total (Offline Wholesale)</h4><div class="amount">Rs ${sellTotal.toFixed(2)}</div></div>
-        <div class="card">
-          <h4>4) Buy Total (Purchases)</h4><div class="amount">Rs ${buyTotal.toFixed(2)}</div>
-          <span class="sub-text">Soham: Rs ${sohamBuyTotal.toFixed(2)} | Jeet: Rs ${jeetBuyTotal.toFixed(2)} | Farm: Rs ${farmBuyTotal.toFixed(2)}</span>
-        </div>
-        <div class="card">
-          <h4>5) Expense Total</h4><div class="amount">Rs ${expenseTotal.toFixed(2)}</div>
-          <span class="sub-text">Soham: Rs ${sohamExpOnly.toFixed(2)} | Jeet: Rs ${jeetExpOnly.toFixed(2)} | Farm: Rs ${farmExpOnly.toFixed(2)}</span>
-        </div>
-        <div class="card">
-          <h4>6) Partner & Farm Total (Buy + Expense)</h4>
-          <span class="sub-text">👤 Soham Total: Rs ${sohamExpTotal.toFixed(2)}</span>
-          <span class="sub-text">👤 Jeet Total: Rs ${jeetExpTotal.toFixed(2)}</span>
-          <span class="sub-text">🏢 Farm Total: Rs ${farmExpTotal.toFixed(2)}</span>
-        </div>
-        <div class="card"><h4>7) Farm Available Balance (Net Vault)</h4><div class="amount" style="color: ${farmAvailableBalance >= 0 ? '#16a34a' : '#dc2626'};">Rs ${farmAvailableBalance.toFixed(2)}</div></div>
-        <div class="card"><h4>8) Unified Net Profit (P&L)</h4><div class="amount" style="color: ${netProfit >= 0 ? '#16a34a' : '#dc2626'};">Rs ${netProfit.toFixed(2)}</div></div>
-        <div class="card">
-          <h4>9) Total Damage Losses</h4><div class="amount">Rs ${damageTotal.toFixed(2)}</div>
-          <span class="sub-text">Soham: Rs ${sohamDmgTotal.toFixed(2)} | Jeet: Rs ${jeetDmgTotal.toFixed(2)} | Farm: Rs ${farmDmgTotal.toFixed(2)}</span>
-        </div>
-        <div class="card">
-          <h4>10) Soham & Jeet Net Expenses (6 - 9)</h4>
-          <span class="sub-text">👤 Soham Net: Rs ${sohamNetExp.toFixed(2)}</span>
-          <span class="sub-text">👤 Jeet Net: Rs ${jeetNetExp.toFixed(2)}</span>
-        </div>
+      <div class="meta">
+        <strong>Section:</strong> ${sectionLabels[selectedSection]} &nbsp;|&nbsp; 
+        <strong>Period:</strong> ${filterBadgeText} &nbsp;|&nbsp; 
+        <strong>Generated:</strong> ${new Date().toLocaleString('en-IN')}
       </div>
-
+      
+      ${overviewHTML}
       ${combinedHTML}
+      
       <script>
         window.onload = function() { setTimeout(function() { window.print(); }, 500); };
       <\/script>
